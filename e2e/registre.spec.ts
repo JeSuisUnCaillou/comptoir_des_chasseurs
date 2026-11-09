@@ -221,3 +221,31 @@ test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page,
   expect(after.week - before.week).toBeLessThan(1_000_000); // 8 days ago is not
   expect(after.all - before.all).toBeGreaterThanOrEqual(1_100_000);
 });
+
+test("annuler un achat retire la marchandise, sauf si elle est déjà vendue", async ({ browser }) => {
+  const kept = uniqueName("Peau de sabrecat");
+  const sold = uniqueName("Peau de troll");
+  await createProduct(kept, { buyPrice: 2, sellPrice: 3 });
+  await createProduct(sold, { buyPrice: 2, sellPrice: 3 });
+  const { page } = await newEmployeePage(browser, "camilla");
+  await record(page, "achat", { product: kept, quantity: 4 });
+  await record(page, "achat", { product: sold, quantity: 10 });
+  await record(page, "vente", { product: sold, quantity: 8 });
+
+  // Goods still in stock leave it again.
+  await page.goto("/achat-vente?type=rachat");
+  const keptRow = page.getByTestId("registre").getByRole("row").filter({ hasText: kept });
+  page.once("dialog", (dialog) => dialog.accept());
+  await keptRow.getByRole("button", { name: /Annuler/ }).click();
+  await expect(keptRow).toContainText("Annulée par");
+  await expect(await stockOf(page, kept)).toHaveText("0");
+
+  // Goods already sold cannot come back out: the line stays.
+  await page.goto("/achat-vente?type=rachat");
+  const soldRow = page.getByTestId("registre").getByRole("row").filter({ hasText: sold });
+  page.once("dialog", (dialog) => dialog.accept());
+  await soldRow.getByRole("button", { name: /Annuler/ }).click();
+  await expect(soldRow.locator(ALERT)).toContainText("la marchandise rachetée a déjà été vendue");
+  await expect(soldRow).not.toContainText("Annulée par");
+  await expect(await stockOf(page, sold)).toHaveText("2");
+});

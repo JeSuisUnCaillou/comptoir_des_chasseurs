@@ -33,34 +33,7 @@ export function TransactionForm({
   products: TransactionProduct[];
 }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
-  const sale = kind === "vente";
-  return (
-    <TransactionFields
-      kind={kind}
-      products={products}
-      action={action}
-      pending={pending}
-      state={state}
-      submitLabel={sale ? "Confirmer la vente" : "Confirmer l'achat"}
-    />
-  );
-}
-
-function TransactionFields({
-  kind,
-  products,
-  action,
-  pending,
-  state,
-  submitLabel,
-}: {
-  kind: TransactionKind;
-  products: TransactionProduct[];
-  action: (formData: FormData) => void;
-  pending: boolean;
-  state: TransactionState;
-  submitLabel: string;
-}) {
+  const submitLabel = kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat";
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [amount, setAmount] = useState("");
