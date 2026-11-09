@@ -14,7 +14,7 @@ export default async function Connexion() {
   return (
     <main className="gate">
       <div className="gate-card">
-        <BrandMark size={34} />
+        <BrandMark />
         <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
           Comptoir <span>de Chasse</span>
