@@ -46,3 +46,39 @@ export async function newEmployeePage(browser: Browser, prefix: string) {
   await loginAs(page, username, "mot-de-passe");
   return { page, username };
 }
+
+/** Creates a product straight in the database, with its tariff and stock. */
+export async function createProduct(
+  name: string,
+  { buyPrice = 2, sellPrice = 3, stock = 0, unit = "peau" } = {},
+) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into products (name, category, unit, stock, buy_price, sell_price)
+      values (${name}, 'peau', ${unit}, ${stock}, ${buyPrice}, ${sellPrice})`;
+  } finally {
+    await sql.end();
+  }
+}
+
+/**
+ * Writes `n` off-stock sales by a member straight in the database, dated
+ * yesterday so they never push other tests' fresh lines off the first page.
+ */
+export async function createTransactions(
+  username: string,
+  n: number,
+  { at = "now() - interval '1 day'", amount = 1, label = "Article de test" } = {},
+) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into transactions (kind, label, quantity, amount, member_id, created_at)
+      select 'vente', ${label} || ' ' || i, 1, ${amount}, m.id, ${sql.unsafe(at)}
+      from generate_series(1, ${n}::int) as i, members m
+      where m.username = ${username.toLowerCase()}`;
+  } finally {
+    await sql.end();
+  }
+}

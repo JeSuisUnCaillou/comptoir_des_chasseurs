@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { useActionState, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
@@ -98,27 +98,39 @@ function StockCard({ item }: { item: StockItem }) {
   );
 }
 
+const CARDS_PER_PAGE = 24;
+
 export function StockBoard({ items }: { items: StockItem[] }) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"" | ProductCategory>("");
+  const [page, setPage] = useState(1);
   const normalized = query.trim().toLocaleLowerCase("fr");
   const visible = items.filter(
     (i) =>
       (!category || i.category === category) &&
       (!normalized || i.name.toLocaleLowerCase("fr").includes(normalized)),
   );
+  const pages = Math.max(1, Math.ceil(visible.length / CARDS_PER_PAGE));
+  const current = Math.min(page, pages);
+  const shown = visible.slice((current - 1) * CARDS_PER_PAGE, current * CARDS_PER_PAGE);
 
   return (
     <>
       <div className="calc-inputs">
         <div className="field">
           <label htmlFor={`${id}-s`}>Rechercher une marchandise</label>
-          <input id={`${id}-s`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input id={`${id}-s`} type="search" value={query} onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }} />
         </div>
         <div className="field">
           <label htmlFor={`${id}-c`}>Catégorie</label>
-          <select id={`${id}-c`} value={category} onChange={(e) => setCategory(e.target.value as ProductCategory | "")}>
+          <select id={`${id}-c`} value={category} onChange={(e) => {
+              setCategory(e.target.value as ProductCategory | "");
+              setPage(1);
+            }}>
             <option value="">Toutes</option>
             {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -132,10 +144,33 @@ export function StockBoard({ items }: { items: StockItem[] }) {
         <p className="muted">Aucune marchandise ne correspond.</p>
       ) : (
         <div className="stock-grid">
-          {visible.map((item) => (
+          {shown.map((item) => (
             <StockCard key={item.id} item={item} />
           ))}
         </div>
+      )}
+      {pages > 1 && (
+        <nav className="pagination" aria-label="Pages du stock">
+          <button
+            className="btn btn-small btn-ghost"
+            type="button"
+            disabled={current === 1}
+            onClick={() => setPage(current - 1)}
+          >
+            <ChevronLeft size={14} /> Précédent
+          </button>
+          <span className="small muted">
+            Page {current} sur {pages} · {visible.length} marchandises
+          </span>
+          <button
+            className="btn btn-small btn-ghost"
+            type="button"
+            disabled={current === pages}
+            onClick={() => setPage(current + 1)}
+          >
+            Suivant <ChevronRight size={14} />
+          </button>
+        </nav>
       )}
     </>
   );

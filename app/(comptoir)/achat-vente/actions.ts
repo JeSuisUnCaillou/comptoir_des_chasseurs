@@ -2,6 +2,7 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { moveStock } from "@/lib/products";
@@ -9,7 +10,7 @@ import { moveStock } from "@/lib/products";
 export type TransactionState = { ok: boolean; message: string } | null;
 
 function revalidate() {
-  for (const path of ["/", "/registre", "/inventaire", "/tarifs"]) revalidatePath(path);
+  for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
 export async function recordTransaction(
@@ -38,8 +39,9 @@ export async function recordTransaction(
   }
 
   const db = getDb();
+  let id: number;
   try {
-    await db.transaction(async (tx) => {
+    id = await db.transaction(async (tx) => {
       if (productId != null) {
         const [product] = await tx
           .select({ name: schema.products.name })
@@ -49,12 +51,12 @@ export async function recordTransaction(
         if (!product) throw new UserError("Marchandise inconnue.");
         label = product.name;
         const delta = kind === "vente" ? -quantity : quantity;
-        const reason = `${kind === "vente" ? "Vente" : "Rachat"}${counterparty ? ` · ${counterparty}` : ""}`;
+        const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
         const moved = await moveStock(tx, productId, delta, member.id, reason);
         if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
       }
       if (!label) throw new UserError("Indique l'article ou la marchandise.");
-      await tx.insert(schema.transactions).values({
+      const [line] = await tx.insert(schema.transactions).values({
         kind,
         productId,
         label,
@@ -63,7 +65,8 @@ export async function recordTransaction(
         counterparty,
         notes,
         memberId: member.id,
-      });
+      }).returning({ id: schema.transactions.id });
+      return line.id;
     });
   } catch (error) {
     if (error instanceof UserError) return { ok: false, message: error.message };
@@ -71,10 +74,8 @@ export async function recordTransaction(
   }
 
   revalidate();
-  return {
-    ok: true,
-    message: `${kind === "vente" ? "Vente" : "Rachat"} inscrit : ${quantity} × ${label}, ${amount} septim${amount > 1 ? "s" : ""}.`,
-  };
+  // Back to the register, which shows the new line.
+  redirect(`/achat-vente?inscrit=${id}`);
 }
 
 class UserError extends Error {}

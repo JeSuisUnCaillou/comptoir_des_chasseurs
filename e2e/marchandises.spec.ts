@@ -18,6 +18,14 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   await form.getByLabel("Cuirs obtenus").fill("2");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
 
+  // The catalogue is paginated: find the new product with the search.
+  await expect(async () => {
+    await page.goto("/marchandises");
+    await page.getByRole("searchbox", { name: "Nom de la marchandise" }).fill(name);
+    await page.getByRole("button", { name: "Chercher" }).click();
+    await expect(page).toHaveURL(/q=/);
+    await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(1, { timeout: 1000 });
+  }).toPass();
   await page.getByRole("link", { name: `Modifier ${name}` }).click();
   await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible();
   await page.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("2");

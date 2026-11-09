@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
 export async function activeProducts() {
@@ -19,7 +19,12 @@ export async function blacksmithLeatherPrice() {
   return row?.value ?? 6;
 }
 
-export async function recentMovements(limit = 100) {
+export async function movementCount() {
+  const [row] = await getDb().select({ total: count() }).from(schema.stockMovements);
+  return row.total;
+}
+
+export async function recentMovements({ limit, offset = 0 }: { limit: number; offset?: number }) {
   return getDb()
     .select({
       id: schema.stockMovements.id,
@@ -35,7 +40,8 @@ export async function recentMovements(limit = 100) {
     .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
     .innerJoin(schema.members, eq(schema.members.id, schema.stockMovements.memberId))
     .orderBy(desc(schema.stockMovements.createdAt), desc(schema.stockMovements.id))
-    .limit(limit);
+    .limit(limit)
+    .offset(offset);
 }
 
 export type MoveResult = { ok: true; stock: number } | { ok: false; error: string };
