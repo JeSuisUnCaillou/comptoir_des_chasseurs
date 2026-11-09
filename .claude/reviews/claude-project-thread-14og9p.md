@@ -11,4 +11,13 @@ Tête relue : f075a5b (relecteurs bugs et architecte).
 
 Pas de trouvaille bloquante restante : une passe suffit.
 
-Tête relue : d009d23a1d5e8473219073d33fd69a836137fa71
+# Passe 2
+
+Tête relue : 6bdba3a (branche rebasée sur main, import des annonces ajouté).
+
+- Architecte, README § CI muet sur test:legacy : corrigée en e45ad32.
+- Bugs, un format inattendu du tableau donnerait 0 annonce : rejetée, l'essai l'affiche avant toute confirmation.
+
+Rien de bloquant.
+
+Tête relue : e45ad324adb27f58a9efca397d39cd6f84106e8d
