@@ -67,10 +67,14 @@ propriétaire l'a refusé. Ils tournent sur chaque pull request
 
 En local, il faut un Postgres et les variables de `.env.example`
 (`DATABASE_URL`, `AUTH_SECRET`) ; dans une session cloud, le Postgres du
-système suffit :
+système suffit, une fois démarré et doté d'un mot de passe et d'une base :
 
 ```sh
-service postgresql start          # session cloud ; base comptoir_test, postgres/postgres
+service postgresql start
+su postgres -c "psql -c \"alter user postgres password 'postgres'\""
+su postgres -c "psql -c 'create database comptoir_test'"
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/comptoir_test
+export AUTH_SECRET=$(openssl rand -base64 32)
 npm install
 npm run db:migrate
 npm run build
