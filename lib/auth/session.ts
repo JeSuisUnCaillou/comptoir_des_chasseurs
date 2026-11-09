@@ -10,6 +10,10 @@ import type { Member, MemberRole } from "@/lib/db/schema";
 const COOKIE = "comptoir_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
 
+export function authConfigured() {
+  return (process.env.AUTH_SECRET?.length ?? 0) >= 32;
+}
+
 function secret() {
   const value = process.env.AUTH_SECRET;
   if (!value || value.length < 32) {
