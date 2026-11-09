@@ -93,8 +93,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 ## Intégration et déploiement continus
 
 - **CI** (`.github/workflows/ci.yml`) : sur chaque pull request et chaque push
-  sur `main`, vérification TypeScript, cohérence schéma/migrations, build, puis
-  tests e2e Playwright sur un Postgres jetable.
+  sur `main`, vérification TypeScript, cohérence schéma/migrations, tests des
+  scripts de reprise de l'ancienne app, build, puis tests e2e Playwright sur un
+  Postgres jetable.
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
   part en production, chaque pull request reçoit une URL de preview.
   Les tests tournent avant le merge, jamais sur la prod.
