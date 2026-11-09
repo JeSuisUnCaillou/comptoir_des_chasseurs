@@ -1,6 +1,6 @@
 # Passe 1
 
-Tête relue : 4038baf (avant corrections)
+Relue sur : 4038baf (avant corrections)
 
 - relecteur-architecte : le partage app/ components/ lib/ décrit par l'agent ne correspond pas au code de la PR #5 (SQL dans les actions et les pages, composants qui importent les actions) — corrigée en b631ef9.
 - harness-engineer contredit CLAUDE.md sur l'issue de la revue périodique (Closes contre Refs) — corrigée en b631ef9.
@@ -13,3 +13,5 @@ Tête relue : 4038baf (avant corrections)
 - README et scripts/vercel-build.sh de la PR #5 disent encore que les previews partagent la base de prod — hors de cette branche, laissée au propriétaire et à la PR #5.
 
 Aucune trouvaille bloquante dans du code de l'app (la branche n'en touche pas) : pas de seconde passe.
+
+Tête relue : b631ef9e74bb2baca451a04c132b149eaf65e130
