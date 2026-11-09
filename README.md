@@ -32,8 +32,6 @@ BASE_URL=https://exemple.vercel.app npm run test:e2e   # teste un site déployé
   sur `main`, vérification TypeScript, build, puis tests e2e Playwright.
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
   part en production, chaque pull request reçoit une URL de preview.
-- **Vérification de la prod** (`.github/workflows/production-smoke.yml`) :
-  quand Vercel signale que le déploiement de production a réussi, les tests e2e
-  sont rejoués sur l'URL de production.
+  Les tests tournent avant le merge, jamais sur la prod.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
