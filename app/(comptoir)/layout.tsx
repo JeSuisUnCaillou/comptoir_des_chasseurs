@@ -1,5 +1,17 @@
 import type { ReactNode } from "react";
-import { Archive, KeyRound, LayoutGrid, LogOut, Package, Shield, Tag, Users } from "lucide-react";
+import {
+  Archive,
+  Coins,
+  KeyRound,
+  LayoutGrid,
+  LogOut,
+  Package,
+  ScrollText,
+  Shield,
+  ShoppingBasket,
+  Tag,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand";
 import { NavLink } from "@/components/nav-link";
@@ -26,6 +38,15 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
         <nav className="nav" aria-label="Menu principal">
           <NavLink href="/">
             <LayoutGrid size={18} /> Grand livre
+          </NavLink>
+          <NavLink href="/vente">
+            <Coins size={18} /> Nouvelle vente
+          </NavLink>
+          <NavLink href="/rachat">
+            <ShoppingBasket size={18} /> Nouveau rachat
+          </NavLink>
+          <NavLink href="/registre">
+            <ScrollText size={18} /> Registre
           </NavLink>
           <NavLink href="/tarifs">
             <Tag size={18} /> Tarifs

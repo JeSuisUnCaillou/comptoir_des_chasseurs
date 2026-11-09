@@ -680,3 +680,46 @@ th.num {
 .gate-card form .btn-primary {
   margin: 6px 0 18px;
 }
+
+tr.cancelled td {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+tr.cancelled td:last-child {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.btn {
+  white-space: nowrap;
+}
+
+.tx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+.tx-grid .full {
+  grid-column: 1 / -1;
+}
+
+.tariff-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.filters {
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .tx-grid {
+    grid-template-columns: 1fr;
+  }
+}

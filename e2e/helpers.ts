@@ -46,3 +46,18 @@ export async function newEmployeePage(browser: Browser, prefix: string) {
   await loginAs(page, username, "mot-de-passe");
   return { page, username };
 }
+
+/** Creates a product straight in the database, with its tariff and stock. */
+export async function createProduct(
+  name: string,
+  { buyPrice = 2, sellPrice = 3, stock = 0, unit = "peau" } = {},
+) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into products (name, category, unit, stock, buy_price, sell_price)
+      values (${name}, 'peau', ${unit}, ${stock}, ${buyPrice}, ${sellPrice})`;
+  } finally {
+    await sql.end();
+  }
+}

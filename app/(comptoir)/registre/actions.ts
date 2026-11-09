@@ -6,7 +6,7 @@ import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { moveStock } from "@/lib/products";
 
-export type TransactionState = { ok: boolean; message: string } | null;
+export type TransactionState = { ok: boolean; message: string; id?: number } | null;
 
 function revalidate() {
   for (const path of ["/", "/registre", "/inventaire", "/tarifs"]) revalidatePath(path);
@@ -38,8 +38,9 @@ export async function recordTransaction(
   }
 
   const db = getDb();
+  let id: number;
   try {
-    await db.transaction(async (tx) => {
+    id = await db.transaction(async (tx) => {
       if (productId != null) {
         const [product] = await tx
           .select({ name: schema.products.name })
@@ -54,7 +55,7 @@ export async function recordTransaction(
         if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
       }
       if (!label) throw new UserError("Indique l'article ou la marchandise.");
-      await tx.insert(schema.transactions).values({
+      const [line] = await tx.insert(schema.transactions).values({
         kind,
         productId,
         label,
@@ -63,7 +64,8 @@ export async function recordTransaction(
         counterparty,
         notes,
         memberId: member.id,
-      });
+      }).returning({ id: schema.transactions.id });
+      return line.id;
     });
   } catch (error) {
     if (error instanceof UserError) return { ok: false, message: error.message };
@@ -73,6 +75,7 @@ export async function recordTransaction(
   revalidate();
   return {
     ok: true,
+    id,
     message: `${kind === "vente" ? "Vente" : "Rachat"} inscrit : ${quantity} × ${label}, ${amount} septim${amount > 1 ? "s" : ""}.`,
   };
 }
