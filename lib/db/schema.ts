@@ -98,3 +98,37 @@ export const settings = pgTable("settings", {
 
 export type Product = typeof products.$inferSelect;
 export type ProductCategory = (typeof productCategory.enumValues)[number];
+
+export const transactionKind = pgEnum("transaction_kind", ["vente", "rachat"]);
+
+/**
+ * A line of the register. A sale brings money into the till, a buyback takes
+ * money out. When it names a product, its stock moves with it.
+ */
+export const transactions = pgTable(
+  "transactions",
+  {
+    id: serial("id").primaryKey(),
+    kind: transactionKind("kind").notNull(),
+    productId: integer("product_id").references(() => products.id),
+    // Product name at the time, or free text ("Salaires", ...).
+    label: text("label").notNull(),
+    quantity: integer("quantity").notNull(),
+    amount: integer("amount").notNull(),
+    counterparty: text("counterparty"),
+    notes: text("notes"),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledBy: integer("cancelled_by").references(() => members.id),
+  },
+  (t) => [
+    check("transactions_quantity_positive", sql`${t.quantity} > 0`),
+    check("transactions_amount_positive", sql`${t.amount} >= 0`),
+  ],
+);
+
+export type Transaction = typeof transactions.$inferSelect;
+export type TransactionKind = (typeof transactionKind.enumValues)[number];

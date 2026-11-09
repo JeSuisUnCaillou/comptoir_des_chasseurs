@@ -15,6 +15,13 @@
       "when": 1794247561641,
       "tag": "0001_seed_tarifs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794248524986,
+      "tag": "0002_transactions",
+      "breakpoints": true
     }
   ]
 }
