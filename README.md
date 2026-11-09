@@ -43,6 +43,41 @@ connectée au seul environnement Preview avec le préfixe `PREVIEW`
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone,
 un peu de stock et quelques annonces si la base est neuve (sans jamais rien écraser).
 
+## Reprendre les données de l'ancienne app
+
+Deux scripts, lancés à la main depuis un poste qui joint l'ancienne app (le
+cloud de Claude ne la joint pas). Il faut Node 22 et le dépôt cloné, avec
+`npm install`. L'adresse, les identifiants et l'URL de la base sont demandés
+au lancement, jamais lus dans l'environnement ni écrits dans le dépôt.
+
+```bash
+npm run legacy:export
+npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview --essai
+npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview
+```
+
+1. `legacy:export` se connecte à l'ancienne app (certificat auto-signé
+   accepté pour elle seule) et écrit tout ce que son API renvoie dans
+   `legacy-export/` (ignoré par git) : stock, mouvements, tarifs des peaux,
+   du cuir et des viandes, registre complet, trésorerie, fournisseurs,
+   annonces. Prendre un compte de gérant, sinon des routes manquent.
+2. `legacy:import` lit ce fichier et **remplace** dans la base cible les
+   marchandises, l'historique du stock et le registre, et met à jour le prix
+   du cuir chez le forgeron. Les membres restent : chaque ligne est rattachée
+   au membre du même identifiant ou du même nom, sinon au gérant, avec le nom
+   d'origine en note. Les ajustements de trésorerie deviennent des lignes
+   « Ajustement de trésorerie » du registre. Les fournisseurs et les annonces
+   restent dans le fichier tant que l'app n'a pas de place pour eux.
+   - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
+     « écraser la preview » ou « écraser la prod » pour confirmer.
+   - `--essai` montre ce qui serait remplacé, la caisse obtenue et les
+     avertissements, sans rien écrire.
+   - Avant d'écrire, l'existant est sauvegardé dans `legacy-export/`, et tout
+     s'écrit en une transaction : en cas d'erreur, la base ne bouge pas.
+
+`npm run test:legacy` (lancé par la CI) joue les deux scripts contre une
+fausse ancienne app et une base `comptoir_import_test`.
+
 ## Tests
 
 ```bash

@@ -38,6 +38,8 @@ jobs:
       - name: Les migrations correspondent au schéma
         run: npx drizzle-kit check && npx drizzle-kit generate --name ci-check && git diff --exit-code --stat -- drizzle && test -z "$(git status --porcelain -- drizzle)"
       - run: npm run db:migrate
+      - name: Scripts de reprise de l'ancienne app
+        run: npm run test:legacy
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
