@@ -16,3 +16,11 @@ Relue sur : 157eb27
 
 - relecteur-bugs : les fenêtres « Aujourd'hui » et « 7 derniers jours » du grand livre (`tillSummary`) n'étaient pas vérifiées en chiffres — test ajouté en 80c642f ; vu échouer avec la borne de semaine à -9 jours, puis passer à -6.
 - relecteur-architecte : aucune trouvaille. Écartées par lui-même : la barre de pagination client des cartes du stock (mécanisme différent), et `revalidate()` qui liste les pages de formulaire — elles affichent le stock (« En stock : … »), la revalidation est utile.
+
+# Passe 3
+
+- relecteur-bugs : aucun test n'annulait un achat (retrait du stock, refus quand la marchandise est déjà vendue). Corrigé : test « annuler un achat retire la marchandise, sauf si elle est déjà vendue », vu échouer avec le sens du mouvement inversé.
+- relecteur-architecte : `TransactionFields` n'avait qu'un appelant, `TransactionForm`. Corrigé : fusionnés.
+- Suite e2e : 30 tests verts.
+
+Tête relue : 4b0b2711f8fce536113f1e860c3e9a3ec7724815
