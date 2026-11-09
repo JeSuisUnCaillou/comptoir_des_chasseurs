@@ -40,6 +40,8 @@ Sur Vercel, les migrations sont appliquées par le build
 utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
+Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone et
+un peu de stock si la base est neuve (sans jamais rien écraser).
 
 ## Tests
 

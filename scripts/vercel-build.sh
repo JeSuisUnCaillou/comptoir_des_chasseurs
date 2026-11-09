@@ -7,5 +7,6 @@
 set -euo pipefail
 if [ -n "${VERCEL_ENV:-}" ] && [ "${VERCEL_ENV}" != "development" ]; then
   node scripts/migrate.mjs
+  node scripts/seed-preview.mjs
 fi
 npx next build
