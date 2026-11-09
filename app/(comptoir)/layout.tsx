@@ -47,14 +47,14 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
           <NavLink href="/inventaire">
             <Archive size={18} /> Inventaire
           </NavLink>
-          <NavLink href="/annonces">
-            <Megaphone size={18} /> Annonces
-          </NavLink>
           {gerant && (
             <NavLink href="/marchandises">
               <Package size={18} /> Marchandises
             </NavLink>
           )}
+          <NavLink href="/annonces">
+            <Megaphone size={18} /> Annonces
+          </NavLink>
           {gerant && (
             <NavLink href="/membres">
               <Users size={18} /> Membres
