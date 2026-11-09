@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { takeDownAnnouncement } from "@/app/(comptoir)/annonces/actions";
 import { PinIcon } from "@/components/pins";
-import { PINS } from "@/lib/announcement-rules";
+import { canTakeDown, PINS } from "@/lib/announcement-rules";
 import type { AnnouncementEntry } from "@/lib/announcements";
 import type { Member } from "@/lib/db/schema";
 
@@ -33,7 +33,7 @@ export function AnnouncementBoard({ announcements, member }: { announcements: An
                 <span className="parchment-pin" title={PINS.find((p) => p.value === a.pin)?.label}>
                   <PinIcon pin={a.pin} size={52} />
                 </span>
-                {(a.memberId === member.id || member.role === "gerant") && (
+                {canTakeDown(member, a) && (
                   <form action={takeDownAnnouncement} className="parchment-remove">
                     <input type="hidden" name="id" value={a.id} />
                     <button type="submit" className="icon-btn" aria-label={`Décrocher « ${a.title} »`} title="Décrocher">

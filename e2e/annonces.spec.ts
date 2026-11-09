@@ -74,3 +74,13 @@ test("toutes les annonces sont paginées, l'accueil n'en montre que les dernièr
   // The oldest of the batch is past the first twelve.
   await expect(parchment(page, `${title} 14`)).toBeVisible();
 });
+
+test("un parchemin sans titre est refusé, et la saisie reste", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto("/annonces");
+  await page.getByLabel("Titre de l'annonce").fill("   ");
+  await page.getByLabel("Texte à afficher").fill("Un texte sans titre");
+  await page.getByRole("button", { name: "Accrocher le parchemin" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "titre" })).toHaveText("Donne un titre à l'annonce.");
+  await expect(page.getByLabel("Texte à afficher")).toHaveValue("Un texte sans titre");
+});

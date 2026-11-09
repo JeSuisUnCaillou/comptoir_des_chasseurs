@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
-import { BODY_MAX, PINS, TITLE_MAX } from "@/lib/announcement-rules";
+import { BODY_MAX, canTakeDown, PINS, TITLE_MAX } from "@/lib/announcement-rules";
 
 export type AnnouncementState = { ok: boolean; message: string; id?: number } | null;
 
@@ -39,8 +39,7 @@ export async function takeDownAnnouncement(formData: FormData) {
     .select({ memberId: schema.announcements.memberId })
     .from(schema.announcements)
     .where(eq(schema.announcements.id, id));
-  if (!announcement) return;
-  if (announcement.memberId !== member.id && member.role !== "gerant") return;
+  if (!announcement || !canTakeDown(member, announcement)) return;
   await db.delete(schema.announcements).where(eq(schema.announcements.id, id));
   revalidatePath("/");
   revalidatePath("/annonces");
