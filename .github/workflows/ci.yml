@@ -15,6 +15,18 @@ jobs:
     name: Build et tests e2e
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: comptoir_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/comptoir_test
+      AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,6 +35,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - name: Les migrations correspondent au schéma
+        run: npx drizzle-kit check && npx drizzle-kit generate --name ci-check && git diff --exit-code --stat -- drizzle && test -z "$(git status --porcelain -- drizzle)"
+      - run: npm run db:migrate
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
