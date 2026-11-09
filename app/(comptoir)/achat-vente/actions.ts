@@ -2,14 +2,15 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { moveStock } from "@/lib/products";
 
-export type TransactionState = { ok: boolean; message: string; id?: number } | null;
+export type TransactionState = { ok: boolean; message: string } | null;
 
 function revalidate() {
-  for (const path of ["/", "/achat-vente", "/inventaire", "/tarifs"]) revalidatePath(path);
+  for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
 export async function recordTransaction(
@@ -50,7 +51,7 @@ export async function recordTransaction(
         if (!product) throw new UserError("Marchandise inconnue.");
         label = product.name;
         const delta = kind === "vente" ? -quantity : quantity;
-        const reason = `${kind === "vente" ? "Vente" : "Rachat"}${counterparty ? ` · ${counterparty}` : ""}`;
+        const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
         const moved = await moveStock(tx, productId, delta, member.id, reason);
         if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
       }
@@ -73,11 +74,8 @@ export async function recordTransaction(
   }
 
   revalidate();
-  return {
-    ok: true,
-    id,
-    message: `${kind === "vente" ? "Vente" : "Rachat"} inscrit : ${quantity} × ${label}, ${amount} septim${amount > 1 ? "s" : ""}.`,
-  };
+  // Back to the register, which shows the new line.
+  redirect(`/achat-vente?inscrit=${id}`);
 }
 
 class UserError extends Error {}

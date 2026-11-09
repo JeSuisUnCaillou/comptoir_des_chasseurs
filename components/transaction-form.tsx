@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { useActionState, useState } from "react";
+import { Pencil, Plus } from "lucide-react";
+import { useActionState, useRef, useState } from "react";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
@@ -33,19 +33,15 @@ export function TransactionForm({
   products: TransactionProduct[];
 }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
-  // The last recorded line: a new one gives a fresh form, a refused one keeps the fields.
-  const [recorded, setRecorded] = useState<number>();
-  if (state?.ok && state.id !== recorded) setRecorded(state.id);
   const sale = kind === "vente";
   return (
     <TransactionFields
-      key={recorded ?? "form"}
       kind={kind}
       products={products}
       action={action}
       pending={pending}
       state={state}
-      submitLabel={sale ? "Confirmer la vente" : "Confirmer le rachat"}
+      submitLabel={sale ? "Confirmer la vente" : "Confirmer l'achat"}
     />
   );
 }
@@ -68,11 +64,15 @@ function TransactionFields({
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [amount, setAmount] = useState("");
+  // The amount follows the tariff until the member takes it over with the pencil.
+  const [manual, setManual] = useState(false);
+  const amountInput = useRef<HTMLInputElement>(null);
   const product = products.find((p) => String(p.id) === productId);
   const qty = Number(quantity);
   const validQty = Number.isInteger(qty) && qty > 0;
   const tariff = product && validQty ? (kind === "vente" ? sellTotal(product, qty) : buyTotal(product, qty)) : null;
   const suggested = tariff ? Math.round(tariff.value) : null;
+  const auto = suggested != null && !manual;
   const short = kind === "vente" && product && validQty && qty > product.stock;
   const categories = [...new Set(products.map((p) => p.category))];
 
@@ -132,29 +132,49 @@ function TransactionFields({
         </div>
         <div className="field">
           <label htmlFor="t-amount">Montant total (septims)</label>
-          <input
-            id="t-amount"
-            name="amount"
-            type="number"
-            min={0}
-            step={1}
-            required
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          {suggested != null && (
-            <span className="small muted tariff-hint">
-              Tarif : {septims(suggested)}
-              {tariff && "bulk" in tariff && tariff.bulk ? " (prix de gros)" : ""}
-              {tariff && !tariff.complete ? " (lot incomplet, arrondi)" : ""}{" "}
+          <div className="amount-row">
+            <input
+              ref={amountInput}
+              id="t-amount"
+              name="amount"
+              type="number"
+              min={0}
+              step={1}
+              required
+              readOnly={auto}
+              value={auto ? String(suggested) : amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            {auto && (
               <button
                 type="button"
-                className="btn btn-small btn-ghost"
-                onClick={() => setAmount(String(suggested))}
+                className="icon-btn"
+                title="Modifier le montant"
+                aria-label="Modifier le montant"
+                onClick={() => {
+                  setAmount(String(suggested));
+                  setManual(true);
+                  requestAnimationFrame(() => amountInput.current?.focus());
+                }}
               >
-                Appliquer le tarif
+                <Pencil size={18} />
               </button>
+            )}
+          </div>
+          {suggested != null && (
+            <span className="small muted tariff-hint" data-testid="tarif">
+              {auto ? "Calculé avec le tarif" : `Tarif : ${septims(suggested)}`}
+              {tariff && "bulk" in tariff && tariff.bulk ? " (prix de gros)" : ""}
+              {tariff && !tariff.complete ? " (lot incomplet, arrondi)" : ""}
+              {!auto && (
+                <button type="button" className="btn btn-small btn-ghost" onClick={() => setManual(false)}>
+                  Revenir au tarif
+                </button>
+              )}
             </span>
+          )}
+          {product && suggested == null && (
+            <span className="small muted">Pas de tarif pour cette opération : indique le montant.</span>
           )}
         </div>
         <div className="field full">
@@ -172,7 +192,7 @@ function TransactionFields({
         </p>
       )}
       {state && (
-        <p className={`notice ${state.ok ? "" : "error"}`} role={state.ok ? "status" : "alert"}>
+        <p className="notice error" role="alert">
           {state.message}
         </p>
       )}

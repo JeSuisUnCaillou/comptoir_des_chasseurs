@@ -13,10 +13,12 @@ export function RegisterTable({
   entries,
   member,
   showNotes = true,
+  highlight,
 }: {
   entries: RegisterEntry[];
   member: Pick<Member, "id" | "role">;
   showNotes?: boolean;
+  highlight?: number;
 }) {
   if (entries.length === 0) return <p className="muted">Aucune écriture pour l&apos;instant.</p>;
   return (
@@ -40,12 +42,16 @@ export function RegisterTable({
             const sale = e.kind === "vente";
             const cancelled = e.cancelledAt != null;
             const canCancel = !cancelled && (member.role === "gerant" || e.memberId === member.id);
-            const label = sale ? `la vente n°${e.id}` : `le rachat n°${e.id}`;
+            const label = sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
             return (
-              <tr key={e.id} className={cancelled ? "cancelled" : undefined} data-testid={`ligne-${e.id}`}>
+              <tr
+                key={e.id}
+                className={cancelled ? "cancelled" : e.id === highlight ? "fresh" : undefined}
+                data-testid={`ligne-${e.id}`}
+              >
                 <td className="num">{dateTime.format(e.createdAt)}</td>
                 <td>
-                  <span className={`badge ${sale ? "badge-green" : "badge-gold"}`}>{sale ? "Vente" : "Rachat"}</span>
+                  <span className={`badge ${sale ? "badge-green" : "badge-gold"}`}>{sale ? "Vente" : "Achat"}</span>
                 </td>
                 <td>{e.label}</td>
                 <td className="num">{formatNumber(e.quantity)}</td>

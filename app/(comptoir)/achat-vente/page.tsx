@@ -1,17 +1,16 @@
-import { Coins, ShoppingBasket, X } from "lucide-react";
+import { Coins, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { RegisterTable } from "@/components/register-table";
 import { TillStat } from "@/components/till-stat";
-import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
 import type { TransactionKind } from "@/lib/db/schema";
+import { septims } from "@/lib/pricing";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
-import { activeProducts } from "@/lib/products";
 import { parisDay, registerCount, registerEntries, tillTotals, type RegisterFilter } from "@/lib/register";
 
-type Search = Record<"saisie" | "type" | "du" | "au" | "page", string | string[] | undefined>;
+type Search = Record<"type" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 
 const PATH = "/achat-vente";
 
@@ -26,7 +25,6 @@ function asDate(value: string | undefined) {
 export default async function AchatVente({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
   const search = await searchParams;
-  const entry = asKind(param(search.saisie));
   const kind = asKind(param(search.type));
   let du = asDate(param(search.du));
   let au = asDate(param(search.au));
@@ -35,39 +33,28 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   const filters = { type: kind, du, au };
   const filter: RegisterFilter = { kind, from: parisDay(du), to: parisDay(au, 1) }; // "au" includes that day
 
-  const [entries, total, totals, products] = await Promise.all([
+  const [entries, total, totals] = await Promise.all([
     registerEntries(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     registerCount(filter),
     tillTotals(filter),
-    entry ? activeProducts() : [],
   ]);
   const filtered = Boolean(kind || du || au);
-  const withFilters = (extra: Record<string, string>) => {
-    const query = new URLSearchParams(extra);
-    for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value);
-    return `${PATH}?${query}`;
-  };
+  // Coming back from the entry form: confirm the line just written.
+  const writtenId = Number(param(search.inscrit));
+  const written = entries.find((e) => e.id === writtenId);
 
   return (
     <>
       <PageHead title="Achat / Vente" />
       <div className="big-actions">
-        <Link
-          className={`big-action${entry === "rachat" ? " active" : ""}`}
-          href={withFilters({ saisie: "rachat" })}
-          aria-current={entry === "rachat" ? "true" : undefined}
-        >
+        <Link className="big-action" href={`${PATH}/achat`}>
           <ShoppingBasket size={28} />
           <span>
-            <strong>Nouveau rachat</strong>
+            <strong>Nouvel achat</strong>
             <span className="small muted">On paie un vendeur, la marchandise entre en stock.</span>
           </span>
         </Link>
-        <Link
-          className={`big-action${entry === "vente" ? " active" : ""}`}
-          href={withFilters({ saisie: "vente" })}
-          aria-current={entry === "vente" ? "true" : undefined}
-        >
+        <Link className="big-action" href={`${PATH}/vente`}>
           <Coins size={28} />
           <span>
             <strong>Nouvelle vente</strong>
@@ -76,42 +63,12 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
         </Link>
       </div>
 
-      {entry && (
-        <section
-          className="panel"
-          style={{ maxWidth: 760 }}
-          aria-label={entry === "vente" ? "Inscrire une vente" : "Inscrire un rachat"}
-        >
-          <div className="panel-head">
-            <div>
-              <div className="eyebrow">Nouvelle écriture</div>
-              <h2>{entry === "vente" ? "Inscrire une vente" : "Inscrire un rachat"}</h2>
-            </div>
-            <Link className="icon-btn" href={withFilters({})} aria-label="Fermer" title="Fermer">
-              <X size={20} />
-            </Link>
-          </div>
-          <TransactionForm
-            key={entry}
-            kind={entry}
-            products={products.map((p) => ({
-              id: p.id,
-              name: p.name,
-              category: p.category,
-              unit: p.unit,
-              stock: p.stock,
-              buyPrice: p.buyPrice,
-              buyQty: p.buyQty,
-              sellPrice: p.sellPrice,
-              sellQty: p.sellQty,
-              bulkMin: p.bulkMin,
-              bulkPrice: p.bulkPrice,
-              bulkQty: p.bulkQty,
-            }))}
-          />
-        </section>
+      {written && (
+        <p className="notice" role="status">
+          {written.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} : {written.quantity} × {written.label},{" "}
+          {septims(written.amount)}.
+        </p>
       )}
-
       <section className="panel" aria-labelledby="registre">
         <div className="eyebrow">Toutes les écritures</div>
         <h2 id="registre">Registre des achats et ventes</h2>
@@ -122,7 +79,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           <select id="r-type" name="type" defaultValue={kind ?? ""}>
             <option value="">Toutes</option>
             <option value="vente">Ventes</option>
-            <option value="rachat">Rachats</option>
+            <option value="rachat">Achats</option>
           </select>
           <label className="small muted" htmlFor="r-du">
             Du
@@ -145,7 +102,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           <TillStat title={filtered ? "Caisse sur la sélection" : "Caisse depuis l'ouverture"} till={totals} testId="totaux-registre" />
         </div>
         <p className="small muted">Les lignes annulées sont barrées et ne comptent pas dans la caisse.</p>
-        <RegisterTable entries={entries} member={member} />
+        <RegisterTable entries={entries} member={member} highlight={written?.id} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />
       </section>
     </>

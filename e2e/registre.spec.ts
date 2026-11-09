@@ -3,20 +3,24 @@ import { createProduct, createTransactions, loginAsGerant, newEmployeePage, uniq
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
+/** Writes a line through its form; the form then brings the member back to the register. */
 async function record(
   page: Page,
-  kind: "vente" | "rachat",
+  kind: "vente" | "achat",
   { product, quantity, counterparty }: { product: string; quantity: number; counterparty?: string },
 ) {
-  await page.goto(`/achat-vente?saisie=${kind}`);
-  const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un rachat" });
+  await page.goto(`/achat-vente/${kind}`);
+  const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
   await form.getByLabel("Article ou marchandise").selectOption({ label: product });
   await form.getByLabel("Quantité").fill(String(quantity));
-  await form.getByRole("button", { name: "Appliquer le tarif" }).click();
+  // The tariff fills the amount on its own.
+  await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
   if (counterparty) await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill(counterparty);
-  await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer le rachat" }).click();
-  await expect(form.getByRole("status")).toContainText(`${quantity} × ${product}`);
-  return form;
+  await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
+  await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
+  const status = page.getByRole("status").filter({ hasText: `${quantity} × ${product}` });
+  await expect(status).toBeVisible();
+  return status;
 }
 
 async function stockOf(page: Page, product: string) {
@@ -25,24 +29,25 @@ async function stockOf(page: Page, product: string) {
   return page.getByTestId(`stock-${product}`).getByTestId("stock-value");
 }
 
-test("un rachat puis une vente mettent à jour le stock et le registre", async ({ browser }) => {
+test("un achat puis une vente mettent à jour le stock et le registre", async ({ browser }) => {
   const product = uniqueName("Peau de dragon");
   await createProduct(product, { buyPrice: 2, sellPrice: 3 });
   const { page } = await newEmployeePage(browser, "brelyna");
 
-  const buy = await record(page, "rachat", { product, quantity: 10, counterparty: "Aela" });
-  await expect(buy.getByRole("status")).toContainText("20 septims");
-  const sell = await record(page, "vente", { product, quantity: 4, counterparty: "Belethor" });
-  await expect(sell.getByRole("status")).toContainText("12 septims");
-  // The form is ready for the next line.
-  await expect(sell.getByLabel("Quantité")).toHaveValue("1");
+  await expect(await record(page, "achat", { product, quantity: 10, counterparty: "Aela" })).toHaveText(
+    `Achat inscrit : 10 × ${product}, 20 septims.`,
+  );
+  await expect(page.getByTestId("registre").locator("tr.fresh")).toContainText("Aela");
+  await expect(await record(page, "vente", { product, quantity: 4, counterparty: "Belethor" })).toContainText(
+    "12 septims",
+  );
 
   await expect(await stockOf(page, product)).toHaveText("6");
 
   await page.getByRole("link", { name: "Achat / Vente" }).click();
   const rows = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
   await expect(rows.filter({ hasText: "Belethor" })).toContainText(/Vente.*4.*\+12 septims/);
-  await expect(rows.filter({ hasText: "Aela" })).toContainText(/Rachat.*10.*−20 septims/);
+  await expect(rows.filter({ hasText: "Aela" })).toContainText(/Achat.*10.*−20 septims/);
 
   await page.getByLabel("Opération").selectOption("rachat");
   await page.getByRole("button", { name: "Filtrer" }).click();
@@ -70,12 +75,18 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "j-zargo");
   await page.goto("/achat-vente");
   await page.getByRole("link", { name: /Nouvelle vente/ }).click();
+  // The form has a page of its own, without the register.
+  await expect(page).toHaveURL(/\/achat-vente\/vente$/);
+  await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("registre")).toHaveCount(0);
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await form.getByLabel("Article ou marchandise").selectOption("autre");
   await form.getByLabel("Nom de l'article").fill(label);
   await form.getByLabel("Montant total (septims)").fill("500");
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(form.getByRole("status")).toContainText(`1 × ${label}, 500 septims`);
+  await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
+    `Vente inscrite : 1 × ${label}, 500 septims.`,
+  );
   await expect(
     page.getByTestId("registre").getByRole("row").filter({ hasText: label }),
   ).toContainText("+500 septims");
@@ -136,4 +147,56 @@ test("le registre est paginé", async ({ browser }) => {
   await expect(pages).toContainText(/Page 2 sur \d+/);
   await pages.getByRole("link", { name: "Précédent" }).click();
   await expect(pages).toContainText(/Page 1 sur/);
+});
+
+test("le filtre par dates et la caisse de la sélection, annulation comprise", async ({ page, browser }) => {
+  // A day of its own, years back, so no other test writes on it.
+  const day = `2020-0${1 + Math.floor(Math.random() * 9)}-1${Math.floor(Math.random() * 9)}`;
+  const { username } = await newEmployeePage(browser, "ralof");
+  await createTransactions(username, 3, { at: `'${day}T12:00:00+01:00'::timestamptz`, amount: 7, label: "Vente du passé" });
+
+  await loginAsGerant(page);
+  await page.goto("/achat-vente");
+  await page.getByLabel("Du", { exact: true }).fill(day);
+  await page.getByLabel("Au", { exact: true }).fill(day);
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  const table = page.getByTestId("registre");
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+  await expect(page.getByTestId("totaux-registre")).toContainText("+21 septims");
+
+  // A wider range still finds them, written either way round.
+  await page.goto(`/achat-vente?au=${day}&du=2019-01-01`);
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+  await page.goto(`/achat-vente?du=${day}&au=2019-01-01`);
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+
+  // A cancelled line leaves the till.
+  await page.goto(`/achat-vente?du=${day}&au=${day}`);
+  page.once("dialog", (dialog) => dialog.accept());
+  await table.locator("tbody tr").first().getByRole("button", { name: /Annuler/ }).click();
+  await expect(table.locator("tbody tr").first()).toContainText("Annulée par Lomone");
+  await expect(page.getByTestId("totaux-registre")).toContainText("+14 septims");
+});
+
+test("le montant suit le tarif, et le crayon permet de le changer", async ({ browser }) => {
+  const product = uniqueName("Peau de horqueur");
+  await createProduct(product, { buyPrice: 2, sellPrice: 3, stock: 10 });
+  const { page } = await newEmployeePage(browser, "lydia");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  const amount = form.getByLabel("Montant total (septims)");
+  await form.getByLabel("Article ou marchandise").selectOption({ label: product });
+  await form.getByLabel("Quantité").fill("4");
+  await expect(amount).toHaveValue("12");
+  await expect(amount).not.toBeEditable();
+  await form.getByLabel("Quantité").fill("5");
+  await expect(amount).toHaveValue("15");
+
+  await form.getByRole("button", { name: "Modifier le montant" }).click();
+  await expect(amount).toBeEditable();
+  await amount.fill("13");
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
+    `Vente inscrite : 5 × ${product}, 13 septims.`,
+  );
 });

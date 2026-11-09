@@ -691,7 +691,7 @@ tr.cancelled td:last-child {
   text-decoration: none;
 }
 
-.btn {
+.move-actions .btn {
   white-space: nowrap;
 }
 
@@ -768,4 +768,19 @@ tr.cancelled td:last-child {
 .big-action.active {
   background: rgba(201, 169, 106, 0.12);
   border-color: var(--gold);
+}
+
+.amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amount-row input[readonly] {
+  opacity: 0.8;
+  cursor: default;
+}
+
+tr.fresh td {
+  background: rgba(201, 169, 106, 0.1);
 }
