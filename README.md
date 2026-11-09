@@ -65,6 +65,22 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
 
+## Pages
+
+- **Grand livre** : la caisse du jour, des 7 derniers jours et depuis
+  l'ouverture (ventes encaissées moins rachats payés), et les dernières
+  écritures.
+- **Achat / Vente** : deux gros boutons, Nouveau rachat et Nouvelle vente,
+  ouvrent le formulaire au-dessus du registre. Une écriture porte sur une
+  marchandise du stock (le tarif est proposé, le stock bouge : +quantité au
+  rachat, −quantité à la vente, jamais sous zéro) ou sur un article libre hors
+  stock. Le registre se filtre par opération et par dates (heure de Paris).
+  L'auteur d'une ligne ou un gérant peut l'annuler : elle reste barrée, ne
+  compte plus dans la caisse, et le stock revient à l'état d'avant.
+- **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
+  gérants **Marchandises** et **Membres**.
+- Toutes les listes sont paginées par 25 (24 cartes pour le stock).
+
 ## Rôles
 
 - Au premier lancement, la page de connexion crée le compte du **gérant**.
