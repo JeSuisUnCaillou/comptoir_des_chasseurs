@@ -8,4 +8,11 @@ Tête relue : 812d302
 - Bugs : le refus serveur d'un titre fait d'espaces n'est pas testé : corrigée en 9d2dc3c (nouveau test, vu échouer sans la vérification puis passer).
 
 Aucune trouvaille bloquante : pas de deuxième passe.
-Tête relue : 9d2dc3ca40c39ba11158a537bde9d14cf1922d60
+
+# Passe 2
+
+Tête relue : eb06677 (Annonces déplacée sous Marchandises, demandé par Caillou)
+
+Aucune trouvaille.
+
+Tête relue : eb0667730198b67b95ff51dcac317af837bfca4b
