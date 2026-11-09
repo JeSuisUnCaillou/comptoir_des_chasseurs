@@ -1,23 +1,20 @@
 import postgres from "postgres";
+import { hashPassword } from "../lib/auth/password";
+import { GERANT } from "./helpers";
 
-/** Empties the test database and seeds the gérant used by the tests. */
+/** Resets the test database and seeds the gérant used by the tests. */
 export default async function globalSetup() {
   if (process.env.BASE_URL) return; // never touch a deployed database
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL est requis pour les tests e2e.");
   const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {
-    const tables = await sql<{ tablename: string }[]>`
-      select tablename from pg_tables
-      where schemaname = 'public' and tablename <> '__drizzle_migrations'`;
-    if (tables.length) {
-      await sql.unsafe(
-        `truncate ${tables.map((t) => `"${t.tablename}"`).join(", ")} restart identity cascade`,
-      );
-    }
+    // Members and everything they recorded go; the seeded price grid stays.
+    await sql`truncate members restart identity cascade`;
+    await sql`update products set stock = 0`;
     await sql`
-      insert into members (discord_id, discord_name, name, role)
-      values ('test-Lomone', 'Lomone', 'Lomone', 'gerant')`;
+      insert into members (username, name, password_hash, role)
+      values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant')`;
   } finally {
     await sql.end();
   }

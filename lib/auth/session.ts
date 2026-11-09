@@ -51,20 +51,19 @@ export const currentMember = cache(async function currentMember(): Promise<Membe
       .from(schema.members)
       .where(eq(schema.members.id, id))
       .limit(1);
-    return member ?? null;
+    // A deactivated member is signed out everywhere.
+    return member && member.role !== "desactive" ? member : null;
   } catch {
     return null;
   }
 });
 
-export const STAFF: MemberRole[] = ["gerant", "employe"];
-
 /** Redirects away unless the member is signed in with one of the given roles. */
-export async function requireMember(roles: MemberRole[] = STAFF): Promise<Member> {
+export async function requireMember(
+  roles: MemberRole[] = ["gerant", "employe"],
+): Promise<Member> {
   const member = await currentMember();
   if (!member) redirect("/connexion");
-  if (!roles.includes(member.role)) {
-    redirect(STAFF.includes(member.role) ? "/" : "/attente");
-  }
+  if (!roles.includes(member.role)) redirect("/");
   return member;
 }

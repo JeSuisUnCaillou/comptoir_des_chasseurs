@@ -9,7 +9,7 @@ de Vendeaume, pour le serveur Skyrim RP Keizaal.
 - Hébergement : [Vercel](https://vercel.com) (offre Hobby, gratuite)
 - Base de données : Postgres chez [Supabase](https://supabase.com) (offre gratuite),
   via [Drizzle ORM](https://orm.drizzle.team)
-- Connexion : Discord (OAuth2), session signée dans un cookie
+- Connexion : identifiant + mot de passe (scrypt), session signée dans un cookie
 - Tests e2e : [Playwright](https://playwright.dev)
 
 ## Développer en local
@@ -23,9 +23,8 @@ npm run db:migrate              # crée les tables
 npm run dev                     # http://localhost:3000
 ```
 
-Sans application Discord en local, mettre `AUTH_TEST_LOGIN=1` dans `.env.local`
-et se connecter via `/api/auth/test-login?name=Lomone`. Cette route n'existe
-jamais sur Vercel.
+Au premier lancement (aucun membre en base), la page de connexion propose de
+créer le compte du gérant.
 
 ## Base de données
 
@@ -60,6 +59,8 @@ npm run test:e2e                  # vide la base de test, lance l'app et la test
 
 ## Rôles
 
-- Le premier membre connecté devient **gérant**.
-- Les suivants arrivent **en attente**, jusqu'à ce qu'un gérant les passe
-  **employé** (ou gérant) depuis la page Membres.
+- Au premier lancement, la page de connexion crée le compte du **gérant**.
+- Le gérant crée les comptes des **employés** (identifiant + mot de passe
+  provisoire) depuis la page Membres, peut réinitialiser un mot de passe ou
+  **désactiver** un compte.
+- Chacun change son mot de passe avec la clé, en haut à droite.

@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794246944987,
-      "tag": "0000_members",
+      "when": 1794247560857,
+      "tag": "0000_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794247561641,
+      "tag": "0001_seed_tarifs",
       "breakpoints": true
     }
   ]

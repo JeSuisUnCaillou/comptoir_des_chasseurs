@@ -27,7 +27,6 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/comptoir_test
       AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
-      AUTH_TEST_LOGIN: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

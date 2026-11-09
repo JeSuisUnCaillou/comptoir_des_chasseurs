@@ -514,3 +514,169 @@ textarea:focus {
     padding: 20px 16px;
   }
 }
+
+.calc-inputs {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.cols > .panel {
+  margin-bottom: 0;
+}
+
+.section-gap {
+  margin-bottom: 22px;
+}
+
+h3 {
+  font-size: 18px;
+  margin: 22px 0 8px;
+}
+
+td.num,
+th.num {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .calc-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.stock-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 8px 0 14px;
+}
+
+.stock-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-qty {
+  margin: auto 0 14px;
+}
+
+.stock-qty strong {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--gold-strong);
+}
+
+.move-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.move-actions .btn {
+  flex: 1;
+}
+
+.move-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.move-form input {
+  padding: 6px 10px;
+}
+
+.move-form p {
+  margin: 0;
+}
+
+.btn-ghost {
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.plus {
+  color: var(--green);
+}
+
+.btn.minus {
+  color: var(--red);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0 12px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.check input {
+  width: auto;
+}
+
+@media (max-width: 600px) {
+  .span-2 {
+    grid-column: auto;
+  }
+}
+
+.gate-divider {
+  color: var(--gold);
+  letter-spacing: 0.2em;
+  margin: 18px 0 22px;
+  font-size: 12px;
+}
+
+.gate-card form .btn-primary {
+  margin: 6px 0 18px;
+}

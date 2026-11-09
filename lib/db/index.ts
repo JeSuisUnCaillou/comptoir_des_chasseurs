@@ -20,3 +20,9 @@ export function getDb() {
 }
 
 export { schema };
+
+/** True for a Postgres unique constraint violation (drizzle wraps the driver error). */
+export function isUniqueViolation(error: unknown) {
+  const e = error as { code?: string; cause?: { code?: string } };
+  return e?.code === "23505" || e?.cause?.code === "23505";
+}
