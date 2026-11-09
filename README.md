@@ -35,8 +35,11 @@ npm run db:generate -- --name ce-qui-change   # écrit la migration SQL dans dri
 npm run db:migrate
 ```
 
-En production, les migrations sont appliquées par le build Vercel
-(`scripts/vercel-build.sh`), avant la mise en ligne du nouveau code.
+Sur Vercel (production et previews, qui partagent la même base pour l'instant),
+les migrations sont appliquées par le build
+(`scripts/vercel-build.sh`), avant la mise en ligne du nouveau code. Tant que les
+previews partagent la base de prod, une migration doit rester additive (ajouter
+des tables ou colonnes, sans en supprimer).
 
 ## Tests
 
