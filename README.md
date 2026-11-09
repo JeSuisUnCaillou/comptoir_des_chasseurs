@@ -85,7 +85,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   de viande. L'auteur d'une annonce ou un gérant peut la décrocher. Le Grand
   livre montre les 6 dernières, la page Annonces les montre toutes.
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
-  gérants **Marchandises** et **Membres**.
+  gérants **Membres** et **Gérer les tarifs** (créer et modifier les
+  marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
+  page Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres et les annonces.
 

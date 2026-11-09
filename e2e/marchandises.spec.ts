@@ -6,7 +6,14 @@ const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 test("un gérant crée puis modifie une marchandise, visible dans les tarifs", async ({ page }) => {
   const name = uniqueName("Peau de chèvre des glaces");
   await loginAsGerant(page);
-  await page.getByRole("link", { name: "Marchandises" }).click();
+  await page.getByRole("link", { name: "Tarifs" }).click();
+  await page.getByRole("link", { name: "Gérer les tarifs" }).click();
+  await expect(page.getByRole("heading", { name: "Gérer les tarifs", level: 1 })).toBeVisible();
+  // The page belongs to Tarifs in the menu.
+  await expect(page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill(name);
@@ -65,10 +72,9 @@ test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
 test("un employé ne voit pas la gestion des marchandises", async ({ browser }) => {
   const { page: employee } = await newEmployeePage(browser, "sariel");
   await expect(employee.getByRole("link", { name: "Tarifs" })).toBeVisible();
-  await expect(employee.getByRole("link", { name: "Marchandises" })).toHaveCount(0);
   await employee.getByRole("link", { name: "Tarifs" }).click();
   await expect(employee.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
-  await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
+  await expect(employee.getByRole("link", { name: "Gérer les tarifs" })).toHaveCount(0);
   await employee.goto("/marchandises");
   await expect(employee).toHaveURL(/\/$/);
 });

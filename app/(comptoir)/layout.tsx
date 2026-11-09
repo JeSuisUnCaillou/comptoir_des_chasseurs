@@ -6,7 +6,6 @@ import {
   LayoutGrid,
   LogOut,
   Megaphone,
-  Package,
   Shield,
   Tag,
   Users,
@@ -41,17 +40,12 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
           <NavLink href="/achat-vente">
             <ArrowLeftRight size={18} /> Achat / Vente
           </NavLink>
-          <NavLink href="/tarifs">
+          <NavLink href="/tarifs" also={["/marchandises"]}>
             <Tag size={18} /> Tarifs
           </NavLink>
           <NavLink href="/inventaire">
             <Archive size={18} /> Inventaire
           </NavLink>
-          {gerant && (
-            <NavLink href="/marchandises">
-              <Package size={18} /> Marchandises
-            </NavLink>
-          )}
           <NavLink href="/annonces">
             <Megaphone size={18} /> Annonces
           </NavLink>
