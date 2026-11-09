@@ -13,7 +13,7 @@ import https from "node:https";
 import path from "node:path";
 import { createPrompter } from "./prompt.mjs";
 
-const PAGE_LIMIT = 200; // the old API returns at most this many transactions per call
+const PAGE_LIMIT = 200; // most transactions the old API returns per call
 const FIRST_DAY = "2000-01-01";
 
 const prompter = createPrompter();
@@ -126,20 +126,31 @@ function client(base) {
 }
 
 /**
- * Every transaction. The API caps a call at PAGE_LIMIT rows, so a full range
- * is cut in halves by date until each half fits.
+ * Every transaction. The API caps a call (200 rows, read in its front end),
+ * so a date range is cut in halves until each half comes back under the cap.
+ * The cap actually seen on the unfiltered call is used if it is lower, and
+ * whether the API counts the `to` day in is checked on a known row.
  */
 async function allTransactions(get) {
   const byId = new Map();
+  const { transactions: first = [] } = await get("/api/transactions");
+  first.forEach((t) => byId.set(t.id, t));
+  if (first.length === 0) return [];
+  const limit = Math.min(PAGE_LIMIT, first.length);
+
   const fetchRange = async (from, to) => {
-    const query = new URLSearchParams({ type: "", from, to });
+    const query = new URLSearchParams({ type: "", from, to: toExclusive ? nextDay(to) : to });
     const { transactions } = await get(`/api/transactions?${query}`);
     return transactions ?? [];
   };
-  const all = await get("/api/transactions");
-  const first = all.transactions ?? [];
-  first.forEach((t) => byId.set(t.id, t));
-  if (first.length < PAGE_LIMIT) return [...byId.values()];
+  // A row from the middle of a UTC day, to stay clear of time-zone edges.
+  const probe = first.find((t) => {
+    const hour = new Date(t.created_at).getUTCHours();
+    return hour >= 4 && hour <= 20;
+  }) ?? first[0];
+  const probeDay = String(probe.created_at).slice(0, 10);
+  let toExclusive = false;
+  toExclusive = !(await fetchRange(probeDay, probeDay)).some((t) => t.id === probe.id);
 
   const visit = async (from, to) => {
     const rows = await fetchRange(from, to);
@@ -152,9 +163,9 @@ async function allTransactions(get) {
       throw new Error("Le filtre par dates des transactions ne répond pas comme prévu : export incomplet.");
     }
     rows.forEach((t) => byId.set(t.id, t));
-    if (rows.length < PAGE_LIMIT) return;
+    if (rows.length < limit) return;
     if (from === to) {
-      console.log(`⚠ Plus de ${PAGE_LIMIT} transactions le ${from} : certaines peuvent manquer.`);
+      console.log(`⚠ Au moins ${limit} transactions le ${from} : certaines peuvent manquer.`);
       return;
     }
     const middle = midDay(from, to);

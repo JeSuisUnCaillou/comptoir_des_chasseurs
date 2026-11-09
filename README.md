@@ -69,7 +69,8 @@ npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview
    « Ajustement de trésorerie » du registre. Les fournisseurs et les annonces
    restent dans le fichier tant que l'app n'a pas de place pour eux.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
-     « écraser la preview » ou « écraser la prod » pour confirmer.
+     « écraser la preview » ou « écraser la prod » pour confirmer
+     (`--cible=local`, pour le test, n'accepte qu'une base sur la machine).
    - `--essai` montre ce qui serait remplacé, la caisse obtenue et les
      avertissements, sans rien écrire.
    - Avant d'écrire, l'existant est sauvegardé dans `legacy-export/`, et tout

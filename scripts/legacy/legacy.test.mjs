@@ -62,6 +62,8 @@ const legacy = {
   "/api/missives/board": [{ id: 1, title: "Bienvenue", body: "…" }],
 };
 
+// How the fake API pages transactions; the real cap and `to` bound are guesses.
+const api = { cap: 200, toExclusive: false };
 let server;
 let baseUrl;
 let dbUrl;
@@ -93,10 +95,11 @@ before(async () => {
     if (url.pathname === "/api/transactions") {
       const from = url.searchParams.get("from");
       const to = url.searchParams.get("to");
+      const day = (t) => t.created_at.slice(0, 10);
       const rows = transactions
-        .filter((t) => (!from || t.created_at.slice(0, 10) >= from) && (!to || t.created_at.slice(0, 10) <= to))
+        .filter((t) => (!from || day(t) >= from) && (!to || (api.toExclusive ? day(t) < to : day(t) <= to)))
         .toReversed()
-        .slice(0, 200);
+        .slice(0, api.cap);
       return send(200, { transactions: rows });
     }
     if (url.pathname === "/api/einar") return send(403, { error: "Réservé." });
@@ -201,6 +204,19 @@ test("export puis import, sans toucher aux membres", async () => {
 
   const backups = (await readdir(OUT)).filter((f) => f.startsWith("sauvegarde-local-"));
   assert.equal(backups.length, 1, "l'existant est sauvegardé avant d'écrire");
+});
+
+test("l'export récupère tout le registre, quel que soit le découpage de l'API", async () => {
+  Object.assign(api, { cap: 100, toExclusive: true });
+  try {
+    const { code, output } = await run(["scripts/legacy/export.mjs"], `${baseUrl}\n${USER}\n${PASSWORD}\n`);
+    assert.equal(code, 0, output);
+    const file = output.match(/Données écrites dans (.+)/)[1].trim();
+    const data = JSON.parse(await readFile(file, "utf8"));
+    assert.equal(data.transactions.length, 450);
+  } finally {
+    Object.assign(api, { cap: 200, toExclusive: false });
+  }
 });
 
 /** Runs a script of the repo, feeding `input` on stdin. */
