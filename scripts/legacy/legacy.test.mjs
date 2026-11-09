@@ -59,7 +59,12 @@ const legacy = {
   },
   "/api/suppliers": { suppliers: [{ id: 1, name: "Ferme", offers: [] }] },
   "/api/treasury/adjustments": { adjustments: [{ amount: -50, description: "Salaires", created_at: "2026-10-05T00:00:00Z" }] },
-  "/api/missives/board": [{ id: 1, title: "Bienvenue", body: "…" }],
+  "/api/missives/board": {
+    posts: [
+      { id: 1, title: "Bienvenue", body: "Le comptoir ouvre.", fastener: "axe", author_name: "Einar le Rouge", created_at: "2026-10-02T09:00:00Z" },
+      { id: 2, title: "Chasse", body: "Ours au nord.", fastener: "meat", author_name: "Inconnu", created_at: "2026-10-03T09:00:00Z" },
+    ],
+  },
 };
 
 // How the fake API pages transactions; the real cap and `to` bound are guesses.
@@ -157,6 +162,7 @@ test("export puis import, sans toucher aux membres", async () => {
   const trial = await run(["scripts/legacy/import.mjs", file, "--cible=local", "--essai"], `${dbUrl}\n`);
   assert.equal(trial.code, 0, trial.output);
   assert.match(trial.output, /registre\s+0 → 451/);
+  assert.match(trial.output, /annonces\s+0 → 2/);
   assert.match(trial.output, /rien n'a été écrit/);
   assert.equal((await admin`select count(*)::int as n from transactions`)[0].n, 0);
 
@@ -168,7 +174,7 @@ test("export puis import, sans toucher aux membres", async () => {
   const imported = await run(["scripts/legacy/import.mjs", file, "--cible=local"], `${dbUrl}\nécraser\n`);
   assert.equal(imported.code, 0, imported.output);
   assert.match(imported.output, /Import terminé/);
-  assert.match(imported.output, /1 fournisseurs, 1 annonces/);
+  assert.match(imported.output, /1 fournisseurs/);
   assert.match(imported.output, /Mouvement de stock ignoré : marchandise inconnue \(Fantôme\)/);
   assert.match(imported.output, /rattachés au gérant Lomone : Inconnu/);
   assert.doesNotMatch(imported.output, /postgres:postgres/, "l'URL n'est jamais affichée en entier");
@@ -201,6 +207,14 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.deepEqual({ ...salaries }, { kind: "rachat", amount: 50 });
   const [{ n: moves }] = await admin`select count(*)::int as n from stock_movements`;
   assert.equal(moves, 1);
+
+  const notices = await admin`
+    select title, body, pin, (select username from members where id = member_id) as author
+    from announcements order by created_at`;
+  assert.deepEqual(notices.map((n) => ({ ...n })), [
+    { title: "Bienvenue", body: "Le comptoir ouvre.", pin: "hache", author: "einar" },
+    { title: "Chasse", body: "Ours au nord.\n\n— Inconnu", pin: "viande", author: "lomone" },
+  ]);
 
   const backups = (await readdir(OUT)).filter((f) => f.startsWith("sauvegarde-local-"));
   assert.equal(backups.length, 1, "l'existant est sauvegardé avant d'écrire");

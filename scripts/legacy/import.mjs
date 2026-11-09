@@ -43,7 +43,8 @@ try {
   const [current] = await sql`
     select (select count(*) from products)::int as products,
            (select count(*) from stock_movements)::int as movements,
-           (select count(*) from transactions)::int as transactions`;
+           (select count(*) from transactions)::int as transactions,
+           (select count(*) from announcements)::int as announcements`;
 
   console.log(`\nCible : ${target.toUpperCase()}, ${where.username}@${where.host}${where.pathname}`);
   console.log(`Membres gardés : ${members.length}`);
@@ -51,6 +52,7 @@ try {
   console.log(`  marchandises        ${current.products} → ${plan.products.length}`);
   console.log(`  mouvements de stock ${current.movements} → ${plan.movements.length}`);
   console.log(`  registre            ${current.transactions} → ${plan.transactions.length}`);
+  console.log(`  annonces            ${current.announcements} → ${plan.announcements.length}`);
   for (const [k, v] of Object.entries(plan.settings)) console.log(`  réglage ${k} = ${v}`);
   console.log(`Caisse après import : ${till(plan.transactions)} septims`);
   const legacyNet = data.stats?.net_operations ?? data.stats?.stats?.net_operations;
@@ -93,6 +95,7 @@ async function saveBackup(sql, target) {
     stockMovements: await sql`select * from stock_movements order by id`,
     transactions: await sql`select * from transactions order by id`,
     settings: await sql`select * from settings`,
+    announcements: await sql`select * from announcements order by id`,
   };
   const dir = path.resolve("legacy-export");
   await mkdir(dir, { recursive: true });
@@ -103,7 +106,7 @@ async function saveBackup(sql, target) {
 
 async function write(sql, plan) {
   await sql.begin(async (tx) => {
-    await tx`truncate transactions, stock_movements, products restart identity`;
+    await tx`truncate transactions, stock_movements, products, announcements restart identity`;
     const ids = new Map();
     for (const p of plan.products) {
       const [{ id }] = await tx`insert into products ${tx(snake(p))} returning id`;
@@ -124,6 +127,9 @@ async function write(sql, plan) {
         productId: productName ? ids.get(productName) : null,
       }));
       await tx`insert into transactions ${tx(rows.map(snake))}`;
+    }
+    for (const chunk of chunks(plan.announcements)) {
+      await tx`insert into announcements ${tx(chunk.map(snake))}`;
     }
   });
 }

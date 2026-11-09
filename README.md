@@ -62,12 +62,12 @@ npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview
    du cuir et des viandes, registre complet, trésorerie, fournisseurs,
    annonces. Prendre un compte de gérant, sinon des routes manquent.
 2. `legacy:import` lit ce fichier et **remplace** dans la base cible les
-   marchandises, l'historique du stock et le registre, et met à jour le prix
-   du cuir chez le forgeron. Les membres restent : chaque ligne est rattachée
+   marchandises, l'historique du stock, le registre et les annonces, et met
+   à jour le prix du cuir chez le forgeron. Les membres restent : chaque ligne est rattachée
    au membre du même identifiant ou du même nom, sinon au gérant, avec le nom
    d'origine en note. Les ajustements de trésorerie deviennent des lignes
-   « Ajustement de trésorerie » du registre. Les fournisseurs et les annonces
-   restent dans le fichier tant que l'app n'a pas de place pour eux.
+   « Ajustement de trésorerie » du registre. Les fournisseurs restent dans le
+   fichier tant que l'app n'a pas de place pour eux.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
      « écraser la preview » ou « écraser la prod » pour confirmer
      (`--cible=local`, pour le test, n'accepte qu'une base sur la machine).

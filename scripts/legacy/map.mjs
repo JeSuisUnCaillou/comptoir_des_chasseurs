@@ -18,6 +18,8 @@ const CATEGORIES = {
   ressource: "ressource",
 };
 
+const PINS = { knife: "couteau", axe: "hache", meat: "viande" };
+
 const MAX_INT = 2_147_483_647;
 
 /**
@@ -213,6 +215,26 @@ export function mapLegacy(data, members) {
   transactions.sort((a, b) => a.createdAt - b.createdAt);
   movements.sort((a, b) => a.createdAt - b.createdAt);
 
+  // --- Board.
+  const boardPosts = Array.isArray(data.board)
+    ? data.board
+    : ["posts", "board", "messages", "announcements"].map((f) => list(data.board, f)).find((l) => l.length) ?? [];
+  const announcements = [];
+  for (const post of boardPosts) {
+    const title = post.title?.trim();
+    const body = post.body?.trim();
+    if (!title && !body) continue;
+    const { memberId, foreign } = authorOf(post);
+    announcements.push({
+      title: title || "Annonce",
+      body: [body, foreign && `— ${foreign}`].filter(Boolean).join("\n\n"),
+      pin: PINS[key(post.fastener)] ?? "couteau",
+      memberId,
+      createdAt: date(post.created_at),
+    });
+  }
+  announcements.sort((a, b) => a.createdAt - b.createdAt);
+
   if (unmatchedAuthors.size) {
     warn(
       `Auteurs sans compte dans la nouvelle app, rattachés au gérant ${gerant.name} : ${[...unmatchedAuthors].join(", ")}.`,
@@ -220,12 +242,9 @@ export function mapLegacy(data, members) {
   }
 
   // Kept in the export file, with no place in the new app yet.
-  const notImported = {
-    fournisseurs: list(data.suppliers, "suppliers").length,
-    annonces: Array.isArray(data.board) ? data.board.length : list(data.board, "posts").length,
-  };
+  const notImported = { fournisseurs: list(data.suppliers, "suppliers").length };
 
-  return { products: [...products.values()], settings, movements, transactions, warnings, notImported };
+  return { products: [...products.values()], settings, movements, transactions, announcements, warnings, notImported };
 }
 
 /** Till as the new app counts it: sales in, buybacks out, cancelled lines aside. */
