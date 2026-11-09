@@ -61,3 +61,20 @@ export async function createProduct(
     await sql.end();
   }
 }
+
+/**
+ * Writes `n` off-stock sales by a member straight in the database, dated
+ * yesterday so they never push other tests' fresh lines off the first page.
+ */
+export async function createTransactions(username: string, n: number) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into transactions (kind, label, quantity, amount, member_id, created_at)
+      select 'vente', 'Article de test ' || i, 1, 1, m.id, now() - interval '1 day' 
+      from generate_series(1, ${n}::int) as i, members m
+      where m.username = ${username.toLowerCase()}`;
+  } finally {
+    await sql.end();
+  }
+}

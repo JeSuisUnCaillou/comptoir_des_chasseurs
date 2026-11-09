@@ -9,7 +9,7 @@ import { moveStock } from "@/lib/products";
 export type TransactionState = { ok: boolean; message: string; id?: number } | null;
 
 function revalidate() {
-  for (const path of ["/", "/registre", "/inventaire", "/tarifs"]) revalidatePath(path);
+  for (const path of ["/", "/achat-vente", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
 export async function recordTransaction(

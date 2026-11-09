@@ -40,7 +40,7 @@ export function RegisterTable({
             const sale = e.kind === "vente";
             const cancelled = e.cancelledAt != null;
             const canCancel = !cancelled && (member.role === "gerant" || e.memberId === member.id);
-            const label = `${sale ? "vente" : "rachat"} n°${e.id}`;
+            const label = sale ? `la vente n°${e.id}` : `le rachat n°${e.id}`;
             return (
               <tr key={e.id} className={cancelled ? "cancelled" : undefined} data-testid={`ligne-${e.id}`}>
                 <td className="num">{dateTime.format(e.createdAt)}</td>
@@ -59,7 +59,19 @@ export function RegisterTable({
                   {cancelled ? (
                     <span className="small muted">Annulée{e.cancelledBy ? ` par ${e.cancelledBy}` : ""}</span>
                   ) : (
-                    canCancel && <CancelButton id={e.id} label={label} />
+                    canCancel && (
+                      <CancelButton
+                        id={e.id}
+                        label={label}
+                        effect={
+                          e.productId == null
+                            ? "Le stock n'est pas touché."
+                            : sale
+                              ? `${e.quantity} ${e.label} reviendront en stock.`
+                              : `${e.quantity} ${e.label} sortiront du stock.`
+                        }
+                      />
+                    )
                   )}
                 </td>
               </tr>

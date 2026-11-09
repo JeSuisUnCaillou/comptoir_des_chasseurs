@@ -1,5 +1,7 @@
-import { asc } from "drizzle-orm";
+import { asc, count } from "drizzle-orm";
 import { PageHead } from "@/components/page-head";
+import { Pagination } from "@/components/pagination";
+import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
 import { NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
@@ -18,12 +20,22 @@ const BADGE: Record<MemberRole, string> = {
   desactive: "badge badge-red",
 };
 
-export default async function Membres() {
+export default async function Membres({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
   const me = await requireMember(["gerant"]);
-  const members = await getDb()
-    .select()
-    .from(schema.members)
-    .orderBy(asc(schema.members.role), asc(schema.members.name));
+  const page = pageParam((await searchParams).page);
+  const [members, [{ total }]] = await Promise.all([
+    getDb()
+      .select()
+      .from(schema.members)
+      .orderBy(asc(schema.members.role), asc(schema.members.name), asc(schema.members.id))
+      .limit(PAGE_SIZE)
+      .offset(offsetOf(page)),
+    getDb().select({ total: count() }).from(schema.members),
+  ]);
 
   return (
     <>
@@ -91,6 +103,7 @@ export default async function Membres() {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} total={total} path="/membres" label="Pages des comptes" />
       </section>
     </>
   );

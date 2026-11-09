@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createProduct, createTransactions, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -8,7 +8,7 @@ async function record(
   kind: "vente" | "rachat",
   { product, quantity, counterparty }: { product: string; quantity: number; counterparty?: string },
 ) {
-  await page.goto(`/${kind}`);
+  await page.goto(`/achat-vente?saisie=${kind}`);
   const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un rachat" });
   await form.getByLabel("Article ou marchandise").selectOption({ label: product });
   await form.getByLabel("Quantité").fill(String(quantity));
@@ -39,7 +39,7 @@ test("un rachat puis une vente mettent à jour le stock et le registre", async (
 
   await expect(await stockOf(page, product)).toHaveText("6");
 
-  await page.getByRole("link", { name: "Registre" }).click();
+  await page.getByRole("link", { name: "Achat / Vente" }).click();
   const rows = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
   await expect(rows.filter({ hasText: "Belethor" })).toContainText(/Vente.*4.*\+12 septims/);
   await expect(rows.filter({ hasText: "Aela" })).toContainText(/Rachat.*10.*−20 septims/);
@@ -55,7 +55,8 @@ test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
   const product = uniqueName("Peau de loup-garou");
   await createProduct(product, { stock: 2 });
   const { page } = await newEmployeePage(browser, "onmund");
-  await page.goto("/vente");
+  await page.goto("/achat-vente");
+  await page.getByRole("link", { name: /Nouvelle vente/ }).click();
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await form.getByLabel("Article ou marchandise").selectOption({ label: product });
   await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 2 peaux");
@@ -67,7 +68,8 @@ test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
 test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   const label = uniqueName("Trophée de dragon");
   const { page } = await newEmployeePage(browser, "j-zargo");
-  await page.goto("/vente");
+  await page.goto("/achat-vente");
+  await page.getByRole("link", { name: /Nouvelle vente/ }).click();
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await form.getByLabel("Article ou marchandise").selectOption("autre");
   await form.getByLabel("Nom de l'article").fill(label);
@@ -88,17 +90,17 @@ test("annuler une ligne rétablit le stock, et seul l'auteur ou un gérant le pe
   await expect(await stockOf(author, product)).toHaveText("2");
 
   // A colleague cannot cancel someone else's line; a gérant can.
-  await colleague.goto("/registre");
+  await colleague.goto("/achat-vente");
   const theirRow = colleague.getByTestId("registre").getByRole("row").filter({ hasText: product });
   await expect(theirRow).toBeVisible();
   await expect(theirRow.getByRole("button", { name: /Annuler/ })).toHaveCount(0);
   await loginAsGerant(page);
-  await page.goto("/registre");
+  await page.goto("/achat-vente");
   await expect(
     page.getByTestId("registre").getByRole("row").filter({ hasText: product }).getByRole("button", { name: /Annuler/ }),
   ).toBeVisible();
 
-  await author.goto("/registre");
+  await author.goto("/achat-vente");
   const row = author.getByTestId("registre").getByRole("row").filter({ hasText: product });
   author.once("dialog", (dialog) => dialog.accept());
   await row.getByRole("button", { name: /Annuler/ }).click();
@@ -120,4 +122,18 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
   await expect(page.getByTestId("registre").getByRole("row").filter({ hasText: product })).toContainText(
     "+16 septims",
   );
+});
+
+test("le registre est paginé", async ({ browser }) => {
+  const { page, username } = await newEmployeePage(browser, "mjoll");
+  await createTransactions(username, 30);
+  await page.getByRole("link", { name: "Achat / Vente" }).click();
+  const pages = page.getByRole("navigation", { name: "Pages du registre" });
+  await expect(pages).toContainText(/Page 1 sur \d+/);
+  await expect(page.getByTestId("registre").locator("tbody tr")).toHaveCount(25);
+  await pages.getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(pages).toContainText(/Page 2 sur \d+/);
+  await pages.getByRole("link", { name: "Précédent" }).click();
+  await expect(pages).toContainText(/Page 1 sur/);
 });

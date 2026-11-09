@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 import {
   Archive,
-  Coins,
+  ArrowLeftRight,
   KeyRound,
   LayoutGrid,
   LogOut,
   Package,
-  ScrollText,
   Shield,
-  ShoppingBasket,
   Tag,
   Users,
 } from "lucide-react";
@@ -39,14 +37,8 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
           <NavLink href="/">
             <LayoutGrid size={18} /> Grand livre
           </NavLink>
-          <NavLink href="/vente">
-            <Coins size={18} /> Nouvelle vente
-          </NavLink>
-          <NavLink href="/rachat">
-            <ShoppingBasket size={18} /> Nouveau rachat
-          </NavLink>
-          <NavLink href="/registre">
-            <ScrollText size={18} /> Registre
+          <NavLink href="/achat-vente">
+            <ArrowLeftRight size={18} /> Achat / Vente
           </NavLink>
           <NavLink href="/tarifs">
             <Tag size={18} /> Tarifs

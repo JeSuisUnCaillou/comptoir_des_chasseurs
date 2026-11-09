@@ -10,7 +10,10 @@ async function addProduct(page: Page, name: string) {
   await form.getByLabel("Catégorie").selectOption("peau");
   await form.getByLabel("Unité (au singulier)").fill("peau");
   await page.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(page.getByRole("row", { name: new RegExp(name) })).toBeVisible();
+  await expect(async () => {
+    await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
+    await expect(page.getByRole("link", { name: `Modifier ${name}` })).toBeVisible({ timeout: 1000 });
+  }).toPass();
 }
 
 test("entrées et sorties de stock, avec historique", async ({ page }) => {

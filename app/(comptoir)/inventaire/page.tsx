@@ -3,7 +3,9 @@ import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
 import { formatNumber, plural } from "@/lib/pricing";
-import { activeProducts, recentMovements } from "@/lib/products";
+import { Pagination } from "@/components/pagination";
+import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
+import { activeProducts, movementCount, recentMovements } from "@/lib/products";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
@@ -11,9 +13,18 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
 });
 
-export default async function Inventaire() {
+export default async function Inventaire({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
   await requireMember();
-  const [products, movements] = await Promise.all([activeProducts(), recentMovements()]);
+  const page = pageParam((await searchParams).page);
+  const [products, movements, total] = await Promise.all([
+    activeProducts(),
+    recentMovements({ limit: PAGE_SIZE, offset: offsetOf(page) }),
+    movementCount(),
+  ]);
   const sum = (category: string) =>
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
   const others = products.filter((p) => p.category !== "peau" && p.category !== "cuir").length;
@@ -59,7 +70,7 @@ export default async function Inventaire() {
 
       <section className="panel">
         <h2>Historique des mouvements</h2>
-        <p className="muted">Les 100 dernières entrées et sorties, avec leur auteur et leur motif.</p>
+        <p className="muted">Les entrées et sorties, des plus récentes aux plus anciennes, avec leur auteur et leur motif.</p>
         {movements.length === 0 ? (
           <p className="muted">Aucun mouvement pour l&apos;instant.</p>
         ) : (
@@ -95,6 +106,7 @@ export default async function Inventaire() {
             </table>
           </div>
         )}
+        <Pagination page={page} total={total} path="/inventaire" label="Pages de l'historique" />
       </section>
     </>
   );

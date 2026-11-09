@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useActionState, useState } from "react";
-import { recordTransaction, type TransactionState } from "@/app/(comptoir)/registre/actions";
+import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
 import { CATEGORY_LABELS, buyTotal, plural, sellTotal, septims } from "@/lib/pricing";
@@ -33,11 +33,13 @@ export function TransactionForm({
   products: TransactionProduct[];
 }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
+  // The last recorded line: a new one gives a fresh form, a refused one keeps the fields.
+  const [recorded, setRecorded] = useState<number>();
+  if (state?.ok && state.id !== recorded) setRecorded(state.id);
   const sale = kind === "vente";
   return (
-    // A fresh form after each recorded line; a refused one keeps what was typed.
     <TransactionFields
-      key={state?.ok ? state.id : "form"}
+      key={recorded ?? "form"}
       kind={kind}
       products={products}
       action={action}

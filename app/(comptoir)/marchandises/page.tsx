@@ -1,6 +1,8 @@
-import { asc } from "drizzle-orm";
+import { asc, count, ilike } from "drizzle-orm";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
+import { Pagination } from "@/components/pagination";
+import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
@@ -8,13 +10,23 @@ import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { blacksmithLeatherPrice } from "@/lib/products";
 import { saveBlacksmithPrice } from "./actions";
 
-export default async function Marchandises() {
+type Search = { q?: string | string[]; page?: string | string[] };
+
+export default async function Marchandises({ searchParams }: { searchParams: Promise<Search> }) {
   await requireMember(["gerant"]);
-  const [products, blacksmith] = await Promise.all([
+  const search = await searchParams;
+  const q = (param(search.q) ?? "").trim().slice(0, 100);
+  const page = pageParam(search.page);
+  const where = q ? ilike(schema.products.name, `%${q.replace(/[\\%_]/g, "\\$&")}%`) : undefined;
+  const [products, [{ total }], blacksmith] = await Promise.all([
     getDb()
       .select()
       .from(schema.products)
-      .orderBy(asc(schema.products.archived), asc(schema.products.category), asc(schema.products.name)),
+      .where(where)
+      .orderBy(asc(schema.products.archived), asc(schema.products.category), asc(schema.products.name))
+      .limit(PAGE_SIZE)
+      .offset(offsetOf(page)),
+    getDb().select({ total: count() }).from(schema.products).where(where),
     blacksmithLeatherPrice(),
   ]);
 
@@ -27,6 +39,18 @@ export default async function Marchandises() {
       <section className="panel">
         <div className="eyebrow">Catalogue</div>
         <h2>Toutes les marchandises</h2>
+        <form className="inline-form filters" method="get" aria-label="Chercher une marchandise">
+          <input name="q" type="search" defaultValue={q} placeholder="Nom de la marchandise" aria-label="Nom de la marchandise" />
+          <button className="btn btn-small" type="submit">
+            Chercher
+          </button>
+          {q && (
+            <Link className="btn btn-small btn-ghost" href="/marchandises">
+              Tout afficher
+            </Link>
+          )}
+        </form>
+        {products.length === 0 && <p className="muted">Aucune marchandise ne correspond.</p>}
         <div className="table-wrap">
           <table>
             <thead>
@@ -57,6 +81,7 @@ export default async function Marchandises() {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} total={total} path="/marchandises" params={{ q: q || undefined }} label="Pages des marchandises" />
       </section>
 
       <div className="cols">

@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { cancelTransaction, type TransactionState } from "@/app/(comptoir)/registre/actions";
+import { cancelTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 
-export function CancelButton({ id, label }: { id: number; label: string }) {
+export function CancelButton({ id, label, effect }: { id: number; label: string; effect: string }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(cancelTransaction, null);
   return (
     <form action={action} className="inline-form">
@@ -14,7 +14,7 @@ export function CancelButton({ id, label }: { id: number; label: string }) {
         disabled={pending}
         aria-label={`Annuler ${label}`}
         onClick={(e) => {
-          if (!window.confirm(`Annuler « ${label} » ? Le stock sera rétabli.`)) e.preventDefault();
+          if (!window.confirm(`Annuler ${label} ? ${effect}`)) e.preventDefault();
         }}
       >
         Annuler
