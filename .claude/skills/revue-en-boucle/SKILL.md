@@ -72,9 +72,9 @@ chaque passe s'y ajoute.
    (un mot, une valeur par défaut, une couleur) partent. Dans le doute, c'est
    une fonctionnalité et elle attend. Pour merger, suis la PR
    (`subscribe_pr_activity`), et sur son événement CI verte merge-la avec
-   `merge_pull_request`, en squash, avec `expectedHeadSha` égal au commit qui
-   a fermé le fichier de revue, pour qu'un commit poussé après la revue ne
-   soit jamais mergé sans relecture. Une PR en conflit avec `main` n'a pas de
+   `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
+   `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
+   qu'un commit poussé après la revue ne soit jamais mergé sans relecture. Une PR en conflit avec `main` n'a pas de
    CI sur un nouveau push, donc pas d'événement vert : avant d'attendre, lis
    son état de merge (`pull_request_read`), et si elle est en conflit, merge
    `main` dedans, lance la suite, pousse, et refais un tour de boucle, pour
@@ -106,6 +106,6 @@ le fichier de revue. Ajoute la même ligne à la description de la PR.
 - **« Vérifié » ne se dit que de ce que tu as vu échouer puis passer** : pour
   une correction de comportement, retire-la, vois son test passer au rouge,
   remets-la.
-- **Les relecteurs ne changent rien** : leurs outils n'ont pas d'Edit ni de
-  Write, et leur consigne interdit toute écriture, `git stash` et `git checkout` compris, puisque
+- **Les relecteurs ne changent rien** : ils n'ont ni Edit ni Write, mais Bash
+  reste ouvert : c'est leur consigne qui interdit toute écriture, `git stash` et `git checkout` compris, puisque
   tu corriges dans la même copie.

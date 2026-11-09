@@ -76,6 +76,7 @@ su postgres -c "psql -c 'create database comptoir_test'"
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/comptoir_test
 export AUTH_SECRET=$(openssl rand -base64 32)
 npm install
+npx playwright install chromium
 npm run db:migrate
 npm run build
 npm run test:e2e

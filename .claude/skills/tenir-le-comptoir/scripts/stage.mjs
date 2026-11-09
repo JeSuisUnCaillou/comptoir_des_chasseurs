@@ -93,6 +93,7 @@ async function open() {
     } catch { /* already gone */ }
   };
   process.on('exit', stopSite);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(1));
   for (let i = 0; !(await reachable(`http://localhost:${SITE}/`)); i++) {
     if (i > 150) {
       console.error('The app did not start: run `npm run build` first.');
@@ -149,11 +150,13 @@ async function open() {
       return void res.writeHead(400).end('not a command\n');
     }
     if (body.close) {
-      res.end('closed\n');
+      // Answered once everything is down, so an `open` right after succeeds.
       for (const w of windows.values()) await w.context.close();
       stopSite();
+      while (await reachable(`http://localhost:${SITE}/`)) await sleep(0.2);
       rmSync(TOKEN, { force: true });
       server.close();
+      res.end('closed\n');
       return;
     }
     const lines = [];
@@ -178,8 +181,10 @@ async function open() {
 }
 
 function appEnv() {
-  const env = { ...process.env, DATABASE_URL: DB, NODE_ENV: 'production' };
-  delete env.DATABASE_MIGRATION_URL;
+  // The app and its migrations reach the stage's database only, whatever
+  // Supabase or Vercel variables the shell holds (see lib/db/url.mjs).
+  const env = { ...process.env, DATABASE_URL: DB, DATABASE_MIGRATION_URL: DB, NODE_ENV: 'production' };
+  for (const name of Object.keys(env)) if (/^(PREVIEW_)?POSTGRES_/.test(name)) delete env[name];
   env.AUTH_SECRET ||= 'stage-secret-stage-secret-stage-secret';
   return env;
 }

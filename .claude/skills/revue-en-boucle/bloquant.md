@@ -18,10 +18,10 @@ une nouvelle passe.
   lui ;
 - tout ce qui ferait passer la CI au rouge.
 
-**Pas bloquant**, tout le reste, y compris du code au mauvais endroit ou un
-import contre le sens que le relecteur architecte décrit, sauf si c'est aussi
-un bug : ça mesure une dette, pas un risque au comptoir, et bloquer dessus
-ferait tourner la boucle sur du design. Corrige-le quand même. Aussi toute
+**Pas bloquant**, tout le reste, y compris du code au mauvais endroit selon le
+partage que décrit le relecteur architecte, sauf si c'est aussi un bug : ça
+mesure une dette, pas un risque au comptoir, et bloquer dessus ferait tourner
+la boucle sur du design. Corrige-le quand même. Aussi toute
 erreur de texte (un commentaire, un doc, un skill, même une affirmation
 fausse), un fait écrit deux fois, un manque dans un doc, le style, les noms,
 la structure.

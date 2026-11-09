@@ -75,7 +75,8 @@ audit (le plus récent `.claude/audits/*-harness*.md` sur `origin/main`),
 sinon sept jours, sinon ce qu'on te donne. Une passe coupée avant sa PR ne se
 reprend pas : sa branche est abandonnée et la tienne repart des preuves. Comme
 tout travail ici, la passe trouve ou ouvre d'abord son issue, « Passe du
-harness AAAA-MM-JJ ».
+harness AAAA-MM-JJ » ; lancée par la revue périodique, son issue est
+`periodic-review` et sa PR dit `Refs #n` (`CLAUDE.md` § Revue périodique).
 
 **Avec une demande**, une capacité qui manque au harness : la demande est la
 preuve du besoin. Cherche comment la chose se fait aujourd'hui et ce que ça
@@ -126,7 +127,8 @@ demande explicite, mais tient pour ce que tu serais tenté d'ajouter à côté.
    condition vraie et fausse. Puis [`measures.md` § Contrôles](measures.md#contrôles),
    et toute la suite e2e si la passe a touché `e2e/`.
 8. **Pousse et ouvre la PR** vers `main` avec les outils GitHub MCP, qui
-   ferme l'issue de la passe (`Closes #n`). Sa description a une ligne par
+   ferme l'issue de la passe (`Closes #n`, ou
+   `Refs #n` pour une revue périodique). Sa description a une ligne par
    trouvaille, avec sa preuve et son commit, pour juger chacune depuis le
    téléphone. La revue en boucle la relit ensuite, comme toute PR.
 9. **Dépose ce qui ne peut se faire que plus tard** en issues `harness` :

@@ -21,8 +21,8 @@ tu aurais lu ; le code n'est pas ouvert sur ton bureau.
 ## La semaine
 
 1. **Ouvre la scène.** Sur un clone de la branche qu'on te donne, sinon
-   `main` : Postgres démarré (`CLAUDE.md` § Tests de bout en bout),
-   `npm install`, `npm run build`, puis lance la scène en arrière-plan avec
+   `main` : Postgres, Chromium et le build prêts comme pour les tests
+   (`CLAUDE.md` § Tests de bout en bout), puis lance la scène en arrière-plan avec
    `node .claude/skills/tenir-le-comptoir/scripts/stage.mjs open --fresh --out <dir>`,
    `<dir>` dans ton scratchpad, et lis [`conduite.md`](conduite.md). Choisis
    l'appareil : un ordinateur (sans option) pour le gérant qui fait ses
@@ -53,7 +53,7 @@ tu aurais lu ; le code n'est pas ouvert sur ton bureau.
 5. **Fais les comptes.** En fin de semaine : l'inventaire, comparé à ce que
    le plan prévoyait ; le registre, comparé aux visites ; un prix qui change ;
    un employé qui part et dont le compte se désactive ; ferme la scène et
-   rouvre-la sans `--fresh` (le lendemain). Fini quand chaque écart entre le
+   rouvre-la avec la même `--out`, sans `--fresh` (le lendemain). Fini quand chaque écart entre le
    plan et l'app est au log, expliqué ou non.
 
 6. **Écris le retour** dans le fichier que l'appelant a nommé, sinon
