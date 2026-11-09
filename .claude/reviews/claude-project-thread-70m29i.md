@@ -15,4 +15,11 @@ Tête relue : eb06677 (Annonces déplacée sous Marchandises, demandé par Caill
 
 Aucune trouvaille.
 
-Tête relue : eb0667730198b67b95ff51dcac317af837bfca4b
+
+# Passe 3
+
+Tête relue : f02c788 (Marchandises retirée du menu, page « Gérer les tarifs », issue #16)
+
+Aucune trouvaille.
+
+Tête relue : f02c7881bd6d0665cbb9c6d4dc7e33b7779dd365
