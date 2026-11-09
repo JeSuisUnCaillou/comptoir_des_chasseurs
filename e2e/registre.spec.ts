@@ -200,3 +200,24 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
     `Vente inscrite : 5 × ${product}, 13 septims.`,
   );
 });
+
+test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page, browser }) => {
+  // Amounts far above what other tests write, so their lines cannot blur the deltas.
+  const { username } = await newEmployeePage(browser, "brynjolf");
+  const till = async () => {
+    await page.goto("/");
+    const read = async (id: string) =>
+      Number(((await page.getByTestId(id).locator(".stat-value").textContent()) ?? "").replace(/\D/g, ""));
+    return { day: await read("caisse-jour"), week: await read("caisse-semaine"), all: await read("caisse-totale") };
+  };
+  await loginAsGerant(page);
+  const before = await till();
+  await createTransactions(username, 1, { at: "now() - interval '4 days'", amount: 100_000 });
+  await createTransactions(username, 1, { at: "now() - interval '8 days'", amount: 1_000_000 });
+  const after = await till();
+
+  expect(after.day - before.day).toBeLessThan(100_000); // neither line is today
+  expect(after.week - before.week).toBeGreaterThanOrEqual(100_000); // 4 days ago is in the week
+  expect(after.week - before.week).toBeLessThan(1_000_000); // 8 days ago is not
+  expect(after.all - before.all).toBeGreaterThanOrEqual(1_100_000);
+});
