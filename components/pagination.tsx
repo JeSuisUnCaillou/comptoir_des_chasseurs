@@ -14,6 +14,7 @@ export function Pagination({
   name = "page",
   size = PAGE_SIZE,
   label = "Pagination",
+  noun = "ligne",
 }: {
   page: number;
   total: number;
@@ -22,6 +23,8 @@ export function Pagination({
   name?: string;
   size?: number;
   label?: string;
+  /** What is counted, in the singular ("ligne", "annonce"). */
+  noun?: string;
 }) {
   const pages = pageCount(total, size);
   if (pages <= 1) return null;
@@ -43,7 +46,7 @@ export function Pagination({
         <span />
       )}
       <span className="small muted">
-        Page {current} sur {pages} · {total} ligne{total > 1 ? "s" : ""}
+        Page {current} sur {pages} · {total} {noun}{total > 1 ? "s" : ""}
       </span>
       {current < pages ? (
         <Link className="btn btn-small btn-ghost" href={href(current + 1)} rel="next">

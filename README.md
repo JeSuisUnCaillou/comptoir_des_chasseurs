@@ -40,8 +40,8 @@ Sur Vercel, les migrations sont appliquées par le build
 utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
-Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone et
-un peu de stock si la base est neuve (sans jamais rien écraser).
+Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone,
+un peu de stock et quelques annonces si la base est neuve (sans jamais rien écraser).
 
 ## Tests
 
@@ -79,10 +79,17 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   filtre par opération et par dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
   et le stock revient à l'état d'avant.
+- **Annonces** : le tableau du comptoir, des parchemins épinglés sur du bois
+  (titre, texte, auteur, date). Chacun en accroche avec « Afficher un
+  parchemin » et choisit ce qui le fixe : couteau, hache nordique ou morceau
+  de viande. L'auteur d'une annonce ou un gérant peut la décrocher. Le Grand
+  livre montre les 6 dernières, la page Annonces les montre toutes.
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
-  gérants **Marchandises** et **Membres**.
+  gérants **Membres** et **Gérer les tarifs** (créer et modifier les
+  marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
+  page Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
-  marchandises (avec une recherche par nom) et les membres.
+  marchandises (avec une recherche par nom), les membres et les annonces.
 
 ## Rôles
 

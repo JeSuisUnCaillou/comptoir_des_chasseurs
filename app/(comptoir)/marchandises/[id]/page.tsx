@@ -20,7 +20,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
   return (
     <>
       <PageHead eyebrow="Registres · Gérance" title={product.name}>
-        <Link href="/marchandises">← Toutes les marchandises</Link>
+        <Link href="/marchandises">← Gérer les tarifs</Link>
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
         <ProductForm product={product} />

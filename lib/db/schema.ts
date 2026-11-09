@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -132,3 +133,25 @@ export const transactions = pgTable(
 
 export type Transaction = typeof transactions.$inferSelect;
 export type TransactionKind = (typeof transactionKind.enumValues)[number];
+
+export const announcementPin = pgEnum("announcement_pin", ["couteau", "hache", "viande"]);
+
+/** A parchment pinned on the comptoir's board, for every member to read. */
+export const announcements = pgTable(
+  "announcements",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    // What holds the parchment on the board.
+    pin: announcementPin("pin").notNull().default("couteau"),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("announcements_created_at_idx").on(t.createdAt)],
+);
+
+export type Announcement = typeof announcements.$inferSelect;
+export type AnnouncementPin = (typeof announcementPin.enumValues)[number];

@@ -81,7 +81,7 @@ export default async function Tarifs() {
         <PageHead title="Tarifs" />
         {member.role === "gerant" && (
           <Link className="btn" href="/marchandises">
-            <Settings2 size={16} /> Gérer les marchandises
+            <Settings2 size={16} /> Gérer les tarifs
           </Link>
         )}
       </div>

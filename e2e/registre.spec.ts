@@ -202,7 +202,8 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
 });
 
 test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page, browser }) => {
-  // Amounts far above what other tests write, so their lines cannot blur the deltas.
+  // Amounts far above what other tests write, so their lines cannot blur the
+  // deltas: a purchase they record meanwhile only takes a few septims off.
   const { username } = await newEmployeePage(browser, "brynjolf");
   const till = async () => {
     await page.goto("/");
@@ -217,9 +218,9 @@ test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page,
   const after = await till();
 
   expect(after.day - before.day).toBeLessThan(100_000); // neither line is today
-  expect(after.week - before.week).toBeGreaterThanOrEqual(100_000); // 4 days ago is in the week
+  expect(after.week - before.week).toBeGreaterThan(90_000); // 4 days ago is in the week
   expect(after.week - before.week).toBeLessThan(1_000_000); // 8 days ago is not
-  expect(after.all - before.all).toBeGreaterThanOrEqual(1_100_000);
+  expect(after.all - before.all).toBeGreaterThan(1_090_000);
 });
 
 test("annuler un achat retire la marchandise, sauf si elle est déjà vendue", async ({ browser }) => {

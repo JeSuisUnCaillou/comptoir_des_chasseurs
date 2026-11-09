@@ -1,6 +1,7 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and some stock. Runs on preview builds only, after the
-// migrations, and only adds what is missing (it never overwrites anything).
+// gérant account, some stock and a few announcements. Runs on preview builds
+// only, after the migrations, and only adds what is missing (it never
+// overwrites anything).
 //
 // The password is stored as a scrypt hash only, never in clear.
 import nextEnv from "@next/env";
@@ -33,6 +34,25 @@ const STOCK = {
   "Kit débutant": 5,
 };
 
+// A few parchments for the board, oldest first.
+const ANNOUNCEMENTS = [
+  {
+    title: "Contrat de la taverne",
+    body: "À livrer chaque semaine si possible :\n\n100 venaison\n100 pattes de vasard\n50 viandes de chèvre",
+    pin: "viande",
+  },
+  {
+    title: "Infos",
+    body: "Un Khajiit s'est proposé pour racheter régulièrement nos viandes. Voyez avec moi avant de lui vendre.",
+    pin: "hache",
+  },
+  {
+    title: "URGENT",
+    body: "Commande de 700 défenses de horqueurs pour dimanche : chassez ces bêtes en priorité.",
+    pin: "couteau",
+  },
+];
+
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 try {
@@ -44,9 +64,20 @@ try {
       returning id`;
     console.log(gerant ? "Gérant Lomone créé." : "Gérant Lomone déjà présent.");
 
+    const [{ id: memberId }] = await tx`select id from members where username = ${GERANT.username}`;
+
+    const [{ posted }] = await tx`select count(*)::int as posted from announcements`;
+    if (posted === 0) {
+      for (const [i, { title, body, pin }] of ANNOUNCEMENTS.entries()) {
+        await tx`
+          insert into announcements (title, body, pin, member_id, created_at)
+          values (${title}, ${body}, ${pin}, ${memberId}, now() - ${`${ANNOUNCEMENTS.length - i} hours`}::interval)`;
+      }
+      console.log("Annonces d'exemple affichées.");
+    }
+
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;
     if (moved > 0) return;
-    const [{ id: memberId }] = await tx`select id from members where username = ${GERANT.username}`;
     for (const [name, quantity] of Object.entries(STOCK)) {
       const [product] = await tx`
         update products set stock = stock + ${quantity}
