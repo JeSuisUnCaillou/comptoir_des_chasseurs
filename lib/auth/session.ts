@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -22,10 +23,16 @@ function secret() {
   return new TextEncoder().encode(value);
 }
 
-export async function startSession(memberId: number) {
-  const token = await new SignJWT({})
+// Ties a session to the password it was opened with: changing or resetting a
+// password signs the member out of every other device.
+function passwordStamp(passwordHash: string) {
+  return createHash("sha256").update(passwordHash).digest("base64url").slice(0, 16);
+}
+
+export async function startSession(member: Pick<Member, "id" | "passwordHash">) {
+  const token = await new SignJWT({ pw: passwordStamp(member.passwordHash) })
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(String(memberId))
+    .setSubject(String(member.id))
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
     .sign(secret());
@@ -55,8 +62,9 @@ export const currentMember = cache(async function currentMember(): Promise<Membe
       .from(schema.members)
       .where(eq(schema.members.id, id))
       .limit(1);
+    if (!member || payload.pw !== passwordStamp(member.passwordHash)) return null;
     // A deactivated member is signed out everywhere.
-    return member && member.role !== "desactive" ? member : null;
+    return member.role !== "desactive" ? member : null;
   } catch {
     return null;
   }

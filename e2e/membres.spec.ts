@@ -54,13 +54,17 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
 });
 
 test("un gérant réinitialise un mot de passe oublié", async ({ page, browser }) => {
-  const { username } = await newEmployeePage(browser, "sariel");
+  const { page: employee, username } = await newEmployeePage(browser, "sariel");
   await loginAsGerant(page);
   await page.goto("/membres");
   const row = page.getByTestId(`member-${username}`);
   await row.getByLabel("Nouveau mot de passe").fill("tout-neuf-123");
   await row.getByRole("button", { name: "Changer" }).click();
   await expect(row.getByRole("status")).toHaveText("Mot de passe changé.");
+
+  // Whoever was using the old password is signed out.
+  await employee.goto("/");
+  await expect(employee).toHaveURL(/\/connexion$/);
 
   const other = await (await browser.newContext()).newPage();
   await loginAs(other, username, "tout-neuf-123");

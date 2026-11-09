@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from "@/lib/auth/password";
-import { requireMember } from "@/lib/auth/session";
+import { requireMember, startSession } from "@/lib/auth/session";
 
 export type PasswordState = { ok: boolean; message: string } | null;
 
@@ -20,9 +20,9 @@ export async function changePassword(_prev: PasswordState, formData: FormData): 
   if (next !== formData.get("confirm")) {
     return { ok: false, message: "Les deux mots de passe ne correspondent pas." };
   }
-  await getDb()
-    .update(schema.members)
-    .set({ passwordHash: await hashPassword(next) })
-    .where(eq(schema.members.id, member.id));
+  const passwordHash = await hashPassword(next);
+  await getDb().update(schema.members).set({ passwordHash }).where(eq(schema.members.id, member.id));
+  // Other devices are signed out; this one gets a fresh session.
+  await startSession({ id: member.id, passwordHash });
   return { ok: true, message: "Mot de passe changé." };
 }

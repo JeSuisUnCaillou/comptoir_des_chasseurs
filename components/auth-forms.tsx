@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createFirstGerant, login, type AuthState } from "@/app/connexion/actions";
+import { keepValues } from "@/lib/keep-values";
 
 function Field({
   name,
@@ -34,7 +35,7 @@ function ErrorNotice({ state }: { state: AuthState }) {
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, null);
   return (
-    <form action={action}>
+    <form onSubmit={keepValues(action)}>
       <Field name="username" label="Identifiant" autoComplete="username" />
       <Field name="password" label="Mot de passe" type="password" autoComplete="current-password" />
       <ErrorNotice state={state} />
@@ -48,7 +49,7 @@ export function LoginForm() {
 export function FirstGerantForm() {
   const [state, action, pending] = useActionState(createFirstGerant, null);
   return (
-    <form action={action}>
+    <form onSubmit={keepValues(action)}>
       <p className="notice" style={{ textAlign: "left" }}>
         Premier passage : crée le compte du gérant. Tu pourras ensuite créer ceux des employés.
       </p>

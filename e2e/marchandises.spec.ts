@@ -40,6 +40,20 @@ test("deux marchandises ne peuvent pas porter le même nom", async ({ page }) =>
   await expect(form.locator(ALERT)).toHaveText("Une marchandise porte déjà ce nom.");
 });
 
+test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto("/marchandises");
+  const form = page.getByRole("region", { name: "Ajouter une marchandise" });
+  await form.getByLabel("Nom").fill("Peau à moitié remplie");
+  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("4");
+  await form.getByLabel("Peaux par lot").fill("2");
+  await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
+  await expect(form.locator(ALERT)).toContainText("Indique les peaux ET les cuirs");
+  await expect(form.getByLabel("Nom")).toHaveValue("Peau à moitié remplie");
+  await expect(form.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("4");
+});
+
 test("un employé ne voit pas la gestion des marchandises", async ({ browser }) => {
   const { page: employee } = await newEmployeePage(browser, "sariel");
   await expect(employee.getByRole("link", { name: "Tarifs" })).toBeVisible();

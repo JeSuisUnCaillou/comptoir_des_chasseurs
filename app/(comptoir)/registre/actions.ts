@@ -44,7 +44,7 @@ export async function recordTransaction(
         const [product] = await tx
           .select({ name: schema.products.name })
           .from(schema.products)
-          .where(eq(schema.products.id, productId))
+          .where(and(eq(schema.products.id, productId), eq(schema.products.archived, false)))
           .limit(1);
         if (!product) throw new UserError("Marchandise inconnue.");
         label = product.name;
@@ -80,29 +80,41 @@ export async function recordTransaction(
 class UserError extends Error {}
 
 /** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */
-export async function cancelTransaction(formData: FormData) {
+export async function cancelTransaction(
+  _prev: TransactionState,
+  formData: FormData,
+): Promise<TransactionState> {
   const member = await requireMember();
   const id = Number(formData.get("id"));
-  if (!Number.isInteger(id)) return;
+  if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
   const db = getDb();
-  await db.transaction(async (tx) => {
-    const [line] = await tx
-      .update(schema.transactions)
-      .set({ cancelledAt: new Date(), cancelledBy: member.id })
-      .where(and(eq(schema.transactions.id, id), isNull(schema.transactions.cancelledAt)))
-      .returning();
-    if (!line) return;
-    if (member.role !== "gerant" && line.memberId !== member.id) {
-      tx.rollback();
-    }
-    if (line.productId != null) {
-      const delta = line.kind === "vente" ? line.quantity : -line.quantity;
-      const moved = await moveStock(tx, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`);
-      // A cancelled buyback whose goods are already gone cannot be undone.
-      if (!moved.ok) tx.rollback();
-    }
-  }).catch((error) => {
-    if ((error as Error)?.name !== "TransactionRollbackError") throw error;
-  });
+  try {
+    await db.transaction(async (tx) => {
+      const [line] = await tx
+        .select()
+        .from(schema.transactions)
+        .where(and(eq(schema.transactions.id, id), isNull(schema.transactions.cancelledAt)))
+        .for("update")
+        .limit(1);
+      if (!line) throw new UserError("Cette ligne est introuvable ou déjà annulée.");
+      if (member.role !== "gerant" && line.memberId !== member.id) {
+        throw new UserError("Seul un gérant peut annuler la ligne d'un autre membre.");
+      }
+      if (line.productId != null) {
+        const delta = line.kind === "vente" ? line.quantity : -line.quantity;
+        const moved = await moveStock(tx, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`);
+        // A cancelled buyback whose goods are already gone cannot be undone.
+        if (!moved.ok) throw new UserError("Impossible d'annuler : la marchandise rachetée a déjà été vendue.");
+      }
+      await tx
+        .update(schema.transactions)
+        .set({ cancelledAt: new Date(), cancelledBy: member.id })
+        .where(eq(schema.transactions.id, id));
+    });
+  } catch (error) {
+    if (error instanceof UserError) return { ok: false, message: error.message };
+    throw error;
+  }
   revalidate();
+  return { ok: true, message: "Ligne annulée, stock rétabli." };
 }

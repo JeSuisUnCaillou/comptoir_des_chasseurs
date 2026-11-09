@@ -6,6 +6,7 @@ import {
   resetPassword,
   type MemberFormState,
 } from "@/app/(comptoir)/membres/actions";
+import { keepValues } from "@/lib/keep-values";
 
 function Status({ state }: { state: MemberFormState }) {
   if (!state) return null;
@@ -19,7 +20,7 @@ function Status({ state }: { state: MemberFormState }) {
 export function NewMemberForm() {
   const [state, action, pending] = useActionState(createMember, null);
   return (
-    <form action={action} key={state?.ok ? state.message : "form"}>
+    <form onSubmit={keepValues(action)} key={state?.ok ? state.message : "form"}>
       <div className="form-grid">
         <div className="field">
           <label htmlFor="nm-username">Identifiant</label>
@@ -52,7 +53,7 @@ export function NewMemberForm() {
 export function ResetPasswordForm({ id }: { id: number }) {
   const [state, action, pending] = useActionState(resetPassword, null);
   return (
-    <form action={action}>
+    <form onSubmit={keepValues(action)}>
       <div className="inline-form">
         <input type="hidden" name="id" value={id} />
         <input

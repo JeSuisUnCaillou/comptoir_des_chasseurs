@@ -2,11 +2,12 @@
 
 import { useActionState } from "react";
 import { changePassword } from "@/app/(comptoir)/mot-de-passe/actions";
+import { keepValues } from "@/lib/keep-values";
 
 export function ChangePasswordForm() {
   const [state, action, pending] = useActionState(changePassword, null);
   return (
-    <form action={action} key={state?.ok ? "done" : "form"}>
+    <form onSubmit={keepValues(action)} key={state?.ok ? "done" : "form"}>
       <div className="field">
         <label htmlFor="pw-current">Mot de passe actuel</label>
         <input id="pw-current" name="current" type="password" required autoComplete="current-password" />

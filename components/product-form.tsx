@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveProduct, type ProductFormState } from "@/app/(comptoir)/marchandises/actions";
 import type { Product, ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
+import { keepValues } from "@/lib/keep-values";
 
 function NumberField({
   name,
@@ -37,7 +38,7 @@ export function ProductForm({ product }: { product?: Product }) {
   const [category, setCategory] = useState<ProductCategory>(product?.category ?? "ressource");
 
   return (
-    <form action={action}>
+    <form onSubmit={keepValues(action)}>
       {product && <input type="hidden" name="id" value={product.id} />}
       <div className="form-grid">
         <div className="field span-2">

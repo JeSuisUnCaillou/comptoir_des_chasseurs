@@ -41,6 +41,8 @@ test("un membre change son mot de passe", async ({ page }) => {
   await page.getByLabel("Confirmer le nouveau mot de passe").fill("nouveau-mdp");
   await page.getByRole("button", { name: "Changer mon mot de passe" }).click();
   await expect(page.getByRole("status")).toHaveText("Mot de passe changé.");
+  await page.goto("/");
+  await expect(page.getByTestId("member-name")).toHaveText("Maxarion");
 
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await loginAs(page, username, "nouveau-mdp");

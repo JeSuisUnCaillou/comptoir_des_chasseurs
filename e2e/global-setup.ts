@@ -7,6 +7,10 @@ export default async function globalSetup() {
   if (process.env.BASE_URL) return; // never touch a deployed database
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL est requis pour les tests e2e.");
+  // The tests wipe the database: only ever run them against a test one.
+  if (!new URL(url).pathname.includes("test")) {
+    throw new Error(`Les tests e2e vident la base : ${new URL(url).pathname} n'est pas une base de test.`);
+  }
   const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {
     // Members and everything they recorded go; the seeded price grid stays.

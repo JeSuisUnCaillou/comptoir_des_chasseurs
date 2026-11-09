@@ -44,6 +44,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     archived: formData.get("archived") === "on",
   };
 
+  if (Number.isNaN(id)) return { error: "Marchandise inconnue." };
   if (!name) return { error: "Le nom est obligatoire." };
   if (!productCategory.enumValues.includes(category)) return { error: "Catégorie inconnue." };
   const numbers = Object.values(values).filter((v) => typeof v === "number") as number[];
@@ -59,7 +60,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
   const db = getDb();
   try {
-    if (id != null && !Number.isNaN(id)) {
+    if (id != null) {
       await db.update(schema.products).set(values).where(eq(schema.products.id, id));
     } else {
       await db.insert(schema.products).values(values);

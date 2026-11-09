@@ -35,11 +35,11 @@ npm run db:generate -- --name ce-qui-change   # écrit la migration SQL dans dri
 npm run db:migrate
 ```
 
-Sur Vercel (production et previews, qui partagent la même base pour l'instant),
-les migrations sont appliquées par le build
-(`scripts/vercel-build.sh`), avant la mise en ligne du nouveau code. Tant que les
-previews partagent la base de prod, une migration doit rester additive (ajouter
-des tables ou colonnes, sans en supprimer).
+Sur Vercel, les migrations sont appliquées par le build
+(`scripts/vercel-build.sh`), avant la mise en ligne du nouveau code. La prod
+utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
+connectée au seul environnement Preview avec le préfixe `PREVIEW`
+(`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 
 ## Tests
 
@@ -48,6 +48,9 @@ npx playwright install chromium   # une seule fois
 npm run build
 npm run test:e2e                  # vide la base de test, lance l'app et la teste
 ```
+
+Les tests vident la base : ils refusent de tourner si le nom de la base
+(dans `DATABASE_URL`) ne contient pas `test`.
 
 ## Intégration et déploiement continus
 

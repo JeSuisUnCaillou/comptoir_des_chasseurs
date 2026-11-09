@@ -5,6 +5,7 @@ import { useActionState, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
+import { keepValues } from "@/lib/keep-values";
 
 export type StockItem = {
   id: number;
@@ -30,7 +31,7 @@ function MoveForm({
   }, [state, onDone]);
 
   return (
-    <form action={action} className="move-form" aria-label={direction === "in" ? "Entrée en stock" : "Sortie de stock"}>
+    <form onSubmit={keepValues(action)} className="move-form" aria-label={direction === "in" ? "Entrée en stock" : "Sortie de stock"}>
       <input type="hidden" name="productId" value={item.id} />
       <input type="hidden" name="direction" value={direction} />
       <label htmlFor={`${id}-q`} className="small muted">

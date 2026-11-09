@@ -29,7 +29,7 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   if (!member || !valid || member.role === "desactive") {
     return { error: "Identifiant ou mot de passe incorrect." };
   }
-  await startSession(member.id);
+  await startSession(member);
   redirect("/");
 }
 
@@ -58,7 +58,7 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
     return member;
   });
   if (!created) return { error: "Le comptoir a déjà un gérant. Connecte-toi." };
-  await startSession(created.id);
+  await startSession(created);
   redirect("/");
 }
 
