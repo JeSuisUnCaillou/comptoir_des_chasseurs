@@ -82,3 +82,20 @@ export async function createTransactions(
     await sql.end();
   }
 }
+
+/**
+ * Pins `n` parchments by a member straight in the database, dated yesterday so
+ * they never push other tests' fresh ones off the first page.
+ */
+export async function createAnnouncements(username: string, n: number, title = "Annonce de test") {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into announcements (title, body, member_id, created_at)
+      select ${title} || ' ' || i, 'Texte ' || i, m.id, now() - interval '1 day' - i * interval '1 minute'
+      from generate_series(1, ${n}::int) as i, members m
+      where m.username = ${username.toLowerCase()}`;
+  } finally {
+    await sql.end();
+  }
+}
