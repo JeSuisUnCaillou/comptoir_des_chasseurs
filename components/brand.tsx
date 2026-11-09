@@ -1,9 +1,6 @@
-import { Gavel } from "lucide-react";
-
-export function BrandMark({ size = 22 }: { size?: number }) {
+// The app's mark is the favicon itself (app/icon.svg, served at /icon.svg).
+export function BrandMark() {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <Gavel size={size} />
-    </span>
+    <img className="brand-mark" src="/icon.svg" alt="" aria-hidden="true" />
   );
 }
