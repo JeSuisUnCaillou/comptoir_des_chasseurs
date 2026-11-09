@@ -9,3 +9,10 @@ Relue sur : 4f66686 (avant corrections)
 - relecteur-bugs et relecteur-architecte : le README disait « toutes les listes » paginées (faux pour Tarifs) et répétait 25 et 24 — corrigée en 0a98225, la phrase nomme les listes sans les tailles.
 - relecteur-bugs : `.btn { white-space: nowrap }` touchait tous les boutons — corrigée en 0a98225, limitée à `.move-actions .btn`.
 - relecteur-architecte (hors périmètre) : `recordTransaction` et `cancelTransaction` écrivent au registre depuis `app/` plutôt que `lib/` — précède la branche (renommage de dossier), non comptée.
+
+# Passe 2
+
+Relue sur : 157eb27
+
+- relecteur-bugs : les fenêtres « Aujourd'hui » et « 7 derniers jours » du grand livre (`tillSummary`) n'étaient pas vérifiées en chiffres — test ajouté en 80c642f ; vu échouer avec la borne de semaine à -9 jours, puis passer à -6.
+- relecteur-architecte : aucune trouvaille. Écartées par lui-même : la barre de pagination client des cartes du stock (mécanisme différent), et `revalidate()` qui liste les pages de formulaire — elles affichent le stock (« En stock : … »), la revalidation est utile.
