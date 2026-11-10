@@ -109,6 +109,11 @@ test("chaque table a sa recherche, qui filtre pendant qu'on tape", async ({ page
   await expect(searchPeaux).toHaveValue("biche");
 });
 
+test("le calculateur a le cuir choisi par défaut", async ({ page }) => {
+  const calc = page.getByTestId("calculateur");
+  await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue("Cuir");
+});
+
 test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {
   const calc = page.getByTestId("calculateur");
   const box = calc.getByRole("combobox", { name: "Marchandise" });

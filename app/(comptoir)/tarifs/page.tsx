@@ -267,7 +267,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
           <div className="eyebrow">Outil des marchands</div>
           <h2 id="calcul">Calculateur des prix</h2>
           <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-          <PriceCalculator products={calculable} />
+          <PriceCalculator products={calculable} initialId={leather?.id} />
         </section>
       </div>
 
