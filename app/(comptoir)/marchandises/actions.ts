@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, isUniqueViolation, schema } from "@/lib/db";
-import { productCategory, type ProductCategory } from "@/lib/db/schema";
+import { DUPLICATE_PRODUCT_NAME, readProductIdentity } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -24,9 +24,7 @@ function positiveInt(formData: FormData, key: string) {
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
   await requireMember(["gerant"]);
   const id = optionalInt(formData, "id");
-  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
-  const category = String(formData.get("category")) as ProductCategory;
-  const unit = String(formData.get("unit") ?? "").trim().slice(0, 30) || "pièce";
+  const { name, category, unit, error: identityError } = readProductIdentity(formData);
 
   const values = {
     name,
@@ -46,8 +44,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   };
 
   if (Number.isNaN(id)) return { error: "Marchandise inconnue." };
-  if (!name) return { error: "Le nom est obligatoire." };
-  if (!productCategory.enumValues.includes(category)) return { error: "Catégorie inconnue." };
+  if (identityError) return { error: identityError };
   const numbers = Object.values(values).filter((v) => typeof v === "number") as number[];
   if (numbers.some((n) => Number.isNaN(n))) {
     return { error: "Les prix et quantités doivent être des nombres entiers positifs." };
@@ -68,7 +65,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     }
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { error: "Une marchandise porte déjà ce nom." };
+      return { error: DUPLICATE_PRODUCT_NAME };
     }
     throw error;
   }

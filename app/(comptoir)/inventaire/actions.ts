@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, isUniqueViolation, schema } from "@/lib/db";
-import { productCategory, type ProductCategory } from "@/lib/db/schema";
-import { moveStock } from "@/lib/products";
+import { DUPLICATE_PRODUCT_NAME, moveStock, readProductIdentity } from "@/lib/products";
 
 export type MoveState = { ok: boolean; message: string } | null;
 
@@ -40,14 +39,11 @@ export type CreateState = { ok: true; name: string } | { ok: false; message: str
  */
 export async function createAndStock(_prev: CreateState, formData: FormData): Promise<CreateState> {
   const member = await requireMember();
-  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
-  const category = String(formData.get("category")) as ProductCategory;
-  const unit = String(formData.get("unit") ?? "").trim().slice(0, 30) || "pièce";
+  const { name, category, unit, error } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 200);
 
-  if (!name) return { ok: false, message: "Le nom est obligatoire." };
-  if (!productCategory.enumValues.includes(category)) return { ok: false, message: "Catégorie inconnue." };
+  if (error) return { ok: false, message: error };
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
@@ -62,11 +58,11 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
       const result = await moveStock(tx, product.id, quantity, member.id, reason);
       if (!result.ok) throw new Error(result.error);
     });
-  } catch (error) {
-    if (isUniqueViolation(error)) {
-      return { ok: false, message: "Une marchandise porte déjà ce nom (peut-être archivée, voir Gérer les tarifs)." };
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      return { ok: false, message: `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : voir Gérer les tarifs.` };
     }
-    throw error;
+    throw e;
   }
 
   revalidatePath("/", "layout");
