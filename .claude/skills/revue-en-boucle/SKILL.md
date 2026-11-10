@@ -74,7 +74,7 @@ chaque passe s'y ajoute.
    2026-11-09, qui a dit « merge it yourself » sur une petite PR de
    correctif.
 
-   **Pour merger une PR qui part, ou que le propriétaire a approuvée** :
+   **Pour merger une PR qui part, ou dont le propriétaire a demandé le merge** :
    - Avant d'attendre, lis son état de merge (`pull_request_read`). Une PR
      en conflit avec `main` n'a pas de CI sur un nouveau push : merge `main`
      dedans, lance la suite, pousse, et refais un tour de boucle, pour que le
