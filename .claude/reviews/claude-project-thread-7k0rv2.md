@@ -21,3 +21,11 @@ Tête relue : 50c41943386f3e95fe1baa004e503b33f422e0cf
 Tête relue : 4b1d97b
 
 - Bugs, architecture : aucune trouvaille. Après la passe, Caillou a précisé la règle (doc, tests, harness et petits correctifs partent seuls), appliquée en 0a22325 ; la passe 4 relit ce commit.
+
+# Passe 4
+
+Tête relue : 8095a71
+
+- Bugs, architecture : aucune trouvaille.
+
+Tête relue : 8095a71d044bcd58710b5d44a8aa3fb517c2222e
