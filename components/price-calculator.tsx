@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ProductCombobox } from "@/components/product-combobox";
 import type { Product } from "@/lib/db/schema";
 import { buyTotal, margin, sellTotal, septims, transformation, type Total } from "@/lib/pricing";
 
@@ -44,13 +45,7 @@ export function PriceCalculator({ products }: { products: CalcProduct[] }) {
       <div className="calc-inputs">
         <div className="field">
           <label htmlFor={`${id}-p`}>Marchandise</label>
-          <select id={`${id}-p`} value={productId} onChange={(e) => setProductId(Number(e.target.value))}>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <ProductCombobox id={`${id}-p`} products={products} value={product.id} onChange={setProductId} />
         </div>
         <div className="field">
           <label htmlFor={`${id}-q`}>Quantité</label>

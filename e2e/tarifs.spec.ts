@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { loginAsGerant } from "./helpers";
+
+/** Picks a product in the calculator by typing its name and clicking it in the list. */
+async function pick(calc: Locator, name: string) {
+  await calc.getByRole("combobox", { name: "Marchandise" }).fill(name);
+  await calc.getByRole("option", { name, exact: true }).click();
+  await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue(name);
+}
 
 test.beforeEach(async ({ page }) => {
   await loginAsGerant(page);
@@ -28,15 +35,100 @@ test("les ressources affichent un bénéfice sur des lots entiers", async ({ pag
 
 test("le calculateur donne rachat, vente et transformation", async ({ page }) => {
   const calc = page.getByTestId("calculateur");
-  await calc.getByLabel("Marchandise").selectOption({ label: "Biche" });
+  await pick(calc, "Biche");
   await calc.getByLabel("Quantité").fill("4");
   await expect(calc.getByTestId("calc-rachat")).toHaveText("8 septims");
   await expect(calc.getByTestId("calc-vente")).toHaveText("12 septims");
   await expect(calc.getByTestId("calc-transfo")).toContainText("1 lot → 2 cuirs");
 
-  await calc.getByLabel("Marchandise").selectOption({ label: "Venaison" });
+  await pick(calc, "Venaison");
   await calc.getByLabel("Quantité").fill("200");
   await expect(calc.getByTestId("calc-vente")).toHaveText("400 septims");
   await expect(calc).toContainText("Tarif de gros");
   await expect(calc.getByTestId("calc-benefice")).toHaveText("+200 septims");
+});
+
+test("chaque table a sa recherche, qui filtre pendant qu'on tape", async ({ page }) => {
+  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
+  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+
+  const searchPeaux = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
+  const searchChasse = chasse.getByRole("searchbox", { name: "Chercher une marchandise" });
+  await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
+  await expect(searchPeaux).toHaveAttribute("placeholder", "Chercher une marchandise");
+  // Each bar takes at least half of its panel's width, the table's.
+  const bar = (await searchPeaux.boundingBox())!;
+  const table = (await peaux.getByRole("table").boundingBox())!;
+  expect(bar.width).toBeGreaterThanOrEqual(table.width / 2);
+  const panel = (await peaux.boundingBox())!;
+  // Leather and the calculator come first, then the tables.
+  const cuir = (await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox())!;
+  const calcul = (await page.getByRole("region", { name: "Calculateur des prix" }).boundingBox())!;
+  expect(cuir.y).toBeLessThan(panel.y);
+  expect(calcul.y).toBeLessThan(panel.y);
+
+  // The hides search filters only the hides.
+  await searchPeaux.pressSequentially("ours");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=ours$/);
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  // The calculator still offers every priced product.
+  const calc = page.getByTestId("calculateur");
+  await calc.getByRole("combobox", { name: "Marchandise" }).click();
+  await expect(calc.getByRole("option", { name: "Biche", exact: true })).toHaveCount(1);
+  await calc.getByRole("combobox", { name: "Marchandise" }).press("Escape");
+
+  // The other search filters the meats and resources, and both hold together.
+  await searchChasse.pressSequentially("venaison");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=ours&chasse=venaison$/);
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(1);
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
+
+  await searchPeaux.fill("introuvable-xyz");
+  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+  await searchPeaux.clear();
+  await expect(page).toHaveURL(/\/tarifs\?chasse=venaison$/);
+  await searchChasse.clear();
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+
+  // Leaving the search by the menu or the back button shows the URL's query in the field.
+  await searchPeaux.pressSequentially("biche");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
+  await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" }).click();
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(searchPeaux).toHaveValue("");
+  await page.goBack();
+  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
+  await expect(searchPeaux).toHaveValue("biche");
+});
+
+test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {
+  const calc = page.getByTestId("calculateur");
+  const box = calc.getByRole("combobox", { name: "Marchandise" });
+  // One field: no separate search box in the calculator.
+  await expect(calc.getByRole("searchbox")).toHaveCount(0);
+  const before = await box.inputValue();
+
+  await box.fill("venai");
+  await expect(calc.getByRole("option")).toHaveText(["Venaison"]);
+  await box.press("Enter");
+  await expect(box).toHaveValue("Venaison");
+  await expect(calc.getByRole("listbox")).toHaveCount(0);
+  await calc.getByLabel("Quantité").fill("200");
+  await expect(calc.getByTestId("calc-vente")).toHaveText("400 septims");
+  // The tables are not filtered by it.
+  await expect(page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: /Biche/ })).toBeVisible();
+
+  await box.fill("introuvable-xyz");
+  await expect(calc.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
+  await box.press("Escape");
+  await expect(box).toHaveValue("Venaison");
+  expect(before).not.toBe("");
 });

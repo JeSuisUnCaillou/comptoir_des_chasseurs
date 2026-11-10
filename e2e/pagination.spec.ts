@@ -26,14 +26,15 @@ test("le catalogue des marchandises se cherche et se pagine", async ({ page }) =
   await expect(page).toHaveURL(/page=2/);
   await expect(pages).toContainText(/Page 2 sur \d+/);
 
-  const search = page.getByRole("searchbox", { name: "Nom de la marchandise" });
-  await search.fill("ours");
-  await page.getByRole("button", { name: "Chercher" }).click();
+  const search = page.getByRole("searchbox", { name: "Chercher une marchandise" });
+  // The search filters as you type, with no button, and goes back to page 1.
+  await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
+  await search.pressSequentially("ours");
+  await expect(page).toHaveURL(/\/marchandises\?q=ours$/);
   await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(3); // Ours, des neiges, troglodyte
   await search.fill("introuvable-xyz");
-  await page.getByRole("button", { name: "Chercher" }).click();
   await expect(page.getByText("Aucune marchandise ne correspond.")).toBeVisible();
-  await page.getByRole("link", { name: "Tout afficher" }).click();
+  await search.clear();
   await expect(page).toHaveURL(/\/marchandises$/);
   await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(25);
 });

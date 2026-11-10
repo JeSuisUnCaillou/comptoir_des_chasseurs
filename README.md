@@ -113,6 +113,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   citoyens d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres) ;
   vide, tout le monde a le même prix. Les Tarifs le montrent en évidence (une
   tuile à lui pour le cuir, une étiquette dorée dans les tableaux).
+  Tarifs et Gérer les tarifs ont la même recherche par nom, qui filtre
+  pendant qu'on tape, comme celle de l'Inventaire ; sur Tarifs, chacune des
+  deux tables (peaux ; viandes et ressources) a la sienne. Tarifs montre
+  d'abord les tarifs du cuir et le calculateur, dont le choix de la
+  marchandise se cherche en tapant parmi toutes les marchandises qui ont un
+  prix, puis les tables.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
