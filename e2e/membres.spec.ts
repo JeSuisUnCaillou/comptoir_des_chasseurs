@@ -72,22 +72,30 @@ test("un gérant réinitialise un mot de passe oublié", async ({ page, browser 
 
 test("la liste des comptes est paginée", async ({ page }) => {
   // 26 accounts, enough for a second page whatever the other tests create.
-  const tag = uniqueName("Abel");
+  // "Zz" sorts them after everyone, so they never push another test's member
+  // off the first page.
+  const tag = uniqueName("zz-page");
   for (let i = 1; i <= 26; i++) {
     const n = String(i).padStart(2, "0");
-    await createMember(`${tag}-${n}`.toLowerCase(), "mot-de-passe", "employe", `${tag} ${n}`);
+    await createMember(`${tag}-${n}`, "mot-de-passe", "employe", `Zz ${tag} ${n}`);
   }
-  const last = `member-${tag}-26`.toLowerCase();
+  const last = page.getByTestId(`member-${tag}-26`);
   await loginAsGerant(page);
   await page.goto("/membres");
   const pages = page.getByRole("navigation", { name: "Pages des comptes" });
   await expect(page.locator("tbody tr")).toHaveCount(25);
   await expect(pages).toContainText(/Page 1 sur \d+/);
   // The 26th of the group sorts after 25 others: it cannot be on the first page.
-  await expect(page.getByTestId(last)).toHaveCount(0);
+  await expect(last).toHaveCount(0);
 
   await pages.getByRole("link", { name: "Suivant" }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(pages).toContainText(/Page 2 sur \d+/);
-  await expect(page.getByTestId(last)).toBeVisible();
+  // It sorts last of all, so it is on the last page.
+  const next = pages.getByRole("link", { name: "Suivant" });
+  for (let n = 3; await next.count(); n++) {
+    await next.click();
+    await expect(pages).toContainText(`Page ${n} sur`);
+  }
+  await expect(last).toBeVisible();
 });
