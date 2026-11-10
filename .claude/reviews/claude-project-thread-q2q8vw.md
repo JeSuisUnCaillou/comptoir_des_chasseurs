@@ -1,8 +1,8 @@
 # Passe 1
 
-Tête relue : acaa33a
+Tête relue : 5da2b66
 
 - relecteur-bugs : aucune trouvaille.
-- relecteur-architecte : aucune trouvaille (remarque de forme sur la longueur d'une ligne du README, laissée).
+- relecteur-architecte : aucune trouvaille.
 
-Tête relue : acaa33aa8509f361f9bce93118372eb35ae32b53
+Tête relue : 5da2b6686e9fbce261f7cf08b63e7273f65f0480
