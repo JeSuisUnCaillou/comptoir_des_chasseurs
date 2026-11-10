@@ -127,8 +127,11 @@ l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
 
 Chaque pull request reçoit une preview Vercel, avec sa propre base. Quand un
 travail est poussé, donne au propriétaire le lien de la preview que Vercel
-publie sur la PR. Sur une base de preview vide, la première visite crée le
-compte du gérant.
+publie sur la PR, **toujours vers la page précise à essayer** (chemin complet,
+par exemple `…vercel.app/fournisseurs`), jamais la seule racine de la preview.
+Le propriétaire l'a demandé le 2026-11-10 : « donne moi TOUJOURS le lien de la
+page spécifique à tester ». Sur une base de preview vide, la première visite
+crée le compte du gérant.
 
 ## Ouvrir une pull request pour chaque branche
 

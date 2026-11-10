@@ -65,9 +65,9 @@ chaque passe s'y ajoute.
 7. **Ce qui part sans attendre le propriétaire.** Claude ne merge seul que
    la doc, les tests, le harness et les petits correctifs. Tout le reste
    attend que le propriétaire demande le merge de cette PR : une fois la
-   boucle convergée, donne-lui le lien de la preview Vercel publiée sur la
-   PR (`CLAUDE.md` § Donner un lien pour essayer) et ce qu'il peut y
-   essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
+   boucle convergée, donne-lui le lien de la page à essayer sur la preview
+   Vercel publiée sur la PR (`CLAUDE.md` § Donner un lien pour essayer) et
+   ce qu'il peut y essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
    le doute, ça attend. Choisi par le propriétaire le 2026-11-10 : « ne
    merge pas des choses sans mon accord, montre moi à chaque fois une
    preview avant de merge », puis « les seules choses que tu peux merge
