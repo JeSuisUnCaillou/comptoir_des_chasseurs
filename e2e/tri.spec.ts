@@ -8,20 +8,26 @@ test("le stock est rangé par nom, accents compris", async ({ page }) => {
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`);
   await createProduct(`${tag} loup`);
-  await createProduct(`${tag} Aurochs`, { category: "viande", unit: "morceau" });
+  // A leading digit puts this meat ahead of every hide in the alphabet.
+  await createProduct(`0 ${tag} Aurochs`, { category: "viande", unit: "morceau" });
   await loginAsGerant(page);
 
   await page.goto("/inventaire");
   await page.getByLabel("Rechercher une marchandise").fill(tag);
   await expect(page.locator(".stock-card h3")).toHaveText([
-    `${tag} Aurochs`,
+    `0 ${tag} Aurochs`,
     `${tag} Élan`,
     `${tag} loup`,
     `${tag} zèbre`,
   ]);
 
-  // The sale form keeps its category groups, sorted by name inside each.
+  // The sale form keeps its category groups in order, sorted by name inside each.
   await page.goto("/achat-vente/vente");
+  const groups = await page
+    .getByLabel("Article ou marchandise")
+    .locator("optgroup")
+    .evaluateAll((els) => els.map((e) => e.getAttribute("label")));
+  expect(groups.indexOf("Peaux")).toBeLessThan(groups.indexOf("Viandes et venaison"));
   const hides = page.getByLabel("Article ou marchandise").locator("optgroup[label='Peaux'] option");
   await expect(hides.filter({ hasText: tag })).toHaveText([`${tag} Élan`, `${tag} loup`, `${tag} zèbre`]);
 });
