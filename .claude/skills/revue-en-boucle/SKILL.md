@@ -65,8 +65,9 @@ chaque passe s'y ajoute.
 7. **Ce qui part sans attendre le propriétaire.** Claude ne merge seul que
    la doc, les tests, le harness et les petits correctifs. Tout le reste
    attend que le propriétaire demande le merge de cette PR : une fois la
-   boucle convergée, donne-lui le lien de la page à essayer sur la preview
-   Vercel publiée sur la PR (`CLAUDE.md` § Donner un lien pour essayer) et
+   boucle convergée, refais la preview si la tête a changé depuis
+   l'ouverture de la PR, puis donne-lui le lien de la page à essayer sur la
+   preview publiée sur la PR (`CLAUDE.md` § Donner un lien pour essayer) et
    ce qu'il peut y essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
    le doute, ça attend. Choisi par le propriétaire le 2026-11-10 : « ne
    merge pas des choses sans mon accord, montre moi à chaque fois une
@@ -82,8 +83,8 @@ chaque passe s'y ajoute.
    - Suis la PR (`subscribe_pr_activity`) **et** programme-toi un rappel
      avec `send_later` dans 3 minutes. Un tour qui finit en attendant la CI
      a toujours un rappel programmé : la fin du job e2e ne réveille pas la
-     session, et le seul `check_suite.completed` arrive quand la suite
-     Vercel finit, avant le job (vu le 2026-11-10 sur #23 et #26, que le
+     session, et un `check_suite.completed` peut arriver d'une autre suite
+     finie avant le job (vu le 2026-11-10 sur #23 et #26 avec Vercel, que le
      propriétaire a dû réclamer ; `.claude/audits/2026-11-10-harness-ci.md`).
    - À chaque réveil, rappel ou événement, lis le check run « Build et tests
      e2e » de la tête (`pull_request_read`, `get_check_runs`). Vert : merge

@@ -67,8 +67,20 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   scripts de reprise de l'ancienne app, build, puis tests e2e Playwright sur un
   Postgres jetable.
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
-  part en production, chaque pull request reçoit une URL de preview.
-  Les tests tournent avant le merge, jamais sur la prod.
+  part en production. Les autres branches ne déploient rien d'elles-mêmes
+  (`git.deploymentEnabled` dans `vercel.json`) : l'offre Hobby limite à 100
+  déploiements par jour, et un build ignoré compte quand même.
+- **Preview** (`.github/workflows/preview.yml`) : à l'ouverture (ou la
+  réouverture) d'une pull request, une preview est construite sur Vercel avec
+  les variables de l'environnement Preview, et son lien est posté en
+  commentaire sur la PR. Les pushs suivants ne la mettent pas à jour : pour
+  la refaire, lancer le workflow « Preview » sur la branche (onglet Actions,
+  « Run workflow »), et le commentaire est mis à jour. Il faut trois secrets
+  dans le dépôt (Settings → Secrets and variables → Actions) :
+  `VERCEL_TOKEN` (un jeton créé sur vercel.com/account/tokens),
+  `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` (dans les réglages du compte et du
+  projet Vercel). Sans eux, le workflow passe sans rien déployer.
+- Les tests tournent avant le merge, jamais sur la prod.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
 
