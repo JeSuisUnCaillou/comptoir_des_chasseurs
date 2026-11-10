@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings2, Tag } from "lucide-react";
+import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
 import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
 import { PriceCalculator } from "@/components/price-calculator";
@@ -23,6 +23,32 @@ function priced(p: Product) {
 
 const NO_MATCH = <p className="muted">Aucune marchandise ne correspond.</p>;
 
+/** The product's name, flagged when it has no price yet (shown only on request). */
+function ProductName({ product }: { product: Product }) {
+  return (
+    <>
+      <strong>{product.name}</strong> {!priced(product) && <span className="badge">Sans tarif</span>}
+    </>
+  );
+}
+
+/** A gérant's pencil to the product's form in Gérer les tarifs, at the end of its row. */
+function EditCell({ product, canEdit }: { product: Product; canEdit: boolean }) {
+  if (!canEdit) return null;
+  return (
+    <td className="row-action">
+      <Link
+        className="icon-btn"
+        href={`/marchandises/${product.id}?depuis=tarifs`}
+        title={`Modifier ${product.name}`}
+        aria-label={`Modifier ${product.name}`}
+      >
+        <Pencil size={16} />
+      </Link>
+    </td>
+  );
+}
+
 /** The citizens of Estemarche's buyback price, under the usual one, when the product has one. */
 function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?: boolean }) {
   if (product.citizenBuyPrice == null) return null;
@@ -36,7 +62,7 @@ function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?
   );
 }
 
-function GoodsTable({ products }: { products: Product[] }) {
+function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boolean }) {
   if (products.length === 0) return NO_MATCH;
   return (
     <div className="table-wrap">
@@ -49,6 +75,7 @@ function GoodsTable({ products }: { products: Product[] }) {
             <th className="num">Gros</th>
             <th className="num">Stock</th>
             <th className="num">Bénéfice brut indicatif</th>
+            {canEdit && <th aria-label="Modifier" />}
           </tr>
         </thead>
         <tbody>
@@ -58,7 +85,7 @@ function GoodsTable({ products }: { products: Product[] }) {
             return (
               <tr key={p.id}>
                 <td>
-                  <strong>{p.name}</strong>
+                  <ProductName product={p} />
                 </td>
                 <td className="num minus">
                   {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
@@ -78,6 +105,7 @@ function GoodsTable({ products }: { products: Product[] }) {
                     ? "—"
                     : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
                 </td>
+                <EditCell product={p} canEdit={canEdit} />
               </tr>
             );
           })}
@@ -87,7 +115,40 @@ function GoodsTable({ products }: { products: Product[] }) {
   );
 }
 
-type Search = { peaux?: string | string[]; chasse?: string | string[] };
+type Table = "peaux" | "chasse";
+type Search = Partial<Record<Table | `${Table}-sans-tarif`, string | string[]>>;
+
+/** Whether the table shows its products without a price, asked by its button. */
+function showsUnpriced(search: Search, table: Table) {
+  return param(search[`${table}-sans-tarif`]) === "1";
+}
+
+/** The button under a table that shows or hides its products without a price, keeping the rest of the address. */
+function UnpricedToggle({ search, table }: { search: Search; table: Table }) {
+  const shown = showsUnpriced(search, table);
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    const v = param(value);
+    if (v && key !== `${table}-sans-tarif`) query.set(key, v);
+  }
+  if (!shown) query.set(`${table}-sans-tarif`, "1");
+  const qs = query.toString();
+  return (
+    <div className="unpriced-toggle">
+      <Link className="btn btn-small" href={qs ? `/tarifs?${qs}` : "/tarifs"} scroll={false}>
+        {shown ? (
+          <>
+            <EyeOff size={14} /> Masquer les marchandises sans tarif
+          </>
+        ) : (
+          <>
+            <Eye size={14} /> Voir les marchandises sans tarif
+          </>
+        )}
+      </Link>
+    </div>
+  );
+}
 
 /** Products whose name holds the search, ignoring case. */
 function matching(products: Product[], search: string | string[] | undefined) {
@@ -99,18 +160,21 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const member = await requireMember();
   const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(), blacksmithLeatherPrice()]);
-  const hides = matching(products, search.peaux).filter((p) => p.category === "peau" && priced(p));
+  const canEdit = member.role === "gerant";
+  const allHides = showsUnpriced(search, "peaux");
+  const allHunted = showsUnpriced(search, "chasse");
+  const hides = matching(products, search.peaux).filter((p) => p.category === "peau" && (allHides || priced(p)));
   const hunted = matching(products, search.chasse);
   const leather = products.find((p) => p.category === "cuir");
-  const meats = hunted.filter((p) => p.category === "viande" && priced(p));
-  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
+  const meats = hunted.filter((p) => p.category === "viande" && (allHunted || priced(p)));
+  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && (allHunted || priced(p)));
   const calculable = products.filter(priced);
 
   return (
     <>
       <div className="panel-head">
         <PageHead title="Tarifs" />
-        {member.role === "gerant" && (
+        {canEdit && (
           <Link className="btn" href="/marchandises">
             <Settings2 size={16} /> Gérer les tarifs
           </Link>
@@ -173,6 +237,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
                   <th className="num">Rachat / peau</th>
                   <th className="num">Vente / peau</th>
                   <th className="num">Bénéfice / lot</th>
+                  {canEdit && <th aria-label="Modifier" />}
                 </tr>
               </thead>
               <tbody>
@@ -181,7 +246,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
                   return (
                     <tr key={p.id}>
                       <td>
-                        <strong>{p.name}</strong>
+                        <ProductName product={p} />
                       </td>
                       <td>
                         {p.hidesPerBatch && p.leatherPerBatch
@@ -194,6 +259,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
                       </td>
                       <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
                       <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                      <EditCell product={p} canEdit={canEdit} />
                     </tr>
                   );
                 })}
@@ -201,6 +267,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
             </table>
           </div>
         )}
+        <UnpricedToggle search={search} table="peaux" />
         <p className="small muted" style={{ marginTop: 14 }}>
           Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
           {septims(blacksmith)}. Ils sont bruts, hors frais.
@@ -213,9 +280,10 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <p className="muted">Prix de rachat, prix de vente et tarifs de gros.</p>
         <LiveSearch name="chasse" />
         <h3>Viandes et venaison</h3>
-        <GoodsTable products={meats} />
+        <GoodsTable products={meats} canEdit={canEdit} />
         <h3>Autres ressources</h3>
-        <GoodsTable products={goods} />
+        <GoodsTable products={goods} canEdit={canEdit} />
+        <UnpricedToggle search={search} table="chasse" />
       </section>
     </>
   );

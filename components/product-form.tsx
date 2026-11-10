@@ -33,13 +33,15 @@ function NumberField({
   );
 }
 
-export function ProductForm({ product }: { product?: Product }) {
+/** `fromTarifs`: the form was opened from the Tarifs page, which saving goes back to. */
+export function ProductForm({ product, fromTarifs = false }: { product?: Product; fromTarifs?: boolean }) {
   const [state, action, pending] = useActionState<ProductFormState, FormData>(saveProduct, null);
   const [category, setCategory] = useState<ProductCategory>(product?.category ?? "ressource");
 
   return (
     <form onSubmit={keepValues(action)}>
       {product && <input type="hidden" name="id" value={product.id} />}
+      {fromTarifs && <input type="hidden" name="depuis" value="tarifs" />}
       <div className="form-grid">
         <div className="field span-2">
           <label htmlFor="f-name">Nom</label>
