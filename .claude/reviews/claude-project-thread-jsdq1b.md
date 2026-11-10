@@ -22,3 +22,12 @@ Tête relue : 026d213
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : 026d2135ebec3bf3e65a73a6e030792242463eab
+
+# Passe 4 (disposition des tuiles du cuir demandée par Caillou)
+
+Tête relue : d65dacd
+
+- relecteur-bugs : aucune trouvaille.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : d65dacd253b285a164105e044e765a78aedaf5d6
