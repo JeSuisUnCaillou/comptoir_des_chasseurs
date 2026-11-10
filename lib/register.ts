@@ -49,8 +49,8 @@ export async function registerEntries(
     .offset(offset);
 }
 
-/** Everyone who can author a line, deactivated members included, for the register's filter. */
-export async function registerAuthors() {
+/** Every member, deactivated ones included, for the "Employé" filters. */
+export async function memberNames() {
   const m = schema.members;
   return getDb().select({ id: m.id, name: m.name }).from(m).orderBy(byName(m.name), asc(m.id));
 }
@@ -159,9 +159,17 @@ export function parisDay(value: string | undefined, offsetDays = 0): Date | unde
   return new Date(utc.getTime() - Number(parisHour.format(utc)) * 3600_000);
 }
 
-/** A "YYYY-MM-DD" date from the query string, or undefined when it is not one. */
-export function dayParam(value: string | undefined) {
-  return value && parisDay(value) ? value : undefined;
+/**
+ * The "du" and "au" dates of a filter, from the query string ("YYYY-MM-DD",
+ * anything else ignored), and the instants they stand for in Paris: from
+ * midnight on "du" to midnight after "au", which is included. A reversed
+ * range is put back in order.
+ */
+export function dayRange(duParam: string | undefined, auParam: string | undefined) {
+  let du = duParam && parisDay(duParam) ? duParam : undefined;
+  let au = auParam && parisDay(auParam) ? auParam : undefined;
+  if (du && au && du > au) [du, au] = [au, du];
+  return { du, au, from: parisDay(du), to: parisDay(au, 1) };
 }
 
 /** Today's date in Paris, as "YYYY-MM-DD". */

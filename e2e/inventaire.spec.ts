@@ -140,10 +140,11 @@ test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", asyn
   await filters.getByLabel("Du").fill(parisDate(-7));
   await filters.getByLabel("Au").fill(parisDate());
   await filters.getByRole("button", { name: "Filtrer" }).click();
-  await expect(page).toHaveURL(/employe=\d+.*sens=entree/);
+  await expect(page).toHaveURL(/sens=entree/);
+  await expect(page).toHaveURL(/employe=\d+/);
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText(/\+5.*chasse de l'employé/);
-  // The search survived the filters, and the filters survive a new search.
+  // The search survived the filters.
   await expect(history.getByRole("searchbox", { name: "Chercher une marchandise" })).toHaveValue(name);
 
   // Without the dates, the old movement comes back.

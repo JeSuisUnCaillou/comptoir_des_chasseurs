@@ -1,6 +1,6 @@
 import { Archive } from "lucide-react";
-import Link from "next/link";
 import { LiveSearch } from "@/components/live-search";
+import { MemberDateFilters } from "@/components/member-date-filters";
 import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
@@ -9,7 +9,7 @@ import { formatNumber, plural } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
-import { dayParam, parisDay, registerAuthors } from "@/lib/register";
+import { dayRange, memberNames } from "@/lib/register";
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page", string | string[] | undefined>;
 
@@ -39,10 +39,8 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
   const page = pageParam(search.page);
   const q = (param(search.q) ?? "").trim().slice(0, 100) || undefined;
   const sens = asDirection(param(search.sens));
-  let du = dayParam(param(search.du));
-  let au = dayParam(param(search.au));
-  if (du && au && du > au) [du, au] = [au, du]; // a reversed range still means something
-  const authors = await registerAuthors();
+  const { du, au, from, to } = dayRange(param(search.du), param(search.au));
+  const authors = await memberNames();
   const author = authors.find((a) => String(a.id) === param(search.employe));
   const employe = author && String(author.id);
   const filters = { q, employe, sens, du, au };
@@ -50,8 +48,8 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     q,
     memberId: author?.id,
     direction: sens && DIRECTIONS[sens],
-    from: parisDay(du),
-    to: parisDay(au, 1), // "au" includes that day
+    from,
+    to,
   };
   const filtered = Boolean(q || employe || sens || du || au);
   const [products, movements, total] = await Promise.all([
@@ -113,20 +111,8 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         </div>
         <p className="muted">Les entrées et sorties, des plus récentes aux plus anciennes, avec leur auteur et leur motif.</p>
         <LiveSearch />
-        {/* Keyed on the filters so "Tout afficher" resets the fields, which keep their value across client navigation. */}
-        <form key={JSON.stringify(filters)} className="inline-form filters" method="get" action={PATH} aria-label="Filtrer l'historique">
+        <MemberDateFilters path={PATH} label="Filtrer l'historique" filters={filters} members={authors} employe={employe} du={du} au={au}>
           {q && <input type="hidden" name="q" value={q} />}
-          <label className="small muted" htmlFor="h-employe">
-            Employé
-          </label>
-          <select id="h-employe" name="employe" defaultValue={employe ?? ""}>
-            <option value="">Tous</option>
-            {authors.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
           <label className="small muted" htmlFor="h-sens">
             Mouvement
           </label>
@@ -135,23 +121,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             <option value="entree">Entrées</option>
             <option value="sortie">Sorties</option>
           </select>
-          <label className="small muted" htmlFor="h-du">
-            Du
-          </label>
-          <input id="h-du" name="du" type="date" defaultValue={du ?? ""} />
-          <label className="small muted" htmlFor="h-au">
-            Au
-          </label>
-          <input id="h-au" name="au" type="date" defaultValue={au ?? ""} />
-          <button className="btn btn-small" type="submit">
-            Filtrer
-          </button>
-          {filtered && (
-            <Link className="btn btn-small btn-ghost" href={PATH}>
-              Tout afficher
-            </Link>
-          )}
-        </form>
+        </MemberDateFilters>
         {movements.length === 0 ? (
           <p className="muted">{filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}</p>
         ) : (
