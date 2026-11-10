@@ -698,6 +698,11 @@ td.row-action .icon-btn {
   margin-bottom: 0;
 }
 
+/* Side by side panels that end at the same height. */
+.cols-stretch {
+  align-items: stretch;
+}
+
 .section-gap {
   margin-bottom: 22px;
 }

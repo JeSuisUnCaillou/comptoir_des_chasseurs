@@ -232,7 +232,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         )}
       </div>
 
-      <div className="cols section-gap">
+      <div className="cols cols-stretch section-gap">
         <section className="panel" aria-labelledby="cuir">
           <div className="eyebrow">Produits transformés</div>
           <h2 id="cuir">Tarifs du cuir</h2>
