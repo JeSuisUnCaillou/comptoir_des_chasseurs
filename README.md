@@ -111,7 +111,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
   page Tarifs. Une marchandise peut avoir un second prix de rachat, pour les
   citoyens d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres) ;
-  vide, tout le monde a le même prix. Les Tarifs montrent les deux.
+  vide, tout le monde a le même prix. Les Tarifs le montrent en évidence (une
+  tuile à lui pour le cuir, une étiquette dorée dans les tableaux).
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).

@@ -5,7 +5,7 @@ import { useActionState, useRef, useState } from "react";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
-import { CATEGORY_LABELS, buyTotal, plural, sellTotal, septims } from "@/lib/pricing";
+import { CATEGORY_LABELS, buyTotal, plural, rate, sellTotal, septims } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
   Product,
@@ -178,6 +178,10 @@ export function TransactionForm({
               />{" "}
               Le vendeur est citoyen d&apos;Estemarche
             </label>
+            <span className="small muted">
+              Citoyens : {rate(product.citizenBuyPrice!, product.buyQty)}
+              {product.buyPrice != null && ` · autres vendeurs : ${rate(product.buyPrice, product.buyQty)}`}
+            </span>
           </div>
         )}
         <div className="field full">

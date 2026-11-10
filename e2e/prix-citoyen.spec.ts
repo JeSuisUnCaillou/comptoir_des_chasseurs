@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import postgres from "postgres";
 import { loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqué à l'achat", async ({
@@ -31,6 +32,7 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   await purchase.getByLabel("Quantité").fill("10");
   const amount = purchase.getByLabel("Montant total (septims)");
   const citizen = purchase.getByLabel("Le vendeur est citoyen d'Estemarche");
+  await expect(purchase.getByText("Citoyens : 4 septims / unité · autres vendeurs : 3 septims / unité")).toBeVisible();
   await expect(amount).toHaveValue("30");
   await citizen.check();
   await expect(amount).toHaveValue("40");
@@ -57,4 +59,19 @@ test("sans prix citoyen, l'achat ne propose pas la case", async ({ browser }) =>
   await purchase.getByLabel("Article ou marchandise").selectOption({ label: "Biche" });
   await expect(purchase.getByLabel("Montant total (septims)")).not.toHaveValue("");
   await expect(purchase.getByLabel("Le vendeur est citoyen d'Estemarche")).toHaveCount(0);
+});
+
+test("le prix citoyen du cuir a sa propre tuile sur les Tarifs", async ({ browser }) => {
+  // The seeded leather; no other test reads its tiles.
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`update products set citizen_buy_price = 5 where name = 'Cuir'`;
+  } finally {
+    await sql.end();
+  }
+  const { page } = await newEmployeePage(browser, "ralof");
+  await page.getByRole("link", { name: "Tarifs" }).click();
+  const leather = page.getByRole("region", { name: "Tarifs du cuir" });
+  await expect(leather).toContainText("Rachat de cuir · autres vendeurs4 septims");
+  await expect(leather.getByTestId("rachat-cuir-citoyens")).toHaveText("Rachat de cuir · citoyens d'Estemarche5 septims");
 });

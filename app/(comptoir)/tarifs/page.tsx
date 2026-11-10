@@ -23,9 +23,11 @@ function priced(p: Product) {
 function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?: boolean }) {
   if (product.citizenBuyPrice == null) return null;
   return (
-    <div className="small muted">
-      Citoyens d&apos;Estemarche :{" "}
-      {perUnit ? septims(product.citizenBuyPrice) : rate(product.citizenBuyPrice, product.buyQty)}
+    <div className="citizen-price">
+      <span className="badge badge-gold">
+        Citoyens d&apos;Estemarche :{" "}
+        <strong>{perUnit ? septims(product.citizenBuyPrice) : rate(product.citizenBuyPrice, product.buyQty)}</strong>
+      </span>
     </div>
   );
 }
@@ -154,10 +156,17 @@ export default async function Tarifs() {
           <h2 id="cuir">Tarifs du cuir</h2>
           <div className="stats" style={{ marginTop: 14 }}>
             <div className="stat">
-              <div className="stat-label">Rachat de cuir</div>
+              <div className="stat-label">
+                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
+              </div>
               <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
-              {leather && <CitizenPrice product={leather} perUnit />}
             </div>
+            {leather?.citizenBuyPrice != null && (
+              <div className="stat stat-citizen" data-testid="rachat-cuir-citoyens">
+                <div className="stat-label">Rachat de cuir · citoyens d&apos;Estemarche</div>
+                <div className="stat-value">{septims(leather.citizenBuyPrice)}</div>
+              </div>
+            )}
             <div className="stat">
               <div className="stat-label">Vente de cuir</div>
               <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
