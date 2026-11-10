@@ -55,6 +55,9 @@ export const products = pgTable(
     stock: integer("stock").notNull().default(0),
     buyPrice: integer("buy_price"),
     buyQty: integer("buy_qty").notNull().default(1),
+    // Buyback price for citizens of Estemarche, for the same buyQty units.
+    // Null: they get the usual buyPrice.
+    citizenBuyPrice: integer("citizen_buy_price"),
     sellPrice: integer("sell_price"),
     sellQty: integer("sell_qty").notNull().default(1),
     // Wholesale: from bulkMin units, bulkPrice septims per bulkQty units.

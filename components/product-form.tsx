@@ -70,6 +70,12 @@ export function ProductForm({ product }: { product?: Product }) {
       <div className="form-grid">
         <NumberField name="buyPrice" label="Prix en septims" defaultValue={product?.buyPrice} placeholder="vide = pas de rachat" />
         <NumberField name="buyQty" label="Pour combien d'unités" defaultValue={product?.buyQty ?? 1} />
+        <NumberField
+          name="citizenBuyPrice"
+          label="Prix pour les citoyens d'Estemarche"
+          defaultValue={product?.citizenBuyPrice}
+          placeholder="vide = même prix"
+        />
       </div>
 
       <h3>Vente (le comptoir encaisse)</h3>

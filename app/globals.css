@@ -310,6 +310,20 @@ h3 {
   margin-top: 6px;
 }
 
+/* The citizens of Estemarche's buyback price, on Tarifs */
+.stat-citizen {
+  border-color: var(--border-gold);
+  border-left: 3px solid var(--gold);
+}
+
+.citizen-price {
+  margin-top: 6px;
+}
+
+.citizen-price .badge {
+  font-size: 12px;
+}
+
 /* The four tiles of the till on the Grand livre */
 .till-overview .stat {
   border-left-width: 3px;

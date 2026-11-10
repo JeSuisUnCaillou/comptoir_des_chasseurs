@@ -50,6 +50,13 @@
       "when": 1794309548594,
       "tag": "0006_fournisseurs",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794318828724,
+      "tag": "0007_prix-rachat-citoyen",
+      "breakpoints": true
     }
   ]
 }
