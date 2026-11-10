@@ -1,11 +1,8 @@
 # Passe 1
 
-Tête relue : 39cb1cd
+Tête relue : acaa33a
 
 - relecteur-bugs : aucune trouvaille.
-- relecteur-architecte : ordre des catégories typé en `string`, une faute passerait `tsc` (mineure) : corrigée en 20138f2.
-- relecteur-architecte : README disait encore « cartes du stock » rangées par nom seul (mineure) : corrigée en 20138f2.
+- relecteur-architecte : aucune trouvaille (remarque de forme sur la longueur d'une ligne du README, laissée).
 
-Aucune trouvaille bloquante : pas de deuxième passe. Suite e2e verte après correction (73).
-
-Tête relue : 20138f2280bd36d6b49336fc40f377d74117058d
+Tête relue : acaa33aa8509f361f9bce93118372eb35ae32b53

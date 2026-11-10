@@ -32,7 +32,9 @@ test("entrées et sorties de stock, avec historique", async ({ page }) => {
   await card.getByLabel("Motif").fill("chasse du matin");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("10");
-  await expect(card).toContainText("En stock");
+  // Only an empty stock gets a tag: no "En stock" once it is filled.
+  await expect(card).not.toContainText("Rupture");
+  await expect(card).not.toContainText("En stock");
 
   await card.getByRole("button", { name: "Sortie" }).click();
   await card.getByLabel("Quantité sortie").fill("4");
