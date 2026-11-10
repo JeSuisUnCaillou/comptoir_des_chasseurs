@@ -30,7 +30,8 @@ export function mapLegacy(data, members) {
   const warnings = [];
   const warn = (message) => warnings.push(message);
 
-  // --- Members: the target's accounts stay; legacy authors are matched by name.
+  // --- Members: the target's accounts stay; legacy authors are matched by
+  // username or name.
   const gerant = [...members].sort((a, b) => a.id - b.id).find((m) => m.role === "gerant");
   if (!gerant) throw new Error("La base cible n'a aucun gérant : crée d'abord le compte du gérant.");
   const memberByKey = new Map();
@@ -42,14 +43,21 @@ export function mapLegacy(data, members) {
     const m = memberByKey.get(key(u.username));
     if (m && u.display_name) memberByKey.set(key(u.display_name), m);
   }
-  const unmatchedAuthors = new Set();
+  // Authors with no account get one, without a password: the gérant gives
+  // them one from the Membres page. Until written, they are known by `ref`.
+  const newMembers = [];
   const authorOf = (row) => {
-    const name =
-      row.employee_name ?? row.author_name ?? row.manager_name ?? row.created_by_name ?? row.user_name;
-    const m = name ? memberByKey.get(key(name)) : undefined;
-    if (m) return { memberId: m.id, foreign: null };
-    if (name) unmatchedAuthors.add(name);
-    return { memberId: gerant.id, foreign: name ?? null };
+    const name = (
+      row.employee_name ?? row.author_name ?? row.manager_name ?? row.created_by_name ?? row.user_name
+    )?.trim();
+    if (!name) return gerant.id;
+    let m = memberByKey.get(key(name));
+    if (!m) {
+      m = { id: `nouveau:${key(name)}`, username: key(name).slice(0, 40), name };
+      newMembers.push(m);
+      memberByKey.set(key(name), m);
+    }
+    return m.id;
   };
 
   // --- Products: the union of the inventory and both price lists, by name.
@@ -145,14 +153,14 @@ export function mapLegacy(data, members) {
     }
     const delta = int(m.delta, "mouvement de stock", warn);
     if (!delta) continue;
-    const { memberId, foreign } = authorOf(m);
+    const memberId = authorOf(m);
     const reason = m.reason?.trim() || "Ancienne app";
     movements.push({
       productName: products.get(key(name)).name,
       delta,
       stockAfter: Math.max(0, int(m.after_qty ?? m.stock_after, "stock après mouvement", warn) ?? 0),
       memberId,
-      reason: foreign ? `${reason} (par ${foreign})` : reason,
+      reason,
       createdAt: date(m.created_at),
     });
   }
@@ -176,10 +184,9 @@ export function mapLegacy(data, members) {
       quantity = 1;
     }
     const label = (t.item_name ?? "").trim() || "Article";
-    const { memberId, foreign } = authorOf(t);
+    const memberId = authorOf(t);
     const notes = [
       t.notes?.trim(),
-      foreign && `Saisie par ${foreign} dans l'ancienne app.`,
       t.voided_at && t.void_reason?.trim() && `Annulée : ${t.void_reason.trim()}`,
     ].filter(Boolean);
     transactions.push({
@@ -198,7 +205,7 @@ export function mapLegacy(data, members) {
   for (const a of list(data.treasury, "adjustments")) {
     const amount = int(a.amount, "ajustement de trésorerie", warn);
     if (!amount) continue;
-    const { memberId, foreign } = authorOf(a);
+    const memberId = authorOf(a);
     transactions.push({
       kind: amount > 0 ? "vente" : "rachat",
       productName: null,
@@ -206,9 +213,7 @@ export function mapLegacy(data, members) {
       quantity: 1,
       amount: Math.abs(amount),
       counterparty: null,
-      notes: [a.description?.trim(), foreign && `Saisi par ${foreign} dans l'ancienne app.`]
-        .filter(Boolean)
-        .join("\n") || null,
+      notes: a.description?.trim() || null,
       memberId,
       createdAt: date(a.created_at),
       cancelledAt: null,
@@ -226,10 +231,10 @@ export function mapLegacy(data, members) {
     const title = post.title?.trim();
     const body = post.body?.trim();
     if (!title && !body) continue;
-    const { memberId, foreign } = authorOf(post);
+    const memberId = authorOf(post);
     announcements.push({
       title: title || "Annonce",
-      body: [body, foreign && `— ${foreign}`].filter(Boolean).join("\n\n"),
+      body: body || title,
       pin: PINS[key(post.fastener)] ?? "couteau",
       memberId,
       createdAt: date(post.created_at),
@@ -237,16 +242,20 @@ export function mapLegacy(data, members) {
   }
   announcements.sort((a, b) => a.createdAt - b.createdAt);
 
-  if (unmatchedAuthors.size) {
-    warn(
-      `Auteurs sans compte dans la nouvelle app, rattachés au gérant ${gerant.name} : ${[...unmatchedAuthors].join(", ")}.`,
-    );
-  }
 
   // Kept in the export file, with no place in the new app yet.
   const notImported = { fournisseurs: list(data.suppliers, "suppliers").length };
 
-  return { products: [...products.values()], settings, movements, transactions, announcements, warnings, notImported };
+  return {
+    newMembers: newMembers.map(({ id, username, name }) => ({ ref: id, username, name })),
+    products: [...products.values()],
+    settings,
+    movements,
+    transactions,
+    announcements,
+    warnings,
+    notImported,
+  };
 }
 
 /** Till as the new app counts it: sales in, buybacks out, cancelled lines aside. */

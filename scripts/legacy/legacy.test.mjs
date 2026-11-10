@@ -181,11 +181,19 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.match(imported.output, /Caisse après import : 1144 septims\nCaisse de l'ancienne app : 1144 septims/);
   assert.match(imported.output, /1 fournisseurs/);
   assert.match(imported.output, /Mouvement de stock ignoré : marchandise inconnue \(Fantôme\)/);
-  assert.match(imported.output, /rattachés au gérant Lomone : Inconnu/);
+  assert.match(imported.output, /Comptes créés, sans mot de passe .*: Inconnu/);
   assert.doesNotMatch(imported.output, /postgres:postgres/, "l'URL n'est jamais affichée en entier");
 
-  const members = await admin`select username from members order by id`;
-  assert.deepEqual(members.map((m) => m.username), ["lomone", "einar"]);
+  // Existing accounts untouched; the unknown author gets one he cannot sign in with.
+  const members = await admin`select username, name, role, password_hash from members order by id`;
+  assert.deepEqual(
+    members.map((m) => ({ ...m })),
+    [
+      { username: "lomone", name: "Lomone", role: "gerant", password_hash: "x" },
+      { username: "einar", name: "Einar", role: "employe", password_hash: "x" },
+      { username: "inconnu", name: "Inconnu", role: "employe", password_hash: "!" },
+    ],
+  );
 
   const products = await admin`select * from products order by name`;
   assert.deepEqual(products.map((p) => p.name), ["Biche", "Cuir", "Lanterne", "Venaison"]);
@@ -220,7 +228,7 @@ test("export puis import, sans toucher aux membres", async () => {
     from announcements order by created_at`;
   assert.deepEqual(notices.map((n) => ({ ...n })), [
     { title: "Bienvenue", body: "Le comptoir ouvre.", pin: "hache", author: "einar" },
-    { title: "Chasse", body: "Ours au nord.\n\n— Inconnu", pin: "viande", author: "lomone" },
+    { title: "Chasse", body: "Ours au nord.", pin: "viande", author: "inconnu" },
   ]);
 
   const backups = (await readdir(OUT)).filter((f) => f.startsWith("sauvegarde-local-"));

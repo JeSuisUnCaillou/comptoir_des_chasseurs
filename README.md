@@ -69,9 +69,11 @@ frappe.
    annonces. Prendre un compte de gérant, sinon des routes manquent.
 2. `legacy:import` lit ce fichier et **remplace** dans la base cible les
    marchandises, l'historique du stock, le registre et les annonces, et met
-   à jour le prix du cuir chez le forgeron. Les membres restent : chaque ligne est rattachée
-   au membre du même identifiant ou du même nom, sinon au gérant, avec le nom
-   d'origine en note. Les ajustements de trésorerie deviennent des lignes
+   à jour le prix du cuir chez le forgeron. Les membres existants ne changent
+   pas : chaque ligne est rattachée au membre du même identifiant ou du même
+   nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en
+   employé et sans mot de passe ; le gérant lui en donne un depuis Membres.
+   Les ajustements de trésorerie deviennent des lignes
    « Ajustement de trésorerie » du registre. Les fournisseurs restent dans le
    fichier tant que l'app n'a pas de place pour eux.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape

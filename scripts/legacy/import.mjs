@@ -1,6 +1,7 @@
 // Loads an export of the old app (scripts/legacy/export.mjs) into a database
 // of the new one, replacing its merchandise, stock history and register.
-// Members are kept: the old app's authors are matched to them by name.
+// Members are never changed: the old app's authors are matched to them by
+// name, and those with no account get one, without a password.
 //
 //   node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--essai]
 //
@@ -48,6 +49,11 @@ try {
 
   console.log(`\nCible : ${target.toUpperCase()}, ${where.username}@${where.host}${where.pathname}`);
   console.log(`Membres gardés : ${members.length}`);
+  if (plan.newMembers.length) {
+    console.log(
+      `Comptes créés, sans mot de passe (le gérant leur en donne un dans Membres) : ${plan.newMembers.map((m) => m.name).join(", ")}`,
+    );
+  }
   console.log("Remplacé :");
   console.log(`  marchandises        ${current.products} → ${plan.products.length}`);
   console.log(`  mouvements de stock ${current.movements} → ${plan.movements.length}`);
@@ -108,6 +114,16 @@ async function saveBackup(sql, target) {
 async function write(sql, plan) {
   await sql.begin(async (tx) => {
     await tx`truncate transactions, stock_movements, products, announcements restart identity`;
+    // Members are only ever added, never changed. "!" is no valid hash: no
+    // sign-in until the gérant sets a password.
+    const memberIds = new Map();
+    for (const m of plan.newMembers) {
+      const [{ id }] = await tx`
+        insert into members (username, name, password_hash, role)
+        values (${m.username}, ${m.name}, '!', 'employe') returning id`;
+      memberIds.set(m.ref, id);
+    }
+    const member = (row) => ({ ...row, memberId: memberIds.get(row.memberId) ?? row.memberId });
     const ids = new Map();
     for (const p of plan.products) {
       const [{ id }] = await tx`insert into products ${tx(snake(p))} returning id`;
@@ -119,18 +135,17 @@ async function write(sql, plan) {
         on conflict (key) do update set value = excluded.value`;
     }
     for (const chunk of chunks(plan.movements)) {
-      const rows = chunk.map(({ productName, ...m }) => ({ ...m, productId: ids.get(productName) }));
+      const rows = chunk.map(({ productName, ...m }) => member({ ...m, productId: ids.get(productName) }));
       await tx`insert into stock_movements ${tx(rows.map(snake))}`;
     }
     for (const chunk of chunks(plan.transactions)) {
-      const rows = chunk.map(({ productName, ...t }) => ({
-        ...t,
-        productId: productName ? ids.get(productName) : null,
-      }));
+      const rows = chunk.map(({ productName, ...t }) =>
+        member({ ...t, productId: productName ? ids.get(productName) : null }),
+      );
       await tx`insert into transactions ${tx(rows.map(snake))}`;
     }
     for (const chunk of chunks(plan.announcements)) {
-      await tx`insert into announcements ${tx(chunk.map(snake))}`;
+      await tx`insert into announcements ${tx(chunk.map(member).map(snake))}`;
     }
   });
 }
