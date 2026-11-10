@@ -7,7 +7,7 @@ export default async function NewSupplier() {
   await requireMember(["gerant"]);
   return (
     <>
-      <PageHead eyebrow="Registres · Gérance" title="Nouveau fournisseur">
+      <PageHead title="Nouveau fournisseur">
         <Link href="/fournisseurs">← Fournisseurs</Link>
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>

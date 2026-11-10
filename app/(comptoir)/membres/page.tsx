@@ -39,7 +39,7 @@ export default async function Membres({
 
   return (
     <>
-      <PageHead eyebrow="Registres · Gérance" title="Membres">
+      <PageHead title="Membres">
         Qui peut entrer au comptoir, et sous quel nom.
       </PageHead>
 

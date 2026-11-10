@@ -27,7 +27,7 @@ export default async function EditProduct({
 
   return (
     <>
-      <PageHead eyebrow="Registres · Gérance" title={product.name}>
+      <PageHead title={product.name}>
         {fromTarifs ? <Link href="/tarifs">← Tarifs</Link> : <Link href="/marchandises">← Gérer les tarifs</Link>}
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>

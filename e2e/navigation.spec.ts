@@ -48,3 +48,18 @@ test("un lien cliqué avant son préchargement montre qu'il travaille", async ({
   await expect(page.getByRole("heading", { name: "Inventaire", exact: true })).toBeVisible();
   await expect(link.getByTestId("nav-pending")).toHaveCount(0);
 });
+
+test("les pages n'affichent plus la mention « Registres » en tête", async ({ page }) => {
+  await loginAsGerant(page);
+  for (const [path, title] of [
+    ["/", "Grand livre"],
+    ["/inventaire", "Inventaire"],
+    ["/marchandises", "Gérer les tarifs"],
+    ["/membres", "Membres"],
+    ["/fournisseurs/nouveau", "Nouveau fournisseur"],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();
+    await expect(page.getByText(/Registres ·/)).toHaveCount(0);
+  }
+});

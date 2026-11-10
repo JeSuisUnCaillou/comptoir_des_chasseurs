@@ -28,7 +28,7 @@ export default async function EditSupplier({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHead eyebrow="Registres · Gérance" title={supplier.name}>
+      <PageHead title={supplier.name}>
         <Link href="/fournisseurs">← Fournisseurs</Link>
       </PageHead>
 
