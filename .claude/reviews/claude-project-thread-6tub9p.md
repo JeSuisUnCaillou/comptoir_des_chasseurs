@@ -24,3 +24,11 @@ Tête relue : 8595cdb
 - Aucune trouvaille. `till()` de `scripts/legacy/map.mjs` répète le signe de `lib/transaction-kinds.ts` : déjà là avant, un script `.mjs` n'importe pas le `.ts`, écarté.
 
 Tête relue : 8595cdb380733159a0f6ed00c58f8421a74b4caa
+
+# Passe 4 (PR #26, bouton sur le Grand livre)
+
+Tête relue : 130ee75
+
+- Aucune trouvaille. Le README cite les boutons dans la puce Grand livre et dans la puce Achat / Vente : chaque puce décrit sa page, écarté.
+
+Tête relue : 130ee75db01df190097d1bdf205faa3d25c67748
