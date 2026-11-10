@@ -21,3 +21,9 @@ Tête relue : 6bdba3a (branche rebasée sur main, import des annonces ajouté).
 Rien de bloquant.
 
 Tête relue : e45ad324adb27f58a9efca397d39cd6f84106e8d
+
+# Passe 3
+
+Doc seule (winpty sous Git Bash), pas de relecture de code nécessaire.
+
+Tête relue : e04b36e1e123c9a68bf8b487bf36c6d75b275471
