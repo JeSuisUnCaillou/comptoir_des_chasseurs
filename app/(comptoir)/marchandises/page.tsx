@@ -5,7 +5,7 @@ import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { byName, getDb, schema } from "@/lib/db";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { blacksmithLeatherPrice } from "@/lib/products";
 import { saveBlacksmithPrice } from "./actions";
@@ -23,7 +23,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
       .select()
       .from(schema.products)
       .where(where)
-      .orderBy(asc(schema.products.archived), asc(schema.products.category), asc(schema.products.name))
+      .orderBy(asc(schema.products.archived), byName(schema.products.name), asc(schema.products.id))
       .limit(PAGE_SIZE)
       .offset(offsetOf(page)),
     getDb().select({ total: count() }).from(schema.products).where(where),

@@ -47,7 +47,10 @@ export function TransactionForm({
   const suggested = tariff ? Math.round(tariff.value) : null;
   const auto = suggested != null && !manual;
   const short = kind === "vente" && product && validQty && qty > product.stock;
-  const categories = [...new Set(products.map((p) => p.category))];
+  // Groups keep the catalogue's category order; names are sorted inside each.
+  const categories = (Object.keys(CATEGORY_LABELS) as Product["category"][]).filter((c) =>
+    products.some((p) => p.category === c),
+  );
 
   return (
     <form onSubmit={keepValues(action)}>

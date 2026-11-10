@@ -4,7 +4,7 @@ import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
 import { NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { byName, getDb, schema } from "@/lib/db";
 import type { MemberRole } from "@/lib/db/schema";
 import { updateMember } from "./actions";
 
@@ -31,7 +31,7 @@ export default async function Membres({
     getDb()
       .select()
       .from(schema.members)
-      .orderBy(asc(schema.members.role), asc(schema.members.name), asc(schema.members.id))
+      .orderBy(byName(schema.members.name), asc(schema.members.id))
       .limit(PAGE_SIZE)
       .offset(offsetOf(page)),
     getDb().select({ total: count() }).from(schema.members),

@@ -1,13 +1,13 @@
 import "server-only";
 import { and, asc, count, desc, eq, sql } from "drizzle-orm";
-import { getDb, schema } from "@/lib/db";
+import { byName, getDb, schema } from "@/lib/db";
 
 export async function activeProducts() {
   return getDb()
     .select()
     .from(schema.products)
     .where(eq(schema.products.archived, false))
-    .orderBy(asc(schema.products.category), asc(schema.products.name));
+    .orderBy(byName(schema.products.name), asc(schema.products.id));
 }
 
 export async function blacksmithLeatherPrice() {
