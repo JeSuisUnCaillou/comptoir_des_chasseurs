@@ -55,7 +55,7 @@ export function LiveSearch({ name = "q" }: { name?: string }) {
         type="search"
         value={value}
         onChange={(e) => search(e.target.value)}
-        placeholder="Nom de la marchandise"
+        placeholder="Chercher une marchandise"
         aria-label="Chercher une marchandise"
         maxLength={100}
       />

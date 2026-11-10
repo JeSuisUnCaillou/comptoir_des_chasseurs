@@ -57,6 +57,7 @@ test("chaque table a sa recherche, qui filtre pendant qu'on tape", async ({ page
   const searchPeaux = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
   const searchChasse = chasse.getByRole("searchbox", { name: "Chercher une marchandise" });
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
+  await expect(searchPeaux).toHaveAttribute("placeholder", "Chercher une marchandise");
   // Each bar takes at least half of its panel's width, the table's.
   const bar = (await searchPeaux.boundingBox())!;
   const table = (await peaux.getByRole("table").boundingBox())!;
