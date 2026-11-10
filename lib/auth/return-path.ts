@@ -10,18 +10,22 @@ export const PATH_HEADER = "x-comptoir-path";
  * to another site.
  */
 export function safeReturnPath(value: unknown): string {
-  if (typeof value !== "string" || !value.startsWith("/")) return "/";
-  // "//host" and "/\host" are read by browsers as another site.
-  if (value.startsWith("//") || value.startsWith("/\\")) return "/";
+  if (typeof value !== "string" || !isLocal(value)) return "/";
   try {
     const base = "http://comptoir.invalid";
     const url = new URL(value, base);
-    if (url.origin !== base) return "/";
+    // Checked again once normalized: "/.//host" becomes "//host".
+    if (url.origin !== base || !isLocal(url.pathname)) return "/";
     if (url.pathname === "/connexion") return "/";
     return url.pathname + url.search + url.hash;
   } catch {
     return "/";
   }
+}
+
+// "//host" and "/\host" are read by browsers as another site.
+function isLocal(path: string) {
+  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\");
 }
 
 /** The login page URL that comes back to `path` once signed in. */

@@ -37,7 +37,7 @@ test("un mauvais mot de passe garde la page à rejoindre", async ({ page }) => {
   await expect(page).toHaveURL(/\/inventaire$/);
 });
 
-for (const suite of ["//example.com", "https://example.com/", "/\\example.com"]) {
+for (const suite of ["//example.com", "https://example.com/", "/\\example.com", "/.//example.com", "/a/..//example.com"]) {
   test(`un lien de connexion vers un autre site (${suite}) ramène au Grand livre`, async ({
     page,
   }) => {
@@ -46,6 +46,11 @@ for (const suite of ["//example.com", "https://example.com/", "/\\example.com"])
     await page.getByLabel("Mot de passe").fill(GERANT.password);
     await page.getByRole("button", { name: "Entrer au comptoir" }).click();
 
+    await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/");
+
+    // Already signed in, the same link redirects straight away.
+    await page.goto(`/connexion?suite=${encodeURIComponent(suite)}`);
     await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
     expect(new URL(page.url()).pathname).toBe("/");
   });
