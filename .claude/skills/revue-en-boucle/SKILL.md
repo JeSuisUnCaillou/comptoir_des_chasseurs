@@ -62,25 +62,38 @@ chaque passe s'y ajoute.
    pousse. Le hook lit cette ligne ; une branche inchangée depuis, hors de
    `.claude/reviews/`, n'a pas besoin d'une nouvelle passe.
 
-7. **Ce qui part sans attendre le propriétaire.** Une PR est mergée par
-   Claude une fois la boucle convergée sans rien laissé au propriétaire, sauf
-   si c'est une fonctionnalité moyenne ou grosse : elle donne aux membres
-   quelque chose de nouveau à faire ou à voir (une page, un formulaire, un
-   réglage), change le schéma de la base de façon non triviale, ou change une
-   règle métier (prix, stock, rôles). Les correctifs, les tests, la doc, le
-   harness, l'infra et les petites retouches d'une fonctionnalité existante
-   (un mot, une valeur par défaut, une couleur) partent. Dans le doute, c'est
-   une fonctionnalité et elle attend. Pour merger, suis la PR
-   (`subscribe_pr_activity`), et sur son événement CI verte merge-la avec
-   `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
-   `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
-   qu'un commit poussé après la revue ne soit jamais mergé sans relecture. Une PR en conflit avec `main` n'a pas de
-   CI sur un nouveau push, donc pas d'événement vert : avant d'attendre, lis
-   son état de merge (`pull_request_read`), et si elle est en conflit, merge
-   `main` dedans, lance la suite, pousse, et refais un tour de boucle, pour
-   que le fichier de revue se ferme sur le commit de merge et que ce soit lui
-   l'`expectedHeadSha`. Choisi par le propriétaire le 2026-11-09, qui a dit
-   « merge it yourself » sur une petite PR de correctif.
+7. **Ce qui part sans attendre le propriétaire.** Claude ne merge seul que
+   la doc, les tests, le harness et les petits correctifs. Tout le reste
+   attend que le propriétaire demande le merge de cette PR : une fois la
+   boucle convergée, donne-lui le lien de la preview Vercel publiée sur la
+   PR (`CLAUDE.md` § Donner un lien pour essayer) et ce qu'il peut y
+   essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
+   le doute, ça attend. Choisi par le propriétaire le 2026-11-10 : « ne
+   merge pas des choses sans mon accord, montre moi à chaque fois une
+   preview avant de merge », puis « les seules choses que tu peux merge
+   tout seul sont la doc, les tests, et le harness, ou les petits fixs ».
+
+   **Pour merger une PR qui part seule, ou dont le propriétaire a demandé
+   le merge** :
+   - Avant d'attendre, lis son état de merge (`pull_request_read`). Une PR
+     en conflit avec `main` n'a pas de CI sur un nouveau push : merge `main`
+     dedans, lance la suite, pousse, et refais un tour de boucle, pour que le
+     fichier de revue se ferme sur le commit de merge.
+   - Suis la PR (`subscribe_pr_activity`) **et** programme-toi un rappel
+     avec `send_later` dans 3 minutes. Un tour qui finit en attendant la CI
+     a toujours un rappel programmé : la fin du job e2e ne réveille pas la
+     session, et le seul `check_suite.completed` arrive quand la suite
+     Vercel finit, avant le job (vu le 2026-11-10 sur #23 et #26, que le
+     propriétaire a dû réclamer ; `.claude/audits/2026-11-10-harness-ci.md`).
+   - À chaque réveil, rappel ou événement, lis le check run « Build et tests
+     e2e » de la tête (`pull_request_read`, `get_check_runs`). Vert : merge
+     avec `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
+     `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
+     qu'un commit poussé après la revue ne soit jamais mergé sans relecture.
+     En file ou en cours : un nouveau rappel dans 2 minutes. Rouge : c'est
+     une correction, et la boucle repart.
+   - Toujours pas fini 20 minutes après le push : dis au propriétaire quel
+     check bloque, et arrête les rappels.
 
 8. **Pèse les restes.** Liste ce que le travail laisse ouvert : les questions
    que tu t'es posées ou as posées au propriétaire sans les trancher, les
