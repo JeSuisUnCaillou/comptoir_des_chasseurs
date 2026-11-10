@@ -109,7 +109,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   ou une marchandise. Tout le monde les consulte ; seuls les gérants en
   ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
   suppriment, par les boutons de la page.
-- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; l'historique
+- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; le bouton
+  « Nouvelle marchandise » fait entrer en stock une marchandise qui n'existe
+  pas encore : tout membre la crée, sans prix, avec nom, catégorie, unité,
+  quantité et motif, et un gérant règle ses prix ensuite dans Gérer les
+  tarifs ; quand la recherche du stock ne trouve rien, le formulaire reprend
+  le nom cherché ; l'historique
   des mouvements se cherche par marchandise, en filtrant pendant qu'on tape,
   et se filtre par employé, par sens, entrées ou sorties, et par dates, heure
   de Paris), et pour les
