@@ -16,6 +16,7 @@ export type TransactionProduct = Pick<
   | "stock"
   | "buyPrice"
   | "buyQty"
+  | "citizenBuyPrice"
   | "sellPrice"
   | "sellQty"
   | "bulkMin"
@@ -39,11 +40,19 @@ export function TransactionForm({
   const [amount, setAmount] = useState("");
   // The amount follows the tariff until the member takes it over with the pencil.
   const [manual, setManual] = useState(false);
+  const [citizen, setCitizen] = useState(false);
   const amountInput = useRef<HTMLInputElement>(null);
   const product = products.find((p) => String(p.id) === productId);
   const qty = Number(quantity);
   const validQty = Number.isInteger(qty) && qty > 0;
-  const tariff = product && validQty ? (kind === "vente" ? sellTotal(product, qty) : buyTotal(product, qty)) : null;
+  // Only buybacks have a citizens' price, and only for the products that set one.
+  const citizenPrice = kind === "rachat" && product?.citizenBuyPrice != null;
+  const tariff =
+    product && validQty
+      ? kind === "vente"
+        ? sellTotal(product, qty)
+        : buyTotal(product, qty, { citizen: citizenPrice && citizen })
+      : null;
   const suggested = tariff ? Math.round(tariff.value) : null;
   const auto = suggested != null && !manual;
   const short = kind === "vente" && product && validQty && qty > product.stock;
@@ -141,6 +150,7 @@ export function TransactionForm({
             <span className="small muted tariff-hint" data-testid="tarif">
               {auto ? "Calculé avec le tarif" : `Tarif : ${septims(suggested)}`}
               {tariff && "bulk" in tariff && tariff.bulk ? " (prix de gros)" : ""}
+              {citizenPrice && citizen ? " (prix citoyen d'Estemarche)" : ""}
               {tariff && !tariff.complete ? " (lot incomplet, arrondi)" : ""}
               {!auto && (
                 <button type="button" className="btn btn-small btn-ghost" onClick={() => setManual(false)}>
@@ -153,6 +163,19 @@ export function TransactionForm({
             <span className="small muted">Pas de tarif pour cette opération : indique le montant.</span>
           )}
         </div>
+        {citizenPrice && (
+          <div className="field full">
+            <label className="check">
+              <input
+                type="checkbox"
+                name="citizen"
+                checked={citizen}
+                onChange={(e) => setCitizen(e.target.checked)}
+              />{" "}
+              Le vendeur est citoyen d&apos;Estemarche
+            </label>
+          </div>
+        )}
         <div className="field full">
           <label htmlFor="t-counterparty">Nom du client / vendeur RP (facultatif)</label>
           <input id="t-counterparty" name="counterparty" maxLength={100} />

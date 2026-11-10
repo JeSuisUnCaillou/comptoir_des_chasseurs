@@ -37,8 +37,14 @@ function total(price: number, per: number, quantity: number): Total {
   return { value: (quantity * price) / per, complete: quantity % per === 0 };
 }
 
-export function buyTotal(p: Prices, quantity: number): Total | null {
-  return p.buyPrice == null ? null : total(p.buyPrice, p.buyQty, quantity);
+/** What the comptoir pays a seller; citizens of Estemarche get their own price when it is set. */
+export function buyTotal(
+  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
+  quantity: number,
+  { citizen = false } = {},
+): Total | null {
+  const price = citizen && p.citizenBuyPrice != null ? p.citizenBuyPrice : p.buyPrice;
+  return price == null ? null : total(price, p.buyQty, quantity);
 }
 
 export function isBulk(p: Prices, quantity: number) {

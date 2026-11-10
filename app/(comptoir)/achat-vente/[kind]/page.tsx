@@ -44,6 +44,7 @@ export default async function NouvelleEcriture({ params }: { params: Promise<{ k
             stock: p.stock,
             buyPrice: p.buyPrice,
             buyQty: p.buyQty,
+            citizenBuyPrice: p.citizenBuyPrice,
             sellPrice: p.sellPrice,
             sellQty: p.sellQty,
             bulkMin: p.bulkMin,

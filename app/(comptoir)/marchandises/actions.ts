@@ -34,6 +34,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     unit,
     buyPrice: optionalInt(formData, "buyPrice"),
     buyQty: positiveInt(formData, "buyQty"),
+    citizenBuyPrice: optionalInt(formData, "citizenBuyPrice"),
     sellPrice: optionalInt(formData, "sellPrice"),
     sellQty: positiveInt(formData, "sellQty"),
     bulkMin: optionalInt(formData, "bulkMin"),
