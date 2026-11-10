@@ -37,6 +37,33 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         La liste des marchandises du comptoir et leurs prix.
       </PageHead>
 
+      <div className="cols">
+        <section className="panel" aria-labelledby="ajout">
+          <div className="eyebrow">Nouvelle référence</div>
+          <h2 id="ajout">Ajouter une marchandise</h2>
+          <ProductForm />
+        </section>
+        <section className="panel">
+          <div className="eyebrow">Réglage</div>
+          <h2>Rachat du cuir par le forgeron</h2>
+          <p className="muted">
+            Sert au calcul du bénéfice par lot de peaux. Actuellement : {septims(blacksmith)}.
+          </p>
+          <form action={saveBlacksmithPrice} className="inline-form">
+            <input
+              name="value"
+              type="number"
+              min={0}
+              defaultValue={blacksmith}
+              aria-label="Prix du cuir chez le forgeron"
+            />
+            <button className="btn btn-small" type="submit">
+              Enregistrer
+            </button>
+          </form>
+        </section>
+      </div>
+
       <section className="panel">
         <div className="eyebrow">Catalogue</div>
         <h2>Toutes les marchandises</h2>
@@ -74,33 +101,6 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         </div>
         <Pagination page={page} total={total} path="/marchandises" params={{ q: q || undefined }} label="Pages des marchandises" />
       </section>
-
-      <div className="cols">
-        <section className="panel" aria-labelledby="ajout">
-          <div className="eyebrow">Nouvelle référence</div>
-          <h2 id="ajout">Ajouter une marchandise</h2>
-          <ProductForm />
-        </section>
-        <section className="panel">
-          <div className="eyebrow">Réglage</div>
-          <h2>Rachat du cuir par le forgeron</h2>
-          <p className="muted">
-            Sert au calcul du bénéfice par lot de peaux. Actuellement : {septims(blacksmith)}.
-          </p>
-          <form action={saveBlacksmithPrice} className="inline-form">
-            <input
-              name="value"
-              type="number"
-              min={0}
-              defaultValue={blacksmith}
-              aria-label="Prix du cuir chez le forgeron"
-            />
-            <button className="btn btn-small" type="submit">
-              Enregistrer
-            </button>
-          </form>
-        </section>
-      </div>
     </>
   );
 }
