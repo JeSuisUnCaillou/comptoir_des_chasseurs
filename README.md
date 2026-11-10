@@ -108,8 +108,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
   page Tarifs. Tarifs et Gérer les tarifs ont la même recherche par nom, qui
-  filtre pendant qu'on tape, comme celle de l'Inventaire ; sur Tarifs, le
-  calculateur garde toutes les marchandises.
+  filtre pendant qu'on tape, comme celle de l'Inventaire. Tarifs montre
+  d'abord les tarifs du cuir et le calculateur, qui a sa propre recherche
+  sur toutes les marchandises, puis la recherche et les tables qu'elle
+  filtre.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).

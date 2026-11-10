@@ -15,26 +15,24 @@ export function LiveSearch() {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const [value, setValue] = useState(urlQuery);
-  const [seenQuery, setSeenQuery] = useState(urlQuery);
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  // The last query this field wrote to the URL: its arrival must not overwrite what was typed since.
-  const written = useRef(urlQuery);
+  // The last query this field wrote to the URL; null while a keystroke waits to be written.
+  const written = useRef<string | null>(urlQuery);
 
-  // The URL changed from elsewhere (a menu link, the back button): show its query.
-  if (urlQuery !== seenQuery) {
-    setSeenQuery(urlQuery);
-    if (urlQuery !== written.current) {
-      written.current = urlQuery;
-      clearTimeout(timer.current);
-      setValue(urlQuery);
-    }
-  }
+  // Once nothing typed is on its way, a URL that says something else was changed
+  // elsewhere (a menu link, the back button): show its query.
+  useEffect(() => {
+    if (pending || written.current === null || urlQuery === written.current) return;
+    written.current = urlQuery;
+    setValue(urlQuery);
+  }, [urlQuery, pending]);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
   function search(next: string) {
     setValue(next);
+    written.current = null;
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const query = new URLSearchParams(searchParams.toString());

@@ -94,6 +94,35 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
           </Link>
         )}
       </div>
+
+      <div className="cols section-gap">
+        <section className="panel" aria-labelledby="cuir">
+          <div className="eyebrow">Produits transformés</div>
+          <h2 id="cuir">Tarifs du cuir</h2>
+          <div className="stats" style={{ marginTop: 14 }}>
+            <div className="stat">
+              <div className="stat-label">Rachat de cuir</div>
+              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">Vente de cuir</div>
+              <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">Rachat par le forgeron</div>
+              <div className="stat-value">{septims(blacksmith)}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel" aria-labelledby="calcul">
+          <div className="eyebrow">Outil des marchands</div>
+          <h2 id="calcul">Calculateur des prix</h2>
+          <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
+          <PriceCalculator products={calculable} />
+        </section>
+      </div>
+
       <LiveSearch />
 
       <section className="panel" aria-labelledby="peaux">
@@ -142,34 +171,6 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
           {septims(blacksmith)}. Ils sont bruts, hors frais.
         </p>
       </section>
-
-      <div className="cols section-gap">
-        <section className="panel" aria-labelledby="cuir">
-          <div className="eyebrow">Produits transformés</div>
-          <h2 id="cuir">Tarifs du cuir</h2>
-          <div className="stats" style={{ marginTop: 14 }}>
-            <div className="stat">
-              <div className="stat-label">Rachat de cuir</div>
-              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Vente de cuir</div>
-              <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Rachat par le forgeron</div>
-              <div className="stat-value">{septims(blacksmith)}</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel" aria-labelledby="calcul">
-          <div className="eyebrow">Outil des marchands</div>
-          <h2 id="calcul">Calculateur des prix</h2>
-          <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-          <PriceCalculator products={calculable} />
-        </section>
-      </div>
 
       <section className="panel" aria-labelledby="chasse">
         <div className="eyebrow">Produits de chasse</div>
