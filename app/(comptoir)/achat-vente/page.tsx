@@ -9,9 +9,16 @@ import type { TransactionKind } from "@/lib/db/schema";
 import { septims } from "@/lib/pricing";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
-import { parisDay, registerCount, registerEntries, tillTotals, type RegisterFilter } from "@/lib/register";
+import {
+  parisDay,
+  registerAuthors,
+  registerCount,
+  registerEntries,
+  tillTotals,
+  type RegisterFilter,
+} from "@/lib/register";
 
-type Search = Record<"type" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
+type Search = Record<"type" | "employe" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 
 const PATH = "/achat-vente";
 
@@ -38,15 +45,23 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   let au = asDate(param(search.au));
   if (du && au && du > au) [du, au] = [au, du]; // a reversed range still means something
   const page = pageParam(search.page);
-  const filters = { type: operation, du, au };
-  const filter: RegisterFilter = { kinds: operation && OPERATIONS[operation], from: parisDay(du), to: parisDay(au, 1) }; // "au" includes that day
+  const authors = await registerAuthors();
+  const author = authors.find((a) => String(a.id) === param(search.employe));
+  const employe = author && String(author.id);
+  const filters = { type: operation, employe, du, au };
+  const filter: RegisterFilter = {
+    kinds: operation && OPERATIONS[operation],
+    memberId: author?.id,
+    from: parisDay(du),
+    to: parisDay(au, 1), // "au" includes that day
+  };
 
   const [entries, total, totals] = await Promise.all([
     registerEntries(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     registerCount(filter),
     tillTotals(filter),
   ]);
-  const filtered = Boolean(operation || du || au);
+  const filtered = Boolean(operation || employe || du || au);
   // Coming back from the entry form: confirm the line just written.
   const writtenId = Number(param(search.inscrit));
   const written = entries.find((e) => e.id === writtenId);
@@ -96,7 +111,8 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
       <section className="panel" aria-labelledby="registre">
         <div className="eyebrow">Toutes les écritures</div>
         <h2 id="registre">Registre des achats, ventes et mouvements de caisse</h2>
-        <form className="inline-form filters" method="get" action={PATH} aria-label="Filtrer le registre">
+        {/* Keyed on the filters so "Tout afficher" resets the fields, which keep their value across client navigation. */}
+        <form key={JSON.stringify(filters)} className="inline-form filters" method="get" action={PATH} aria-label="Filtrer le registre">
           <label className="small muted" htmlFor="r-type">
             Opération
           </label>
@@ -105,6 +121,17 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             <option value="vente">Ventes</option>
             <option value="rachat">Achats</option>
             <option value="caisse">Mouvements de caisse</option>
+          </select>
+          <label className="small muted" htmlFor="r-employe">
+            Employé
+          </label>
+          <select id="r-employe" name="employe" defaultValue={employe ?? ""}>
+            <option value="">Tous</option>
+            {authors.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
           </select>
           <label className="small muted" htmlFor="r-du">
             Du
