@@ -40,4 +40,11 @@ Tête relue : f790e2a (une recherche par table sur Tarifs)
 - relecteur-bugs : rien.
 - relecteur-architecte : rien.
 
-Tête relue : f790e2a434790d02c58df26c6529f0ab67e94674
+# Passe 7
+
+Tête relue : 319d956 (texte du champ « Chercher une marchandise »)
+
+- relecteur-bugs : rien.
+- relecteur-architecte : rien.
+
+Tête relue : 319d95622c2fddd91cc2f82402c9a796bccc2c95
