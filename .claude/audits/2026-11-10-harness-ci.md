@@ -51,10 +51,28 @@ l'auto-merge GitHub (plus bas) ou un hook Stop qui refuse de finir un tour
 sur une PR ouverte dont le check e2e tourne encore.
 **Appliquée** : oui, commit « revue-en-boucle : attendre la CI par un rappel, pas par un événement »
 
+### 2. Claude merge seul des PR que le propriétaire veut voir avant
+**Pilier** : contexte
+**Preuve** : Caillou, dans ce fil, le 2026-11-10 à 10:34 : « ne merge pas des
+choses sans mon accord, montre moi à chaque fois une preview avant de merge.
+Je peux avoir des feedbacks. » `revue-en-boucle` étape 7 et `CLAUDE.md`
+§ Qui merge faisaient merger seuls les correctifs, la doc, le harness et
+l'infra ; la mémoire `caillou-preferences.md` (2026-11-09) et `MEMORY.md`
+(« Caillou lets Claude merge small PRs once CI is green ») disaient pareil.
+**Remède** : corriger — l'étape 7 interdit tout merge sans la demande du
+propriétaire pour cette PR, après lui avoir donné la preview ; `CLAUDE.md`
+§ Qui merge le dit en une phrase ; la mémoire est corrigée tout de suite,
+puisqu'elle disait le contraire.
+**Impact attendu** : PR mergées par Claude sans demande du propriétaire dans
+le fil après le lien de preview — base : #19, #26 le 2026-11-10 — attendu 0 —
+contrôle le 2026-11-17 — sinon : un contrôle (hook avant `merge_pull_request`).
+**Appliquée** : oui, commit « Ne merger aucune PR sans l'accord du propriétaire »
+
 ## Mémoires et instructions du projet rapatriées
 | Source | Vers | À vider après le merge |
 | --- | --- | --- |
 | `caillou-preferences.md`, ligne du 2026-11-10 (rappel `send_later` après un push) | `revue-en-boucle/SKILL.md` étape 7 | oui, réduite à un renvoi |
+| `caillou-preferences.md` 2026-11-09 et `MEMORY.md` « Caillou lets Claude merge small PRs once CI is green » | contredites par la consigne du 2026-11-10, corrigées en mémoire pendant la passe | non, déjà corrigées |
 
 Le reste de la mémoire et les instructions du projet sont hors du sujet de
 cette passe ; la prochaine passe rétrospective les rapatrie.
