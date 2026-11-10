@@ -1,12 +1,26 @@
 import { Archive } from "lucide-react";
+import { LiveSearch } from "@/components/live-search";
+import { MemberDateFilters } from "@/components/member-date-filters";
 import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
 import type { ProductCategory } from "@/lib/db/schema";
 import { formatNumber, plural } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
-import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
-import { activeProducts, movementCount, recentMovements } from "@/lib/products";
+import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
+import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
+import { dayRange, memberNames } from "@/lib/register";
+
+type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page", string | string[] | undefined>;
+
+const PATH = "/inventaire";
+
+/** What the "Mouvement" filter offers, and the direction each keeps. */
+const DIRECTIONS = { entree: "in", sortie: "out" } as const satisfies Record<string, MovementFilter["direction"]>;
+
+function asDirection(value: string | undefined) {
+  return value && Object.hasOwn(DIRECTIONS, value) ? (value as keyof typeof DIRECTIONS) : undefined;
+}
 
 // Meats first, then hides, then everything else; the database already sorts by
 // name and Array.prototype.sort is stable, so names stay in order inside each group.
@@ -19,17 +33,29 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
 });
 
-export default async function Inventaire({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string | string[] }>;
-}) {
+export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   await requireMember();
-  const page = pageParam((await searchParams).page);
+  const search = await searchParams;
+  const page = pageParam(search.page);
+  const q = (param(search.q) ?? "").trim().slice(0, 100) || undefined;
+  const sens = asDirection(param(search.sens));
+  const { du, au, from, to } = dayRange(param(search.du), param(search.au));
+  const authors = await memberNames();
+  const author = authors.find((a) => String(a.id) === param(search.employe));
+  const employe = author && String(author.id);
+  const filters = { q, employe, sens, du, au };
+  const filter: MovementFilter = {
+    q,
+    memberId: author?.id,
+    direction: sens && DIRECTIONS[sens],
+    from,
+    to,
+  };
+  const filtered = Boolean(q || employe || sens || du || au);
   const [products, movements, total] = await Promise.all([
     activeProducts(),
-    recentMovements({ limit: PAGE_SIZE, offset: offsetOf(page) }),
-    movementCount(),
+    recentMovements(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
+    movementCount(filter),
   ]);
   const sum = (category: string) =>
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
@@ -76,11 +102,28 @@ export default async function Inventaire({
         />
       </section>
 
-      <section className="panel">
-        <h2>Historique des mouvements</h2>
+      <section className="panel" aria-labelledby="historique-titre">
+        <div className="panel-head">
+          <h2 id="historique-titre">Historique des mouvements</h2>
+          <span className="small muted" data-testid="historique-total">
+            {total} mouvement(s)
+          </span>
+        </div>
         <p className="muted">Les entrées et sorties, des plus récentes aux plus anciennes, avec leur auteur et leur motif.</p>
+        <LiveSearch />
+        <MemberDateFilters path={PATH} label="Filtrer l'historique" filters={filters} members={authors} employe={employe} du={du} au={au}>
+          {q && <input type="hidden" name="q" value={q} />}
+          <label className="small muted" htmlFor="h-sens">
+            Mouvement
+          </label>
+          <select id="h-sens" name="sens" defaultValue={sens ?? ""}>
+            <option value="">Tous</option>
+            <option value="entree">Entrées</option>
+            <option value="sortie">Sorties</option>
+          </select>
+        </MemberDateFilters>
         {movements.length === 0 ? (
-          <p className="muted">Aucun mouvement pour l&apos;instant.</p>
+          <p className="muted">{filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}</p>
         ) : (
           <div className="table-wrap">
             <table data-testid="historique">
@@ -114,7 +157,7 @@ export default async function Inventaire({
             </table>
           </div>
         )}
-        <Pagination page={page} total={total} path="/inventaire" label="Pages de l'historique" />
+        <Pagination page={page} total={total} path={PATH} params={filters} label="Pages de l'historique" />
       </section>
     </>
   );
