@@ -223,10 +223,11 @@ test("export puis import, sans toucher aux membres", async () => {
 test("l'export récupère tout le registre, quel que soit le découpage de l'API", async () => {
   Object.assign(api, { cap: 100, toExclusive: true });
   try {
-    // Address and sign-in name on the command line: only the password is asked.
-    const { code, output } = await run(["scripts/legacy/export.mjs", baseUrl, USER], `${PASSWORD}\n`);
+    // Everything on the command line: nothing is asked, the password isn't printed.
+    const { code, output } = await run(["scripts/legacy/export.mjs", baseUrl, USER, PASSWORD], "");
     assert.equal(code, 0, output);
-    assert.doesNotMatch(output, /Identifiant :/);
+    assert.doesNotMatch(output, /Identifiant :|Mot de passe :/);
+    assert.doesNotMatch(output, new RegExp(PASSWORD));
     const file = output.match(/Données écrites dans (.+)/)[1].trim();
     const data = JSON.parse(await readFile(file, "utf8"));
     assert.equal(data.transactions.length, 450);

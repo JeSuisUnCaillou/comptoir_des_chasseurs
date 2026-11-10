@@ -2,10 +2,11 @@
 // its API, to a JSON file in legacy-export/ (ignored by git). Nothing is
 // written to any database: scripts/legacy/import.mjs does that from the file.
 //
-//   node scripts/legacy/export.mjs [adresse] [identifiant]
+//   node scripts/legacy/export.mjs [adresse] [identifiant] [mot de passe]
 //
-// The address and sign-in name can be given on the command line, or are
-// asked; the password is always asked at run time, never taken as an argument. The old app
+// What is not given on the command line is asked; the password is then typed
+// without being echoed. A password on the command line stays in the shell's
+// history: that is the caller's choice. The old app
 // uses a self-signed certificate, so certificate checks are off for that one
 // host only.
 import { mkdir, writeFile } from "node:fs/promises";
@@ -19,10 +20,10 @@ const FIRST_DAY = "2000-01-01";
 
 const prompter = createPrompter();
 try {
-  const [argUrl, argUser] = process.argv.slice(2);
+  const [argUrl, argUser, argPassword] = process.argv.slice(2);
   const base = new URL(argUrl ?? (await prompter.ask("Adresse de l'ancienne app (https://…) : ")));
   const username = argUser ?? (await prompter.ask("Identifiant : "));
-  const password = await prompter.ask("Mot de passe : ", { hidden: true });
+  const password = argPassword ?? (await prompter.ask("Mot de passe : ", { hidden: true }));
   prompter.close();
 
   const api = client(base);
