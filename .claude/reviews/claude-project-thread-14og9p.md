@@ -39,3 +39,9 @@ Tête relue : 51771e8e8c67edae947561003d130537b2231e50
 Petit ajout (mot de passe en argument, au choix du propriétaire), couvert par test:legacy ; relu par moi, rien de bloquant.
 
 Tête relue : 32888bd03e1e4d6a40539f6fdd8b6cdf5c14549b
+
+# Passe 6
+
+Correctif (filtre de type vide refusé par l'ancienne app), test rouge sans lui, vert avec ; relu par moi.
+
+Tête relue : f610610c92ce6e9c7c9bde330a0e53339295db23
