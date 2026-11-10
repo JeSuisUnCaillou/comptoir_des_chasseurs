@@ -1,6 +1,7 @@
 import { CancelButton } from "@/components/cancel-button";
 import type { Member } from "@/lib/db/schema";
 import { formatNumber, septims } from "@/lib/pricing";
+import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
@@ -40,8 +41,8 @@ export function RegisterTable({
         <tbody>
           {entries.map((e) => {
             const sale = e.kind === "vente";
-            const cash = e.kind === "entree" || e.kind === "sortie";
-            const moneyIn = sale || e.kind === "entree";
+            const cash = isCashKind(e.kind);
+            const amount = signedAmount(e.kind, e.amount);
             const cancelled = e.cancelledAt != null;
             const canCancel = !cancelled && (member.role === "gerant" || e.memberId === member.id);
             const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
@@ -59,8 +60,8 @@ export function RegisterTable({
                 </td>
                 <td>{e.label}</td>
                 <td className="num">{cash ? "—" : formatNumber(e.quantity)}</td>
-                <td className={`num ${cancelled ? "" : moneyIn ? "plus" : "minus"}`}>
-                  {septims(moneyIn ? e.amount : -e.amount, { signed: true })}
+                <td className={`num ${cancelled ? "" : amount >= 0 ? "plus" : "minus"}`}>
+                  {septims(amount, { signed: true })}
                 </td>
                 <td>{e.counterparty ?? "—"}</td>
                 <td>{e.member}</td>

@@ -260,7 +260,11 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   const reason = uniqueName("Salaires");
   const deposit = uniqueName("Apport du gérant");
   const { page } = await newEmployeePage(browser, "farengar");
-  await page.goto("/achat-vente");
+  // Only this test writes movements: the till of the movements alone is ours to watch.
+  const movementsTill = async () =>
+    septimsValue((await page.getByTestId("totaux-registre").locator(".stat-value").textContent())!);
+  await page.goto("/achat-vente?type=caisse");
+  const tillBefore = await movementsTill();
   await page.getByRole("link", { name: /Mouvement de caisse/ }).click();
   await expect(page).toHaveURL(/\/achat-vente\/caisse$/);
   const form = page.getByRole("region", { name: "Inscrire un mouvement de caisse" });
@@ -301,9 +305,11 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await expect(table.getByRole("row").filter({ hasText: deposit })).toBeVisible();
   await expect(table.getByRole("row").filter({ hasText: /Vente|Achat/ })).toHaveCount(0);
   await expect(page.getByTestId("totaux-registre")).toContainText("en mouvements de caisse");
+  expect(await movementsTill()).toBe(tillBefore + 50 - 37);
 
   // Its author cancels it: it no longer counts.
   page.once("dialog", (dialog) => dialog.accept());
   await table.getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /Annuler/ }).click();
   await expect(table.getByRole("row").filter({ hasText: reason })).toContainText("Annulée");
+  await expect.poll(movementsTill).toBe(tillBefore + 50);
 });

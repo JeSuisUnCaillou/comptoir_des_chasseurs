@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { recordCashMovement, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import { keepValues } from "@/lib/keep-values";
 import { septims } from "@/lib/pricing";
+import { signedAmount } from "@/lib/transaction-kinds";
 
 const REASONS = ["Salaires", "Apport du gérant", "Retrait du gérant", "Correction de caisse"];
 
@@ -15,7 +16,7 @@ export function CashMovementForm({ balance }: { balance: number }) {
   const [amount, setAmount] = useState("");
   const value = Number(amount);
   const after = kind && amount !== "" && Number.isInteger(value) && value > 0
-    ? balance + (kind === "entree" ? value : -value)
+    ? balance + signedAmount(kind, value)
     : null;
 
   return (

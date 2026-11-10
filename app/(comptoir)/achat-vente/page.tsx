@@ -8,6 +8,7 @@ import { requireMember } from "@/lib/auth/session";
 import type { TransactionKind } from "@/lib/db/schema";
 import { septims } from "@/lib/pricing";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
+import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import { parisDay, registerCount, registerEntries, tillTotals, type RegisterFilter } from "@/lib/register";
 
 type Search = Record<"type" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
@@ -18,7 +19,7 @@ const PATH = "/achat-vente";
 const OPERATIONS = {
   vente: ["vente"],
   rachat: ["rachat"],
-  caisse: ["entree", "sortie"],
+  caisse: [...CASH_KINDS],
 } satisfies Record<string, TransactionKind[]>;
 
 function asOperation(value: string | undefined) {
@@ -79,10 +80,10 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
 
       {written && (
         <p className="notice" role="status">
-          {written.kind === "entree" || written.kind === "sortie" ? (
+          {isCashKind(written.kind) ? (
             <>
               Mouvement inscrit : {written.label},{" "}
-              {septims(written.kind === "entree" ? written.amount : -written.amount, { signed: true })}.
+              {septims(signedAmount(written.kind, written.amount), { signed: true })}.
             </>
           ) : (
             <>
