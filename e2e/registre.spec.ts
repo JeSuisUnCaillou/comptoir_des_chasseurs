@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, createTransactions, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import {
+  createMember,
+  createProduct,
+  createTransactions,
+  loginAs,
+  loginAsGerant,
+  newEmployeePage,
+  setRole,
+  uniqueName,
+} from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -118,6 +127,32 @@ test("annuler une ligne rétablit le stock, et seul l'auteur ou un gérant le pe
   await expect(row).toContainText("Annulée par");
   await expect(row.getByRole("button", { name: /Annuler/ })).toHaveCount(0);
   await expect(await stockOf(author, product)).toHaveText("5");
+});
+
+// The hidden button is not the only guard: the server refuses too. A gérant
+// demoted while the register is open still sees the button, and is refused.
+test("le serveur refuse d'annuler la ligne d'un autre à qui n'est plus gérant", async ({ browser }) => {
+  const product = uniqueName("Peau de horqueur");
+  await createProduct(product, { stock: 5 });
+  const { page: author } = await newEmployeePage(browser, "onmund");
+  await record(author, "vente", { product, quantity: 2 });
+
+  const username = uniqueName("faralda").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
+  const page = await (await browser.newContext()).newPage();
+  await loginAs(page, username, "mot-de-passe");
+  await page.goto("/achat-vente");
+  const row = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
+  const cancel = row.getByRole("button", { name: /Annuler/ });
+  await expect(cancel).toBeVisible();
+
+  await setRole(username, "employe");
+  page.once("dialog", (dialog) => dialog.accept());
+  await cancel.click();
+  await expect(row.locator(ALERT)).toHaveText("Seul un gérant peut annuler la ligne d'un autre membre.");
+  await page.reload();
+  await expect(row).not.toContainText("Annulée par");
+  await expect(await stockOf(page, product)).toHaveText("3");
 });
 
 test("le grand livre montre la caisse et les dernières écritures", async ({ browser }) => {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAs, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createMember, loginAs, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -68,4 +68,26 @@ test("un gérant réinitialise un mot de passe oublié", async ({ page, browser 
 
   const other = await (await browser.newContext()).newPage();
   await loginAs(other, username, "tout-neuf-123");
+});
+
+test("la liste des comptes est paginée", async ({ page }) => {
+  // 26 accounts, enough for a second page whatever the other tests create.
+  const tag = uniqueName("Abel");
+  for (let i = 1; i <= 26; i++) {
+    const n = String(i).padStart(2, "0");
+    await createMember(`${tag}-${n}`.toLowerCase(), "mot-de-passe", "employe", `${tag} ${n}`);
+  }
+  const last = `member-${tag}-26`.toLowerCase();
+  await loginAsGerant(page);
+  await page.goto("/membres");
+  const pages = page.getByRole("navigation", { name: "Pages des comptes" });
+  await expect(page.locator("tbody tr")).toHaveCount(25);
+  await expect(pages).toContainText(/Page 1 sur \d+/);
+  // The 26th of the group sorts after 25 others: it cannot be on the first page.
+  await expect(page.getByTestId(last)).toHaveCount(0);
+
+  await pages.getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(pages).toContainText(/Page 2 sur \d+/);
+  await expect(page.getByTestId(last)).toBeVisible();
 });
