@@ -91,6 +91,9 @@ export const stockMovements = pgTable("stock_movements", {
     .notNull()
     .references(() => members.id),
   reason: text("reason").notNull(),
+  // The register line that moved the stock (a sale, a buyback or its
+  // cancellation). Null for a movement made by hand on the Inventaire.
+  transactionId: integer("transaction_id").references(() => transactions.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

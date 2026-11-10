@@ -5,7 +5,8 @@ import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
 import type { ProductCategory } from "@/lib/db/schema";
-import { formatNumber, plural } from "@/lib/pricing";
+import { MovementTable } from "@/components/movement-table";
+import { formatNumber } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
@@ -26,12 +27,6 @@ function asDirection(value: string | undefined) {
 // name and Array.prototype.sort is stable, so names stay in order inside each group.
 const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { viande: 0, peau: 1 };
 const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 2;
-
-const dateTime = new Intl.DateTimeFormat("fr-FR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "Europe/Paris",
-});
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   await requireMember();
@@ -122,41 +117,10 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             <option value="sortie">Sorties</option>
           </select>
         </MemberDateFilters>
-        {movements.length === 0 ? (
-          <p className="muted">{filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}</p>
-        ) : (
-          <div className="table-wrap">
-            <table data-testid="historique">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Marchandise</th>
-                  <th className="num">Mouvement</th>
-                  <th className="num">Stock après</th>
-                  <th>Employé</th>
-                  <th>Motif</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movements.map((m) => (
-                  <tr key={m.id}>
-                    <td className="num">{dateTime.format(m.createdAt)}</td>
-                    <td>{m.product}</td>
-                    <td className={`num ${m.delta > 0 ? "plus" : "minus"}`}>
-                      {m.delta > 0 ? "+" : "−"}
-                      {formatNumber(Math.abs(m.delta))}
-                    </td>
-                    <td className="num">
-                      {formatNumber(m.stockAfter)} {plural(m.unit, m.stockAfter)}
-                    </td>
-                    <td>{m.member}</td>
-                    <td>{m.reason}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <MovementTable
+          movements={movements}
+          empty={filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}
+        />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages de l'historique" />
       </section>
     </>

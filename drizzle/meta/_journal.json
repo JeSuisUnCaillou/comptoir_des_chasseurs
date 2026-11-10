@@ -57,6 +57,13 @@
       "when": 1794318828724,
       "tag": "0007_prix-rachat-citoyen",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794337671841,
+      "tag": "0008_stock-movement-transaction",
+      "breakpoints": true
     }
   ]
 }
