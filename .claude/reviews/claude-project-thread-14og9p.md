@@ -45,3 +45,9 @@ Tête relue : 32888bd03e1e4d6a40539f6fdd8b6cdf5c14549b
 Correctif (filtre de type vide refusé par l'ancienne app), test rouge sans lui, vert avec ; relu par moi.
 
 Tête relue : f610610c92ce6e9c7c9bde330a0e53339295db23
+
+# Passe 7
+
+Correspondance ajustée sur un vrai export (noms des champs du cuir et des ajustements, caisse comparée à stats.treasury), test:legacy mis à la forme réelle ; relu par moi, rien de bloquant.
+
+Tête relue : e6a79e7e023e833e7a14d789da279ef51f1ea4f4
