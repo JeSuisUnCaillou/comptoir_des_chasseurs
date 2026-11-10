@@ -10,6 +10,7 @@ import { septims } from "@/lib/pricing";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import {
+  dayParam,
   parisDay,
   registerAuthors,
   registerCount,
@@ -33,16 +34,12 @@ function asOperation(value: string | undefined) {
   return value && Object.hasOwn(OPERATIONS, value) ? (value as keyof typeof OPERATIONS) : undefined;
 }
 
-function asDate(value: string | undefined) {
-  return value && parisDay(value) ? value : undefined;
-}
-
 export default async function AchatVente({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
   const search = await searchParams;
   const operation = asOperation(param(search.type));
-  let du = asDate(param(search.du));
-  let au = asDate(param(search.au));
+  let du = dayParam(param(search.du));
+  let au = dayParam(param(search.au));
   if (du && au && du > au) [du, au] = [au, du]; // a reversed range still means something
   const page = pageParam(search.page);
   const authors = await registerAuthors();

@@ -159,6 +159,11 @@ export function parisDay(value: string | undefined, offsetDays = 0): Date | unde
   return new Date(utc.getTime() - Number(parisHour.format(utc)) * 3600_000);
 }
 
+/** A "YYYY-MM-DD" date from the query string, or undefined when it is not one. */
+export function dayParam(value: string | undefined) {
+  return value && parisDay(value) ? value : undefined;
+}
+
 /** Today's date in Paris, as "YYYY-MM-DD". */
 export function parisToday(now = new Date()) {
   return parisDate.format(now);

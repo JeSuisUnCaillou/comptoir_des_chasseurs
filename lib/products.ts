@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, lt, sql, type SQL } from "drizzle-orm";
 import { byName, getDb, schema } from "@/lib/db";
 
 export async function activeProducts() {
@@ -19,12 +19,40 @@ export async function blacksmithLeatherPrice() {
   return row?.value ?? 6;
 }
 
-export async function movementCount() {
-  const [row] = await getDb().select({ total: count() }).from(schema.stockMovements);
+export type MovementFilter = {
+  /** Part of the merchandise's name. */
+  q?: string;
+  memberId?: number;
+  direction?: "in" | "out";
+  from?: Date;
+  to?: Date;
+};
+
+function movementConditions(filter: MovementFilter) {
+  const m = schema.stockMovements;
+  const where: SQL[] = [];
+  if (filter.q) where.push(ilike(schema.products.name, `%${filter.q.replace(/[\\%_]/g, "\\$&")}%`));
+  if (filter.memberId) where.push(eq(m.memberId, filter.memberId));
+  if (filter.direction) where.push(filter.direction === "in" ? gt(m.delta, 0) : lt(m.delta, 0));
+  if (filter.from) where.push(gte(m.createdAt, filter.from));
+  if (filter.to) where.push(lt(m.createdAt, filter.to));
+  return where.length ? and(...where) : undefined;
+}
+
+/** Number of stock movements matching the filter. */
+export async function movementCount(filter: MovementFilter = {}) {
+  const [row] = await getDb()
+    .select({ total: count() })
+    .from(schema.stockMovements)
+    .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
+    .where(movementConditions(filter));
   return row.total;
 }
 
-export async function recentMovements({ limit, offset = 0 }: { limit: number; offset?: number }) {
+export async function recentMovements(
+  filter: MovementFilter,
+  { limit, offset = 0 }: { limit: number; offset?: number },
+) {
   return getDb()
     .select({
       id: schema.stockMovements.id,
@@ -39,6 +67,7 @@ export async function recentMovements({ limit, offset = 0 }: { limit: number; of
     .from(schema.stockMovements)
     .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
     .innerJoin(schema.members, eq(schema.members.id, schema.stockMovements.memberId))
+    .where(movementConditions(filter))
     .orderBy(desc(schema.stockMovements.createdAt), desc(schema.stockMovements.id))
     .limit(limit)
     .offset(offset);

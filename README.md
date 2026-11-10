@@ -109,7 +109,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   ou une marchandise. Tout le monde les consulte ; seuls les gérants en
   ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
   suppriment, par les boutons de la page.
-- **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
+- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; l'historique
+  des mouvements se cherche par marchandise, en filtrant pendant qu'on tape,
+  et se filtre par employé, par sens, entrées ou sorties, et par dates, heure
+  de Paris), et pour les
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
   page Tarifs. Une marchandise peut avoir un second prix de rachat, pour les
