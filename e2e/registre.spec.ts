@@ -171,6 +171,14 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
   );
 });
 
+test("le grand livre met l'achat et la vente en avant, pas le mouvement de caisse", async ({ browser }) => {
+  const { page } = await newEmployeePage(browser, "brand-shei");
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Nouvel achat" })).toHaveClass(/btn-primary/);
+  await expect(page.getByRole("link", { name: "Nouvelle vente" })).toHaveClass(/btn-primary/);
+  await expect(page.getByRole("link", { name: "Mouvement de caisse" })).not.toHaveClass(/btn-primary/);
+});
+
 test("le registre est paginé", async ({ browser }) => {
   const { page, username } = await newEmployeePage(browser, "mjoll");
   await createTransactions(username, 30);

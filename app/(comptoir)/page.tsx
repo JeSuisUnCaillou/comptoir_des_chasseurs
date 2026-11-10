@@ -27,7 +27,7 @@ export default async function GrandLivre() {
             <h2>Bonjour, {member.name}</h2>
           </div>
           <div className="move-actions">
-            <Link className="btn" href="/achat-vente/achat">
+            <Link className="btn btn-primary" href="/achat-vente/achat">
               <ShoppingBasket size={16} /> Nouvel achat
             </Link>
             <Link className="btn btn-primary" href="/achat-vente/vente">
