@@ -166,3 +166,50 @@ test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", asyn
   await expect(filters.getByLabel("Mouvement")).toHaveValue("");
   await expect(history.getByRole("searchbox", { name: "Chercher une marchandise" })).toHaveValue("");
 });
+
+test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encore", async ({ page, browser }) => {
+  const name = uniqueName("Chaurus géant");
+  const employee = await newEmployeePage(browser, "Hadvar");
+  const p = employee.page;
+  await p.goto("/inventaire");
+
+  // Searching for it finds nothing; the button creates it under that name.
+  await p.getByLabel("Rechercher une marchandise").fill(name);
+  await expect(p.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+  await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
+  const form = p.getByRole("form", { name: "Nouvelle marchandise" });
+  await expect(form.getByLabel("Nom")).toHaveValue(name);
+  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Unité (au singulier)").fill("peau");
+  await form.getByLabel("Quantité entrée").fill("3");
+  await form.getByLabel("Motif").fill("chasse en montagne");
+  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+
+  const card = p.getByTestId(`stock-${name}`);
+  await expect(card.getByTestId("stock-value")).toHaveText("3");
+  await expect(card).toContainText("Peaux");
+  await expect(form).toBeHidden();
+  await expect(p.getByTestId("historique").getByRole("row").filter({ hasText: name })).toContainText(
+    /\+3.*3 peaux.*chasse en montagne/,
+  );
+
+  // Created without prices: the gérant finds it in Gérer les tarifs to set them.
+  await loginAsGerant(page);
+  await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
+  const row = page.getByRole("row").filter({ hasText: name });
+  await expect(row).toContainText("Peaux");
+  await expect(row.getByRole("cell", { name: "—" })).toHaveCount(2);
+
+  // A name already taken is refused, and nothing is recorded.
+  await p.getByLabel("Rechercher une marchandise").fill("");
+  await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
+  await form.getByLabel("Nom").fill(name);
+  await form.getByLabel("Quantité entrée").fill("1");
+  await form.getByLabel("Motif").fill("doublon");
+  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await expect(form.locator(ALERT)).toContainText("Une marchandise porte déjà ce nom");
+  await expect(form.getByLabel("Motif")).toHaveValue("doublon");
+  await form.getByRole("button", { name: "Annuler" }).click();
+  await p.getByLabel("Rechercher une marchandise").fill(name);
+  await expect(card.getByTestId("stock-value")).toHaveText("3");
+});
