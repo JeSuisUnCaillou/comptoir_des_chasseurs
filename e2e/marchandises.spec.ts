@@ -77,3 +77,13 @@ test("un employé ne voit pas la gestion des marchandises", async ({ browser }) 
   await employee.goto("/marchandises");
   await expect(employee).toHaveURL(/\/$/);
 });
+
+test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto("/marchandises");
+  await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+    "Ajouter une marchandise",
+    "Rachat du cuir par le forgeron",
+    "Toutes les marchandises",
+  ]);
+});
