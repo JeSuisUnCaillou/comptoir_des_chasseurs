@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import postgres from "postgres";
-import { loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
 test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqué à l'achat", async ({
   page,
@@ -28,7 +28,7 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   // The amount follows the box "citizen of Estemarche".
   await employee.goto("/achat-vente/achat");
   const purchase = employee.getByRole("region", { name: "Inscrire un achat" });
-  await purchase.getByLabel("Article ou marchandise").selectOption({ label: name });
+  await pickProduct(purchase, name);
   await purchase.getByLabel("Quantité").fill("10");
   const amount = purchase.getByLabel("Montant total (septims)");
   const citizen = purchase.getByLabel("Le vendeur est citoyen d'Estemarche");
@@ -41,8 +41,8 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   await expect(amount).toHaveValue("30");
   // Another merchandise, then back: the box starts unticked again.
   await citizen.check();
-  await purchase.getByLabel("Article ou marchandise").selectOption({ label: "Biche" });
-  await purchase.getByLabel("Article ou marchandise").selectOption({ label: name });
+  await pickProduct(purchase, "Biche");
+  await pickProduct(purchase, name);
   await expect(citizen).not.toBeChecked();
   await expect(amount).toHaveValue("30");
   await citizen.check();
@@ -56,7 +56,7 @@ test("sans prix citoyen, l'achat ne propose pas la case", async ({ browser }) =>
   const { page } = await newEmployeePage(browser, "onmund");
   await page.goto("/achat-vente/achat");
   const purchase = page.getByRole("region", { name: "Inscrire un achat" });
-  await purchase.getByLabel("Article ou marchandise").selectOption({ label: "Biche" });
+  await pickProduct(purchase, "Biche");
   await expect(purchase.getByLabel("Montant total (septims)")).not.toHaveValue("");
   await expect(purchase.getByLabel("Le vendeur est citoyen d'Estemarche")).toHaveCount(0);
 });

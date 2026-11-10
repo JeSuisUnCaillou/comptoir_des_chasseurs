@@ -1,4 +1,4 @@
-import { expect, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
 
@@ -15,6 +15,14 @@ export async function loginAs(page: Page, username: string, password: string) {
 
 export function loginAsGerant(page: Page) {
   return loginAs(page, GERANT.username, GERANT.password);
+}
+
+/** Picks a product in the "Article ou marchandise" field of a sale or purchase form, by typing its name. */
+export async function pickProduct(form: Locator, name: string) {
+  const box = form.getByRole("combobox", { name: "Article ou marchandise" });
+  await box.fill(name);
+  await form.getByRole("option", { name, exact: true }).click();
+  await expect(box).toHaveValue(name);
 }
 
 /** A name unique to this test run, so parallel tests don't collide. */

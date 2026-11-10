@@ -643,6 +643,14 @@ textarea:focus {
   border-radius: 3px;
 }
 
+.combobox-list .combobox-group {
+  padding-top: 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
 .combobox-list [role="option"] {
   cursor: pointer;
 }

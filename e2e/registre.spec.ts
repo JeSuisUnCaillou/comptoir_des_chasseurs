@@ -6,6 +6,7 @@ import {
   loginAs,
   loginAsGerant,
   newEmployeePage,
+  pickProduct,
   setRole,
   uniqueName,
 } from "./helpers";
@@ -20,7 +21,7 @@ async function record(
 ) {
   await page.goto(`/achat-vente/${kind}`);
   const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
-  await form.getByLabel("Article ou marchandise").selectOption({ label: product });
+  await pickProduct(form, product);
   await form.getByLabel("Quantité").fill(String(quantity));
   // The tariff fills the amount on its own.
   await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
@@ -72,7 +73,7 @@ test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
   await page.goto("/achat-vente");
   await page.getByRole("link", { name: /Nouvelle vente/ }).click();
   const form = page.getByRole("region", { name: "Inscrire une vente" });
-  await form.getByLabel("Article ou marchandise").selectOption({ label: product });
+  await pickProduct(form, product);
   await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 2 peaux");
   await form.getByLabel("Quantité").fill("5");
   await expect(form.locator(ALERT)).toContainText("il ne reste que 2 peaux");
@@ -89,7 +90,7 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
   await expect(page.getByTestId("registre")).toHaveCount(0);
   const form = page.getByRole("region", { name: "Inscrire une vente" });
-  await form.getByLabel("Article ou marchandise").selectOption("autre");
+  await pickProduct(form, "Autre article (hors stock)…");
   await form.getByLabel("Nom de l'article").fill(label);
   await form.getByLabel("Montant total (septims)").fill("500");
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
@@ -99,6 +100,44 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   await expect(
     page.getByTestId("registre").getByRole("row").filter({ hasText: label }),
   ).toContainText("+500 septims");
+});
+
+test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ browser }) => {
+  const product = uniqueName("Peau de mammouth");
+  await createProduct(product, { stock: 3 });
+  const { page } = await newEmployeePage(browser, "faralda");
+  for (const [kind, region, submit] of [
+    ["vente", "Inscrire une vente", "Confirmer la vente"],
+    ["achat", "Inscrire un achat", "Confirmer l'achat"],
+  ] as const) {
+    await page.goto(`/achat-vente/${kind}`);
+    const form = page.getByRole("region", { name: region });
+    const box = form.getByRole("combobox", { name: "Article ou marchandise" });
+    // Nothing chosen yet: the form is refused.
+    await form.getByRole("button", { name: submit }).click();
+    await expect(page).toHaveURL(new RegExp(`/achat-vente/${kind}$`));
+    await expect(box).toHaveValue("");
+
+    // The list keeps the categories and ends with the item outside the stock.
+    await box.click();
+    await expect(form.getByRole("listbox")).toContainText("Peaux");
+    await expect(form.getByRole("option").last()).toHaveText("Autre article (hors stock)…");
+
+    // Typing filters; Enter picks the product.
+    await box.fill(product.slice(-12));
+    await expect(form.getByRole("option")).toHaveText([product, "Autre article (hors stock)…"]);
+    await box.press("Enter");
+    await expect(box).toHaveValue(product);
+    await expect(form.getByRole("listbox")).toHaveCount(0);
+    await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 3 peaux");
+    await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
+
+    // A name typed without picking anything keeps the product already chosen.
+    await box.fill("introuvable-xyz");
+    await expect(form.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
+    await box.press("Escape");
+    await expect(box).toHaveValue(product);
+  }
 });
 
 test("annuler une ligne rétablit le stock, et seul l'auteur ou un gérant le peut", async ({ page, browser }) => {
@@ -229,7 +268,7 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
   await page.goto("/achat-vente/vente");
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   const amount = form.getByLabel("Montant total (septims)");
-  await form.getByLabel("Article ou marchandise").selectOption({ label: product });
+  await pickProduct(form, product);
   await form.getByLabel("Quantité").fill("4");
   await expect(amount).toHaveValue("12");
   await expect(amount).not.toBeEditable();
