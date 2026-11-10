@@ -47,8 +47,12 @@ test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
 
-  const search = page.getByRole("searchbox", { name: "Nom de la marchandise" });
+  const search = page.getByRole("searchbox", { name: "Chercher une marchandise" });
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
+  // The bar takes at least half of the page's width.
+  const bar = (await search.boundingBox())!;
+  const panel = (await peaux.boundingBox())!;
+  expect(bar.width).toBeGreaterThanOrEqual(panel.width / 2);
   await search.pressSequentially("ours");
   await expect(page).toHaveURL(/\/tarifs\?q=ours$/);
   await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();

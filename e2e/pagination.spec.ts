@@ -26,7 +26,7 @@ test("le catalogue des marchandises se cherche et se pagine", async ({ page }) =
   await expect(page).toHaveURL(/page=2/);
   await expect(pages).toContainText(/Page 2 sur \d+/);
 
-  const search = page.getByRole("searchbox", { name: "Nom de la marchandise" });
+  const search = page.getByRole("searchbox", { name: "Chercher une marchandise" });
   // The search filters as you type, with no button, and goes back to page 1.
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
   await search.pressSequentially("ours");

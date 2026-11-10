@@ -28,7 +28,7 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   // The catalogue is paginated: find the new product with the search.
   await expect(async () => {
     await page.goto("/marchandises");
-    await page.getByRole("searchbox", { name: "Nom de la marchandise" }).fill(name);
+    await page.getByRole("searchbox", { name: "Chercher une marchandise" }).fill(name);
     await expect(page).toHaveURL(/q=/);
     await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(1, { timeout: 1000 });
   }).toPass();

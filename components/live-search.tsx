@@ -9,7 +9,7 @@ const DELAY_MS = 250;
  * Product name search that filters as you type: it writes `q` to the URL
  * (back to page 1) after a short pause, and the server page filters on it.
  */
-export function LiveSearch({ label = "Chercher une marchandise" }: { label?: string }) {
+export function LiveSearch() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,14 +49,14 @@ export function LiveSearch({ label = "Chercher une marchandise" }: { label?: str
   }
 
   return (
-    <form className="inline-form filters" role="search" aria-label={label} onSubmit={(e) => e.preventDefault()}>
+    <form className="inline-form filters live-search" role="search" aria-label="Recherche" onSubmit={(e) => e.preventDefault()}>
       <input
         name="q"
         type="search"
         value={value}
         onChange={(e) => search(e.target.value)}
         placeholder="Nom de la marchandise"
-        aria-label="Nom de la marchandise"
+        aria-label="Chercher une marchandise"
         maxLength={100}
       />
     </form>

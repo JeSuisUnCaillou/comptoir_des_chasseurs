@@ -802,6 +802,11 @@ tr.cancelled td:last-child {
   margin-bottom: 16px;
 }
 
+/* At least half of its container, the whole width on a phone. */
+.inline-form.live-search input {
+  width: max(50%, min(100%, 320px));
+}
+
 @media (max-width: 600px) {
   .tx-grid {
     grid-template-columns: 1fr;
