@@ -41,7 +41,7 @@ utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone,
-un peu de stock et quelques annonces si la base est neuve (sans jamais rien écraser).
+un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
 
@@ -96,14 +96,21 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   de viande. L'auteur d'une annonce ou un gérant peut la décrocher. Le Grand
   livre montre tout le tableau d'un coup, sans pagination (choix du
   propriétaire) ; la page Annonces le montre 12 parchemins par page.
+- **Fournisseurs** : une carte par fournisseur, avec son lieu, une note
+  (qui il représente…) et les marchandises du comptoir qu'il vend, chacune à
+  son prix (« 1 septim pour 6 pièces »). Une recherche trouve un nom, un lieu
+  ou une marchandise. Tout le monde les consulte ; seuls les gérants en
+  ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
+  suppriment, par les boutons de la page.
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
   page Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
-  marchandises (avec une recherche par nom), les membres et les annonces.
+  marchandises (avec une recherche par nom), les membres, les annonces et les
+  fournisseurs (12 par page).
 - Les marchandises (cartes du stock, Gérer les tarifs, sections des Tarifs,
-  choix d'Achat/Vente) et les membres sont rangés par nom, de A à Z, sans
+  choix d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A à Z, sans
   tenir compte des majuscules ni des accents ; les marchandises archivées
   viennent en dernier. Le registre, l'historique du stock et les annonces
   restent du plus récent au plus ancien.

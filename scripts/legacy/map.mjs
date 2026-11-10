@@ -259,9 +259,48 @@ export function mapLegacy(data, members) {
   }
   announcements.sort((a, b) => a.createdAt - b.createdAt);
 
-
-  // Kept in the export file, with no place in the new app yet.
-  const notImported = { fournisseurs: list(data.suppliers, "suppliers").length };
+  // --- Suppliers and what they sell, by merchandise name.
+  const suppliers = [];
+  const supplierNames = new Set();
+  for (const s of list(data.suppliers, "suppliers")) {
+    const name = s.name?.trim();
+    if (!name) continue;
+    if (s.active === false) {
+      warn(`Fournisseur ${name} ignoré : désactivé dans l'ancienne app.`);
+      continue;
+    }
+    if (supplierNames.has(key(name))) {
+      warn(`Fournisseur ${name} ignoré : nom en double.`);
+      continue;
+    }
+    supplierNames.add(key(name));
+    const offers = [];
+    for (const o of Array.isArray(s.offers) ? s.offers : []) {
+      const item = o.item_name ?? itemNameById.get(o.item_id);
+      const price = int(o.price_septims ?? o.price, `prix de ${item} chez ${name}`, warn);
+      if (!item || !products.has(key(item))) {
+        warn(`Offre de ${name} ignorée : marchandise inconnue (${item ?? o.item_id}).`);
+        continue;
+      }
+      if (price === null || price < 0) {
+        warn(`Offre de ${name} ignorée : prix illisible pour ${item}.`);
+        continue;
+      }
+      const productName = products.get(key(item)).name;
+      if (offers.some((offer) => offer.productName === productName)) {
+        warn(`Offre de ${name} ignorée : ${productName} en double.`);
+        continue;
+      }
+      offers.push({ productName, price, qty: positive(o.lot_qty) ?? 1 });
+    }
+    suppliers.push({
+      name,
+      place: s.locality?.trim() ?? "",
+      notes: s.notes?.trim() ?? "",
+      createdAt: date(s.created_at),
+      offers,
+    });
+  }
 
   return {
     newMembers: newMembers.map(({ id, username, name }) => ({ ref: id, username, name })),
@@ -270,8 +309,8 @@ export function mapLegacy(data, members) {
     movements,
     transactions,
     announcements,
+    suppliers,
     warnings,
-    notImported,
   };
 }
 
@@ -288,7 +327,7 @@ function list(value, field) {
   return Array.isArray(inner) ? inner : [];
 }
 
-function key(value) {
+export function key(value) {
   return String(value ?? "")
     .trim()
     .toLocaleLowerCase("fr");

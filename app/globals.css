@@ -1126,3 +1126,83 @@ tr.fresh td {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* Suppliers */
+.supplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.supplier-card {
+  background: rgb(31 39 35 / 0.92);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.supplier-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.supplier-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 8px;
+}
+
+.supplier-place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-gold);
+}
+
+.supplier-place svg {
+  color: var(--gold);
+}
+
+.supplier-notes {
+  margin: 12px 0 0;
+}
+
+.supplier-offers-title {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 18px 0 6px;
+}
+
+.supplier-offers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.supplier-offers li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.supplier-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.supplier-price strong {
+  color: var(--gold-strong);
+}

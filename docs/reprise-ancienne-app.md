@@ -9,6 +9,7 @@ au lancement, jamais lus dans l'environnement ni écrits dans le dépôt.
 npm run legacy:export
 npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview --essai
 npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview
+npm run legacy:import -- legacy-export/ancienne-app-….json --cible=prod --seulement=fournisseurs
 ```
 
 Sous Windows dans Git Bash, lancer `winpty node scripts/legacy/export.mjs`
@@ -23,15 +24,21 @@ frappe.
    du cuir et des viandes, registre complet, trésorerie, fournisseurs,
    annonces. Prendre un compte de gérant, sinon des routes manquent.
 2. `legacy:import` lit ce fichier et **remplace** dans la base cible les
-   marchandises, l'historique du stock, le registre et les annonces, et met
+   marchandises, l'historique du stock, le registre, les annonces et les
+   fournisseurs, et met
    à jour le prix du cuir chez le forgeron. Les membres existants ne changent
    pas : chaque ligne est rattachée au membre du même identifiant ou du même
    nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en
    employé et sans mot de passe (identifiant tiré du nom, sans accents ni
    espaces) ; le gérant lui en donne un depuis Membres.
    Les ajustements de trésorerie deviennent des mouvements de caisse
-   « Ajustement de trésorerie » du registre. Les fournisseurs restent dans le
-   fichier tant que l'app n'a pas de place pour eux.
+   « Ajustement de trésorerie » du registre. Un fournisseur désactivé dans
+   l'ancienne app n'est pas repris ; ce qu'il vend est rattaché aux
+   marchandises par leur nom.
+   - `--seulement=fournisseurs` ne remplace que les fournisseurs et ce qu'ils
+     vendent, rattaché aux marchandises déjà dans la base cible : le registre,
+     le stock et les annonces ne bougent pas. C'est ainsi qu'on les reprend
+     en prod après le premier import.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
      « écraser la preview » ou « écraser la prod » pour confirmer
      (`--cible=local`, pour le test, n'accepte qu'une base sur la machine).
