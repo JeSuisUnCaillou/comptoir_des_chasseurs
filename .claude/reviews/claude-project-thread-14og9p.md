@@ -51,3 +51,14 @@ Tête relue : f610610c92ce6e9c7c9bde330a0e53339295db23
 Correspondance ajustée sur un vrai export (noms des champs du cuir et des ajustements, caisse comparée à stats.treasury), test:legacy mis à la forme réelle ; relu par moi, rien de bloquant.
 
 Tête relue : e6a79e7e023e833e7a14d789da279ef51f1ea4f4
+
+# Passe 8
+
+Tête relue : bca67f2 (comptes créés par l'import), relecteurs bugs et architecte.
+
+- Bugs et architecte, identifiant des comptes créés hors de la règle [a-z0-9._-] et collision possible : corrigée en 304cf25 (test avec accents et collision).
+- Ajout demandé par le propriétaire : --base et --oui pour l'import en une ligne, couvert par test:legacy.
+
+Rien de bloquant.
+
+Tête relue : 304cf25c0be3b63e673b787692a29544e517d09e
