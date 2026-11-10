@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
+import { LiveSearch } from "@/components/live-search";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { byName, getDb, schema } from "@/lib/db";
@@ -39,17 +40,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
       <section className="panel">
         <div className="eyebrow">Catalogue</div>
         <h2>Toutes les marchandises</h2>
-        <form className="inline-form filters" method="get" aria-label="Chercher une marchandise">
-          <input name="q" type="search" defaultValue={q} placeholder="Nom de la marchandise" aria-label="Nom de la marchandise" />
-          <button className="btn btn-small" type="submit">
-            Chercher
-          </button>
-          {q && (
-            <Link className="btn btn-small btn-ghost" href="/marchandises">
-              Tout afficher
-            </Link>
-          )}
-        </form>
+        <LiveSearch />
         {products.length === 0 && <p className="muted">Aucune marchandise ne correspond.</p>}
         <div className="table-wrap">
           <table>

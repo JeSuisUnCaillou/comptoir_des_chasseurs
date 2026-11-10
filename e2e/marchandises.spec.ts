@@ -29,7 +29,6 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   await expect(async () => {
     await page.goto("/marchandises");
     await page.getByRole("searchbox", { name: "Nom de la marchandise" }).fill(name);
-    await page.getByRole("button", { name: "Chercher" }).click();
     await expect(page).toHaveURL(/q=/);
     await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(1, { timeout: 1000 });
   }).toPass();

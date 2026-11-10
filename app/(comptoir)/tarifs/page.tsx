@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Settings2, Tag } from "lucide-react";
+import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
 import { PriceCalculator } from "@/components/price-calculator";
 import { requireMember } from "@/lib/auth/session";
+import { param } from "@/lib/pagination";
 import type { Product } from "@/lib/db/schema";
 import {
   batchMargin,
@@ -19,7 +21,10 @@ function priced(p: Product) {
   return p.buyPrice != null || p.sellPrice != null;
 }
 
+const NO_MATCH = <p className="muted">Aucune marchandise ne correspond.</p>;
+
 function GoodsTable({ products }: { products: Product[] }) {
+  if (products.length === 0) return NO_MATCH;
   return (
     <div className="table-wrap">
       <table>
@@ -66,13 +71,17 @@ function GoodsTable({ products }: { products: Product[] }) {
   );
 }
 
-export default async function Tarifs() {
+type Search = { q?: string | string[] };
+
+export default async function Tarifs({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
+  const q = (param((await searchParams).q) ?? "").trim().slice(0, 100).toLocaleLowerCase("fr");
   const [products, blacksmith] = await Promise.all([activeProducts(), blacksmithLeatherPrice()]);
-  const hides = products.filter((p) => p.category === "peau" && priced(p));
+  const listed = products.filter((p) => !q || p.name.toLocaleLowerCase("fr").includes(q));
+  const hides = listed.filter((p) => p.category === "peau" && priced(p));
   const leather = products.find((p) => p.category === "cuir");
-  const meats = products.filter((p) => p.category === "viande" && priced(p));
-  const goods = products.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
+  const meats = listed.filter((p) => p.category === "viande" && priced(p));
+  const goods = listed.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
   const calculable = products.filter(priced);
 
   return (
@@ -85,6 +94,7 @@ export default async function Tarifs() {
           </Link>
         )}
       </div>
+      <LiveSearch />
 
       <section className="panel" aria-labelledby="peaux">
         <div className="eyebrow">Grille du comptoir</div>
@@ -92,39 +102,41 @@ export default async function Tarifs() {
           <Tag size={18} style={{ verticalAlign: "-2px" }} /> Tarifs des peaux
         </h2>
         <p className="muted">Prix définis par la gérance et rentabilité des transformations.</p>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Animal</th>
-                <th>Transformation</th>
-                <th className="num">Rachat / peau</th>
-                <th className="num">Vente / peau</th>
-                <th className="num">Bénéfice / lot</th>
-              </tr>
-            </thead>
-            <tbody>
-              {hides.map((p) => {
-                const gain = batchMargin(p, blacksmith);
-                return (
-                  <tr key={p.id}>
-                    <td>
-                      <strong>{p.name}</strong>
-                    </td>
-                    <td>
-                      {p.hidesPerBatch && p.leatherPerBatch
-                        ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
-                        : "—"}
-                    </td>
-                    <td className="num minus">{p.buyPrice == null ? "—" : septims(p.buyPrice)}</td>
-                    <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
-                    <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {hides.length === 0 ? NO_MATCH : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Animal</th>
+                  <th>Transformation</th>
+                  <th className="num">Rachat / peau</th>
+                  <th className="num">Vente / peau</th>
+                  <th className="num">Bénéfice / lot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hides.map((p) => {
+                  const gain = batchMargin(p, blacksmith);
+                  return (
+                    <tr key={p.id}>
+                      <td>
+                        <strong>{p.name}</strong>
+                      </td>
+                      <td>
+                        {p.hidesPerBatch && p.leatherPerBatch
+                          ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
+                          : "—"}
+                      </td>
+                      <td className="num minus">{p.buyPrice == null ? "—" : septims(p.buyPrice)}</td>
+                      <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
+                      <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         <p className="small muted" style={{ marginTop: 14 }}>
           Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
           {septims(blacksmith)}. Ils sont bruts, hors frais.

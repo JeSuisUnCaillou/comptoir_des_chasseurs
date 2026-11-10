@@ -40,3 +40,29 @@ test("le calculateur donne rachat, vente et transformation", async ({ page }) =>
   await expect(calc).toContainText("Tarif de gros");
   await expect(calc.getByTestId("calc-benefice")).toHaveText("+200 septims");
 });
+
+test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
+  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
+  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+
+  const search = page.getByRole("searchbox", { name: "Nom de la marchandise" });
+  await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
+  await search.pressSequentially("ours");
+  await expect(page).toHaveURL(/\/tarifs\?q=ours$/);
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
+  await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(2);
+  // The calculator still offers every product.
+  await expect(page.getByTestId("calculateur").getByLabel("Marchandise").getByRole("option", { name: "Biche" })).toHaveCount(1);
+
+  await search.fill("venaison");
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+
+  await search.clear();
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+});

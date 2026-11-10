@@ -107,7 +107,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
-  page Tarifs.
+  page Tarifs. Tarifs et Gérer les tarifs ont la même recherche par nom, qui
+  filtre pendant qu'on tape, comme celle de l'Inventaire ; sur Tarifs, le
+  calculateur garde toutes les marchandises.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
