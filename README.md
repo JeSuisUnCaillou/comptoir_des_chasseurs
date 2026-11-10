@@ -76,8 +76,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
-  moins les mouvements de caisse), le total des ventes, le total des rachats et
-  le solde ventes − rachats. En dessous, la caisse du jour et des 7 derniers
+  moins les mouvements de caisse, dont elle donne le total), le total des
+  ventes, le total des rachats et le solde ventes − rachats. En dessous, la caisse du jour et des 7 derniers
   jours, les boutons Nouvel achat, Nouvelle vente et Mouvement de caisse, et
   les dernières écritures.
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et

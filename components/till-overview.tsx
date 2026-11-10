@@ -3,13 +3,16 @@ import type { Till } from "@/lib/register";
 
 /** The four tiles of the till since the opening, as in the old app. */
 export function TillOverview({ till }: { till: Till }) {
-  const margin = till.sales - till.buybacks;
+  const movements = till.inflows - till.outflows;
   return (
     <div className="stats till-overview">
       <div className="stat stat-accent-gold" data-testid="caisse-totale">
         <div className="stat-label">Trésorerie actuelle</div>
         <div className={`stat-value ${till.balance < 0 ? "minus" : ""}`}>{septims(till.balance)}</div>
-        <div className="small muted">Solde calculé depuis les écritures</div>
+        <div className="small muted">
+          Solde calculé depuis les écritures
+          {movements !== 0 && `, dont ${septims(movements, { signed: true })} en mouvements de caisse`}
+        </div>
       </div>
       <div className="stat stat-accent-green" data-testid="total-ventes">
         <div className="stat-label">Total des ventes</div>
@@ -21,7 +24,7 @@ export function TillOverview({ till }: { till: Till }) {
       </div>
       <div className="stat stat-accent-gold" data-testid="solde-ventes-rachats">
         <div className="stat-label">Solde ventes − rachats</div>
-        <div className={`stat-value ${margin < 0 ? "minus" : ""}`}>{septims(margin)}</div>
+        <div className={`stat-value ${till.margin < 0 ? "minus" : ""}`}>{septims(till.margin)}</div>
       </div>
     </div>
   );

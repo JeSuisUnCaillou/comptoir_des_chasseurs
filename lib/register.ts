@@ -60,12 +60,28 @@ export async function registerCount(filter: RegisterFilter = {}) {
   return row.total;
 }
 
-export type Till = { sales: number; buybacks: number; inflows: number; outflows: number; balance: number };
+export type Till = {
+  sales: number;
+  buybacks: number;
+  inflows: number;
+  outflows: number;
+  /** What the till holds: sales and inflows minus buybacks and outflows. */
+  balance: number;
+  /** Sales minus buybacks, cash movements left out. */
+  margin: number;
+};
 
-type TillSums = Omit<Till, "balance">;
+type TillSums = Omit<Till, "balance" | "margin">;
 
 function till({ sales, buybacks, inflows, outflows }: TillSums): Till {
-  return { sales, buybacks, inflows, outflows, balance: sales + inflows - buybacks - outflows };
+  return {
+    sales,
+    buybacks,
+    inflows,
+    outflows,
+    balance: sales + inflows - buybacks - outflows,
+    margin: sales - buybacks,
+  };
 }
 
 const TILL_FIELDS: Record<keyof TillSums, TransactionKind> = {
