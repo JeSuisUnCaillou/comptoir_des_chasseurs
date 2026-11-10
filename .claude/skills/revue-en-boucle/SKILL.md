@@ -70,17 +70,30 @@ chaque passe s'y ajoute.
    règle métier (prix, stock, rôles). Les correctifs, les tests, la doc, le
    harness, l'infra et les petites retouches d'une fonctionnalité existante
    (un mot, une valeur par défaut, une couleur) partent. Dans le doute, c'est
-   une fonctionnalité et elle attend. Pour merger, suis la PR
-   (`subscribe_pr_activity`), et sur son événement CI verte merge-la avec
-   `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
-   `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
-   qu'un commit poussé après la revue ne soit jamais mergé sans relecture. Une PR en conflit avec `main` n'a pas de
-   CI sur un nouveau push, donc pas d'événement vert : avant d'attendre, lis
-   son état de merge (`pull_request_read`), et si elle est en conflit, merge
-   `main` dedans, lance la suite, pousse, et refais un tour de boucle, pour
-   que le fichier de revue se ferme sur le commit de merge et que ce soit lui
-   l'`expectedHeadSha`. Choisi par le propriétaire le 2026-11-09, qui a dit
-   « merge it yourself » sur une petite PR de correctif.
+   une fonctionnalité et elle attend. Choisi par le propriétaire le
+   2026-11-09, qui a dit « merge it yourself » sur une petite PR de
+   correctif.
+
+   **Pour merger une PR qui part, ou que le propriétaire a approuvée** :
+   - Avant d'attendre, lis son état de merge (`pull_request_read`). Une PR
+     en conflit avec `main` n'a pas de CI sur un nouveau push : merge `main`
+     dedans, lance la suite, pousse, et refais un tour de boucle, pour que le
+     fichier de revue se ferme sur le commit de merge.
+   - Suis la PR (`subscribe_pr_activity`) **et** programme-toi un rappel
+     avec `send_later` dans 3 minutes. Un tour qui finit en attendant la CI
+     a toujours un rappel programmé : la fin du job e2e ne réveille pas la
+     session, et le seul `check_suite.completed` arrive quand la suite
+     Vercel finit, avant le job (vu le 2026-11-10 sur #23 et #26, que le
+     propriétaire a dû réclamer ; `.claude/audits/2026-11-10-harness-ci.md`).
+   - À chaque réveil, rappel ou événement, lis le check run « Build et tests
+     e2e » de la tête (`pull_request_read`, `get_check_runs`). Vert : merge
+     avec `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
+     `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
+     qu'un commit poussé après la revue ne soit jamais mergé sans relecture.
+     En file ou en cours : un nouveau rappel dans 2 minutes. Rouge : c'est
+     une correction, et la boucle repart.
+   - Toujours pas fini 20 minutes après le push : dis au propriétaire quel
+     check bloque, et arrête les rappels.
 
 8. **Pèse les restes.** Liste ce que le travail laisse ouvert : les questions
    que tu t'es posées ou as posées au propriétaire sans les trancher, les
