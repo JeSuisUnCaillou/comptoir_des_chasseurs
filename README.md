@@ -116,8 +116,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   Tarifs et Gérer les tarifs ont la même recherche par nom, qui filtre
   pendant qu'on tape, comme celle de l'Inventaire. Tarifs montre d'abord les
   tarifs du cuir et le calculateur, dont le choix de la marchandise se
-  cherche en tapant parmi toutes les marchandises, puis la recherche et les
-  tables qu'elle filtre.
+  cherche en tapant parmi toutes les marchandises qui ont un prix, sans
+  tenir compte de la recherche, puis la recherche et les tables qu'elle
+  filtre.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).

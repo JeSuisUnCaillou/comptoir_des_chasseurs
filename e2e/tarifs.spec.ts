@@ -72,7 +72,7 @@ test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
   await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
   await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(2);
-  // The calculator still offers every product.
+  // The calculator still offers every priced product.
   const calc = page.getByTestId("calculateur");
   await calc.getByRole("combobox", { name: "Marchandise" }).click();
   await expect(calc.getByRole("option", { name: "Biche", exact: true })).toHaveCount(1);
