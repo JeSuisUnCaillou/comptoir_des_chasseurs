@@ -74,10 +74,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 ## Pages
 
-- **Grand livre** : la caisse du jour, des 7 derniers jours et depuis
-  l'ouverture (ventes encaissées moins achats payés, plus ou moins les
-  mouvements de caisse), les boutons Nouvel achat, Nouvelle vente et Mouvement
-  de caisse, et les dernières écritures.
+- **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
+  app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
+  moins les mouvements de caisse, dont elle donne le total), le total des
+  ventes, le total des rachats et le solde ventes − rachats. En dessous, la caisse du jour et des 7 derniers
+  jours, les boutons Nouvel achat, Nouvelle vente et Mouvement de caisse, et
+  les dernières écritures.
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une écriture porte sur une

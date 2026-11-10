@@ -164,7 +164,8 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
   await page.getByRole("link", { name: "Grand livre" }).click();
   await expect(page.getByTestId("caisse-jour")).toContainText("Aujourd'hui");
   await expect(page.getByTestId("caisse-jour")).toContainText(/septims? encaissés/);
-  await expect(page.getByTestId("caisse-totale")).toBeVisible();
+  await expect(page.getByTestId("caisse-semaine")).toContainText("7 derniers jours");
+  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
   await expect(page.getByTestId("registre").getByRole("row").filter({ hasText: product })).toContainText(
     "+16 septims",
   );
@@ -349,4 +350,40 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await table.getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /Annuler/ }).click();
   await expect(table.getByRole("row").filter({ hasText: reason })).toContainText("Annulée");
   await expect.poll(movementsTill).toBe(tillBefore + 50);
+});
+
+test("le grand livre montre la trésorerie, les ventes, les rachats et leur solde", async ({ page, browser }) => {
+  // Amounts far above what other tests write, so their lines cannot blur the deltas.
+  const { username } = await newEmployeePage(browser, "hadvar");
+  const tiles = async () => {
+    await page.goto("/");
+    const read = async (id: string) =>
+      septimsValue((await page.getByTestId(id).locator(".stat-value").textContent())!);
+    return {
+      treasury: await read("caisse-totale"),
+      sales: await read("total-ventes"),
+      buybacks: await read("total-rachats"),
+      margin: await read("solde-ventes-rachats"),
+    };
+  };
+  await loginAsGerant(page);
+  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
+  await expect(page.getByTestId("caisse-totale")).toContainText("Solde calculé depuis les écritures");
+  await expect(page.getByTestId("total-ventes")).toContainText("Total des ventes");
+  await expect(page.getByTestId("total-rachats")).toContainText("Total des rachats");
+  await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
+
+  const before = await tiles();
+  await createTransactions(username, 1, { amount: 5_000_000 });
+  await createTransactions(username, 1, { amount: 2_000_000, kind: "rachat" });
+  const after = await tiles();
+
+  const near = (delta: number, expected: number) => {
+    expect(delta).toBeGreaterThan(expected - 10_000);
+    expect(delta).toBeLessThan(expected + 10_000);
+  };
+  near(after.sales - before.sales, 5_000_000);
+  near(after.buybacks - before.buybacks, 2_000_000);
+  near(after.margin - before.margin, 3_000_000);
+  near(after.treasury - before.treasury, 3_000_000);
 });
