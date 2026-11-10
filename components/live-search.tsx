@@ -13,9 +13,23 @@ export function LiveSearch({ label = "Chercher une marchandise" }: { label?: str
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [value, setValue] = useState(searchParams.get("q") ?? "");
+  const urlQuery = searchParams.get("q") ?? "";
+  const [value, setValue] = useState(urlQuery);
+  const [seenQuery, setSeenQuery] = useState(urlQuery);
   const [, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // The last query this field wrote to the URL: its arrival must not overwrite what was typed since.
+  const written = useRef(urlQuery);
+
+  // The URL changed from elsewhere (a menu link, the back button): show its query.
+  if (urlQuery !== seenQuery) {
+    setSeenQuery(urlQuery);
+    if (urlQuery !== written.current) {
+      written.current = urlQuery;
+      clearTimeout(timer.current);
+      setValue(urlQuery);
+    }
+  }
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -28,6 +42,7 @@ export function LiveSearch({ label = "Chercher une marchandise" }: { label?: str
       if (q) query.set("q", q);
       else query.delete("q");
       query.delete("page");
+      written.current = q;
       const qs = query.toString();
       startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
     }, DELAY_MS);

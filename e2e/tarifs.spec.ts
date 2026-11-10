@@ -65,4 +65,15 @@ test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
   await search.clear();
   await expect(page).toHaveURL(/\/tarifs$/);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+
+  // Leaving the search by the menu or the back button shows the URL's query in the field.
+  await search.pressSequentially("biche");
+  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
+  await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" }).click();
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(search).toHaveValue("");
+  await page.goBack();
+  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
+  await expect(search).toHaveValue("biche");
 });
