@@ -15,3 +15,12 @@ Tête relue : f287624 (table à part et chargement, demandés par Caillou)
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : f28762432da9ecc983033d65563262c2643b2e5b
+
+# Passe 3
+
+Tête relue : ebcdc0c (affichage d'office sous 10 résultats, demandé par Caillou)
+
+- relecteur-bugs : aucune trouvaille.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : ebcdc0c58cd39974ed20eb70bf3fa4596977a9d0
