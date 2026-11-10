@@ -657,8 +657,16 @@ textarea:focus {
   gap: 12px;
 }
 
-.unpriced-toggle {
+.unpriced {
   margin-top: 12px;
+}
+
+.unpriced > .btn {
+  margin-bottom: 12px;
+}
+
+.unpriced > .btn .link-spinner {
+  margin-left: 0;
 }
 
 /* A gérant's pencil at the end of a price row. */

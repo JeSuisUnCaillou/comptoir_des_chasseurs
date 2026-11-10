@@ -2,11 +2,13 @@ import Link from "next/link";
 import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
 import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
+import { PendingSpinner } from "@/components/nav-link";
 import { PriceCalculator } from "@/components/price-calculator";
 import { requireMember } from "@/lib/auth/session";
 import { param } from "@/lib/pagination";
 import type { Product } from "@/lib/db/schema";
 import {
+  CATEGORY_LABELS,
   batchMargin,
   margin,
   rate,
@@ -22,15 +24,6 @@ function priced(p: Product) {
 }
 
 const NO_MATCH = <p className="muted">Aucune marchandise ne correspond.</p>;
-
-/** The product's name, flagged when it has no price yet (shown only on request). */
-function ProductName({ product }: { product: Product }) {
-  return (
-    <>
-      <strong>{product.name}</strong> {!priced(product) && <span className="badge">Sans tarif</span>}
-    </>
-  );
-}
 
 /** A gérant's pencil to the product's form in Gérer les tarifs, at the end of its row. */
 function EditCell({ product, canEdit }: { product: Product; canEdit: boolean }) {
@@ -85,7 +78,7 @@ function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boole
             return (
               <tr key={p.id}>
                 <td>
-                  <ProductName product={p} />
+                  <strong>{p.name}</strong>
                 </td>
                 <td className="num minus">
                   {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
@@ -123,8 +116,21 @@ function showsUnpriced(search: Search, table: Table) {
   return param(search[`${table}-sans-tarif`]) === "1";
 }
 
-/** The button under a table that shows or hides its products without a price, keeping the rest of the address. */
-function UnpricedToggle({ search, table }: { search: Search; table: Table }) {
+/**
+ * Under a table, the button that shows or hides its products without a price,
+ * keeping the rest of the address, and those products in a table of their own.
+ */
+function Unpriced({
+  search,
+  table,
+  products,
+  canEdit,
+}: {
+  search: Search;
+  table: Table;
+  products: Product[];
+  canEdit: boolean;
+}) {
   const shown = showsUnpriced(search, table);
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(search)) {
@@ -134,7 +140,7 @@ function UnpricedToggle({ search, table }: { search: Search; table: Table }) {
   if (!shown) query.set(`${table}-sans-tarif`, "1");
   const qs = query.toString();
   return (
-    <div className="unpriced-toggle">
+    <div className="unpriced">
       <Link className="btn btn-small" href={qs ? `/tarifs?${qs}` : "/tarifs"} scroll={false}>
         {shown ? (
           <>
@@ -145,7 +151,39 @@ function UnpricedToggle({ search, table }: { search: Search; table: Table }) {
             <Eye size={14} /> Voir les marchandises sans tarif
           </>
         )}
+        <PendingSpinner testId="sans-tarif-pending" />
       </Link>
+      {shown &&
+        (products.length === 0 ? (
+          <p className="muted">Aucune marchandise sans tarif.</p>
+        ) : (
+          <div className="table-wrap">
+            <table aria-label="Marchandises sans tarif">
+              <thead>
+                <tr>
+                  <th>Marchandise sans tarif</th>
+                  {table === "chasse" && <th>Catégorie</th>}
+                  <th className="num">Stock</th>
+                  {canEdit && <th aria-label="Modifier" />}
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <strong>{p.name}</strong>
+                    </td>
+                    {table === "chasse" && <td>{CATEGORY_LABELS[p.category]}</td>}
+                    <td className="num">
+                      {formatNumber(p.stock)} {plural(p.unit, p.stock)}
+                    </td>
+                    <EditCell product={p} canEdit={canEdit} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
     </div>
   );
 }
@@ -161,13 +199,12 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(), blacksmithLeatherPrice()]);
   const canEdit = member.role === "gerant";
-  const allHides = showsUnpriced(search, "peaux");
-  const allHunted = showsUnpriced(search, "chasse");
-  const hides = matching(products, search.peaux).filter((p) => p.category === "peau" && (allHides || priced(p)));
-  const hunted = matching(products, search.chasse);
+  const allHides = matching(products, search.peaux).filter((p) => p.category === "peau");
+  const hides = allHides.filter(priced);
+  const hunted = matching(products, search.chasse).filter((p) => p.category !== "peau" && p.category !== "cuir");
   const leather = products.find((p) => p.category === "cuir");
-  const meats = hunted.filter((p) => p.category === "viande" && (allHunted || priced(p)));
-  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && (allHunted || priced(p)));
+  const meats = hunted.filter((p) => p.category === "viande" && priced(p));
+  const goods = hunted.filter((p) => p.category !== "viande" && priced(p));
   const calculable = products.filter(priced);
 
   return (
@@ -246,7 +283,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
                   return (
                     <tr key={p.id}>
                       <td>
-                        <ProductName product={p} />
+                        <strong>{p.name}</strong>
                       </td>
                       <td>
                         {p.hidesPerBatch && p.leatherPerBatch
@@ -267,11 +304,11 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
             </table>
           </div>
         )}
-        <UnpricedToggle search={search} table="peaux" />
         <p className="small muted" style={{ marginTop: 14 }}>
           Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
           {septims(blacksmith)}. Ils sont bruts, hors frais.
         </p>
+        <Unpriced search={search} table="peaux" products={allHides.filter((p) => !priced(p))} canEdit={canEdit} />
       </section>
 
       <section className="panel" aria-labelledby="chasse">
@@ -283,7 +320,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <GoodsTable products={meats} canEdit={canEdit} />
         <h3>Autres ressources</h3>
         <GoodsTable products={goods} canEdit={canEdit} />
-        <UnpricedToggle search={search} table="chasse" />
+        <Unpriced search={search} table="chasse" products={hunted.filter((p) => !priced(p))} canEdit={canEdit} />
       </section>
     </>
   );
