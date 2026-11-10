@@ -127,8 +127,11 @@ l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
 
 Chaque pull request reçoit une preview Vercel, avec sa propre base. Quand un
 travail est poussé, donne au propriétaire le lien de la preview que Vercel
-publie sur la PR. Sur une base de preview vide, la première visite crée le
-compte du gérant.
+publie sur la PR, **toujours vers la page précise à essayer** (chemin complet,
+par exemple `…vercel.app/fournisseurs`), jamais la seule racine de la preview.
+Le propriétaire l'a demandé le 2026-11-10 : « donne moi TOUJOURS le lien de la
+page spécifique à tester ». Sur une base de preview vide, la première visite
+crée le compte du gérant.
 
 ## Ouvrir une pull request pour chaque branche
 
@@ -137,7 +140,9 @@ attendre qu'on le demande. Titre et description disent ce qui change et
 pourquoi. Un travail séparé part sur sa propre branche et sa propre PR, même
 si une autre attend.
 
-Assigne la PR au propriétaire, Caillou (`JeSuisUnCaillou`).
+N'assigne jamais Caillou (`JeSuisUnCaillou`) à une PR ou une issue et ne lui
+demande pas de relecture sur GitHub, même si la session le propose : ça lui
+envoie des e-mails. Il reçoit le lien de la preview dans la discussion.
 
 ## Qui merge
 
