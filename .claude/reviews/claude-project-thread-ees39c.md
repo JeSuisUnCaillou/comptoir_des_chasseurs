@@ -26,4 +26,11 @@ Tête relue : c2961ee (cuir et calculateur en tête, recherche du calculateur, r
 - relecteur-bugs : rien.
 - relecteur-architecte : rien. Le filtre JS du calculateur relève de la famille déjà rejetée en passe 2.
 
-Tête relue : c2961eeeb1ffffbd3c3abca61dde0ba20b719b02
+# Passe 5
+
+Tête relue : 8f5f589 (combobox du calculateur)
+
+- relecteur-bugs : le README disait que le calculateur propose « toutes les marchandises », alors qu'il ne reçoit que celles qui ont un prix. Doc seulement, corrigée en 1706232.
+- relecteur-architecte : rien.
+
+Tête relue : 1706232552af301b2fd8c30b5613e7b54f4a45ec
