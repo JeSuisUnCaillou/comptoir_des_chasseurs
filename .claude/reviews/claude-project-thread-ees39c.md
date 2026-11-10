@@ -33,4 +33,11 @@ Tête relue : 8f5f589 (combobox du calculateur)
 - relecteur-bugs : le README disait que le calculateur propose « toutes les marchandises », alors qu'il ne reçoit que celles qui ont un prix. Doc seulement, corrigée en 1706232.
 - relecteur-architecte : rien.
 
-Tête relue : 1706232552af301b2fd8c30b5613e7b54f4a45ec
+# Passe 6
+
+Tête relue : f790e2a (une recherche par table sur Tarifs)
+
+- relecteur-bugs : rien.
+- relecteur-architecte : rien.
+
+Tête relue : f790e2a434790d02c58df26c6529f0ab67e94674
