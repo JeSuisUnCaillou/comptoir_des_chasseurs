@@ -100,4 +100,11 @@ test("seul un gérant voit l'activité d'un membre", async ({ page, browser }) =
   const url = page.url();
   await employee.goto(url);
   await expect(employee).toHaveURL(/\/$/);
+
+  // An id no member can have is a missing page, not a server error.
+  for (const id of ["0", "abc", "99999999999"]) {
+    await page.goto(`/membres/${id}`);
+    // The page streams behind its loading screen, so the status stays 200: read the screen.
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+  }
 });

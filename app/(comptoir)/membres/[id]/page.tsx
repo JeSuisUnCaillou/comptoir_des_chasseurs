@@ -14,18 +14,11 @@ import { getDb, schema } from "@/lib/db";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { septims } from "@/lib/pricing";
 import { movementCount, recentMovements } from "@/lib/products";
-import { dayRange, parisDay, parisToday, registerCount, registerEntries, tillTotals } from "@/lib/register";
+import { lastDays, parisDay, registerCount, registerEntries, tillTotals } from "@/lib/register";
 
 type Search = Record<"du" | "au" | "page" | "mvt", string | string[] | undefined>;
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" });
-
-/** The "YYYY-MM-DD" date `days` days after another one. */
-function shift(date: string, days: number) {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export default async function ActiviteMembre({
   params,
@@ -36,16 +29,14 @@ export default async function ActiviteMembre({
 }) {
   const me = await requireMember(["gerant"]);
   const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  // Ids are Postgres integers: anything else is no member.
+  if (!Number.isInteger(id) || id < 1 || id > 2_147_483_647) notFound();
   const [member] = await getDb().select().from(schema.members).where(eq(schema.members.id, id)).limit(1);
   if (!member) notFound();
 
   const search = await searchParams;
-  const asked = dayRange(param(search.du), param(search.au));
-  // Seven days ending today by default; a lone "au" gets the seven days before
-  // it, a lone "du" runs to today.
-  const end = asked.au ?? parisToday();
-  const { du, au, from, to } = dayRange(asked.du ?? shift(end, -6), end);
+  // The last 7 days, today included, unless another period is asked for.
+  const { du, au, from, to, asked } = lastDays(param(search.du), param(search.au), 7);
   const page = pageParam(search.page);
   const mvt = pageParam(search.mvt);
   const path = `/membres/${member.id}`;
