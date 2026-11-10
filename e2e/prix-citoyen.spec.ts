@@ -74,4 +74,12 @@ test("le prix citoyen du cuir a sa propre tuile sur les Tarifs", async ({ browse
   const leather = page.getByRole("region", { name: "Tarifs du cuir" });
   await expect(leather).toContainText("Rachat de cuir · autres vendeurs4 septims");
   await expect(leather.getByTestId("rachat-cuir-citoyens")).toHaveText("Rachat de cuir · citoyens d'Estemarche5 septims");
+  // Buyback prices on the first line, resale prices on the second.
+  const box = async (label: string) => (await leather.locator(".stat").filter({ hasText: label }).boundingBox())!;
+  const top = async (label: string) => (await box(label)).y;
+  // The citizens' price comes first.
+  expect(await top("autres vendeurs")).toBe(await top("citoyens d'Estemarche"));
+  expect((await box("citoyens d'Estemarche")).x).toBeLessThan((await box("autres vendeurs")).x);
+  expect(await top("Vente de cuir")).toBeGreaterThan(await top("citoyens d'Estemarche"));
+  expect(await top("Vente de cuir")).toBe(await top("Rachat par le forgeron"));
 });

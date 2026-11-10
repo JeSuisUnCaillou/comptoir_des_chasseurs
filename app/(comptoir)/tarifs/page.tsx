@@ -155,18 +155,21 @@ export default async function Tarifs() {
           <div className="eyebrow">Produits transformés</div>
           <h2 id="cuir">Tarifs du cuir</h2>
           <div className="stats" style={{ marginTop: 14 }}>
-            <div className="stat">
-              <div className="stat-label">
-                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
-              </div>
-              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
-            </div>
             {leather?.citizenBuyPrice != null && (
               <div className="stat stat-citizen" data-testid="rachat-cuir-citoyens">
                 <div className="stat-label">Rachat de cuir · citoyens d&apos;Estemarche</div>
                 <div className="stat-value">{septims(leather.citizenBuyPrice)}</div>
               </div>
             )}
+            <div className="stat">
+              <div className="stat-label">
+                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
+              </div>
+              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
+            </div>
+          </div>
+          {/* What the comptoir pays on the first line, what it resells for on the second. */}
+          <div className="stats" style={{ marginTop: 12 }}>
             <div className="stat">
               <div className="stat-label">Vente de cuir</div>
               <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
