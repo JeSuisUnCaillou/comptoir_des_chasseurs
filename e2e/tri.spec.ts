@@ -61,3 +61,14 @@ test("les membres sont rangés par nom, quel que soit leur rôle", async ({ page
   const rows = page.locator(usernames.map((u) => `[data-testid='member-${u}']`).join(", "));
   await expect(rows.locator("td:first-child")).toHaveText(usernames);
 });
+
+test("les sections des Tarifs sont rangées par nom, catégories mêlées", async ({ page }) => {
+  const tag = uniqueName("Tri tarifs");
+  await createProduct(`${tag} zinc`, { category: "ressource", unit: "lingot" });
+  await createProduct(`${tag} Ambre`, { category: "autre", unit: "pierre" });
+  await loginAsGerant(page);
+
+  await page.goto("/tarifs");
+  const rows = page.getByRole("row").filter({ hasText: tag }).locator("td:first-child");
+  await expect(rows).toHaveText([`${tag} Ambre`, `${tag} zinc`]);
+});
