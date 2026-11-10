@@ -7,6 +7,11 @@ import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements } from "@/lib/products";
 
+// Meats first, then hides, then everything else; the database already sorts by
+// name and Array.prototype.sort is stable, so names stay in order inside each group.
+const STOCK_GROUP: Partial<Record<string, number>> = { viande: 0, peau: 1 };
+const stockGroup = (category: string) => STOCK_GROUP[category] ?? 2;
+
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
   timeStyle: "short",
@@ -64,7 +69,9 @@ export default async function Inventaire({
           <span className="small muted">{products.length} référence(s)</span>
         </div>
         <StockBoard
-          items={products.map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}
+          items={[...products]
+            .sort((a, b) => stockGroup(a.category) - stockGroup(b.category))
+            .map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}
         />
       </section>
 
