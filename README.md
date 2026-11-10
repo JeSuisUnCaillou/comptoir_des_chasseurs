@@ -135,9 +135,24 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
   s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
+- **Activité d'un membre** (gérants seulement) : le bouton « Activité » de
+  chaque ligne de Membres ouvre ce qu'il a fait sur une période, par défaut
+  les 7 derniers jours, aujourd'hui compris (dates modifiables, heure de
+  Paris) : ses achats, ventes et mouvements de caisse, et ses mouvements de
+  stock. En tête, la **valeur estimée apportée** : de combien le comptoir
+  s'est enrichi par ses gestes, son stock compté au prix de vente
+  d'aujourd'hui (gros compris). C'est la somme de quatre parts :
+  l'inventaire (marchandises entrées moins sorties à la main, au prix de
+  vente), les achats (ce que la marchandise se revendra, moins ce qu'elle a
+  coûté), les ventes (ce qui a été encaissé, moins la marchandise au tarif :
+  zéro pour une vente au tarif) et les mouvements de caisse (entrées moins
+  sorties). Les lignes annulées ne comptent pas ; une marchandise sans prix
+  de vente est laissée de côté, et la page le dit. Chaque mouvement de stock
+  né d'une écriture (vente, achat ou son annulation) garde le numéro de sa
+  ligne, pour n'être compté qu'une fois.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
-  marchandises (avec une recherche par nom), les membres, les annonces et les
-  fournisseurs (12 par page).
+  marchandises (avec une recherche par nom), les membres, l'activité d'un
+  membre, les annonces et les fournisseurs (12 par page).
 - Les marchandises (Gérer les tarifs, sections des Tarifs, choix
   d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A
   à Z, sans tenir compte des majuscules ni des accents ; les marchandises

@@ -92,10 +92,13 @@ export async function recentMovements(
     .offset(offset);
 }
 
+export type Movement = Awaited<ReturnType<typeof recentMovements>>[number];
+
 export type MoveResult = { ok: true; stock: number } | { ok: false; error: string };
 
 /**
- * Adds `delta` units to a product's stock and records the movement.
+ * Adds `delta` units to a product's stock and records the movement, tied to
+ * the register line that caused it when there is one.
  * Refuses to go below zero. Runs inside the given transaction if any.
  */
 export async function moveStock(
@@ -104,6 +107,7 @@ export async function moveStock(
   delta: number,
   memberId: number,
   reason: string,
+  transactionId: number | null = null,
 ): Promise<MoveResult> {
   const [updated] = await tx
     .update(schema.products)
@@ -117,6 +121,7 @@ export async function moveStock(
     stockAfter: updated.stock,
     memberId,
     reason,
+    transactionId,
   });
   return { ok: true, stock: updated.stock };
 }

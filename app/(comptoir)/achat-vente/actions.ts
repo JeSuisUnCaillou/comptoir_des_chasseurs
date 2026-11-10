@@ -42,6 +42,8 @@ export async function recordTransaction(
   let id: number;
   try {
     id = await db.transaction(async (tx) => {
+      let delta = 0;
+      let reason = "";
       if (productId != null) {
         const [product] = await tx
           .select({ name: schema.products.name })
@@ -50,10 +52,8 @@ export async function recordTransaction(
           .limit(1);
         if (!product) throw new UserError("Marchandise inconnue.");
         label = product.name;
-        const delta = kind === "vente" ? -quantity : quantity;
-        const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
-        const moved = await moveStock(tx, productId, delta, member.id, reason);
-        if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
+        delta = kind === "vente" ? -quantity : quantity;
+        reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
       }
       if (!label) throw new UserError("Indique l'article ou la marchandise.");
       const [line] = await tx.insert(schema.transactions).values({
@@ -66,6 +66,11 @@ export async function recordTransaction(
         notes,
         memberId: member.id,
       }).returning({ id: schema.transactions.id });
+      if (productId != null) {
+        // Throwing rolls the line back with the movement.
+        const moved = await moveStock(tx, productId, delta, member.id, reason, line.id);
+        if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
+      }
       return line.id;
     });
   } catch (error) {
@@ -131,7 +136,7 @@ export async function cancelTransaction(
       }
       if (line.productId != null) {
         const delta = line.kind === "vente" ? line.quantity : -line.quantity;
-        const moved = await moveStock(tx, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`);
+        const moved = await moveStock(tx, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`, line.id);
         // A cancelled buyback whose goods are already gone cannot be undone.
         if (!moved.ok) throw new UserError("Impossible d'annuler : la marchandise rachetée a déjà été vendue.");
       }

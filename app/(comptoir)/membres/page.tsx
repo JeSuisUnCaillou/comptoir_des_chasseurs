@@ -1,4 +1,6 @@
 import { asc, count } from "drizzle-orm";
+import { ScrollText } from "lucide-react";
+import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
@@ -68,6 +70,7 @@ export default async function Membres({
                 <th>Statut</th>
                 <th>Nom et rôle</th>
                 <th>Mot de passe</th>
+                <th>Activité</th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +101,11 @@ export default async function Membres({
                     </form>
                   </td>
                   <td>{m.id !== me.id && <ResetPasswordForm id={m.id} />}</td>
+                  <td>
+                    <Link className="btn btn-small btn-ghost" href={`/membres/${m.id}`}>
+                      <ScrollText size={14} /> Activité
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
