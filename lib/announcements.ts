@@ -2,10 +2,13 @@ import "server-only";
 import { count, desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
-/** Announcements, newest first, with their author's name. */
-export async function announcementList({ limit, offset = 0 }: { limit: number; offset?: number }) {
+/** Parchments per page of the board on the Annonces page. */
+export const BOARD_SIZE = 12;
+
+/** Announcements, newest first, with their author's name; all of them without a limit. */
+export async function announcementList({ limit, offset = 0 }: { limit?: number; offset?: number } = {}) {
   const a = schema.announcements;
-  return getDb()
+  const query = getDb()
     .select({
       id: a.id,
       title: a.title,
@@ -18,8 +21,8 @@ export async function announcementList({ limit, offset = 0 }: { limit: number; o
     .from(a)
     .innerJoin(schema.members, eq(schema.members.id, a.memberId))
     .orderBy(desc(a.createdAt), desc(a.id))
-    .limit(limit)
-    .offset(offset);
+    .$dynamic();
+  return limit === undefined ? query : query.limit(limit).offset(offset);
 }
 
 export type AnnouncementEntry = Awaited<ReturnType<typeof announcementList>>[number];

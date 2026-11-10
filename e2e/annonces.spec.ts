@@ -27,12 +27,9 @@ test("un employé accroche un parchemin, que tout le comptoir lit sur l'accueil"
   await expect(note).toContainText(`Par ${username}`);
   await expect(note.getByTitle("Hache nordique")).toBeVisible();
 
-  // The gérant sees it on the Grand livre, and the link to the whole board.
+  // The gérant sees it on the Grand livre.
   await loginAsGerant(page);
   await expect(parchment(page, title)).toContainText(`Par ${username}`);
-  await page.getByRole("link", { name: /Voir toutes les annonces \(\d+\)/ }).click();
-  await expect(page).toHaveURL(/\/annonces$/);
-  await expect(parchment(page, title)).toBeVisible();
 });
 
 test("seuls l'auteur et un gérant peuvent décrocher un parchemin", async ({ page, browser }) => {
@@ -58,11 +55,13 @@ test("seuls l'auteur et un gérant peuvent décrocher un parchemin", async ({ pa
   await expect(parchment(other, second)).toHaveCount(0);
 });
 
-test("toutes les annonces sont paginées, l'accueil n'en montre que les dernières", async ({ page }) => {
+test("l'accueil montre tout le tableau, la page Annonces le pagine", async ({ page }) => {
   const title = uniqueName("Vieille annonce");
   await createAnnouncements(GERANT.username, 14, title);
   await loginAsGerant(page);
-  await expect(page.locator(".parchment")).toHaveCount(6);
+  // Every parchment of the batch is on the Grand livre, with no pages.
+  for (const i of [1, 14]) await expect(parchment(page, `${title} ${i}`)).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Pages des annonces" })).toHaveCount(0);
 
   await page.goto("/annonces");
   const pages = page.getByRole("navigation", { name: "Pages des annonces" });

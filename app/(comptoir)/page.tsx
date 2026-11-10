@@ -5,16 +5,15 @@ import { PageHead } from "@/components/page-head";
 import { RegisterTable } from "@/components/register-table";
 import { TillStat } from "@/components/till-stat";
 import { requireMember } from "@/lib/auth/session";
-import { announcementCount, announcementList } from "@/lib/announcements";
+import { announcementList } from "@/lib/announcements";
 import { registerEntries, tillSummary } from "@/lib/register";
 
 export default async function GrandLivre() {
   const member = await requireMember();
-  const [till, recent, announcements, announcementTotal] = await Promise.all([
+  const [till, recent, announcements] = await Promise.all([
     tillSummary(),
     registerEntries({}, { limit: 10 }),
-    announcementList({ limit: 6 }),
-    announcementCount(),
+    announcementList(),
   ]);
 
   return (
@@ -60,13 +59,6 @@ export default async function GrandLivre() {
           </Link>
         </div>
         <AnnouncementBoard announcements={announcements} member={member} />
-        {announcementTotal > 0 && (
-          <div className="board-more">
-            <Link className="btn btn-small btn-ghost" href="/annonces">
-              Voir toutes les annonces ({announcementTotal})
-            </Link>
-          </div>
-        )}
       </section>
       <section className="panel">
         <div className="panel-head">

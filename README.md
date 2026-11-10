@@ -136,7 +136,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   (titre, texte, auteur, date). Chacun en accroche avec « Afficher un
   parchemin » et choisit ce qui le fixe : couteau, hache nordique ou morceau
   de viande. L'auteur d'une annonce ou un gérant peut la décrocher. Le Grand
-  livre montre les 6 dernières, la page Annonces les montre toutes.
+  livre montre tout le tableau d'un coup, sans pagination (choix du
+  propriétaire) ; la page Annonces le montre 12 parchemins par page.
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
