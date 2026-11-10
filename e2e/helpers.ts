@@ -50,13 +50,25 @@ export async function newEmployeePage(browser: Browser, prefix: string) {
 /** Creates a product straight in the database, with its tariff and stock. */
 export async function createProduct(
   name: string,
-  { buyPrice = 2, sellPrice = 3, stock = 0, unit = "peau" } = {},
+  {
+    buyPrice = 2,
+    sellPrice = 3,
+    stock = 0,
+    unit = "peau",
+    category = "peau",
+  }: {
+    buyPrice?: number;
+    sellPrice?: number;
+    stock?: number;
+    unit?: string;
+    category?: "peau" | "cuir" | "viande" | "ressource" | "autre";
+  } = {},
 ) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
       insert into products (name, category, unit, stock, buy_price, sell_price)
-      values (${name}, 'peau', ${unit}, ${stock}, ${buyPrice}, ${sellPrice})`;
+      values (${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice})`;
   } finally {
     await sql.end();
   }

@@ -139,6 +139,11 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   page Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres et les annonces.
+- Les marchandises (cartes du stock, Gérer les tarifs, sections des Tarifs,
+  choix d'Achat/Vente) et les membres sont rangés par nom, de A à Z, sans
+  tenir compte des majuscules ni des accents ; les marchandises archivées
+  viennent en dernier. Le registre, l'historique du stock et les annonces
+  restent du plus récent au plus ancien.
 
 ## Rôles
 

@@ -1,6 +1,7 @@
 import "server-only";
 import postgres from "postgres";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql, type AnyColumn } from "drizzle-orm";
 import * as schema from "./schema";
 import { connectionOptions, databaseUrl } from "./url.mjs";
 
@@ -25,4 +26,12 @@ export { schema };
 export function isUniqueViolation(error: unknown) {
   const e = error as { code?: string; cause?: { code?: string } };
   return e?.code === "23505" || e?.cause?.code === "23505";
+}
+
+/**
+ * Orders a text column the French way: case and accents only break ties, so
+ * "élan" sits with the e's instead of after "z".
+ */
+export function byName(column: AnyColumn) {
+  return sql`${column} collate "fr-x-icu"`;
 }
