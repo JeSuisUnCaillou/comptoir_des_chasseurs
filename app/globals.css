@@ -613,6 +613,44 @@ textarea:focus {
   }
 }
 
+.combobox {
+  position: relative;
+}
+
+.combobox input {
+  width: 100%;
+}
+
+.combobox-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid #4b5149;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+
+.combobox-list li {
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+
+.combobox-list [role="option"] {
+  cursor: pointer;
+}
+
+.combobox-list [aria-selected="true"] {
+  background: rgb(207 174 110 / 0.18);
+}
+
 .calc-inputs {
   display: grid;
   grid-template-columns: 2fr 1fr;

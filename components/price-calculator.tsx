@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ProductCombobox } from "@/components/product-combobox";
 import type { Product } from "@/lib/db/schema";
 import { buyTotal, margin, sellTotal, septims, transformation, type Total } from "@/lib/pricing";
 
@@ -29,24 +30,8 @@ export function PriceCalculator({ products }: { products: CalcProduct[] }) {
   const id = useId();
   const [productId, setProductId] = useState(products[0]?.id ?? 0);
   const [quantity, setQuantity] = useState(1);
-  const [query, setQuery] = useState("");
-  const normalized = query.trim().toLocaleLowerCase("fr");
-  const choices = normalized ? products.filter((p) => p.name.toLocaleLowerCase("fr").includes(normalized)) : products;
-  // The chosen product, or the first match when the search hides it.
-  const product = choices.find((p) => p.id === productId) ?? choices[0];
-  const search = (
-    <div className="field" style={{ gridColumn: "1 / -1" }}>
-      <label htmlFor={`${id}-s`}>Chercher une marchandise</label>
-      <input id={`${id}-s`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
-    </div>
-  );
-  if (!product)
-    return (
-      <div data-testid="calculateur">
-        <div className="calc-inputs">{search}</div>
-        <p className="muted">Aucune marchandise ne correspond.</p>
-      </div>
-    );
+  const product = products.find((p) => p.id === productId);
+  if (!product) return null;
 
   const qty = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 0;
   const buy = buyTotal(product, qty);
@@ -58,16 +43,9 @@ export function PriceCalculator({ products }: { products: CalcProduct[] }) {
   return (
     <div data-testid="calculateur">
       <div className="calc-inputs">
-        {search}
         <div className="field">
           <label htmlFor={`${id}-p`}>Marchandise</label>
-          <select id={`${id}-p`} value={product.id} onChange={(e) => setProductId(Number(e.target.value))}>
-            {choices.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <ProductCombobox id={`${id}-p`} products={products} value={product.id} onChange={setProductId} />
         </div>
         <div className="field">
           <label htmlFor={`${id}-q`}>Quantité</label>

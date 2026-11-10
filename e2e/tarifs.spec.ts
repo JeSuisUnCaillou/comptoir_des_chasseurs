@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { loginAsGerant } from "./helpers";
+
+/** Picks a product in the calculator by typing its name and clicking it in the list. */
+async function pick(calc: Locator, name: string) {
+  await calc.getByRole("combobox", { name: "Marchandise" }).fill(name);
+  await calc.getByRole("option", { name, exact: true }).click();
+  await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue(name);
+}
 
 test.beforeEach(async ({ page }) => {
   await loginAsGerant(page);
@@ -28,13 +35,13 @@ test("les ressources affichent un bénéfice sur des lots entiers", async ({ pag
 
 test("le calculateur donne rachat, vente et transformation", async ({ page }) => {
   const calc = page.getByTestId("calculateur");
-  await calc.getByLabel("Marchandise", { exact: true }).selectOption({ label: "Biche" });
+  await pick(calc, "Biche");
   await calc.getByLabel("Quantité").fill("4");
   await expect(calc.getByTestId("calc-rachat")).toHaveText("8 septims");
   await expect(calc.getByTestId("calc-vente")).toHaveText("12 septims");
   await expect(calc.getByTestId("calc-transfo")).toContainText("1 lot → 2 cuirs");
 
-  await calc.getByLabel("Marchandise", { exact: true }).selectOption({ label: "Venaison" });
+  await pick(calc, "Venaison");
   await calc.getByLabel("Quantité").fill("200");
   await expect(calc.getByTestId("calc-vente")).toHaveText("400 septims");
   await expect(calc).toContainText("Tarif de gros");
@@ -66,7 +73,10 @@ test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
   await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(2);
   // The calculator still offers every product.
-  await expect(page.getByTestId("calculateur").getByLabel("Marchandise", { exact: true }).getByRole("option", { name: "Biche" })).toHaveCount(1);
+  const calc = page.getByTestId("calculateur");
+  await calc.getByRole("combobox", { name: "Marchandise" }).click();
+  await expect(calc.getByRole("option", { name: "Biche", exact: true })).toHaveCount(1);
+  await calc.getByRole("combobox", { name: "Marchandise" }).press("Escape");
 
   await search.fill("venaison");
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
@@ -88,19 +98,26 @@ test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
   await expect(search).toHaveValue("biche");
 });
 
-test("le calculateur a sa propre recherche, qui filtre ses marchandises", async ({ page }) => {
+test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {
   const calc = page.getByTestId("calculateur");
-  const choice = calc.getByLabel("Marchandise", { exact: true });
-  await calc.getByRole("searchbox", { name: "Chercher une marchandise" }).fill("venai");
-  await expect(choice.getByRole("option")).toHaveText(["Venaison"]);
-  await expect(choice).toHaveValue(await choice.getByRole("option", { name: "Venaison" }).getAttribute("value") ?? "");
+  const box = calc.getByRole("combobox", { name: "Marchandise" });
+  // One field: no separate search box in the calculator.
+  await expect(calc.getByRole("searchbox")).toHaveCount(0);
+  const before = await box.inputValue();
+
+  await box.fill("venai");
+  await expect(calc.getByRole("option")).toHaveText(["Venaison"]);
+  await box.press("Enter");
+  await expect(box).toHaveValue("Venaison");
+  await expect(calc.getByRole("listbox")).toHaveCount(0);
   await calc.getByLabel("Quantité").fill("200");
   await expect(calc.getByTestId("calc-vente")).toHaveText("400 septims");
-  // The tables above are not filtered by it.
+  // The tables are not filtered by it.
   await expect(page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: /Biche/ })).toBeVisible();
 
-  await calc.getByRole("searchbox", { name: "Chercher une marchandise" }).fill("introuvable-xyz");
-  await expect(calc).toContainText("Aucune marchandise ne correspond.");
-  await calc.getByRole("searchbox", { name: "Chercher une marchandise" }).clear();
-  await expect(choice.getByRole("option", { name: "Biche" })).toHaveCount(1);
+  await box.fill("introuvable-xyz");
+  await expect(calc.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
+  await box.press("Escape");
+  await expect(box).toHaveValue("Venaison");
+  expect(before).not.toBe("");
 });
