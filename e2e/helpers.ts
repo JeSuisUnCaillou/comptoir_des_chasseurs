@@ -39,6 +39,16 @@ export async function createMember(
   }
 }
 
+/** Changes a member's role straight in the database. */
+export async function setRole(username: string, role: "gerant" | "employe" | "desactive") {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`update members set role = ${role} where username = ${username.toLowerCase()}`;
+  } finally {
+    await sql.end();
+  }
+}
+
 export async function newEmployeePage(browser: Browser, prefix: string) {
   const username = uniqueName(prefix).toLowerCase();
   await createMember(username, "mot-de-passe", "employe");
