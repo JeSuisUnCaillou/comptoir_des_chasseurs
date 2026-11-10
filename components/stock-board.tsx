@@ -66,11 +66,7 @@ function StockCard({ item }: { item: StockItem }) {
     <article className="stock-card" data-testid={`stock-${item.name}`}>
       <div className="stock-card-head">
         <span className="small muted">{CATEGORY_LABELS[item.category]}</span>
-        {item.stock > 0 ? (
-          <span className="badge badge-green">En stock</span>
-        ) : (
-          <span className="badge badge-red">Rupture</span>
-        )}
+        {item.stock === 0 && <span className="badge badge-red">Rupture</span>}
       </div>
       <h3>{item.name}</h3>
       <p className="stock-qty">
