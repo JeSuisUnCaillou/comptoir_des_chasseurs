@@ -250,3 +250,66 @@ test("annuler un achat retire la marchandise, sauf si elle est déjà vendue", a
   await expect(soldRow).not.toContainText("Annulée par");
   await expect(await stockOf(page, sold)).toHaveText("2");
 });
+
+/** "1 240 septims" → 1240. */
+function septimsValue(text: string) {
+  return Number(text.replace(/[^\d−-]/g, "").replace("−", "-"));
+}
+
+test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise", async ({ browser }) => {
+  const reason = uniqueName("Salaires");
+  const deposit = uniqueName("Apport du gérant");
+  const { page } = await newEmployeePage(browser, "farengar");
+  // Only this test writes movements: the till of the movements alone is ours to watch.
+  const movementsTill = async () =>
+    septimsValue((await page.getByTestId("totaux-registre").locator(".stat-value").textContent())!);
+  await page.goto("/achat-vente?type=caisse");
+  const tillBefore = await movementsTill();
+  await page.getByRole("link", { name: /Mouvement de caisse/ }).click();
+  await expect(page).toHaveURL(/\/achat-vente\/caisse$/);
+  const form = page.getByRole("region", { name: "Inscrire un mouvement de caisse" });
+
+  // The form shows the till before and after the movement.
+  const preview = form.getByTestId("apercu-caisse");
+  const before = septimsValue((await preview.textContent())!.split("→")[0]);
+  await form.getByRole("radio", { name: "Sortie d'argent" }).check();
+  await form.getByLabel("Montant (septims)").fill("37");
+  await expect(preview).toContainText(`→ après : ${before - 37 < 0 ? "−" : ""}`);
+  expect(septimsValue((await preview.textContent())!.split("après :")[1])).toBe(before - 37);
+
+  // The reason is required.
+  await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+  await expect(page).toHaveURL(/\/achat-vente\/caisse$/);
+  await form.getByLabel("Motif").fill(reason);
+  await form.getByLabel("Pour / de la part de (facultatif)").fill("Ralof");
+  await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+  await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
+  await expect(page.getByRole("status")).toHaveText(`Mouvement inscrit : ${reason}, −37 septims.`);
+  const row = page.getByTestId("registre").getByRole("row").filter({ hasText: reason });
+  await expect(row).toContainText(/Caisse.*—.*−37 septims.*Ralof/);
+
+  // Money in, too.
+  await page.getByRole("link", { name: /Mouvement de caisse/ }).click();
+  await form.getByRole("radio", { name: "Entrée d'argent" }).check();
+  await form.getByLabel("Montant (septims)").fill("50");
+  await form.getByLabel("Motif").fill(deposit);
+  await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+  await expect(page.getByRole("status")).toHaveText(`Mouvement inscrit : ${deposit}, +50 septims.`);
+
+  // The filter shows the movements alone, and the till counts them.
+  await page.getByLabel("Opération").selectOption("caisse");
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/type=caisse/);
+  const table = page.getByTestId("registre");
+  await expect(table.getByRole("row").filter({ hasText: reason })).toBeVisible();
+  await expect(table.getByRole("row").filter({ hasText: deposit })).toBeVisible();
+  await expect(table.getByRole("row").filter({ hasText: /Vente|Achat/ })).toHaveCount(0);
+  await expect(page.getByTestId("totaux-registre")).toContainText("en mouvements de caisse");
+  expect(await movementsTill()).toBe(tillBefore + 50 - 37);
+
+  // Its author cancels it: it no longer counts.
+  page.once("dialog", (dialog) => dialog.accept());
+  await table.getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /Annuler/ }).click();
+  await expect(table.getByRole("row").filter({ hasText: reason })).toContainText("Annulée");
+  await expect.poll(movementsTill).toBe(tillBefore + 50);
+});

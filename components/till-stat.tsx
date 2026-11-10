@@ -10,6 +10,8 @@ export function TillStat({ title, till, testId }: { title: string; till: Till; t
       </div>
       <div className="small muted">
         {septims(till.sales)} encaissés · {septims(till.buybacks)} payés
+        {(till.inflows !== 0 || till.outflows !== 0) &&
+          ` · ${septims(till.inflows - till.outflows, { signed: true })} en mouvements de caisse`}
       </div>
     </div>
   );

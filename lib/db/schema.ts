@@ -100,11 +100,13 @@ export const settings = pgTable("settings", {
 export type Product = typeof products.$inferSelect;
 export type ProductCategory = (typeof productCategory.enumValues)[number];
 
-export const transactionKind = pgEnum("transaction_kind", ["vente", "rachat"]);
+export const transactionKind = pgEnum("transaction_kind", ["vente", "rachat", "entree", "sortie"]);
 
 /**
  * A line of the register. A sale brings money into the till, a buyback takes
- * money out. When it names a product, its stock moves with it.
+ * money out. When it names a product, its stock moves with it. "entree" and
+ * "sortie" move money alone (wages, the gérant's deposits...): no product,
+ * quantity 1, the label holds the reason.
  */
 export const transactions = pgTable(
   "transactions",
