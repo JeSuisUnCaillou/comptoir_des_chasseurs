@@ -224,7 +224,7 @@ export function mapLegacy(data, members) {
     if (!amount) continue;
     const memberId = authorOf(a);
     transactions.push({
-      kind: amount > 0 ? "vente" : "rachat",
+      kind: amount > 0 ? "entree" : "sortie",
       productName: null,
       label: "Ajustement de trésorerie",
       quantity: 1,
@@ -275,11 +275,11 @@ export function mapLegacy(data, members) {
   };
 }
 
-/** Till as the new app counts it: sales in, buybacks out, cancelled lines aside. */
+/** Till as the new app counts it: sales and money in, buybacks and money out, cancelled lines aside. */
 export function till(transactions) {
   return transactions
     .filter((t) => !t.cancelledAt)
-    .reduce((sum, t) => sum + (t.kind === "vente" ? t.amount : -t.amount), 0);
+    .reduce((sum, t) => sum + (t.kind === "vente" || t.kind === "entree" ? t.amount : -t.amount), 0);
 }
 
 function list(value, field) {

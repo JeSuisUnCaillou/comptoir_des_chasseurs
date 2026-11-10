@@ -16,3 +16,11 @@ Tête relue : 63e2f9e
 Restes : la conversion des ajustements importés en mouvements de caisse part dans sa propre issue (seconde PR, après le merge).
 
 Tête relue : 63e2f9e1f23cf5ac1cac34b25575666b5783c19b
+
+# Passe 3 (PR #23, conversion des ajustements importés)
+
+Tête relue : 8595cdb
+
+- Aucune trouvaille. `till()` de `scripts/legacy/map.mjs` répète le signe de `lib/transaction-kinds.ts` : déjà là avant, un script `.mjs` n'importe pas le `.ts`, écarté.
+
+Tête relue : 8595cdb380733159a0f6ed00c58f8421a74b4caa
