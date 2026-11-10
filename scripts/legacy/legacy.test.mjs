@@ -98,6 +98,10 @@ before(async () => {
     }
     if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { error: "Connexion requise." });
     if (url.pathname === "/api/transactions") {
+      // The real API refuses an empty type filter.
+      if (url.searchParams.has("type") && !["sale", "purchase"].includes(url.searchParams.get("type"))) {
+        return send(400, { error: "Type invalide." });
+      }
       const from = url.searchParams.get("from");
       const to = url.searchParams.get("to");
       const day = (t) => t.created_at.slice(0, 10);

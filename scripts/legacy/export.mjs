@@ -142,7 +142,7 @@ async function allTransactions(get) {
   const limit = Math.min(PAGE_LIMIT, first.length);
 
   const fetchRange = async (from, to) => {
-    const query = new URLSearchParams({ type: "", from, to: toExclusive ? nextDay(to) : to });
+    const query = new URLSearchParams({ from, to: toExclusive ? nextDay(to) : to });
     const { transactions } = await get(`/api/transactions?${query}`);
     return transactions ?? [];
   };
