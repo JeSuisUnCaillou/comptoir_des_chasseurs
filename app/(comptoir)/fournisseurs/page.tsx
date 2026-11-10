@@ -1,0 +1,81 @@
+import { Plus, Truck } from "lucide-react";
+import Link from "next/link";
+import { PageHead } from "@/components/page-head";
+import { Pagination } from "@/components/pagination";
+import { SupplierCard } from "@/components/supplier-card";
+import { requireMember } from "@/lib/auth/session";
+import { pageParam, param } from "@/lib/pagination";
+import { SUPPLIER_PAGE_SIZE, supplierPage } from "@/lib/suppliers";
+
+type Search = { q?: string | string[]; page?: string | string[] };
+
+export default async function Fournisseurs({ searchParams }: { searchParams: Promise<Search> }) {
+  const member = await requireMember();
+  const gerant = member.role === "gerant";
+  const search = await searchParams;
+  const q = (param(search.q) ?? "").trim().slice(0, 100);
+  const page = pageParam(search.page);
+  const { suppliers, total } = await supplierPage(q, page);
+
+  return (
+    <>
+      <PageHead title="Fournisseurs">Qui vend quelle ressource, où le trouver et à quel prix.</PageHead>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">Réseau commercial du comptoir</div>
+            <h2>
+              <Truck size={18} style={{ verticalAlign: "-2px" }} /> Fournisseurs
+            </h2>
+          </div>
+          {gerant && (
+            <Link className="btn btn-small" href="/fournisseurs/nouveau">
+              <Plus size={14} /> Ajouter un fournisseur
+            </Link>
+          )}
+        </div>
+        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur" style={{ marginTop: 14 }}>
+          <input
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder="Rechercher un nom, un lieu ou une marchandise"
+            aria-label="Rechercher un nom, un lieu ou une marchandise"
+            style={{ flex: 1 }}
+          />
+          <button className="btn btn-small" type="submit">
+            Chercher
+          </button>
+          {q && (
+            <Link className="btn btn-small btn-ghost" href="/fournisseurs">
+              Tout afficher
+            </Link>
+          )}
+        </form>
+        {suppliers.length === 0 && (
+          <p className="muted" style={{ margin: 0 }}>
+            {q ? "Aucun fournisseur ne correspond." : "Aucun fournisseur pour l'instant."}
+          </p>
+        )}
+      </section>
+
+      <section className="section-gap">
+        <div className="supplier-grid">
+          {suppliers.map((s) => (
+            <SupplierCard key={s.id} supplier={s} editable={gerant} />
+          ))}
+        </div>
+        <Pagination
+          page={page}
+          total={total}
+          path="/fournisseurs"
+          params={{ q: q || undefined }}
+          size={SUPPLIER_PAGE_SIZE}
+          label="Pages des fournisseurs"
+          noun="fournisseur"
+        />
+      </section>
+    </>
+  );
+}

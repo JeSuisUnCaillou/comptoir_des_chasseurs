@@ -84,8 +84,8 @@ test("un parchemin sans titre est refusé, et la saisie reste", async ({ page })
   await expect(page.getByLabel("Texte à afficher")).toHaveValue("Un texte sans titre");
 });
 
-test("le menu du gérant : Annonces sous Inventaire, plus de Marchandises", async ({ page }) => {
+test("le menu du gérant : Fournisseurs et Annonces sous Inventaire, plus de Marchandises", async ({ page }) => {
   await loginAsGerant(page);
   const links = page.getByRole("navigation", { name: "Menu principal" }).getByRole("link");
-  await expect(links).toHaveText(["Grand livre", "Achat / Vente", "Tarifs", "Inventaire", "Annonces", "Membres"]);
+  await expect(links).toHaveText(["Grand livre", "Achat / Vente", "Tarifs", "Inventaire", "Fournisseurs", "Annonces", "Membres"]);
 });

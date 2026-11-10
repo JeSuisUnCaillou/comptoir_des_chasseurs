@@ -1,5 +1,5 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account, some stock and a few announcements. Runs on preview builds
+// gérant account, some stock, a few announcements and the old app's suppliers. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
 //
@@ -53,6 +53,28 @@ const ANNOUNCEMENTS = [
   },
 ];
 
+// The old app's suppliers, with what they sell: [product name, septims, units].
+const SUPPLIERS = [
+  {
+    name: "Do'Dran",
+    place: "Vendeaume",
+    notes: "Représentant Kajitt",
+    offers: [["Patte de vasard", 1, 6], ["Venaison", 1, 1], ["Viande d'horqueur", 1, 2], ["Viande de chèvre", 1, 2]],
+  },
+  {
+    name: "Markir",
+    place: "Blancherive",
+    notes: "Représentant des Guerriers-Nés",
+    offers: [["Biche", 2, 1], ["Smilodon", 3, 1], ["Venaison", 1, 1]],
+  },
+  {
+    name: "Swennec Roche-Ebène",
+    place: "Pierre de Shor",
+    notes: "Famille Roche-Ebène",
+    offers: [["Cuir", 3, 1], ["Venaison", 2, 1]],
+  },
+];
+
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 try {
@@ -74,6 +96,21 @@ try {
           values (${title}, ${body}, ${pin}, ${memberId}, now() - ${`${ANNOUNCEMENTS.length - i} hours`}::interval)`;
       }
       console.log("Annonces d'exemple affichées.");
+    }
+
+    const [{ listed }] = await tx`select count(*)::int as listed from suppliers`;
+    if (listed === 0) {
+      for (const { name, place, notes, offers } of SUPPLIERS) {
+        const [{ id }] = await tx`
+          insert into suppliers (name, place, notes) values (${name}, ${place}, ${notes}) returning id`;
+        for (const [product, price, qty] of offers) {
+          // Only merchandise this database knows.
+          await tx`
+            insert into supplier_offers (supplier_id, product_id, price, qty)
+            select ${id}, id, ${price}, ${qty} from products where name = ${product}`;
+        }
+      }
+      console.log("Fournisseurs d'exemple ajoutés.");
     }
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;

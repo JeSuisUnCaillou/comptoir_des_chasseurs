@@ -8,6 +8,7 @@ import {
   Megaphone,
   Shield,
   Tag,
+  Truck,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +46,9 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
           </NavLink>
           <NavLink href="/inventaire">
             <Archive size={18} /> Inventaire
+          </NavLink>
+          <NavLink href="/fournisseurs">
+            <Truck size={18} /> Fournisseurs
           </NavLink>
           <NavLink href="/annonces">
             <Megaphone size={18} /> Annonces

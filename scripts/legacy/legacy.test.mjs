@@ -57,7 +57,25 @@ const legacy = {
       { id: 1, item_id: 3, name: "Venaison", unit: "pièce", product_kind: "meat", sale_lot_qty: 1, sale_lot_price: 3, buy_lot_qty: 1, buy_lot_price: 1, bulk_from_qty: 200, bulk_unit_price: 2 },
     ],
   },
-  "/api/suppliers": { suppliers: [{ id: 1, name: "Ferme", offers: [] }] },
+  "/api/suppliers": {
+    can_manage: false,
+    suppliers: [
+      {
+        id: "1",
+        name: "Markir",
+        locality: "Blancherive",
+        notes: "Représentant des Guerriers-Nés",
+        active: true,
+        created_at: "2026-11-01T18:50:50Z",
+        offers: [
+          { id: "1", item_id: "1", lot_qty: 1, price_septims: 2, item_name: "Biche" },
+          { id: "2", item_id: "3", lot_qty: 6, price_septims: 1, item_name: "venaison" },
+          { id: "3", item_id: "99", lot_qty: 1, price_septims: 5, item_name: "Licorne" },
+        ],
+      },
+      { id: "2", name: "Ancien", locality: "", notes: "", active: false, offers: [] },
+    ],
+  },
   "/api/treasury/adjustments": { adjustments: [{ amount: "-50", description: "Salaires", manager_name: "Einar le Rouge", created_at: "2026-10-05T00:00:00Z" }] },
   "/api/missives/board": {
     posts: [
@@ -169,6 +187,7 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.equal(trial.code, 0, trial.output);
   assert.match(trial.output, /registre\s+0 → 451/);
   assert.match(trial.output, /annonces\s+0 → 4/);
+  assert.match(trial.output, /fournisseurs\s+0 → 1/);
   assert.match(trial.output, /rien n'a été écrit/);
   assert.equal((await admin`select count(*)::int as n from transactions`)[0].n, 0);
 
@@ -182,7 +201,8 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.equal(imported.code, 0, imported.output);
   assert.match(imported.output, /Import terminé/);
   assert.match(imported.output, /Caisse après import : 1144 septims\nCaisse de l'ancienne app : 1144 septims/);
-  assert.match(imported.output, /1 fournisseurs/);
+  assert.match(imported.output, /Offre de Markir ignorée : marchandise inconnue \(Licorne\)/);
+  assert.match(imported.output, /Fournisseur Ancien ignoré : désactivé/);
   assert.match(imported.output, /Mouvement de stock ignoré : marchandise inconnue \(Fantôme\)/);
   assert.match(imported.output, /Comptes créés, sans mot de passe .*: Inconnu/);
   assert.doesNotMatch(imported.output, /postgres:postgres/, "l'URL n'est jamais affichée en entier");
@@ -238,8 +258,36 @@ test("export puis import, sans toucher aux membres", async () => {
     { title: "Doublon", body: "…", pin: "couteau", author: "einar-2" },
   ]);
 
+  const suppliers = await admin`
+    select s.name, s.place, s.notes, p.name as product, o.price, o.qty
+    from suppliers s join supplier_offers o on o.supplier_id = s.id join products p on p.id = o.product_id
+    order by p.name`;
+  assert.deepEqual(suppliers.map((r) => ({ ...r })), [
+    { name: "Markir", place: "Blancherive", notes: "Représentant des Guerriers-Nés", product: "Biche", price: 2, qty: 1 },
+    { name: "Markir", place: "Blancherive", notes: "Représentant des Guerriers-Nés", product: "Venaison", price: 1, qty: 6 },
+  ]);
+
   const backups = (await readdir(OUT)).filter((f) => f.startsWith("sauvegarde-local-"));
   assert.equal(backups.length, 1, "l'existant est sauvegardé avant d'écrire");
+
+  // Suppliers alone: the register and stock of the target stay as they are.
+  await admin`update transactions set notes = 'Écrit après l''import' where id = 1`;
+  await admin`delete from supplier_offers`;
+  await admin`insert into suppliers (name) values ('Créé dans la nouvelle app')`;
+  const only = await run(
+    ["scripts/legacy/import.mjs", file, "--cible=local", `--base=${dbUrl}`, "--oui", "--seulement=fournisseurs"],
+    "",
+  );
+  assert.equal(only.code, 0, only.output);
+  assert.match(only.output, /fournisseurs\s+2 → 1/);
+  assert.doesNotMatch(only.output, /registre/);
+  assert.equal((await admin`select count(*)::int as n from transactions`)[0].n, 451);
+  assert.equal((await admin`select notes from transactions where id = 1`)[0].notes, "Écrit après l'import");
+  assert.deepEqual(
+    (await admin`select name from suppliers order by name`).map((r) => r.name),
+    ["Markir"],
+  );
+  assert.equal((await admin`select count(*)::int as n from supplier_offers`)[0].n, 2);
 });
 
 test("l'export récupère tout le registre, quel que soit le découpage de l'API", async () => {

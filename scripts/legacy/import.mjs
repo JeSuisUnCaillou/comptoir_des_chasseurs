@@ -1,10 +1,12 @@
 // Loads an export of the old app (scripts/legacy/export.mjs) into a database
-// of the new one, replacing its merchandise, stock history and register.
-// Members are never changed: the old app's authors are matched to them by
-// name, and those with no account get one, without a password.
+// of the new one, replacing its merchandise, stock history, register, board
+// and suppliers. Members are never changed: the old app's authors are matched
+// to them by name, and those with no account get one, without a password.
+// --seulement=fournisseurs replaces the suppliers alone, matching what they
+// sell to the target's merchandise by name, and leaves everything else.
 //
 //   node scripts/legacy/import.mjs <export.json> --cible=preview|prod
-//     [--base=<url postgres>] [--oui] [--essai]
+//     [--base=<url postgres>] [--oui] [--essai] [--seulement=fournisseurs]
 //
 // The database address is asked unless given with --base. --oui confirms
 // without asking; otherwise the target's phrase must be typed. --essai shows what would be
@@ -14,7 +16,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 import { connectionOptions } from "../../lib/db/url.mjs";
-import { mapLegacy, till } from "./map.mjs";
+import { key, mapLegacy, till } from "./map.mjs";
 import { createPrompter } from "./prompt.mjs";
 
 const TARGETS = { preview: "écraser la preview", prod: "écraser la prod", local: "écraser" };
@@ -25,10 +27,12 @@ const target = args.find((a) => a.startsWith("--cible="))?.slice("--cible=".leng
 const dryRun = args.includes("--essai");
 const givenUrl = args.find((a) => a.startsWith("--base="))?.slice("--base=".length);
 const confirmed = args.includes("--oui");
+const only = args.find((a) => a.startsWith("--seulement="))?.slice("--seulement=".length);
+const suppliersOnly = only === "fournisseurs";
 
-if (!file || !TARGETS[target]) {
+if (!file || !TARGETS[target] || (only !== undefined && !suppliersOnly)) {
   console.error(
-    "Usage : node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--base=<url>] [--oui] [--essai]",
+    "Usage : node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--base=<url>] [--oui] [--essai] [--seulement=fournisseurs]",
   );
   process.exit(2);
 }
@@ -51,28 +55,44 @@ try {
     select (select count(*) from products)::int as products,
            (select count(*) from stock_movements)::int as movements,
            (select count(*) from transactions)::int as transactions,
-           (select count(*) from announcements)::int as announcements`;
+           (select count(*) from announcements)::int as announcements,
+           (select count(*) from suppliers)::int as suppliers`;
+  if (suppliersOnly) {
+    // Only the target's merchandise can be offered: the rest is left out.
+    const known = new Map((await sql`select id, name from products`).map((p) => [key(p.name), p.name]));
+    for (const s of plan.suppliers) {
+      s.offers = s.offers.filter((o) => {
+        if (known.has(key(o.productName))) {
+          o.productName = known.get(key(o.productName));
+          return true;
+        }
+        plan.warnings.push(`Offre de ${s.name} ignorée : ${o.productName} n'existe pas dans la base cible.`);
+        return false;
+      });
+    }
+  }
 
   console.log(`\nCible : ${target.toUpperCase()}, ${where.username}@${where.host}${where.pathname}`);
   console.log(`Membres gardés : ${members.length}`);
-  if (plan.newMembers.length) {
+  if (plan.newMembers.length && !suppliersOnly) {
     console.log(
       `Comptes créés, sans mot de passe (le gérant leur en donne un dans Membres) : ${plan.newMembers.map((m) => m.name).join(", ")}`,
     );
   }
-  console.log("Remplacé :");
-  console.log(`  marchandises        ${current.products} → ${plan.products.length}`);
-  console.log(`  mouvements de stock ${current.movements} → ${plan.movements.length}`);
-  console.log(`  registre            ${current.transactions} → ${plan.transactions.length}`);
-  console.log(`  annonces            ${current.announcements} → ${plan.announcements.length}`);
-  for (const [k, v] of Object.entries(plan.settings)) console.log(`  réglage ${k} = ${v}`);
-  console.log(`Caisse après import : ${till(plan.transactions)} septims`);
-  // The old app's treasury: sales minus buybacks, plus adjustments.
-  const legacyTill = data.stats?.treasury;
-  if (legacyTill !== undefined) console.log(`Caisse de l'ancienne app : ${legacyTill} septims`);
-  const left = Object.entries(plan.notImported).filter(([, n]) => n > 0);
-  if (left.length) {
-    console.log(`Pas encore de place dans la nouvelle app (restent dans le fichier) : ${left.map(([k, n]) => `${n} ${k}`).join(", ")}`);
+  console.log(suppliersOnly ? "Remplacé (rien d'autre ne bouge) :" : "Remplacé :");
+  if (!suppliersOnly) {
+    console.log(`  marchandises        ${current.products} → ${plan.products.length}`);
+    console.log(`  mouvements de stock ${current.movements} → ${plan.movements.length}`);
+    console.log(`  registre            ${current.transactions} → ${plan.transactions.length}`);
+    console.log(`  annonces            ${current.announcements} → ${plan.announcements.length}`);
+  }
+  console.log(`  fournisseurs        ${current.suppliers} → ${plan.suppliers.length}`);
+  if (!suppliersOnly) {
+    for (const [k, v] of Object.entries(plan.settings)) console.log(`  réglage ${k} = ${v}`);
+    console.log(`Caisse après import : ${till(plan.transactions)} septims`);
+    // The old app's treasury: sales minus buybacks, plus adjustments.
+    const legacyTill = data.stats?.treasury;
+    if (legacyTill !== undefined) console.log(`Caisse de l'ancienne app : ${legacyTill} septims`);
   }
   if (plan.warnings.length) {
     console.log(`\n${plan.warnings.length} avertissement(s) :`);
@@ -89,7 +109,7 @@ try {
     } else {
       const backup = await saveBackup(sql, target);
       console.log(`Sauvegarde de l'existant : ${backup}`);
-      await write(sql, plan);
+      await (suppliersOnly ? writeSuppliers(sql, plan.suppliers) : write(sql, plan));
       console.log("Import terminé.");
     }
   }
@@ -109,6 +129,8 @@ async function saveBackup(sql, target) {
     transactions: await sql`select * from transactions order by id`,
     settings: await sql`select * from settings`,
     announcements: await sql`select * from announcements order by id`,
+    suppliers: await sql`select * from suppliers order by id`,
+    supplierOffers: await sql`select * from supplier_offers order by id`,
   };
   const dir = path.resolve("legacy-export");
   await mkdir(dir, { recursive: true });
@@ -119,7 +141,7 @@ async function saveBackup(sql, target) {
 
 async function write(sql, plan) {
   await sql.begin(async (tx) => {
-    await tx`truncate transactions, stock_movements, products, announcements restart identity`;
+    await tx`truncate transactions, stock_movements, supplier_offers, suppliers, products, announcements restart identity`;
     // Members are only ever added, never changed. "!" is no valid hash: no
     // sign-in until the gérant sets a password.
     const memberIds = new Map();
@@ -153,7 +175,27 @@ async function write(sql, plan) {
     for (const chunk of chunks(plan.announcements)) {
       await tx`insert into announcements ${tx(chunk.map(member).map(snake))}`;
     }
+    await insertSuppliers(tx, plan.suppliers);
   });
+}
+
+async function writeSuppliers(sql, suppliers) {
+  await sql.begin(async (tx) => {
+    await tx`truncate supplier_offers, suppliers restart identity`;
+    await insertSuppliers(tx, suppliers);
+  });
+}
+
+/** Inserts suppliers and their offers, matched to products by name. */
+async function insertSuppliers(tx, suppliers) {
+  for (const { offers, ...s } of suppliers) {
+    const [{ id }] = await tx`insert into suppliers ${tx(snake(s))} returning id`;
+    for (const o of offers) {
+      await tx`
+        insert into supplier_offers (supplier_id, product_id, price, qty)
+        select ${id}, p.id, ${o.price}, ${o.qty} from products p where p.name = ${o.productName}`;
+    }
+  }
 }
 
 function* chunks(rows, size = 500) {

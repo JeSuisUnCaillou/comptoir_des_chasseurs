@@ -157,3 +157,42 @@ export const announcements = pgTable(
 
 export type Announcement = typeof announcements.$inferSelect;
 export type AnnouncementPin = (typeof announcementPin.enumValues)[number];
+
+/** Someone the comptoir buys from: where to find them and what they sell. */
+export const suppliers = pgTable(
+  "suppliers",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    // Where to find them ("Vendeaume").
+    place: text("place").notNull().default(""),
+    // Free note, such as who they represent.
+    notes: text("notes").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("suppliers_name_idx").on(t.name)],
+);
+
+/** A merchandise a supplier sells: price septims for qty units. */
+export const supplierOffers = pgTable(
+  "supplier_offers",
+  {
+    id: serial("id").primaryKey(),
+    supplierId: integer("supplier_id")
+      .notNull()
+      .references(() => suppliers.id, { onDelete: "cascade" }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id),
+    price: integer("price").notNull(),
+    qty: integer("qty").notNull().default(1),
+  },
+  (t) => [
+    uniqueIndex("supplier_offers_supplier_product_idx").on(t.supplierId, t.productId),
+    check("supplier_offers_price_positive", sql`${t.price} >= 0`),
+    check("supplier_offers_qty_positive", sql`${t.qty} > 0`),
+  ],
+);
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type SupplierOffer = typeof supplierOffers.$inferSelect;
