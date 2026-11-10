@@ -130,11 +130,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
-- Les marchandises (cartes du stock, Gérer les tarifs, sections des Tarifs,
-  choix d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A à Z, sans
-  tenir compte des majuscules ni des accents ; les marchandises archivées
-  viennent en dernier. Les cartes du stock de l'Inventaire montrent d'abord
-  les viandes, puis les peaux, puis tout le reste, chaque groupe rangé par nom. Le registre, l'historique du stock et les annonces
+- Les marchandises (Gérer les tarifs, sections des Tarifs, choix
+  d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A
+  à Z, sans tenir compte des majuscules ni des accents ; les marchandises
+  archivées viennent en dernier. Les cartes du stock de l'Inventaire montrent
+  d'abord les viandes, puis les peaux, puis tout le reste, chaque groupe
+  rangé par nom de la même façon. Le registre, l'historique du stock et les annonces
   restent du plus récent au plus ancien.
 
 ## Rôles

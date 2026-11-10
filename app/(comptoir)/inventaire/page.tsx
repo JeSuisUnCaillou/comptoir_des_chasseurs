@@ -2,6 +2,7 @@ import { Archive } from "lucide-react";
 import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
+import type { ProductCategory } from "@/lib/db/schema";
 import { formatNumber, plural } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
@@ -9,8 +10,8 @@ import { activeProducts, movementCount, recentMovements } from "@/lib/products";
 
 // Meats first, then hides, then everything else; the database already sorts by
 // name and Array.prototype.sort is stable, so names stay in order inside each group.
-const STOCK_GROUP: Partial<Record<string, number>> = { viande: 0, peau: 1 };
-const stockGroup = (category: string) => STOCK_GROUP[category] ?? 2;
+const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { viande: 0, peau: 1 };
+const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 2;
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
