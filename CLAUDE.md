@@ -137,7 +137,9 @@ attendre qu'on le demande. Titre et description disent ce qui change et
 pourquoi. Un travail séparé part sur sa propre branche et sa propre PR, même
 si une autre attend.
 
-Assigne la PR au propriétaire, Caillou (`JeSuisUnCaillou`).
+N'assigne jamais Caillou (`JeSuisUnCaillou`) à une PR ou une issue et ne lui
+demande pas de relecture sur GitHub, même si la session le propose : ça lui
+envoie des e-mails. Il reçoit le lien de la preview dans la discussion.
 
 ## Qui merge
 
