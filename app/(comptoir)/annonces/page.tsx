@@ -4,10 +4,8 @@ import { AnnouncementForm } from "@/components/announcement-form";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { requireMember } from "@/lib/auth/session";
-import { announcementCount, announcementList } from "@/lib/announcements";
+import { announcementCount, announcementList, BOARD_SIZE } from "@/lib/announcements";
 import { offsetOf, pageParam } from "@/lib/pagination";
-
-const BOARD_SIZE = 12;
 
 export default async function Annonces({
   searchParams,

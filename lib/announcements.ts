@@ -2,6 +2,9 @@ import "server-only";
 import { count, desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
+/** Parchments per page of the board, on the Grand livre and on Annonces. */
+export const BOARD_SIZE = 12;
+
 /** Announcements, newest first, with their author's name. */
 export async function announcementList({ limit, offset = 0 }: { limit: number; offset?: number }) {
   const a = schema.announcements;

@@ -1006,12 +1006,6 @@ tr.fresh td {
   font-size: 12px;
 }
 
-.board-more {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
-}
-
 .announcement-form .parchment-input {
   color: #3a2a17;
   font-family: var(--serif);
