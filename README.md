@@ -56,6 +56,10 @@ npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview --e
 npm run legacy:import -- legacy-export/ancienne-app-….json --cible=preview
 ```
 
+Sous Windows dans Git Bash, lancer `winpty node scripts/legacy/export.mjs`
+(et de même pour l'import) : sans `winpty`, le mot de passe s'affiche à la
+frappe.
+
 1. `legacy:export` se connecte à l'ancienne app (certificat auto-signé
    accepté pour elle seule) et écrit tout ce que son API renvoie dans
    `legacy-export/` (ignoré par git) : stock, mouvements, tarifs des peaux,
