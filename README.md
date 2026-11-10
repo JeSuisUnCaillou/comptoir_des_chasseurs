@@ -137,7 +137,7 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A
   à Z, sans tenir compte des majuscules ni des accents ; les marchandises
   archivées viennent en dernier. Les cartes du stock de l'Inventaire montrent
-  d'abord les viandes, puis les peaux, puis tout le reste, chaque groupe
+  d'abord les cuirs, puis les viandes, puis les peaux, puis tout le reste, chaque groupe
   rangé par nom de la même façon. Seule une carte en rupture porte une
   étiquette (« Rupture ») ; une carte en stock n'en a pas. Le registre, l'historique du stock et les annonces
   restent du plus récent au plus ancien.

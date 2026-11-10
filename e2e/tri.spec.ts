@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { createMember, createProduct, loginAsGerant, uniqueName } from "./helpers";
 
-// Case and accents must not push "Élan" after "zèbre". Meats come first, then
-// hides, then everything else mixed by name.
-test("le stock montre les viandes, puis les peaux, puis le reste, chacun par nom", async ({ page }) => {
+// Case and accents must not push "Élan" after "zèbre". Leather comes first,
+// then meats, then hides, then everything else mixed by name.
+test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, chacun par nom", async ({ page }) => {
   const tag = uniqueName("Tri stock");
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`);
@@ -19,6 +19,7 @@ test("le stock montre les viandes, puis les peaux, puis le reste, chacun par nom
   await page.goto("/inventaire");
   await page.getByLabel("Rechercher une marchandise").fill(tag);
   await expect(page.locator(".stock-card h3")).toHaveText([
+    `${tag} Cuir`,
     `${tag} Aurochs`,
     `${tag} sanglier`,
     `${tag} Élan`,
@@ -26,7 +27,6 @@ test("le stock montre les viandes, puis les peaux, puis le reste, chacun par nom
     `${tag} zèbre`,
     `0 ${tag} Ambre`,
     `${tag} Argent`,
-    `${tag} Cuir`,
   ]);
 
   // The sale form keeps its category groups in order, sorted by name inside each.
