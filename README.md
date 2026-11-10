@@ -60,7 +60,8 @@ Sous Windows dans Git Bash, lancer `winpty node scripts/legacy/export.mjs`
 (et de même pour l'import) : sans `winpty`, le mot de passe s'affiche à la
 frappe.
 
-1. `legacy:export` se connecte à l'ancienne app (certificat auto-signé
+1. `legacy:export` (ou `node scripts/legacy/export.mjs <adresse> <identifiant>`,
+   qui ne demande alors que le mot de passe) se connecte à l'ancienne app (certificat auto-signé
    accepté pour elle seule) et écrit tout ce que son API renvoie dans
    `legacy-export/` (ignoré par git) : stock, mouvements, tarifs des peaux,
    du cuir et des viandes, registre complet, trésorerie, fournisseurs,
