@@ -46,6 +46,23 @@ export function mapLegacy(data, members) {
   // Authors with no account get one, without a password: the gérant gives
   // them one from the Membres page. Until written, they are known by `ref`.
   const newMembers = [];
+  const taken = new Set(members.map((m) => m.username));
+  // Same rule as the Membres page ([a-z0-9._-], 40 max), and never one in use.
+  const freeUsername = (name) => {
+    const base =
+      key(name)
+        .replace(/æ/g, "ae")
+        .replace(/œ/g, "oe")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9._-]+/g, ".")
+        .replace(/^\.+|\.+$/g, "")
+        .slice(0, 36) || "employe";
+    let username = base;
+    for (let n = 2; taken.has(username); n++) username = `${base}-${n}`;
+    taken.add(username);
+    return username;
+  };
   const authorOf = (row) => {
     const name = (
       row.employee_name ?? row.author_name ?? row.manager_name ?? row.created_by_name ?? row.user_name
@@ -53,7 +70,7 @@ export function mapLegacy(data, members) {
     if (!name) return gerant.id;
     let m = memberByKey.get(key(name));
     if (!m) {
-      m = { id: `nouveau:${key(name)}`, username: key(name).slice(0, 40), name };
+      m = { id: `nouveau:${key(name)}`, username: freeUsername(name), name };
       newMembers.push(m);
       memberByKey.set(key(name), m);
     }

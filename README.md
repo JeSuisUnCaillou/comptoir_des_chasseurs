@@ -72,13 +72,17 @@ frappe.
    à jour le prix du cuir chez le forgeron. Les membres existants ne changent
    pas : chaque ligne est rattachée au membre du même identifiant ou du même
    nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en
-   employé et sans mot de passe ; le gérant lui en donne un depuis Membres.
+   employé et sans mot de passe (identifiant tiré du nom, sans accents ni
+   espaces) ; le gérant lui en donne un depuis Membres.
    Les ajustements de trésorerie deviennent des lignes
    « Ajustement de trésorerie » du registre. Les fournisseurs restent dans le
    fichier tant que l'app n'a pas de place pour eux.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
      « écraser la preview » ou « écraser la prod » pour confirmer
      (`--cible=local`, pour le test, n'accepte qu'une base sur la machine).
+   - `--base=<url>` donne l'URL de la base et `--oui` confirme sans la
+     question, pour tout lancer en une ligne (l'URL reste alors dans
+     l'historique du terminal).
    - `--essai` montre ce qui serait remplacé, la caisse obtenue et les
      avertissements, sans rien écrire.
    - Avant d'écrire, l'existant est sauvegardé dans `legacy-export/`, et tout

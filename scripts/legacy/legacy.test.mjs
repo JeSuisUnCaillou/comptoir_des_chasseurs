@@ -63,6 +63,8 @@ const legacy = {
     posts: [
       { id: 1, title: "Bienvenue", body: "Le comptoir ouvre.", fastener: "axe", author_name: "Einar le Rouge", created_at: "2026-10-02T09:00:00Z" },
       { id: 2, title: "Chasse", body: "Ours au nord.", fastener: "meat", author_name: "Inconnu", created_at: "2026-10-03T09:00:00Z" },
+      { id: 3, title: "Forge", body: "Cuir livré.", fastener: "knife", author_name: "Ældis la Rapide", created_at: "2026-10-04T09:00:00Z" },
+      { id: 4, title: "Doublon", body: "…", fastener: "knife", author_name: "Einar !", created_at: "2026-10-04T10:00:00Z" },
     ],
   },
 };
@@ -166,7 +168,7 @@ test("export puis import, sans toucher aux membres", async () => {
   const trial = await run(["scripts/legacy/import.mjs", file, "--cible=local", "--essai"], `${dbUrl}\n`);
   assert.equal(trial.code, 0, trial.output);
   assert.match(trial.output, /registre\s+0 → 451/);
-  assert.match(trial.output, /annonces\s+0 → 2/);
+  assert.match(trial.output, /annonces\s+0 → 4/);
   assert.match(trial.output, /rien n'a été écrit/);
   assert.equal((await admin`select count(*)::int as n from transactions`)[0].n, 0);
 
@@ -175,7 +177,8 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.match(refused.output, /Pas confirmé/);
   assert.equal((await admin`select count(*)::int as n from transactions`)[0].n, 0);
 
-  const imported = await run(["scripts/legacy/import.mjs", file, "--cible=local"], `${dbUrl}\nécraser\n`);
+  // Everything on one line: nothing is asked, and the URL is never printed.
+  const imported = await run(["scripts/legacy/import.mjs", file, "--cible=local", `--base=${dbUrl}`, "--oui"], "");
   assert.equal(imported.code, 0, imported.output);
   assert.match(imported.output, /Import terminé/);
   assert.match(imported.output, /Caisse après import : 1144 septims\nCaisse de l'ancienne app : 1144 septims/);
@@ -192,6 +195,8 @@ test("export puis import, sans toucher aux membres", async () => {
       { username: "lomone", name: "Lomone", role: "gerant", password_hash: "x" },
       { username: "einar", name: "Einar", role: "employe", password_hash: "x" },
       { username: "inconnu", name: "Inconnu", role: "employe", password_hash: "!" },
+      { username: "aeldis.la.rapide", name: "Ældis la Rapide", role: "employe", password_hash: "!" },
+      { username: "einar-2", name: "Einar !", role: "employe", password_hash: "!" },
     ],
   );
 
@@ -229,6 +234,8 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.deepEqual(notices.map((n) => ({ ...n })), [
     { title: "Bienvenue", body: "Le comptoir ouvre.", pin: "hache", author: "einar" },
     { title: "Chasse", body: "Ours au nord.", pin: "viande", author: "inconnu" },
+    { title: "Forge", body: "Cuir livré.", pin: "couteau", author: "aeldis.la.rapide" },
+    { title: "Doublon", body: "…", pin: "couteau", author: "einar-2" },
   ]);
 
   const backups = (await readdir(OUT)).filter((f) => f.startsWith("sauvegarde-local-"));

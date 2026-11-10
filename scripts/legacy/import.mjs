@@ -3,9 +3,11 @@
 // Members are never changed: the old app's authors are matched to them by
 // name, and those with no account get one, without a password.
 //
-//   node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--essai]
+//   node scripts/legacy/import.mjs <export.json> --cible=preview|prod
+//     [--base=<url postgres>] [--oui] [--essai]
 //
-// The database address is asked at run time. --essai shows what would be
+// The database address is asked unless given with --base. --oui confirms
+// without asking; otherwise the target's phrase must be typed. --essai shows what would be
 // written and stops. Before writing, the current data is saved to
 // legacy-export/, and everything is written in one transaction.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -21,9 +23,13 @@ const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith("--"));
 const target = args.find((a) => a.startsWith("--cible="))?.slice("--cible=".length);
 const dryRun = args.includes("--essai");
+const givenUrl = args.find((a) => a.startsWith("--base="))?.slice("--base=".length);
+const confirmed = args.includes("--oui");
 
 if (!file || !TARGETS[target]) {
-  console.error("Usage : node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--essai]");
+  console.error(
+    "Usage : node scripts/legacy/import.mjs <export.json> --cible=preview|prod [--base=<url>] [--oui] [--essai]",
+  );
   process.exit(2);
 }
 
@@ -31,7 +37,7 @@ const prompter = createPrompter();
 let sql;
 try {
   const data = JSON.parse(await readFile(file, "utf8"));
-  const rawUrl = await prompter.ask(`URL Postgres de la base ${target} : `, { hidden: true });
+  const rawUrl = givenUrl ?? (await prompter.ask(`URL Postgres de la base ${target} : `, { hidden: true }));
   const { url, ssl } = connectionOptions(rawUrl);
   const where = new URL(url);
   if (target === "local" && !["localhost", "127.0.0.1", "[::1]"].includes(where.hostname)) {
@@ -77,7 +83,7 @@ try {
     console.log("\nEssai : rien n'a été écrit.");
   } else {
     const phrase = TARGETS[target];
-    const answer = await prompter.ask(`\nPour confirmer, tape « ${phrase} » : `);
+    const answer = confirmed ? phrase : await prompter.ask(`\nPour confirmer, tape « ${phrase} » : `);
     if (answer !== phrase) {
       console.log("Pas confirmé : rien n'a été écrit.");
     } else {
