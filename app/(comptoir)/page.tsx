@@ -2,26 +2,18 @@ import { Coins, Megaphone, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
 import { PageHead } from "@/components/page-head";
-import { Pagination } from "@/components/pagination";
 import { RegisterTable } from "@/components/register-table";
 import { TillStat } from "@/components/till-stat";
 import { requireMember } from "@/lib/auth/session";
-import { announcementCount, announcementList, BOARD_SIZE } from "@/lib/announcements";
-import { offsetOf, pageParam } from "@/lib/pagination";
+import { announcementList } from "@/lib/announcements";
 import { registerEntries, tillSummary } from "@/lib/register";
 
-export default async function GrandLivre({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string | string[] }>;
-}) {
+export default async function GrandLivre() {
   const member = await requireMember();
-  const page = pageParam((await searchParams).page);
-  const [till, recent, announcements, announcementTotal] = await Promise.all([
+  const [till, recent, announcements] = await Promise.all([
     tillSummary(),
     registerEntries({}, { limit: 10 }),
-    announcementList({ limit: BOARD_SIZE, offset: offsetOf(page, BOARD_SIZE) }),
-    announcementCount(),
+    announcementList(),
   ]);
 
   return (
@@ -64,7 +56,6 @@ export default async function GrandLivre({
           </Link>
         </div>
         <AnnouncementBoard announcements={announcements} member={member} />
-        <Pagination page={page} total={announcementTotal} path="/" size={BOARD_SIZE} label="Pages des annonces" noun="annonce" />
       </section>
       <section className="panel">
         <div className="panel-head">

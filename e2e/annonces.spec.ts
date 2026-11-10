@@ -55,21 +55,23 @@ test("seuls l'auteur et un gérant peuvent décrocher un parchemin", async ({ pa
   await expect(parchment(other, second)).toHaveCount(0);
 });
 
-test("l'accueil et la page Annonces montrent tout le tableau, paginé", async ({ page }) => {
+test("l'accueil montre tout le tableau, la page Annonces le pagine", async ({ page }) => {
   const title = uniqueName("Vieille annonce");
   await createAnnouncements(GERANT.username, 14, title);
   await loginAsGerant(page);
-  for (const path of ["/", "/annonces"]) {
-    await page.goto(path);
-    const pages = page.getByRole("navigation", { name: "Pages des annonces" });
-    await expect(page.locator(".parchment")).toHaveCount(12);
-    await expect(pages).toContainText(/Page 1 sur \d+ · \d+ annonces/);
-    await pages.getByRole("link", { name: "Suivant" }).click();
-    await expect(page).toHaveURL(/page=2/);
-    await expect(pages).toContainText(/Page 2 sur \d+/);
-    // The oldest of the batch is past the first twelve.
-    await expect(parchment(page, `${title} 14`)).toBeVisible();
-  }
+  // Every parchment of the batch is on the Grand livre, with no pages.
+  for (const i of [1, 14]) await expect(parchment(page, `${title} ${i}`)).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Pages des annonces" })).toHaveCount(0);
+
+  await page.goto("/annonces");
+  const pages = page.getByRole("navigation", { name: "Pages des annonces" });
+  await expect(page.locator(".parchment")).toHaveCount(12);
+  await expect(pages).toContainText(/Page 1 sur \d+ · \d+ annonces/);
+  await pages.getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(pages).toContainText(/Page 2 sur \d+/);
+  // The oldest of the batch is past the first twelve.
+  await expect(parchment(page, `${title} 14`)).toBeVisible();
 });
 
 test("un parchemin sans titre est refusé, et la saisie reste", async ({ page }) => {
