@@ -310,6 +310,27 @@ h3 {
   margin-top: 6px;
 }
 
+/* The four tiles of the till on the Grand livre */
+.till-overview .stat {
+  border-left-width: 3px;
+}
+
+.till-overview .stat-value {
+  font-size: 30px;
+}
+
+.stat-accent-gold {
+  border-left-color: var(--gold);
+}
+
+.stat-accent-green {
+  border-left-color: var(--green);
+}
+
+.stat-accent-red {
+  border-left-color: var(--red);
+}
+
 /* Tables */
 .table-wrap {
   overflow-x: auto;

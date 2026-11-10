@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
 import { PageHead } from "@/components/page-head";
 import { RegisterTable } from "@/components/register-table";
+import { TillOverview } from "@/components/till-overview";
 import { TillStat } from "@/components/till-stat";
 import { requireMember } from "@/lib/auth/session";
 import { announcementList } from "@/lib/announcements";
@@ -37,10 +38,10 @@ export default async function GrandLivre() {
             </Link>
           </div>
         </div>
-        <div className="stats">
+        <TillOverview till={till.all} />
+        <div className="stats" style={{ marginTop: 12 }}>
           <TillStat title="Aujourd'hui" till={till.day} testId="caisse-jour" />
           <TillStat title="7 derniers jours" till={till.week} testId="caisse-semaine" />
-          <TillStat title="Depuis l'ouverture" till={till.all} testId="caisse-totale" />
         </div>
       </section>
       <section className="section-gap">
