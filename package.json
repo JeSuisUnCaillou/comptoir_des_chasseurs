@@ -9,7 +9,10 @@
     "lint": "tsc --noEmit",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "legacy:export": "node scripts/legacy/export.mjs",
+    "legacy:import": "node scripts/legacy/import.mjs",
+    "test:legacy": "node --test scripts/legacy/legacy.test.mjs"
   },
   "engines": {
     "node": ">=22"
