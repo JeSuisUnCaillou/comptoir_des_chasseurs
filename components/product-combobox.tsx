@@ -91,10 +91,11 @@ export function ProductCombobox<T extends number | string>({
             const step = e.key === "ArrowDown" ? 1 : -1;
             setActive((i) => Math.min(Math.max(i + step, 0), Math.max(options.length - 1, 0)));
           } else if (e.key === "Enter") {
-            if (open && options[active]) {
-              e.preventDefault();
-              choose(options[active]);
-            }
+            // While the list is open, Enter belongs to it and never submits the form.
+            if (!open) return;
+            e.preventDefault();
+            // A name that matches nothing does not fall through to the extras.
+            if (options[active] && (matches.length > 0 || !(editing && query))) choose(options[active]);
           } else if (e.key === "Escape") {
             reset();
           }

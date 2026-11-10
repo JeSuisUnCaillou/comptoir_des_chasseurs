@@ -135,6 +135,9 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
     // A name typed without picking anything keeps the product already chosen.
     await box.fill("introuvable-xyz");
     await expect(form.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
+    // Enter does not pick "Autre article" behind the member's back.
+    await box.press("Enter");
+    await expect(form.getByLabel("Nom de l'article")).toHaveCount(0);
     await box.press("Escape");
     await expect(box).toHaveValue(product);
   }
