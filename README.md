@@ -83,7 +83,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une écriture porte sur une
-  marchandise du stock ou sur un article libre hors stock. Le montant est
+  marchandise du stock ou sur un article libre hors stock ; la marchandise
+  se choisit dans un champ où l'on tape son nom, comme dans le calculateur
+  des Tarifs, la liste gardant ses catégories. Le montant est
   calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix. Le stock bouge :
