@@ -88,7 +88,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix. Le stock bouge :
   +quantité à l'achat, −quantité à la vente, jamais sous zéro. Le registre se
-  filtre par opération et par dates (heure de Paris). L'auteur d'une ligne ou
+  filtre par opération, par employé (le membre qui a inscrit la ligne) et par
+  dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
   et le stock revient à l'état d'avant. Un **mouvement de caisse** fait entrer
   ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,

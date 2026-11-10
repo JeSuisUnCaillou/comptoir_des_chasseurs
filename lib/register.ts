@@ -1,10 +1,10 @@
 import "server-only";
-import { and, count, desc, eq, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { getDb, schema } from "@/lib/db";
+import { byName, getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
 
-export type RegisterFilter = { kinds?: TransactionKind[]; from?: Date; to?: Date };
+export type RegisterFilter = { kinds?: TransactionKind[]; from?: Date; to?: Date; memberId?: number };
 
 const canceller = alias(schema.members, "canceller");
 
@@ -14,6 +14,7 @@ function conditions(filter: RegisterFilter) {
   if (filter.kinds?.length) where.push(inArray(t.kind, filter.kinds));
   if (filter.from) where.push(gte(t.createdAt, filter.from));
   if (filter.to) where.push(lt(t.createdAt, filter.to));
+  if (filter.memberId) where.push(eq(t.memberId, filter.memberId));
   return where;
 }
 
@@ -46,6 +47,12 @@ export async function registerEntries(
     .orderBy(desc(t.createdAt), desc(t.id))
     .limit(limit)
     .offset(offset);
+}
+
+/** Everyone who can author a line, deactivated members included, for the register's filter. */
+export async function registerAuthors() {
+  const m = schema.members;
+  return getDb().select({ id: m.id, name: m.name }).from(m).orderBy(byName(m.name), asc(m.id));
 }
 
 export type RegisterEntry = Awaited<ReturnType<typeof registerEntries>>[number];

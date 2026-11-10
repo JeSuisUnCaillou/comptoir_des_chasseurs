@@ -395,3 +395,51 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   near(after.margin - before.margin, 3_000_000);
   near(after.treasury - before.treasury, 3_000_000);
 });
+
+test("le filtre par employé ne garde que ses lignes, page après page", async ({ page }) => {
+  const thorald = uniqueName("thorald").toLowerCase();
+  const vilkas = uniqueName("vilkas").toLowerCase();
+  await createMember(thorald, "mot-de-passe");
+  await createMember(vilkas, "mot-de-passe");
+  const sales = uniqueName("Vente de Thorald");
+  const buyback = uniqueName("Achat de Thorald");
+  const other = uniqueName("Vente de Vilkas");
+  await createTransactions(thorald, 26, { amount: 2, label: sales });
+  await createTransactions(thorald, 1, { amount: 5, label: buyback, kind: "rachat" });
+  await createTransactions(vilkas, 3, { amount: 9, label: other });
+
+  await loginAsGerant(page);
+  await page.goto("/achat-vente");
+  await page.getByLabel("Employé").selectOption({ label: thorald });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const table = page.getByTestId("registre");
+  await expect(table.locator("tbody tr")).toHaveCount(25);
+  await expect(table.locator("tbody tr").filter({ hasNotText: thorald })).toHaveCount(0);
+  await expect(page.getByTestId("totaux-registre")).toContainText("+47 septims"); // 26 × 2 − 5
+
+  // The next page keeps the filter.
+  const pages = page.getByRole("navigation", { name: "Pages du registre" });
+  await expect(pages).toContainText("Page 1 sur 2");
+  await pages.getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(table.locator("tbody tr")).toHaveCount(2);
+  await expect(page.getByLabel("Employé").locator("option:checked")).toHaveText(thorald);
+
+  // It adds up with the other filters.
+  await page.getByLabel("Opération").selectOption("rachat");
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expect(table.locator("tbody tr")).toContainText(buyback);
+
+  // Another member's filter shows only their lines.
+  await page.getByLabel("Opération").selectOption("");
+  await page.getByLabel("Employé").selectOption({ label: vilkas });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+  await expect(table.locator("tbody tr").filter({ hasText: other })).toHaveCount(3);
+
+  await page.getByRole("link", { name: "Tout afficher" }).click();
+  await expect(page).toHaveURL(/\/achat-vente$/);
+  await expect(page.getByLabel("Employé").locator("option:checked")).toHaveText("Tous");
+});
