@@ -86,4 +86,9 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
     "Rachat du cuir par le forgeron",
     "Toutes les marchandises",
   ]);
+  // The catalogue panel keeps the usual gap below the two panels above it.
+  const panel = (name: string) => page.locator("section.panel").filter({ has: page.getByRole("heading", { name, level: 2 }) });
+  const above = await panel("Ajouter une marchandise").boundingBox();
+  const catalogue = await panel("Toutes les marchandises").boundingBox();
+  expect(catalogue!.y - (above!.y + above!.height)).toBeGreaterThanOrEqual(20);
 });

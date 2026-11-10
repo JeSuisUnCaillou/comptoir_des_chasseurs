@@ -37,7 +37,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         La liste des marchandises du comptoir et leurs prix.
       </PageHead>
 
-      <div className="cols">
+      <div className="cols section-gap">
         <section className="panel" aria-labelledby="ajout">
           <div className="eyebrow">Nouvelle référence</div>
           <h2 id="ajout">Ajouter une marchandise</h2>
