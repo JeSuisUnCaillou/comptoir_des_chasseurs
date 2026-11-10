@@ -121,7 +121,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise se cherche en tapant parmi toutes les marchandises qui ont un
   prix, puis les tables. Les tables ne montrent que les marchandises qui ont
   un prix ; un bouton sous chacune montre ses marchandises sans tarif dans
-  une table à part, sous le bouton, rangée par nom. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
+  une table à part, sous le bouton, rangée par nom. Quand la recherche d'une
+  table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
+  s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les

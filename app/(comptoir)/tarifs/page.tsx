@@ -116,22 +116,34 @@ function showsUnpriced(search: Search, table: Table) {
   return param(search[`${table}-sans-tarif`]) === "1";
 }
 
+/** Below this many results for a table's search, priced or not, its products without a price show by themselves. */
+const AUTO_UNPRICED_BELOW = 10;
+
+/** Whether a table's search found so few products that those without a price show without asking. */
+function autoUnpriced(search: Search, table: Table, results: number) {
+  return Boolean(param(search[table])?.trim()) && results < AUTO_UNPRICED_BELOW;
+}
+
 /**
  * Under a table, the button that shows or hides its products without a price,
  * keeping the rest of the address, and those products in a table of their own.
+ * `auto`: a narrow search shows them without the button.
  */
 function Unpriced({
   search,
   table,
   products,
   canEdit,
+  auto,
 }: {
   search: Search;
   table: Table;
   products: Product[];
   canEdit: boolean;
+  auto: boolean;
 }) {
-  const shown = showsUnpriced(search, table);
+  if (auto && products.length === 0) return null;
+  const shown = auto || showsUnpriced(search, table);
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(search)) {
     const v = param(value);
@@ -141,18 +153,20 @@ function Unpriced({
   const qs = query.toString();
   return (
     <div className="unpriced">
-      <Link className="btn btn-small" href={qs ? `/tarifs?${qs}` : "/tarifs"} scroll={false}>
-        {shown ? (
-          <>
-            <EyeOff size={14} /> Masquer les marchandises sans tarif
-          </>
-        ) : (
-          <>
-            <Eye size={14} /> Voir les marchandises sans tarif
-          </>
-        )}
-        <PendingSpinner testId="sans-tarif-pending" />
-      </Link>
+      {!auto && (
+        <Link className="btn btn-small" href={qs ? `/tarifs?${qs}` : "/tarifs"} scroll={false}>
+          {shown ? (
+            <>
+              <EyeOff size={14} /> Masquer les marchandises sans tarif
+            </>
+          ) : (
+            <>
+              <Eye size={14} /> Voir les marchandises sans tarif
+            </>
+          )}
+          <PendingSpinner testId="sans-tarif-pending" />
+        </Link>
+      )}
       {shown &&
         (products.length === 0 ? (
           <p className="muted">Aucune marchandise sans tarif.</p>
@@ -308,7 +322,13 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
           Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
           {septims(blacksmith)}. Ils sont bruts, hors frais.
         </p>
-        <Unpriced search={search} table="peaux" products={allHides.filter((p) => !priced(p))} canEdit={canEdit} />
+        <Unpriced
+          search={search}
+          table="peaux"
+          products={allHides.filter((p) => !priced(p))}
+          canEdit={canEdit}
+          auto={autoUnpriced(search, "peaux", allHides.length)}
+        />
       </section>
 
       <section className="panel" aria-labelledby="chasse">
@@ -320,7 +340,13 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <GoodsTable products={meats} canEdit={canEdit} />
         <h3>Autres ressources</h3>
         <GoodsTable products={goods} canEdit={canEdit} />
-        <Unpriced search={search} table="chasse" products={hunted.filter((p) => !priced(p))} canEdit={canEdit} />
+        <Unpriced
+          search={search}
+          table="chasse"
+          products={hunted.filter((p) => !priced(p))}
+          canEdit={canEdit}
+          auto={autoUnpriced(search, "chasse", hunted.length)}
+        />
       </section>
     </>
   );

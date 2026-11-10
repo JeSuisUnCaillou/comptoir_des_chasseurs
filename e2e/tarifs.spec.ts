@@ -176,23 +176,51 @@ test("chaque liste montre ses marchandises sans tarif sur demande, dans une tabl
   await expect(peaux.getByRole("table").first().getByText(base)).toHaveCount(0);
   await expect(unpricedChasse).toHaveCount(0);
 
-  // The other list has its own; the search filters it and keeps both choices.
+  // The other list has its own, and both choices hold together.
   await chasse.getByRole("link", { name: "Voir les marchandises sans tarif" }).click();
   await expect(page).toHaveURL(/peaux-sans-tarif=1&chasse-sans-tarif=1$/);
   await expect(unpricedChasse.getByRole("row", { name: new RegExp(ressource) })).toContainText("Ressource");
-  await chasse.getByRole("searchbox", { name: "Chercher une marchandise" }).pressSequentially("introuvable-xyz");
-  await expect(page).toHaveURL(/chasse=/);
-  await expect(chasse.getByText("Aucune marchandise sans tarif.")).toBeVisible();
 
-  // Hiding them again keeps the search and the other list's choice.
+  // Hiding one keeps the other.
   await peaux.getByRole("link", { name: "Masquer les marchandises sans tarif" }).click();
-  await expect(page).not.toHaveURL(/peaux-sans-tarif/);
-  await expect(page).toHaveURL(/chasse-sans-tarif=1/);
+  await expect(page).toHaveURL(/\/tarifs\?chasse-sans-tarif=1$/);
   await expect(unpricedPeaux).toHaveCount(0);
-  await expect(chasse.getByText("Aucune marchandise sans tarif.")).toBeVisible();
+  await expect(unpricedChasse.getByRole("row", { name: new RegExp(ressource) })).toBeVisible();
   await chasse.getByRole("link", { name: "Masquer les marchandises sans tarif" }).click();
-  await expect(page).toHaveURL(/\/tarifs\?chasse=[^&]+$/);
-  await expect(chasse.getByText("Aucune marchandise sans tarif.")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/tarifs$/);
+  await expect(unpricedChasse).toHaveCount(0);
+});
+
+test("une recherche à moins de 10 résultats montre d'office les marchandises sans tarif", async ({ page }) => {
+  const few = uniqueName("Peu");
+  const many = uniqueName("Beaucoup");
+  await createProduct(`${few} sans tarif`, { buyPrice: null, sellPrice: null });
+  await createProduct(`${few} avec tarif`);
+  await createProduct(`${many} sans tarif`, { buyPrice: null, sellPrice: null });
+  for (let i = 1; i <= 9; i++) await createProduct(`${many} avec tarif ${i}`);
+  await page.goto("/tarifs");
+  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
+  const unpriced = peaux.getByRole("table", { name: "Marchandises sans tarif" });
+  const search = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
+
+  // 2 results: the one without a price shows by itself, with no button.
+  await search.pressSequentially(few);
+  await expect(unpriced.getByRole("row", { name: new RegExp(`${few} sans tarif`) })).toBeVisible();
+  await expect(peaux.getByRole("row", { name: new RegExp(`${few} avec tarif`) })).toBeVisible();
+  await expect(peaux.getByRole("link", { name: /les marchandises sans tarif/ })).toHaveCount(0);
+  await expect(page).not.toHaveURL(/sans-tarif=/);
+
+  // 10 results, the one without a price included: back to the button.
+  await search.fill(many);
+  await expect(peaux.getByRole("row", { name: new RegExp(`${many} avec tarif 9`) })).toBeVisible();
+  await expect(unpriced).toHaveCount(0);
+  await peaux.getByRole("link", { name: "Voir les marchandises sans tarif" }).click();
+  await expect(unpriced.getByRole("row", { name: new RegExp(`${many} sans tarif`) })).toBeVisible();
+
+  // A search that finds nothing adds nothing more.
+  await search.fill("introuvable-xyz");
+  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+  await expect(peaux.getByText("Aucune marchandise sans tarif.")).toHaveCount(0);
 });
 
 test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tarifs", async ({ page, browser }) => {
