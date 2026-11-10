@@ -48,54 +48,64 @@ test("le calculateur donne rachat, vente et transformation", async ({ page }) =>
   await expect(calc.getByTestId("calc-benefice")).toHaveText("+200 septims");
 });
 
-test("la recherche filtre les tarifs pendant qu'on tape", async ({ page }) => {
+test("chaque table a sa recherche, qui filtre pendant qu'on tape", async ({ page }) => {
   const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
   const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
 
-  const search = page.getByRole("search").getByRole("searchbox", { name: "Chercher une marchandise" });
+  const searchPeaux = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
+  const searchChasse = chasse.getByRole("searchbox", { name: "Chercher une marchandise" });
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
-  // The bar takes at least half of the page's width.
-  const bar = (await search.boundingBox())!;
+  // Each bar takes at least half of its panel's width, the table's.
+  const bar = (await searchPeaux.boundingBox())!;
+  const table = (await peaux.getByRole("table").boundingBox())!;
+  expect(bar.width).toBeGreaterThanOrEqual(table.width / 2);
   const panel = (await peaux.boundingBox())!;
-  expect(bar.width).toBeGreaterThanOrEqual(panel.width / 2);
-  // Leather and the calculator come first, then the bar, then the tables.
+  // Leather and the calculator come first, then the tables.
   const cuir = (await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox())!;
   const calcul = (await page.getByRole("region", { name: "Calculateur des prix" }).boundingBox())!;
-  expect(cuir.y).toBeLessThan(bar.y);
-  expect(calcul.y).toBeLessThan(bar.y);
-  expect(bar.y).toBeLessThan(panel.y);
-  await search.pressSequentially("ours");
-  await expect(page).toHaveURL(/\/tarifs\?q=ours$/);
+  expect(cuir.y).toBeLessThan(panel.y);
+  expect(calcul.y).toBeLessThan(panel.y);
+
+  // The hides search filters only the hides.
+  await searchPeaux.pressSequentially("ours");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=ours$/);
   await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
   await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
-  await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(2);
+  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
   // The calculator still offers every priced product.
   const calc = page.getByTestId("calculateur");
   await calc.getByRole("combobox", { name: "Marchandise" }).click();
   await expect(calc.getByRole("option", { name: "Biche", exact: true })).toHaveCount(1);
   await calc.getByRole("combobox", { name: "Marchandise" }).press("Escape");
 
-  await search.fill("venaison");
+  // The other search filters the meats and resources, and both hold together.
+  await searchChasse.pressSequentially("venaison");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=ours&chasse=venaison$/);
   await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
-  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+  await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(1);
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
 
-  await search.clear();
+  await searchPeaux.fill("introuvable-xyz");
+  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
+  await searchPeaux.clear();
+  await expect(page).toHaveURL(/\/tarifs\?chasse=venaison$/);
+  await searchChasse.clear();
   await expect(page).toHaveURL(/\/tarifs$/);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
 
   // Leaving the search by the menu or the back button shows the URL's query in the field.
-  await search.pressSequentially("biche");
-  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
+  await searchPeaux.pressSequentially("biche");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
   await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
-  await expect(search).toHaveValue("");
+  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
+  await expect(searchPeaux).toHaveValue("");
   await page.goBack();
-  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
-  await expect(search).toHaveValue("biche");
+  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
+  await expect(searchPeaux).toHaveValue("biche");
 });
 
 test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {

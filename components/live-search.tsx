@@ -6,14 +6,15 @@ import { useEffect, useRef, useState, useTransition } from "react";
 const DELAY_MS = 250;
 
 /**
- * Product name search that filters as you type: it writes `q` to the URL
- * (back to page 1) after a short pause, and the server page filters on it.
+ * Product name search that filters as you type: it writes its query parameter
+ * (`name`, `q` by default) to the URL, back to page 1, after a short pause,
+ * and the server page filters on it. Two searches on one page take two names.
  */
-export function LiveSearch() {
+export function LiveSearch({ name = "q" }: { name?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const urlQuery = searchParams.get("q") ?? "";
+  const urlQuery = searchParams.get(name) ?? "";
   const [value, setValue] = useState(urlQuery);
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -35,10 +36,11 @@ export function LiveSearch() {
     written.current = null;
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      const query = new URLSearchParams(searchParams.toString());
+      // Read the address now, not at the keystroke: another search on the page may have changed it since.
+      const query = new URLSearchParams(window.location.search);
       const q = next.trim();
-      if (q) query.set("q", q);
-      else query.delete("q");
+      if (q) query.set(name, q);
+      else query.delete(name);
       query.delete("page");
       written.current = q;
       const qs = query.toString();
@@ -49,7 +51,7 @@ export function LiveSearch() {
   return (
     <form className="inline-form filters live-search" role="search" aria-label="Recherche" onSubmit={(e) => e.preventDefault()}>
       <input
-        name="q"
+        name={name}
         type="search"
         value={value}
         onChange={(e) => search(e.target.value)}

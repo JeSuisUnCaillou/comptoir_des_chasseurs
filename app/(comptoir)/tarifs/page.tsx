@@ -87,17 +87,23 @@ function GoodsTable({ products }: { products: Product[] }) {
   );
 }
 
-type Search = { q?: string | string[] };
+type Search = { peaux?: string | string[]; chasse?: string | string[] };
+
+/** Products whose name holds the search, ignoring case. */
+function matching(products: Product[], search: string | string[] | undefined) {
+  const q = (param(search) ?? "").trim().slice(0, 100).toLocaleLowerCase("fr");
+  return q ? products.filter((p) => p.name.toLocaleLowerCase("fr").includes(q)) : products;
+}
 
 export default async function Tarifs({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
-  const q = (param((await searchParams).q) ?? "").trim().slice(0, 100).toLocaleLowerCase("fr");
+  const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(), blacksmithLeatherPrice()]);
-  const listed = products.filter((p) => !q || p.name.toLocaleLowerCase("fr").includes(q));
-  const hides = listed.filter((p) => p.category === "peau" && priced(p));
+  const hides = matching(products, search.peaux).filter((p) => p.category === "peau" && priced(p));
+  const hunted = matching(products, search.chasse);
   const leather = products.find((p) => p.category === "cuir");
-  const meats = listed.filter((p) => p.category === "viande" && priced(p));
-  const goods = listed.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
+  const meats = hunted.filter((p) => p.category === "viande" && priced(p));
+  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
   const calculable = products.filter(priced);
 
   return (
@@ -150,14 +156,13 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         </section>
       </div>
 
-      <LiveSearch />
-
       <section className="panel" aria-labelledby="peaux">
         <div className="eyebrow">Grille du comptoir</div>
         <h2 id="peaux">
           <Tag size={18} style={{ verticalAlign: "-2px" }} /> Tarifs des peaux
         </h2>
         <p className="muted">Prix définis par la gérance et rentabilité des transformations.</p>
+        <LiveSearch name="peaux" />
         {hides.length === 0 ? NO_MATCH : (
           <div className="table-wrap">
             <table>
@@ -206,6 +211,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <div className="eyebrow">Produits de chasse</div>
         <h2 id="chasse">Viandes, venaison et ressources</h2>
         <p className="muted">Prix de rachat, prix de vente et tarifs de gros.</p>
+        <LiveSearch name="chasse" />
         <h3>Viandes et venaison</h3>
         <GoodsTable products={meats} />
         <h3>Autres ressources</h3>
