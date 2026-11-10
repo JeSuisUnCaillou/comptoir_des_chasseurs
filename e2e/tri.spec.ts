@@ -1,24 +1,32 @@
 import { expect, test } from "@playwright/test";
 import { createMember, createProduct, loginAsGerant, uniqueName } from "./helpers";
 
-// Case and accents must not push "Élan" after "zèbre", and the category must
-// not split the list.
-test("le stock est rangé par nom, accents compris", async ({ page }) => {
+// Case and accents must not push "Élan" after "zèbre". Meats come first, then
+// hides, then everything else mixed by name.
+test("le stock montre les viandes, puis les peaux, puis le reste, chacun par nom", async ({ page }) => {
   const tag = uniqueName("Tri stock");
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`);
   await createProduct(`${tag} loup`);
-  // A leading digit puts this meat ahead of every hide in the alphabet.
-  await createProduct(`0 ${tag} Aurochs`, { category: "viande", unit: "morceau" });
+  await createProduct(`${tag} sanglier`, { category: "viande", unit: "morceau" });
+  await createProduct(`${tag} Aurochs`, { category: "viande", unit: "morceau" });
+  await createProduct(`${tag} Argent`, { category: "ressource", unit: "lingot" });
+  await createProduct(`${tag} Cuir`, { category: "cuir", unit: "pièce" });
+  // A leading digit would put this resource ahead of everything by name alone.
+  await createProduct(`0 ${tag} Ambre`, { category: "autre", unit: "pierre" });
   await loginAsGerant(page);
 
   await page.goto("/inventaire");
   await page.getByLabel("Rechercher une marchandise").fill(tag);
   await expect(page.locator(".stock-card h3")).toHaveText([
-    `0 ${tag} Aurochs`,
+    `${tag} Aurochs`,
+    `${tag} sanglier`,
     `${tag} Élan`,
     `${tag} loup`,
     `${tag} zèbre`,
+    `0 ${tag} Ambre`,
+    `${tag} Argent`,
+    `${tag} Cuir`,
   ]);
 
   // The sale form keeps its category groups in order, sorted by name inside each.
@@ -30,10 +38,20 @@ test("le stock est rangé par nom, accents compris", async ({ page }) => {
     `${tag} Élan`,
     `${tag} loup`,
     `${tag} zèbre`,
-    `0 ${tag} Aurochs`,
+    `${tag} Cuir`,
+    `${tag} Aurochs`,
+    `${tag} sanglier`,
+    `${tag} Argent`,
+    `0 ${tag} Ambre`,
     "Autre article (hors stock)…",
   ]);
-  await expect(list.locator(".combobox-group")).toHaveText(["Peaux", "Viandes et venaison"]);
+  await expect(list.locator(".combobox-group")).toHaveText([
+    "Peaux",
+    "Cuirs",
+    "Viandes et venaison",
+    "Ressources",
+    "Autres marchandises",
+  ]);
 });
 
 test("Gérer les tarifs range les marchandises par nom", async ({ page }) => {
