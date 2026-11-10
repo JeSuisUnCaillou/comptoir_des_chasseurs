@@ -69,6 +69,11 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
   part en production, chaque pull request reçoit une URL de preview.
   Les tests tournent avant le merge, jamais sur la prod.
+- **Région** : les fonctions Vercel tournent à Paris (`cdg1`, `regions` dans
+  `vercel.json`), en Europe comme la base Supabase. Chaque page fait plusieurs
+  requêtes à la base l'une après l'autre : un serveur loin de la base paie un
+  aller-retour transatlantique à chacune. Si la base change de région, la
+  région de `vercel.json` la suit.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
 
