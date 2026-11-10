@@ -224,7 +224,7 @@ test("export puis import, sans toucher aux membres", async () => {
   const [salaries] = await admin`
     select kind, amount, (select username from members where id = member_id) as author
     from transactions where label = 'Ajustement de trésorerie'`;
-  assert.deepEqual({ ...salaries }, { kind: "rachat", amount: 50, author: "einar" });
+  assert.deepEqual({ ...salaries }, { kind: "sortie", amount: 50, author: "einar" });
   const [{ n: moves }] = await admin`select count(*)::int as n from stock_movements`;
   assert.equal(moves, 1);
 

@@ -74,7 +74,7 @@ frappe.
    nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en
    employé et sans mot de passe (identifiant tiré du nom, sans accents ni
    espaces) ; le gérant lui en donne un depuis Membres.
-   Les ajustements de trésorerie deviennent des lignes
+   Les ajustements de trésorerie deviennent des mouvements de caisse
    « Ajustement de trésorerie » du registre. Les fournisseurs restent dans le
    fichier tant que l'app n'a pas de place pour eux.
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape

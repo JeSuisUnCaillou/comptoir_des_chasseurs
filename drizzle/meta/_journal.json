@@ -36,6 +36,13 @@
       "when": 1794304829681,
       "tag": "0004_mouvements-de-caisse",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794305627355,
+      "tag": "0005_ajustements-en-mouvements-de-caisse",
+      "breakpoints": true
     }
   ]
 }
