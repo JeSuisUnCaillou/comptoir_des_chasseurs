@@ -142,8 +142,9 @@ Assigne la PR au propriétaire, Caillou (`JeSuisUnCaillou`).
 
 Merger sur `main` met en production. Une fois le travail poussé, relis-le avec
 `Skill(skill: "revue-en-boucle")` avant de le rendre ; un hook Stop la lance
-sinon. Claude ne merge aucune PR sans l'accord du propriétaire, donné après
-qu'il a vu la preview ; l'étape 7 du skill dit comment.
+sinon. Claude ne merge seul que la doc, les tests, le harness et les petits
+correctifs ; le reste attend l'accord du propriétaire, donné après qu'il a vu
+la preview. L'étape 7 du skill dit comment.
 
 Merge en squash, pour que le titre finisse par le numéro de la PR, `… (#n)`.
 

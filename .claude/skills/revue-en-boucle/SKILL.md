@@ -62,17 +62,19 @@ chaque passe s'y ajoute.
    pousse. Le hook lit cette ligne ; une branche inchangée depuis, hors de
    `.claude/reviews/`, n'a pas besoin d'une nouvelle passe.
 
-7. **Rien ne se merge sans l'accord du propriétaire.** Aucune PR, correctif,
-   doc ou harness compris, n'est mergée par Claude tant que le propriétaire
-   ne l'a pas demandé pour cette PR. Une fois la boucle convergée, donne-lui
-   le lien de la preview Vercel publiée sur la PR (`CLAUDE.md` § Donner un
-   lien pour essayer) et ce qu'il peut y essayer, puis attends sa réponse :
-   il peut avoir des retours. Choisi par le propriétaire le 2026-11-10 (« ne
-   merge pas des choses sans mon accord, montre-moi à chaque fois une
-   preview avant de merge »), à la place de son « merge it yourself » du
-   2026-11-09.
+7. **Ce qui part sans attendre le propriétaire.** Claude ne merge seul que
+   la doc, les tests, le harness et les petits correctifs. Tout le reste
+   attend que le propriétaire demande le merge de cette PR : une fois la
+   boucle convergée, donne-lui le lien de la preview Vercel publiée sur la
+   PR (`CLAUDE.md` § Donner un lien pour essayer) et ce qu'il peut y
+   essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
+   le doute, ça attend. Choisi par le propriétaire le 2026-11-10 : « ne
+   merge pas des choses sans mon accord, montre moi à chaque fois une
+   preview avant de merge », puis « les seules choses que tu peux merge
+   tout seul sont la doc, les tests, et le harness, ou les petits fixs ».
 
-   **Une fois qu'il a demandé le merge** :
+   **Pour merger une PR qui part seule, ou dont le propriétaire a demandé
+   le merge** :
    - Avant d'attendre, lis son état de merge (`pull_request_read`). Une PR
      en conflit avec `main` n'a pas de CI sur un nouveau push : merge `main`
      dedans, lance la suite, pousse, et refais un tour de boucle, pour que le
