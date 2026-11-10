@@ -288,8 +288,10 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   const row = page.getByTestId("registre").getByRole("row").filter({ hasText: reason });
   await expect(row).toContainText(/Caisse.*—.*−37 septims.*Ralof/);
 
-  // Money in, too.
+  // Money in, too, from the Grand livre's button.
+  await page.getByRole("link", { name: "Grand livre" }).click();
   await page.getByRole("link", { name: /Mouvement de caisse/ }).click();
+  await expect(page).toHaveURL(/\/achat-vente\/caisse$/);
   await form.getByRole("radio", { name: "Entrée d'argent" }).check();
   await form.getByLabel("Montant (septims)").fill("50");
   await form.getByLabel("Motif").fill(deposit);
