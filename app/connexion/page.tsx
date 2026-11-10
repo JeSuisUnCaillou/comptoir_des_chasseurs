@@ -2,13 +2,19 @@ import { count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
+import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { authConfigured, currentMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default async function Connexion() {
-  if (await currentMember()) redirect("/");
+export default async function Connexion({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const returnPath = safeReturnPath((await searchParams)[RETURN_PARAM]);
+  if (await currentMember()) redirect(returnPath);
   const [{ total }] = await getDb().select({ total: count() }).from(schema.members);
 
   return (
@@ -31,7 +37,7 @@ export default async function Connexion() {
         ) : total === 0 ? (
           <FirstGerantForm />
         ) : (
-          <LoginForm />
+          <LoginForm returnPath={returnPath} />
         )}
         <p className="small muted">Accès réservé aux gérants et aux employés autorisés.</p>
       </div>

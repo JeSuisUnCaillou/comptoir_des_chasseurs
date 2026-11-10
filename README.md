@@ -132,6 +132,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 ## Rôles
 
 - Au premier lancement, la page de connexion crée le compte du **gérant**.
+- Un visiteur non connecté qui ouvre une page du comptoir passe par la page
+  de connexion, puis revient sur cette page, avec ses filtres (paramètre
+  `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;
+  tout autre lien ramène au Grand livre.
 - Le gérant crée les comptes des **employés** (identifiant + mot de passe
   provisoire) depuis la page Membres, peut réinitialiser un mot de passe ou
   **désactiver** un compte.

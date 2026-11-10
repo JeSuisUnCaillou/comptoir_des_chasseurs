@@ -9,6 +9,7 @@ import {
   normalizeUsername,
   verifyPassword,
 } from "@/lib/auth/password";
+import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { endSession, startSession } from "@/lib/auth/session";
 
 export type AuthState = { error: string } | null;
@@ -30,7 +31,7 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
     return { error: "Identifiant ou mot de passe incorrect." };
   }
   await startSession(member);
-  redirect("/");
+  redirect(safeReturnPath(formData.get(RETURN_PARAM)));
 }
 
 /** Creates the first gérant. Only works while there is no member at all. */

@@ -1,12 +1,13 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
+import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
 
 const COOKIE = "comptoir_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
@@ -70,12 +71,16 @@ export const currentMember = cache(async function currentMember(): Promise<Membe
   }
 });
 
-/** Redirects away unless the member is signed in with one of the given roles. */
+/**
+ * Redirects away unless the member is signed in with one of the given roles.
+ * A visitor who isn't signed in goes to the login page, which brings them
+ * back to the page they asked for.
+ */
 export async function requireMember(
   roles: MemberRole[] = ["gerant", "employe"],
 ): Promise<Member> {
   const member = await currentMember();
-  if (!member) redirect("/connexion");
+  if (!member) redirect(loginUrl((await headers()).get(PATH_HEADER)));
   if (!roles.includes(member.role)) redirect("/");
   return member;
 }
