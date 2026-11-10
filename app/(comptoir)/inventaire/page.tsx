@@ -23,10 +23,11 @@ function asDirection(value: string | undefined) {
   return value && Object.hasOwn(DIRECTIONS, value) ? (value as keyof typeof DIRECTIONS) : undefined;
 }
 
-// Meats first, then hides, then everything else; the database already sorts by
-// name and Array.prototype.sort is stable, so names stay in order inside each group.
-const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { viande: 0, peau: 1 };
-const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 2;
+// Leather first, then meats, then hides, then everything else; the database
+// already sorts by name and Array.prototype.sort is stable, so names stay in
+// order inside each group.
+const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { cuir: 0, viande: 1, peau: 2 };
+const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 3;
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   await requireMember();
