@@ -32,7 +32,7 @@ const transactions = Array.from({ length: 450 }, (_, i) => ({
   void_reason: i === 7 ? "Erreur de saisie" : null,
 }));
 const legacy = {
-  "/api/stats": { net_operations: 0 },
+  "/api/stats": { net_operations: "1194", treasury: "1144" },
   "/api/users": { users: [{ id: 1, username: "einar", display_name: "Einar le Rouge", role: "manager" }] },
   "/api/inventory": {
     items: [
@@ -50,7 +50,7 @@ const legacy = {
   },
   "/api/tariffs": {
     skins: [{ id: 1, name: "Biche", skins_needed: 4, leather_produced: 2, buy_price: 2, sell_price: 3, blacksmith_price: 3 }],
-    leather: { name: "Cuir", buy_price: 4, sell_price: 6, blacksmith_price: 7 },
+    leather: { buy: "4", sell: "6", blacksmith: "7" },
   },
   "/api/tariffs/meats": {
     products: [
@@ -58,7 +58,7 @@ const legacy = {
     ],
   },
   "/api/suppliers": { suppliers: [{ id: 1, name: "Ferme", offers: [] }] },
-  "/api/treasury/adjustments": { adjustments: [{ amount: -50, description: "Salaires", created_at: "2026-10-05T00:00:00Z" }] },
+  "/api/treasury/adjustments": { adjustments: [{ amount: "-50", description: "Salaires", manager_name: "Einar le Rouge", created_at: "2026-10-05T00:00:00Z" }] },
   "/api/missives/board": {
     posts: [
       { id: 1, title: "Bienvenue", body: "Le comptoir ouvre.", fastener: "axe", author_name: "Einar le Rouge", created_at: "2026-10-02T09:00:00Z" },
@@ -178,6 +178,7 @@ test("export puis import, sans toucher aux membres", async () => {
   const imported = await run(["scripts/legacy/import.mjs", file, "--cible=local"], `${dbUrl}\nécraser\n`);
   assert.equal(imported.code, 0, imported.output);
   assert.match(imported.output, /Import terminé/);
+  assert.match(imported.output, /Caisse après import : 1144 septims\nCaisse de l'ancienne app : 1144 septims/);
   assert.match(imported.output, /1 fournisseurs/);
   assert.match(imported.output, /Mouvement de stock ignoré : marchandise inconnue \(Fantôme\)/);
   assert.match(imported.output, /rattachés au gérant Lomone : Inconnu/);
@@ -206,9 +207,11 @@ test("export puis import, sans toucher aux membres", async () => {
     from transactions`;
   assert.equal(counts.n, 451, "450 transactions et un ajustement");
   assert.equal(counts.cancelled, 1);
-  assert.equal(counts.by_einar, 360);
-  const [salaries] = await admin`select kind, amount from transactions where label = 'Ajustement de trésorerie'`;
-  assert.deepEqual({ ...salaries }, { kind: "rachat", amount: 50 });
+  assert.equal(counts.by_einar, 361, "360 transactions et l'ajustement");
+  const [salaries] = await admin`
+    select kind, amount, (select username from members where id = member_id) as author
+    from transactions where label = 'Ajustement de trésorerie'`;
+  assert.deepEqual({ ...salaries }, { kind: "rachat", amount: 50, author: "einar" });
   const [{ n: moves }] = await admin`select count(*)::int as n from stock_movements`;
   assert.equal(moves, 1);
 

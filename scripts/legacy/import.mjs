@@ -55,8 +55,9 @@ try {
   console.log(`  annonces            ${current.announcements} → ${plan.announcements.length}`);
   for (const [k, v] of Object.entries(plan.settings)) console.log(`  réglage ${k} = ${v}`);
   console.log(`Caisse après import : ${till(plan.transactions)} septims`);
-  const legacyNet = data.stats?.net_operations ?? data.stats?.stats?.net_operations;
-  if (legacyNet !== undefined) console.log(`Caisse de l'ancienne app : ${legacyNet} septims`);
+  // The old app's treasury: sales minus buybacks, plus adjustments.
+  const legacyTill = data.stats?.treasury;
+  if (legacyTill !== undefined) console.log(`Caisse de l'ancienne app : ${legacyTill} septims`);
   const left = Object.entries(plan.notImported).filter(([, n]) => n > 0);
   if (left.length) {
     console.log(`Pas encore de place dans la nouvelle app (restent dans le fichier) : ${left.map(([k, n]) => `${n} ${k}`).join(", ")}`);

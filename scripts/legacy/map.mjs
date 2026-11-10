@@ -44,7 +44,8 @@ export function mapLegacy(data, members) {
   }
   const unmatchedAuthors = new Set();
   const authorOf = (row) => {
-    const name = row.employee_name ?? row.author_name ?? row.user_name ?? row.created_by_name ?? row.display_name;
+    const name =
+      row.employee_name ?? row.author_name ?? row.manager_name ?? row.created_by_name ?? row.user_name;
     const m = name ? memberByKey.get(key(name)) : undefined;
     if (m) return { memberId: m.id, foreign: null };
     if (name) unmatchedAuthors.add(name);
@@ -112,9 +113,10 @@ export function mapLegacy(data, members) {
     const p = product(name);
     p.category = "cuir";
     if (p.unit === "pièce") p.unit = "cuir";
-    p.buyPrice = int(leather.buy_price, "prix d'achat du cuir", warn) ?? p.buyPrice;
-    p.sellPrice = int(leather.sell_price, "prix de vente du cuir", warn) ?? p.sellPrice;
-    const smith = int(leather.blacksmith_price, "prix du forgeron", warn);
+    // The old API names them buy / sell / blacksmith.
+    p.buyPrice = int(leather.buy ?? leather.buy_price, "prix d'achat du cuir", warn) ?? p.buyPrice;
+    p.sellPrice = int(leather.sell ?? leather.sell_price, "prix de vente du cuir", warn) ?? p.sellPrice;
+    const smith = int(leather.blacksmith ?? leather.blacksmith_price, "prix du forgeron", warn);
     if (smith !== null) settings.prix_forgeron_cuir = smith;
   }
 
