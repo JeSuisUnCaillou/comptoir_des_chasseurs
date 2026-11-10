@@ -40,9 +40,11 @@ export function RegisterTable({
         <tbody>
           {entries.map((e) => {
             const sale = e.kind === "vente";
+            const cash = e.kind === "entree" || e.kind === "sortie";
+            const moneyIn = sale || e.kind === "entree";
             const cancelled = e.cancelledAt != null;
             const canCancel = !cancelled && (member.role === "gerant" || e.memberId === member.id);
-            const label = sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
+            const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
             return (
               <tr
                 key={e.id}
@@ -51,12 +53,14 @@ export function RegisterTable({
               >
                 <td className="num">{dateTime.format(e.createdAt)}</td>
                 <td>
-                  <span className={`badge ${sale ? "badge-green" : "badge-gold"}`}>{sale ? "Vente" : "Achat"}</span>
+                  <span className={`badge ${cash ? "badge-blue" : sale ? "badge-green" : "badge-gold"}`}>
+                    {cash ? "Caisse" : sale ? "Vente" : "Achat"}
+                  </span>
                 </td>
                 <td>{e.label}</td>
-                <td className="num">{formatNumber(e.quantity)}</td>
-                <td className={`num ${cancelled ? "" : sale ? "plus" : "minus"}`}>
-                  {septims(sale ? e.amount : -e.amount, { signed: true })}
+                <td className="num">{cash ? "—" : formatNumber(e.quantity)}</td>
+                <td className={`num ${cancelled ? "" : moneyIn ? "plus" : "minus"}`}>
+                  {septims(moneyIn ? e.amount : -e.amount, { signed: true })}
                 </td>
                 <td>{e.counterparty ?? "—"}</td>
                 <td>{e.member}</td>
@@ -70,11 +74,13 @@ export function RegisterTable({
                         id={e.id}
                         label={label}
                         effect={
-                          e.productId == null
-                            ? "Le stock n'est pas touché."
-                            : sale
-                              ? `${e.quantity} ${e.label} reviendront en stock.`
-                              : `${e.quantity} ${e.label} sortiront du stock.`
+                          cash
+                            ? "L'argent ne compte plus dans la caisse."
+                            : e.productId == null
+                              ? "Le stock n'est pas touché."
+                              : sale
+                                ? `${e.quantity} ${e.label} reviendront en stock.`
+                                : `${e.quantity} ${e.label} sortiront du stock.`
                         }
                       />
                     )

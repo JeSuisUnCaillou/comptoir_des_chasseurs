@@ -1,17 +1,17 @@
 import "server-only";
-import { and, count, desc, eq, gte, isNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
 
-export type RegisterFilter = { kind?: TransactionKind; from?: Date; to?: Date };
+export type RegisterFilter = { kinds?: TransactionKind[]; from?: Date; to?: Date };
 
 const canceller = alias(schema.members, "canceller");
 
 function conditions(filter: RegisterFilter) {
   const t = schema.transactions;
   const where: SQL[] = [];
-  if (filter.kind) where.push(eq(t.kind, filter.kind));
+  if (filter.kinds?.length) where.push(inArray(t.kind, filter.kinds));
   if (filter.from) where.push(gte(t.createdAt, filter.from));
   if (filter.to) where.push(lt(t.createdAt, filter.to));
   return where;
@@ -60,51 +60,63 @@ export async function registerCount(filter: RegisterFilter = {}) {
   return row.total;
 }
 
-export type Till = { sales: number; buybacks: number; balance: number };
+export type Till = { sales: number; buybacks: number; inflows: number; outflows: number; balance: number };
 
-function till(sales: number, buybacks: number): Till {
-  return { sales, buybacks, balance: sales - buybacks };
+type TillSums = Omit<Till, "balance">;
+
+function till({ sales, buybacks, inflows, outflows }: TillSums): Till {
+  return { sales, buybacks, inflows, outflows, balance: sales + inflows - buybacks - outflows };
+}
+
+const TILL_FIELDS: Record<keyof TillSums, TransactionKind> = {
+  sales: "vente",
+  buybacks: "rachat",
+  inflows: "entree",
+  outflows: "sortie",
+};
+
+/** Sum of the amounts of one kind, from a date when given. */
+function sumOf(kind: TransactionKind, since?: Date) {
+  const t = schema.transactions;
+  return since
+    ? sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = ${kind} and ${t.createdAt} >= ${since.toISOString()}::timestamptz), 0)::int`
+    : sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = ${kind}), 0)::int`;
+}
+
+function tillColumns<P extends string>(prefix: P, since?: Date) {
+  return Object.fromEntries(
+    Object.entries(TILL_FIELDS).map(([field, kind]) => [`${prefix}_${field}`, sumOf(kind, since)]),
+  ) as Record<`${P}_${keyof TillSums}`, SQL<number>>;
+}
+
+function tillFrom<P extends string>(row: Record<string, number>, prefix: P): Till {
+  const pick = (field: keyof TillSums) => row[`${prefix}_${field}`];
+  return till({ sales: pick("sales"), buybacks: pick("buybacks"), inflows: pick("inflows"), outflows: pick("outflows") });
 }
 
 /** Money in and out of the till, ignoring cancelled lines. */
 export async function tillTotals(filter: RegisterFilter = {}): Promise<Till> {
   const t = schema.transactions;
   const [row] = await getDb()
-    .select({
-      sales: sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = 'vente'), 0)::int`,
-      buybacks: sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = 'rachat'), 0)::int`,
-    })
+    .select(tillColumns("all"))
     .from(t)
     .where(and(isNull(t.cancelledAt), ...conditions(filter)));
-  return till(row.sales, row.buybacks);
+  return tillFrom(row, "all");
 }
 
 /** The till today, over the last 7 days and since the opening, in one query. */
 export async function tillSummary(now = new Date()) {
   const t = schema.transactions;
   const today = parisToday(now);
-  const day = parisDay(today)!;
-  const week = parisDay(today, -6)!;
-  const sum = (kind: TransactionKind, since?: Date) =>
-    since
-      ? sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = ${kind} and ${t.createdAt} >= ${since.toISOString()}::timestamptz), 0)::int`
-      : sql<number>`coalesce(sum(${t.amount}) filter (where ${t.kind} = ${kind}), 0)::int`;
   const [row] = await getDb()
     .select({
-      daySales: sum("vente", day),
-      dayBuybacks: sum("rachat", day),
-      weekSales: sum("vente", week),
-      weekBuybacks: sum("rachat", week),
-      sales: sum("vente"),
-      buybacks: sum("rachat"),
+      ...tillColumns("day", parisDay(today)!),
+      ...tillColumns("week", parisDay(today, -6)!),
+      ...tillColumns("all"),
     })
     .from(t)
     .where(isNull(t.cancelledAt));
-  return {
-    day: till(row.daySales, row.dayBuybacks),
-    week: till(row.weekSales, row.weekBuybacks),
-    all: till(row.sales, row.buybacks),
-  };
+  return { day: tillFrom(row, "day"), week: tillFrom(row, "week"), all: tillFrom(row, "all") };
 }
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {

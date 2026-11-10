@@ -117,17 +117,20 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 ## Pages
 
 - **Grand livre** : la caisse du jour, des 7 derniers jours et depuis
-  l'ouverture (ventes encaissées moins achats payés), et les dernières
-  écritures.
-- **Achat / Vente** : deux gros boutons, Nouvel achat et Nouvelle vente,
-  au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
+  l'ouverture (ventes encaissées moins achats payés, plus ou moins les
+  mouvements de caisse), et les dernières écritures.
+- **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
+  Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une écriture porte sur une
   marchandise du stock ou sur un article libre hors stock. Le montant est
   calculé avec le tarif ; le crayon permet de le changer. Le stock bouge :
   +quantité à l'achat, −quantité à la vente, jamais sous zéro. Le registre se
   filtre par opération et par dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
-  et le stock revient à l'état d'avant.
+  et le stock revient à l'état d'avant. Un **mouvement de caisse** fait entrer
+  ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,
+  montant, motif, et l'aperçu de la caisse après lui. Tout membre peut en
+  inscrire ; il a le badge *Caisse* dans le registre et son propre filtre.
 - **Annonces** : le tableau du comptoir, des parchemins épinglés sur du bois
   (titre, texte, auteur, date). Chacun en accroche avec « Afficher un
   parchemin » et choisit ce qui le fixe : couteau, hache nordique ou morceau

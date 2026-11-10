@@ -10,7 +10,7 @@ import { moveStock } from "@/lib/products";
 export type TransactionState = { ok: boolean; message: string } | null;
 
 function revalidate() {
-  for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/inventaire", "/tarifs"]) revalidatePath(path);
+  for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/achat-vente/caisse", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
 export async function recordTransaction(
@@ -79,6 +79,34 @@ export async function recordTransaction(
 }
 
 class UserError extends Error {}
+
+/** Money in or out of the till alone, with no merchandise: wages, the gérant's deposits... */
+export async function recordCashMovement(
+  _prev: TransactionState,
+  formData: FormData,
+): Promise<TransactionState> {
+  const member = await requireMember();
+  const kind = formData.get("kind");
+  const amount = Number(formData.get("amount"));
+  const label = String(formData.get("label") ?? "").trim().slice(0, 100);
+  const counterparty = String(formData.get("counterparty") ?? "").trim().slice(0, 100) || null;
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 500) || null;
+
+  if (kind !== "entree" && kind !== "sortie") {
+    return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
+  }
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return { ok: false, message: "Le montant doit être un nombre entier de septims, au moins 1." };
+  }
+  if (!label) return { ok: false, message: "Indique le motif du mouvement." };
+
+  const [line] = await getDb()
+    .insert(schema.transactions)
+    .values({ kind, productId: null, label, quantity: 1, amount, counterparty, notes, memberId: member.id })
+    .returning({ id: schema.transactions.id });
+  revalidate();
+  redirect(`/achat-vente?inscrit=${line.id}`);
+}
 
 /** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */
 export async function cancelTransaction(

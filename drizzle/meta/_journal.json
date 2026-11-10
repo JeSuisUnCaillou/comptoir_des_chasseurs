@@ -29,6 +29,13 @@
       "when": 1794259599540,
       "tag": "0003_announcements",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794304829681,
+      "tag": "0004_mouvements-de-caisse",
+      "breakpoints": true
     }
   ]
 }

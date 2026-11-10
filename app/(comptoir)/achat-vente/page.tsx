@@ -1,4 +1,4 @@
-import { Coins, ShoppingBasket } from "lucide-react";
+import { Coins, ShoppingBasket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
@@ -14,8 +14,15 @@ type Search = Record<"type" | "du" | "au" | "page" | "inscrit", string | string[
 
 const PATH = "/achat-vente";
 
-function asKind(value: string | undefined): TransactionKind | undefined {
-  return value === "vente" || value === "rachat" ? value : undefined;
+/** What the "Opération" filter offers, and the kinds of lines each shows. */
+const OPERATIONS = {
+  vente: ["vente"],
+  rachat: ["rachat"],
+  caisse: ["entree", "sortie"],
+} satisfies Record<string, TransactionKind[]>;
+
+function asOperation(value: string | undefined) {
+  return value && Object.hasOwn(OPERATIONS, value) ? (value as keyof typeof OPERATIONS) : undefined;
 }
 
 function asDate(value: string | undefined) {
@@ -25,20 +32,20 @@ function asDate(value: string | undefined) {
 export default async function AchatVente({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
   const search = await searchParams;
-  const kind = asKind(param(search.type));
+  const operation = asOperation(param(search.type));
   let du = asDate(param(search.du));
   let au = asDate(param(search.au));
   if (du && au && du > au) [du, au] = [au, du]; // a reversed range still means something
   const page = pageParam(search.page);
-  const filters = { type: kind, du, au };
-  const filter: RegisterFilter = { kind, from: parisDay(du), to: parisDay(au, 1) }; // "au" includes that day
+  const filters = { type: operation, du, au };
+  const filter: RegisterFilter = { kinds: operation && OPERATIONS[operation], from: parisDay(du), to: parisDay(au, 1) }; // "au" includes that day
 
   const [entries, total, totals] = await Promise.all([
     registerEntries(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     registerCount(filter),
     tillTotals(filter),
   ]);
-  const filtered = Boolean(kind || du || au);
+  const filtered = Boolean(operation || du || au);
   // Coming back from the entry form: confirm the line just written.
   const writtenId = Number(param(search.inscrit));
   const written = entries.find((e) => e.id === writtenId);
@@ -61,25 +68,42 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             <span className="small muted">Un client paie, la marchandise sort du stock.</span>
           </span>
         </Link>
+        <Link className="big-action" href={`${PATH}/caisse`}>
+          <Wallet size={28} />
+          <span>
+            <strong>Mouvement de caisse</strong>
+            <span className="small muted">Des septims entrent ou sortent, sans marchandise.</span>
+          </span>
+        </Link>
       </div>
 
       {written && (
         <p className="notice" role="status">
-          {written.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} : {written.quantity} × {written.label},{" "}
-          {septims(written.amount)}.
+          {written.kind === "entree" || written.kind === "sortie" ? (
+            <>
+              Mouvement inscrit : {written.label},{" "}
+              {septims(written.kind === "entree" ? written.amount : -written.amount, { signed: true })}.
+            </>
+          ) : (
+            <>
+              {written.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} : {written.quantity} × {written.label},{" "}
+              {septims(written.amount)}.
+            </>
+          )}
         </p>
       )}
       <section className="panel" aria-labelledby="registre">
         <div className="eyebrow">Toutes les écritures</div>
-        <h2 id="registre">Registre des achats et ventes</h2>
+        <h2 id="registre">Registre des achats, ventes et mouvements de caisse</h2>
         <form className="inline-form filters" method="get" action={PATH} aria-label="Filtrer le registre">
           <label className="small muted" htmlFor="r-type">
             Opération
           </label>
-          <select id="r-type" name="type" defaultValue={kind ?? ""}>
+          <select id="r-type" name="type" defaultValue={operation ?? ""}>
             <option value="">Toutes</option>
             <option value="vente">Ventes</option>
             <option value="rachat">Achats</option>
+            <option value="caisse">Mouvements de caisse</option>
           </select>
           <label className="small muted" htmlFor="r-du">
             Du
