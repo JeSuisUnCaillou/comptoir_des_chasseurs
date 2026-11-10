@@ -19,6 +19,19 @@ function priced(p: Product) {
   return p.buyPrice != null || p.sellPrice != null;
 }
 
+/** The citizens of Estemarche's buyback price, under the usual one, when the product has one. */
+function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?: boolean }) {
+  if (product.citizenBuyPrice == null) return null;
+  return (
+    <div className="citizen-price">
+      <span className="badge badge-gold">
+        Citoyens d&apos;Estemarche :{" "}
+        <strong>{perUnit ? septims(product.citizenBuyPrice) : rate(product.citizenBuyPrice, product.buyQty)}</strong>
+      </span>
+    </div>
+  );
+}
+
 function GoodsTable({ products }: { products: Product[] }) {
   return (
     <div className="table-wrap">
@@ -42,7 +55,10 @@ function GoodsTable({ products }: { products: Product[] }) {
                 <td>
                   <strong>{p.name}</strong>
                 </td>
-                <td className="num minus">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
+                <td className="num minus">
+                  {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
+                  <CitizenPrice product={p} />
+                </td>
                 <td className="num">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
                 <td className="num">
                   {p.bulkMin != null && p.bulkPrice != null
@@ -116,7 +132,10 @@ export default async function Tarifs() {
                         ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
                         : "—"}
                     </td>
-                    <td className="num minus">{p.buyPrice == null ? "—" : septims(p.buyPrice)}</td>
+                    <td className="num minus">
+                      {p.buyPrice == null ? "—" : septims(p.buyPrice)}
+                      <CitizenPrice product={p} perUnit />
+                    </td>
                     <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
                     <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
                   </tr>
@@ -136,10 +155,21 @@ export default async function Tarifs() {
           <div className="eyebrow">Produits transformés</div>
           <h2 id="cuir">Tarifs du cuir</h2>
           <div className="stats" style={{ marginTop: 14 }}>
+            {leather?.citizenBuyPrice != null && (
+              <div className="stat stat-citizen" data-testid="rachat-cuir-citoyens">
+                <div className="stat-label">Rachat de cuir · citoyens d&apos;Estemarche</div>
+                <div className="stat-value">{septims(leather.citizenBuyPrice)}</div>
+              </div>
+            )}
             <div className="stat">
-              <div className="stat-label">Rachat de cuir</div>
+              <div className="stat-label">
+                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
+              </div>
               <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
             </div>
+          </div>
+          {/* What the comptoir pays on the first line, what it resells for on the second. */}
+          <div className="stats" style={{ marginTop: 12 }}>
             <div className="stat">
               <div className="stat-label">Vente de cuir</div>
               <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>

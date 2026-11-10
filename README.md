@@ -84,7 +84,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une écriture porte sur une
   marchandise du stock ou sur un article libre hors stock. Le montant est
-  calculé avec le tarif ; le crayon permet de le changer. Le stock bouge :
+  calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
+  marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
+  vendeur est citoyen d'Estemarche » calcule le montant à ce prix. Le stock bouge :
   +quantité à l'achat, −quantité à la vente, jamais sous zéro. Le registre se
   filtre par opération et par dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
@@ -107,7 +109,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Tarifs**, **Inventaire** (entrées et sorties avec motif), et pour les
   gérants **Membres** et **Gérer les tarifs** (créer et modifier les
   marchandises et leurs prix), qu'on ouvre par le bouton du même nom sur la
-  page Tarifs.
+  page Tarifs. Une marchandise peut avoir un second prix de rachat, pour les
+  citoyens d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres) ;
+  vide, tout le monde a le même prix. Les Tarifs le montrent en évidence (une
+  tuile à lui pour le cuir, une étiquette dorée dans les tableaux).
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
