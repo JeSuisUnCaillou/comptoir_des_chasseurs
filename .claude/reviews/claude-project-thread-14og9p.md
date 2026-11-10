@@ -27,3 +27,9 @@ Tête relue : e45ad324adb27f58a9efca397d39cd6f84106e8d
 Doc seule (winpty sous Git Bash), pas de relecture de code nécessaire.
 
 Tête relue : e04b36e1e123c9a68bf8b487bf36c6d75b275471
+
+# Passe 4
+
+Petit ajout (adresse et identifiant en arguments, mot de passe toujours demandé), couvert par test:legacy ; relu par moi, rien de bloquant.
+
+Tête relue : 51771e8e8c67edae947561003d130537b2231e50
