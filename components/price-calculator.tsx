@@ -26,9 +26,12 @@ function show(total: Total | null) {
   return septims(Math.round(total.value * 10) / 10);
 }
 
-export function PriceCalculator({ products }: { products: CalcProduct[] }) {
+/** `initialId`: the product picked when the page opens (the leather on Tarifs), else the first one. */
+export function PriceCalculator({ products, initialId }: { products: CalcProduct[]; initialId?: number }) {
   const id = useId();
-  const [productId, setProductId] = useState(products[0]?.id ?? 0);
+  const [productId, setProductId] = useState(
+    products.some((p) => p.id === initialId) ? initialId! : (products[0]?.id ?? 0),
+  );
   const [quantity, setQuantity] = useState(1);
   const product = products.find((p) => p.id === productId);
   if (!product) return null;

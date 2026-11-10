@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createFirstGerant, login, type AuthState } from "@/app/connexion/actions";
+import { RETURN_PARAM } from "@/lib/auth/return-path";
 import { keepValues } from "@/lib/keep-values";
 
 function Field({
@@ -32,10 +33,11 @@ function ErrorNotice({ state }: { state: AuthState }) {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ returnPath }: { returnPath: string }) {
   const [state, action, pending] = useActionState(login, null);
   return (
     <form onSubmit={keepValues(action)}>
+      <input type="hidden" name={RETURN_PARAM} value={returnPath} />
       <Field name="username" label="Identifiant" autoComplete="username" />
       <Field name="password" label="Mot de passe" type="password" autoComplete="current-password" />
       <ErrorNotice state={state} />

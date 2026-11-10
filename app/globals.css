@@ -643,6 +643,14 @@ textarea:focus {
   border-radius: 3px;
 }
 
+.combobox-list .combobox-group {
+  padding-top: 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
 .combobox-list [role="option"] {
   cursor: pointer;
 }
@@ -655,6 +663,28 @@ textarea:focus {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 12px;
+}
+
+.unpriced {
+  margin-top: 12px;
+}
+
+.unpriced > .btn {
+  margin-bottom: 12px;
+}
+
+.unpriced > .btn .link-spinner {
+  margin-left: 0;
+}
+
+/* A gérant's pencil at the end of a price row. */
+td.row-action {
+  width: 1%;
+  text-align: right;
+}
+
+td.row-action .icon-btn {
+  color: var(--gold-strong);
 }
 
 .panel-head {
@@ -674,6 +704,11 @@ textarea:focus {
 
 .cols > .panel {
   margin-bottom: 0;
+}
+
+/* Side by side panels that end at the same height. */
+.cols-stretch {
+  align-items: stretch;
 }
 
 .section-gap {

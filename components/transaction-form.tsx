@@ -2,6 +2,7 @@
 
 import { Pencil, Plus } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
+import { ProductCombobox } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
@@ -57,8 +58,10 @@ export function TransactionForm({
   const auto = suggested != null && !manual;
   const short = kind === "vente" && product && validQty && qty > product.stock;
   // Groups keep the catalogue's category order; names are sorted inside each.
-  const categories = (Object.keys(CATEGORY_LABELS) as Product["category"][]).filter((c) =>
-    products.some((p) => p.category === c),
+  const choices = (Object.keys(CATEGORY_LABELS) as Product["category"][]).flatMap((category) =>
+    products
+      .filter((p) => p.category === category)
+      .map((p) => ({ id: String(p.id), name: p.name, group: CATEGORY_LABELS[category] })),
   );
 
   return (
@@ -67,33 +70,20 @@ export function TransactionForm({
       <div className="tx-grid">
         <div className="field full">
           <label htmlFor="t-product">Article ou marchandise</label>
-          <select
+          <ProductCombobox
             id="t-product"
             name="productId"
             required
-            value={productId}
-            onChange={(e) => {
-              setProductId(e.target.value);
+            placeholder="Choisir ou taper un nom…"
+            products={choices}
+            extras={[{ id: OTHER, name: "Autre article (hors stock)…" }]}
+            value={productId || null}
+            onChange={(id) => {
+              setProductId(id);
               // Each seller says again whether they are a citizen.
               setCitizen(false);
             }}
-          >
-            <option value="" disabled>
-              Choisir…
-            </option>
-            {categories.map((category) => (
-              <optgroup key={category} label={CATEGORY_LABELS[category]}>
-                {products
-                  .filter((p) => p.category === category)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-            <option value={OTHER}>Autre article (hors stock)…</option>
-          </select>
+          />
           {product && (
             <span className="small muted" data-testid="stock-dispo">
               En stock : {product.stock} {plural(product.unit, product.stock)}

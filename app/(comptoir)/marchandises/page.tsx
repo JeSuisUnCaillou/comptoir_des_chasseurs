@@ -33,7 +33,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead eyebrow="Registres · Gérance" title="Gérer les tarifs">
+      <PageHead title="Gérer les tarifs">
         La liste des marchandises du comptoir et leurs prix.
       </PageHead>
 

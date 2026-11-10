@@ -83,7 +83,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une écriture porte sur une
-  marchandise du stock ou sur un article libre hors stock. Le montant est
+  marchandise du stock ou sur un article libre hors stock ; la marchandise
+  se choisit dans un champ où l'on tape son nom, comme dans le calculateur
+  des Tarifs, la liste gardant ses catégories. Le montant est
   calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix. Le stock bouge :
@@ -117,21 +119,32 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   Tarifs et Gérer les tarifs ont la même recherche par nom, qui filtre
   pendant qu'on tape, comme celle de l'Inventaire ; sur Tarifs, chacune des
   deux tables (peaux ; viandes et ressources) a la sienne. Tarifs montre
-  d'abord les tarifs du cuir et le calculateur, dont le choix de la
-  marchandise se cherche en tapant parmi toutes les marchandises qui ont un
-  prix, puis les tables.
+  d'abord les tarifs du cuir et le calculateur, réglé sur le cuir à
+  l'ouverture, dont le choix de la marchandise se cherche en tapant parmi
+  toutes les marchandises qui ont un prix, puis les tables. Les tables ne montrent que les marchandises qui ont
+  un prix ; un bouton sous chacune montre ses marchandises sans tarif dans
+  une table à part, sous le bouton, rangée par nom. Quand la recherche d'une
+  table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
+  s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
+  marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
-- Les marchandises (cartes du stock, Gérer les tarifs, sections des Tarifs,
-  choix d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A à Z, sans
-  tenir compte des majuscules ni des accents ; les marchandises archivées
-  viennent en dernier. Le registre, l'historique du stock et les annonces
+- Les marchandises (Gérer les tarifs, sections des Tarifs, choix
+  d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A
+  à Z, sans tenir compte des majuscules ni des accents ; les marchandises
+  archivées viennent en dernier. Les cartes du stock de l'Inventaire montrent
+  d'abord les viandes, puis les peaux, puis tout le reste, chaque groupe
+  rangé par nom de la même façon. Le registre, l'historique du stock et les annonces
   restent du plus récent au plus ancien.
 
 ## Rôles
 
 - Au premier lancement, la page de connexion crée le compte du **gérant**.
+- Un visiteur non connecté qui ouvre une page du comptoir passe par la page
+  de connexion, puis revient sur cette page, avec ses filtres (paramètre
+  `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;
+  tout autre lien ramène au Grand livre.
 - Le gérant crée les comptes des **employés** (identifiant + mot de passe
   provisoire) depuis la page Membres, peut réinitialiser un mot de passe ou
   **désactiver** un compte.
