@@ -13,3 +13,12 @@ Tête relue : db0db40
 - relecteur-architecte : aucune trouvaille. Même remarque sur le calculateur.
 
 Tête relue : db0db40f54bc02732d19f51d214f257f48b8c1e7
+
+# Passe 3 (après la demande de Caillou de rendre le prix citoyen plus visible)
+
+Tête relue : 026d213
+
+- relecteur-bugs : aucune trouvaille bloquante. Une marchandise avec un prix citoyen mais sans prix de rachat ordinaire n'apparaît pas sur les Tarifs : rejeté, cas que le gérant n'a pas de raison de créer.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 026d2135ebec3bf3e65a73a6e030792242463eab
