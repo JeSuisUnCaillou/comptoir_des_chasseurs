@@ -24,3 +24,12 @@ Tête relue : ebcdc0c (affichage d'office sous 10 résultats, demandé par Caill
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : ebcdc0c58cd39974ed20eb70bf3fa4596977a9d0
+
+# Passe 4
+
+Tête relue : 793afa8 (cuir par défaut dans le calculateur, demandé par Caillou)
+
+- relecteur-bugs : « écart de périmètre » (crayon, sans tarif, affichage d'office hors du souhait du cuir). Rejetée : chacune de ces fonctions a été demandée par Caillou dans le fil du projet (issue #51) ; le relecteur ne voyait que la dernière demande.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 793afa839f932adb8e3f0fff8cea1de24049aad4
