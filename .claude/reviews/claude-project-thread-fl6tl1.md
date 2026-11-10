@@ -33,3 +33,12 @@ Tête relue : 793afa8 (cuir par défaut dans le calculateur, demandé par Caillo
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : 793afa839f932adb8e3f0fff8cea1de24049aad4
+
+# Passe 5
+
+Tête relue : 28140dd (alignement des blocs cuir et calculateur, demandé par Caillou)
+
+- relecteur-bugs : aucune trouvaille.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 28140dd62a70cdad88d902c7ad68e1fbb2787932
