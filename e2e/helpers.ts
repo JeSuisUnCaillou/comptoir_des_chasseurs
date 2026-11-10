@@ -75,8 +75,9 @@ export async function createProduct(
     unit = "peau",
     category = "peau",
   }: {
-    buyPrice?: number;
-    sellPrice?: number;
+    /** null: no price, the product is "sans tarif" on that side. */
+    buyPrice?: number | null;
+    sellPrice?: number | null;
     stock?: number;
     unit?: string;
     category?: "peau" | "cuir" | "viande" | "ressource" | "autre";

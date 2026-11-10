@@ -73,7 +73,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     throw error;
   }
   revalidatePath("/", "layout");
-  redirect("/marchandises");
+  redirect(formData.get("depuis") === "tarifs" ? "/tarifs" : "/marchandises");
 }
 
 export async function saveBlacksmithPrice(formData: FormData) {

@@ -16,8 +16,8 @@ export function NavLink({ href, also = [], children }: { href: string; also?: st
   );
 }
 
-/** Spins inside the clicked link until its page has arrived. */
-function PendingSpinner() {
+/** Spins inside the clicked link until its page has arrived; any `Link` can hold one. */
+export function PendingSpinner({ testId = "nav-pending" }: { testId?: string }) {
   const { pending } = useLinkStatus();
-  return pending ? <span className="link-spinner" data-testid="nav-pending" aria-hidden="true" /> : null;
+  return pending ? <span className="link-spinner" data-testid={testId} aria-hidden="true" /> : null;
 }

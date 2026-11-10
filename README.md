@@ -119,9 +119,14 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   Tarifs et Gérer les tarifs ont la même recherche par nom, qui filtre
   pendant qu'on tape, comme celle de l'Inventaire ; sur Tarifs, chacune des
   deux tables (peaux ; viandes et ressources) a la sienne. Tarifs montre
-  d'abord les tarifs du cuir et le calculateur, dont le choix de la
-  marchandise se cherche en tapant parmi toutes les marchandises qui ont un
-  prix, puis les tables.
+  d'abord les tarifs du cuir et le calculateur, réglé sur le cuir à
+  l'ouverture, dont le choix de la marchandise se cherche en tapant parmi
+  toutes les marchandises qui ont un prix, puis les tables. Les tables ne montrent que les marchandises qui ont
+  un prix ; un bouton sous chacune montre ses marchandises sans tarif dans
+  une table à part, sous le bouton, rangée par nom. Quand la recherche d'une
+  table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
+  s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
+  marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, les annonces et les
   fournisseurs (12 par page).
