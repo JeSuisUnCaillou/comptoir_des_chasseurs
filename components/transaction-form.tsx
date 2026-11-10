@@ -72,7 +72,11 @@ export function TransactionForm({
             name="productId"
             required
             value={productId}
-            onChange={(e) => setProductId(e.target.value)}
+            onChange={(e) => {
+              setProductId(e.target.value);
+              // Each seller says again whether they are a citizen.
+              setCitizen(false);
+            }}
           >
             <option value="" disabled>
               Choisir…

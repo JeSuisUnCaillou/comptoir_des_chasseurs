@@ -37,6 +37,12 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   await expect(purchase.getByTestId("tarif")).toContainText("prix citoyen d'Estemarche");
   await citizen.uncheck();
   await expect(amount).toHaveValue("30");
+  // Another merchandise, then back: the box starts unticked again.
+  await citizen.check();
+  await purchase.getByLabel("Article ou marchandise").selectOption({ label: "Biche" });
+  await purchase.getByLabel("Article ou marchandise").selectOption({ label: name });
+  await expect(citizen).not.toBeChecked();
+  await expect(amount).toHaveValue("30");
   await citizen.check();
   await purchase.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(employee.getByRole("status").filter({ hasText: `10 × ${name}` })).toHaveText(
