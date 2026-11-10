@@ -67,14 +67,26 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   scripts de reprise de l'ancienne app, build, puis tests e2e Playwright sur un
   Postgres jetable.
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
-  part en production, chaque pull request reçoit une URL de preview.
-  Les tests tournent avant le merge, jamais sur la prod.
+  part en production. Les autres branches ne déploient rien d'elles-mêmes
+  (`git.deploymentEnabled` dans `vercel.json`) : l'offre Hobby limite à 100
+  déploiements par jour, et un build ignoré compte quand même.
+- **Preview** (`.github/workflows/preview.yml`) : à l'ouverture (ou la
+  réouverture) d'une pull request, une preview est construite sur Vercel avec
+  les variables de l'environnement Preview, et son lien est posté en
+  commentaire sur la PR. Les pushs suivants ne la mettent pas à jour : pour
+  la refaire, lancer le workflow « Preview » sur la branche (onglet Actions,
+  « Run workflow »), et le commentaire est mis à jour. Il faut trois secrets
+  dans le dépôt (Settings → Secrets and variables → Actions) :
+  `VERCEL_TOKEN` (un jeton créé sur vercel.com/account/tokens),
+  `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` (dans les réglages du compte et du
+  projet Vercel). Sans eux, le workflow passe sans rien déployer.
+- Les tests tournent avant le merge, jamais sur la prod.
 - **Région** : les fonctions Vercel tournent à Francfort (`fra1`, `regions`
   dans `vercel.json`), la région Vercel la plus proche de la base Supabase de
-  prod (Zurich, `eu-central-2`). Chaque page fait plusieurs
-  requêtes à la base l'une après l'autre : un serveur loin de la base paie un
-  aller-retour transatlantique à chacune. Si la base change de région, la
-  région de `vercel.json` la suit.
+  prod (Zurich, `eu-central-2`). Chaque page fait plusieurs requêtes à la base
+  l'une après l'autre : un serveur loin de la base paie un aller-retour
+  transatlantique à chacune. Si la base change de région, la région de
+  `vercel.json` la suit.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
 
@@ -115,7 +127,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   ou une marchandise. Tout le monde les consulte ; seuls les gérants en
   ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
   suppriment, par les boutons de la page.
-- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; l'historique
+- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; le bouton
+  « Nouvelle marchandise » fait entrer en stock une marchandise qui n'existe
+  pas encore : tout membre la crée, sans prix, avec nom, catégorie, unité,
+  quantité et motif, et un gérant règle ses prix ensuite dans Gérer les
+  tarifs ; quand la recherche du stock ne trouve rien, le formulaire reprend
+  le nom cherché ; l'historique
   des mouvements se cherche par marchandise, en filtrant pendant qu'on tape,
   et se filtre par employé, par sens, entrées ou sorties, et par dates, heure
   de Paris), et pour les
@@ -136,9 +153,24 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
   s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
+- **Activité d'un membre** (gérants seulement) : le bouton « Activité » de
+  chaque ligne de Membres ouvre ce qu'il a fait sur une période, par défaut
+  les 7 derniers jours, aujourd'hui compris (dates modifiables, heure de
+  Paris) : ses achats, ventes et mouvements de caisse, et ses mouvements de
+  stock. En tête, la **valeur estimée apportée** : de combien le comptoir
+  s'est enrichi par ses gestes, son stock compté au prix de vente
+  d'aujourd'hui (gros compris). C'est la somme de quatre parts :
+  l'inventaire (marchandises entrées moins sorties à la main, au prix de
+  vente), les achats (ce que la marchandise se revendra, moins ce qu'elle a
+  coûté), les ventes (ce qui a été encaissé, moins la marchandise au tarif :
+  zéro pour une vente au tarif) et les mouvements de caisse (entrées moins
+  sorties). Les lignes annulées ne comptent pas ; une marchandise sans prix
+  de vente est laissée de côté, et la page le dit. Chaque mouvement de stock
+  né d'une écriture (vente, achat ou son annulation) garde le numéro de sa
+  ligne, pour n'être compté qu'une fois.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
-  marchandises (avec une recherche par nom), les membres, les annonces et les
-  fournisseurs (12 par page).
+  marchandises (avec une recherche par nom), les membres, l'activité d'un
+  membre, les annonces et les fournisseurs (12 par page).
 - Les marchandises (Gérer les tarifs, sections des Tarifs, choix
   d'Achat/Vente), les membres et les fournisseurs sont rangés par nom, de A
   à Z, sans tenir compte des majuscules ni des accents ; les marchandises

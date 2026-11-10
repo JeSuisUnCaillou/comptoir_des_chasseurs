@@ -172,6 +172,17 @@ export function dayRange(duParam: string | undefined, auParam: string | undefine
   return { du, au, from: parisDay(du), to: parisDay(au, 1) };
 }
 
+/**
+ * Like `dayRange`, but a period of `days` days ending today when nothing is
+ * asked: a lone "au" gets the `days` days ending on it, a lone "du" runs to today.
+ */
+export function lastDays(duParam: string | undefined, auParam: string | undefined, days: number, now = new Date()) {
+  const asked = dayRange(duParam, auParam);
+  const au = asked.au ?? parisToday(now);
+  const du = asked.du ?? parisToday(parisDay(au, 1 - days)!);
+  return { ...dayRange(du, au), asked };
+}
+
 /** Today's date in Paris, as "YYYY-MM-DD". */
 export function parisToday(now = new Date()) {
   return parisDate.format(now);

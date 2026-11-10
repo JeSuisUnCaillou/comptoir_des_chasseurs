@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
-import { useActionState, useEffect, useId, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
+import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
 import { keepValues } from "@/lib/keep-values";
+import { NewStockProductForm } from "@/components/new-stock-product-form";
 
 export type StockItem = {
   id: number;
@@ -101,6 +102,16 @@ export function StockBoard({ items }: { items: StockItem[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"" | ProductCategory>("");
   const [page, setPage] = useState(1);
+  // Name prefilled in the "Nouvelle marchandise" form; null while it is closed.
+  const [creating, setCreating] = useState<string | null>(null);
+  const closeCreate = useCallback(() => setCreating(null), []);
+  // Shows the new merchandise's card once it exists.
+  const created = useCallback((name: string) => {
+    setCreating(null);
+    setCategory("");
+    setQuery(name);
+    setPage(1);
+  }, []);
   const normalized = query.trim().toLocaleLowerCase("fr");
   const visible = items.filter(
     (i) =>
@@ -136,8 +147,20 @@ export function StockBoard({ items }: { items: StockItem[] }) {
           </select>
         </div>
       </div>
+      {creating != null ? (
+        <NewStockProductForm name={creating} category={category} onCreated={created} onCancel={closeCreate} />
+      ) : (
+        <div className="stock-tools">
+          <button className="btn btn-small" type="button" onClick={() => setCreating(visible.length === 0 ? query.trim() : "")}>
+            <PackagePlus size={14} /> Nouvelle marchandise
+          </button>
+        </div>
+      )}
       {visible.length === 0 ? (
-        <p className="muted">Aucune marchandise ne correspond.</p>
+        <p className="muted">
+          Aucune marchandise ne correspond.
+          {creating == null && query.trim() && " Le bouton « Nouvelle marchandise » la crée avec ce nom."}
+        </p>
       ) : (
         <div className="stock-grid">
           {shown.map((item) => (

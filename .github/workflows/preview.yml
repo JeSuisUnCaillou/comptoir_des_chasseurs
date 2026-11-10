@@ -1,0 +1,94 @@
+# Vercel preview, deployed once when a pull request opens.
+#
+# vercel.json turns off Vercel's own deployments for every branch but main,
+# because Vercel Hobby allows 100 deployments a day and a build skipped by the
+# "Ignored Build Step" still counts as one. Later pushes do not refresh the
+# preview: run this workflow by hand on the branch ("Run workflow" in the
+# Actions tab) to deploy it again.
+#
+# The build runs on Vercel, with the Preview environment variables, so it
+# migrates and seeds the preview database exactly as before
+# (scripts/vercel-build.sh). Needs the repository secrets VERCEL_TOKEN,
+# VERCEL_ORG_ID and VERCEL_PROJECT_ID.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: preview-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    name: Preview Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Secrets Vercel présents
+        id: secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::warning::Secrets VERCEL_TOKEN, VERCEL_ORG_ID ou VERCEL_PROJECT_ID absents : pas de preview."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          # The branch's own commit, not the merge commit GitHub builds for
+          # pull requests: the preview shows the branch as pushed.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          node-version-file: .nvmrc
+      - name: Déployer la preview
+        id: deploy
+        if: steps.secrets.outputs.ok == 'true'
+        run: |
+          url=$(npx --yes vercel@65.2.0 deploy --yes --environment=preview --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview : $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Lien sur la pull request
+        if: steps.deploy.outputs.url
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            let number = context.payload.pull_request?.number;
+            if (!number) {
+              const { data } = await github.rest.pulls.list({
+                owner, repo, state: "open", head: `${owner}:${process.env.BRANCH}`,
+              });
+              number = data[0]?.number;
+            }
+            if (!number) return core.notice(`Aucune PR ouverte pour ${process.env.BRANCH}.`);
+            const marker = "<!-- preview-vercel -->";
+            const body = `${marker}\n**Preview Vercel** : ${process.env.PREVIEW_URL}\n\n` +
+              `Construite sur \`${process.env.SHA.slice(0, 7)}\`. Les pushs suivants ne la ` +
+              `mettent pas à jour : relancer le workflow « Preview » sur la branche.`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: number,
+            });
+            const mine = comments.find((c) => c.body?.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            }

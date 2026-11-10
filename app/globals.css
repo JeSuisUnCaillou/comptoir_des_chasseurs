@@ -310,6 +310,12 @@ h3 {
   margin-top: 6px;
 }
 
+/* The value a member brought, on their activity page */
+.stat-total {
+  border-color: var(--border-gold);
+  border-left: 3px solid var(--gold);
+}
+
 /* The citizens of Estemarche's buyback price, on Tarifs */
 .stat-citizen {
   border-color: var(--border-gold);
@@ -748,6 +754,24 @@ th.num {
   padding: 14px;
   display: flex;
   flex-direction: column;
+}
+
+.new-product {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.new-product h3 {
+  margin-top: 0;
+}
+
+.stock-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
 }
 
 .stock-card h3 {
