@@ -76,6 +76,32 @@ export async function registerCount(filter: RegisterFilter = {}) {
   return row.total;
 }
 
+/**
+ * The septims of the entry holding line `id` are now in the till, or out of it:
+ * every line of that entry waiting for the till counts in it from now on.
+ * `recordTransaction` writes the lines of one entry in one database
+ * transaction, so they share their author, their kind and their instant
+ * (now() is the start of the transaction): that is what makes them one entry.
+ * The instant is compared in SQL, which keeps its microseconds.
+ */
+export async function settleEntry(id: number) {
+  const t = schema.transactions;
+  const line = getDb()
+    .select({ memberId: t.memberId, kind: t.kind, createdAt: t.createdAt })
+    .from(t)
+    .where(eq(t.id, id));
+  await getDb()
+    .update(t)
+    .set({ tillPending: false })
+    .where(
+      and(
+        sql`(${t.memberId}, ${t.kind}, ${t.createdAt}) = (${line})`,
+        eq(t.tillPending, true),
+        isNull(t.cancelledAt),
+      ),
+    );
+}
+
 export type Till = {
   sales: number;
   buybacks: number;

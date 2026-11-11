@@ -84,18 +84,18 @@ export function RegisterTable({
                       <div className="row-actions">
                         {waiting && <SettleButton id={e.id} sale={sale} />}
                         <CancelButton
-                        id={e.id}
-                        label={label}
-                        effect={
-                          cash
-                            ? "L'argent ne compte plus dans la caisse."
-                            : e.productId == null
-                              ? "Le stock n'est pas touché."
-                              : sale
-                                ? `${e.quantity} ${e.label} reviendront en stock.`
-                                : `${e.quantity} ${e.label} sortiront du stock.`
-                        }
-                      />
+                          id={e.id}
+                          label={label}
+                          effect={
+                            cash
+                              ? "L'argent ne compte plus dans la caisse."
+                              : e.productId == null
+                                ? "Le stock n'est pas touché."
+                                : sale
+                                  ? `${e.quantity} ${e.label} reviendront en stock.`
+                                  : `${e.quantity} ${e.label} sortiront du stock.`
+                          }
+                        />
                       </div>
                     )
                   )}

@@ -320,7 +320,11 @@ h3 {
   margin-top: 6px;
 }
 
-.citizen-price .row-actions {
+.citizen-price .badge {
+  font-size: 12px;
+}
+
+.row-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -329,10 +333,6 @@ h3 {
 
 .row-actions .btn {
   white-space: nowrap;
-}
-
-.badge {
-  font-size: 12px;
 }
 
 /* The four tiles of the till on the Grand livre */

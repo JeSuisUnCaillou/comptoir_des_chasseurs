@@ -113,3 +113,39 @@ test("l'activité d'un membre montre sa vente en attente de la caisse, hors de s
   );
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
 });
+
+test("le grand livre et la page Mouvement de caisse ne comptent une vente en attente qu'une fois les septims déposés", async ({ browser }) => {
+  // An amount far above what other tests write, so their lines cannot blur the deltas.
+  const label = uniqueName("Couronne de jarl");
+  const { page: employee } = await newEmployeePage(browser, "balgruuf");
+  const read = async (path: string, locator: (p: Page) => ReturnType<Page["getByTestId"]>) => {
+    await employee.goto(path);
+    return Number(((await locator(employee).textContent()) ?? "").replace(/\D/g, ""));
+  };
+  const till = async () => ({
+    all: await read("/", (p) => p.getByTestId("caisse-totale").locator(".stat-value")),
+    page: await read("/achat-vente/caisse", (p) => p.getByTestId("apercu-caisse")),
+  });
+  const before = await till();
+
+  await employee.goto("/achat-vente/vente");
+  const form = employee.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form, "Autre article (hors stock)…");
+  await form.getByLabel("Nom de l'article").fill(label);
+  await form.getByLabel("Montant (septims)").fill("1000000");
+  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(employee.getByRole("status").filter({ hasText: label })).toContainText("en attente de la caisse");
+  const waiting = await till();
+  expect(Math.abs(waiting.all - before.all)).toBeLessThan(500_000);
+  expect(Math.abs(waiting.page - before.page)).toBeLessThan(500_000);
+
+  await employee.goto("/achat-vente");
+  const row = employee.getByTestId("registre").getByRole("row").filter({ hasText: label });
+  employee.once("dialog", (dialog) => dialog.accept());
+  await row.getByRole("button", { name: /déposés dans la caisse/ }).click();
+  await expect(row).not.toContainText("En attente de la caisse");
+  const settled = await till();
+  expect(settled.all - waiting.all).toBeGreaterThan(900_000);
+  expect(settled.page - waiting.page).toBeGreaterThan(900_000);
+});

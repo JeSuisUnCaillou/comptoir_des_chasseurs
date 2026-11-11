@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { moveStock } from "@/lib/products";
+import { settleEntry } from "@/lib/register";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 
 export type TransactionState = { ok: boolean; message: string } | null;
@@ -155,8 +156,7 @@ export async function settleTransaction(
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
   const t = schema.transactions;
-  const db = getDb();
-  const [line] = await db
+  const [line] = await getDb()
     .select({ memberId: t.memberId, kind: t.kind })
     .from(t)
     .where(and(eq(t.id, id), eq(t.tillPending, true), isNull(t.cancelledAt)))
@@ -165,22 +165,7 @@ export async function settleTransaction(
   if (member.role !== "gerant" && line.memberId !== member.id) {
     return { ok: false, message: "Seul un gérant peut le faire pour la ligne d'un autre membre." };
   }
-  // The lines of one entry are written in one database transaction, so they
-  // share their author, their kind and their instant (now() is the start of
-  // the transaction): that is what makes them one entry. The instant is
-  // compared in SQL, which keeps its microseconds.
-  await db
-    .update(t)
-    .set({ tillPending: false })
-    .where(
-      and(
-        eq(t.memberId, line.memberId),
-        eq(t.kind, line.kind),
-        sql`${t.createdAt} = (select ${t.createdAt} from ${t} where ${t.id} = ${id})`,
-        eq(t.tillPending, true),
-        isNull(t.cancelledAt),
-      ),
-    );
+  await settleEntry(id);
   revalidate();
   return { ok: true, message: "Les septims comptent dans la caisse." };
 }
