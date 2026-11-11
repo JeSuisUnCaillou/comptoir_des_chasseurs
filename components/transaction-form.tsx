@@ -7,7 +7,7 @@ import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
 import { MAX_LINES } from "@/lib/transaction-kinds";
-import { CATEGORY_LABELS, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
+import { CATEGORY_LABELS, appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
   Product,
@@ -55,6 +55,7 @@ function evaluate(line: Line, kind: TransactionKind, products: TransactionProduc
         ? sellTotal(product, qty)
         : buyTotal(product, qty, { citizen: citizenPrice && citizen })
       : null;
+  const unitPrice = product ? appliedRate(product, kind === "vente" ? "vente" : "rachat", validQty ? qty : 1, { citizen: citizenPrice && citizen }) : null;
   const suggested = tariff ? Math.round(tariff.value) : null;
   const auto = suggested != null && !line.manual;
   const amount = auto ? suggested : Number(line.amount);
@@ -63,6 +64,7 @@ function evaluate(line: Line, kind: TransactionKind, products: TransactionProduc
     qty: validQty ? qty : 0,
     citizenPrice,
     tariff,
+    unitPrice,
     suggested,
     auto,
     shownAmount: auto ? String(suggested) : line.amount,
@@ -135,7 +137,24 @@ export function TransactionForm({
                   />
                   {e.product && (
                     <span className="small muted" data-testid="stock-dispo">
-                      En stock : {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                      En stock :{" "}
+                      <strong className="tx-figure">
+                        {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                      </strong>
+                    </span>
+                  )}
+                  {e.product && (
+                    <span className="small muted" data-testid="prix-par-defaut">
+                      Prix par défaut :{" "}
+                      {e.unitPrice ? (
+                        <>
+                          <strong className="tx-figure">{rate(e.unitPrice.price, e.unitPrice.qty)}</strong>
+                          {e.unitPrice.bulk ? " (prix de gros)" : ""}
+                          {e.unitPrice.citizen ? " (prix citoyen d'Estemarche)" : ""}
+                        </>
+                      ) : (
+                        "aucun tarif"
+                      )}
                     </span>
                   )}
                 </div>

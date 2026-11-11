@@ -110,7 +110,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise du stock ou sur un article libre hors stock ; la marchandise
   se choisit dans un champ où l'on tape son nom, comme dans le calculateur
   des Tarifs, la liste gardant ses catégories. Le montant est
-  calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
+  calculé avec le tarif ; le crayon permet de le changer. Sous le stock de
+  la marchandise choisie, la ligne montre le prix par défaut qui sert à ce
+  calcul (prix de rachat ou de vente, de gros ou citoyen selon le cas). À l'achat d'une
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix ; il n'y a
   qu'une case par achat, pour le vendeur, qui vaut pour toutes ses

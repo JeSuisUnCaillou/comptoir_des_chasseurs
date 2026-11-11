@@ -34,9 +34,13 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   const citizen = purchase.getByLabel("Le vendeur est citoyen d'Estemarche");
   await expect(purchase.getByText("Citoyens : 4 septims / unité · autres vendeurs : 3 septims / unité")).toBeVisible();
   await expect(amount).toHaveValue("30");
+  await expect(purchase.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : 3 septims / unité");
   await citizen.check();
   await expect(amount).toHaveValue("40");
   await expect(purchase.getByTestId("tarif")).toContainText("prix citoyen d'Estemarche");
+  await expect(purchase.getByTestId("prix-par-defaut")).toHaveText(
+    "Prix par défaut : 4 septims / unité (prix citoyen d'Estemarche)",
+  );
   await citizen.uncheck();
   await expect(amount).toHaveValue("30");
   await citizen.check();
