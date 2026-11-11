@@ -15,15 +15,13 @@ export function RegisterTable({
   member,
   showNotes = true,
   highlight,
-  empty = "Aucune écriture pour l'instant.",
 }: {
   entries: RegisterEntry[];
   member: Pick<Member, "id" | "role">;
   showNotes?: boolean;
   highlight?: number;
-  empty?: string;
 }) {
-  if (entries.length === 0) return <p className="muted">{empty}</p>;
+  if (entries.length === 0) return <p className="muted">Aucune écriture pour l&apos;instant.</p>;
   return (
     <div className="table-wrap">
       <table data-testid="registre">

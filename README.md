@@ -156,18 +156,17 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Activité d'un membre** (gérants seulement) : le bouton « Activité » de
   chaque ligne de Membres ouvre ce qu'il a fait sur une période, par défaut
   les 7 derniers jours, aujourd'hui compris (dates modifiables, heure de
-  Paris) : ses achats, ventes et mouvements de caisse, et ses mouvements de
-  stock. En tête, la **valeur estimée apportée** : de combien le comptoir
-  s'est enrichi par ses gestes, son stock compté au prix de vente
-  d'aujourd'hui (gros compris). C'est la somme de quatre parts :
-  l'inventaire (marchandises entrées moins sorties à la main, au prix de
-  vente), les achats (ce que la marchandise se revendra, moins ce qu'elle a
-  coûté), les ventes (ce qui a été encaissé, moins la marchandise au tarif :
-  zéro pour une vente au tarif) et les mouvements de caisse (entrées moins
-  sorties). Les lignes annulées ne comptent pas ; une marchandise sans prix
-  de vente est laissée de côté, et la page le dit. Chaque mouvement de stock
-  né d'une écriture (vente, achat ou son annulation) garde le numéro de sa
-  ligne, pour n'être compté qu'une fois.
+  Paris), dans une seule liste paginée : ses achats, ventes, mouvements de
+  caisse et mouvements de stock faits à la main (ceux des achats et des
+  ventes sont leur ligne). En tête, quatre totaux : les **achats**
+  (septims payés), les **ventes** (septims encaissés), l'**inventaire**
+  (unités entrées et sorties à la main, hors achats et ventes, et leur
+  valeur au prix de vente d'aujourd'hui, gros compris) et les **mouvements
+  de caisse** (septims entrés moins sortis, sans marchandise). Les lignes
+  annulées ne comptent pas ; une marchandise sans prix de vente est
+  laissée hors de la valeur de l'inventaire, et la page le dit. Chaque
+  mouvement de stock né d'une écriture (vente, achat ou son annulation)
+  garde le numéro de sa ligne, pour le distinguer de ceux faits à la main.
 - Sont paginés : le registre, l'historique du stock, les cartes du stock, les
   marchandises (avec une recherche par nom), les membres, l'activité d'un
   membre, les annonces et les fournisseurs (12 par page).

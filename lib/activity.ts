@@ -1,21 +1,16 @@
 import "server-only";
-import { and, eq, gte, isNull, lt, type SQL } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import type { Product } from "@/lib/db/schema";
+import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
-import { signedAmount } from "@/lib/transaction-kinds";
 
-export type Contribution = {
-  /** Goods put in (+) or taken out (−) by hand on the Inventaire, at their sale price. */
-  stock: number;
-  /** For each buyback: what the goods will sell for, minus what was paid. */
-  buybacks: number;
-  /** For each sale: what was cashed, minus the goods at their sale price. */
-  sales: number;
-  /** Money in and out of the till without goods. */
-  cash: number;
-  total: number;
-  /** Lines and movements left out because their merchandise has no sale price. */
+export type HandStock = {
+  /** Units put in and taken out. */
+  unitsIn: number;
+  unitsOut: number;
+  /** Goods put in minus goods taken out, at their sale price. */
+  value: number;
+  /** Movements left out because their merchandise has no sale price. */
   unpriced: number;
 };
 
@@ -41,55 +36,98 @@ function goodsValue(p: JoinedPrices, quantity: number) {
 }
 
 /**
- * Estimates what a member brought to the comptoir between two instants: how
- * much richer the comptoir got, counting its stock at today's sale prices,
- * through what the member did. Cancelled lines, and the stock movements of
- * register lines (counted with their line), are left out of the inventory part.
+ * The stock a member moved by hand on the Inventaire between two instants
+ * (hunts, transformations, losses…), without the movements of sales and
+ * buybacks, and what it is worth at today's sale prices.
  */
-export async function memberContribution(memberId: number, from: Date, to: Date): Promise<Contribution> {
-  const t = schema.transactions;
+export async function memberHandStock(memberId: number, from: Date, to: Date): Promise<HandStock> {
   const m = schema.stockMovements;
-  const p = schema.products;
-  const lineWhere: SQL[] = [eq(t.memberId, memberId), isNull(t.cancelledAt), gte(t.createdAt, from), lt(t.createdAt, to)];
-  const moveWhere: SQL[] = [eq(m.memberId, memberId), isNull(m.transactionId), gte(m.createdAt, from), lt(m.createdAt, to)];
-  const [lines, moves] = await Promise.all([
-    getDb()
-      .select({ kind: t.kind, productId: t.productId, quantity: t.quantity, amount: t.amount, ...priceColumns })
-      .from(t)
-      .leftJoin(p, eq(p.id, t.productId))
-      .where(and(...lineWhere)),
-    getDb()
-      .select({ delta: m.delta, ...priceColumns })
-      .from(m)
-      .innerJoin(p, eq(p.id, m.productId))
-      .where(and(...moveWhere)),
-  ]);
-
-  const c: Contribution = { stock: 0, buybacks: 0, sales: 0, cash: 0, total: 0, unpriced: 0 };
+  const moves = await getDb()
+    .select({ delta: m.delta, ...priceColumns })
+    .from(m)
+    .innerJoin(schema.products, eq(schema.products.id, m.productId))
+    .where(and(eq(m.memberId, memberId), isNull(m.transactionId), gte(m.createdAt, from), lt(m.createdAt, to)));
+  const result: HandStock = { unitsIn: 0, unitsOut: 0, value: 0, unpriced: 0 };
   for (const move of moves) {
+    if (move.delta > 0) result.unitsIn += move.delta;
+    else result.unitsOut -= move.delta;
     const value = goodsValue(move, Math.abs(move.delta));
-    if (value == null) c.unpriced++;
-    else c.stock += Math.sign(move.delta) * value;
+    if (value == null) result.unpriced++;
+    else result.value += Math.sign(move.delta) * value;
   }
-  for (const line of lines) {
-    const money = signedAmount(line.kind, line.amount);
-    if (line.kind === "entree" || line.kind === "sortie") {
-      c.cash += money;
-      continue;
-    }
-    // An article outside the stock only moves money.
-    let goods = 0;
-    if (line.productId != null) {
-      const value = goodsValue(line, line.quantity);
-      if (value == null) {
-        c.unpriced++;
-        continue;
-      }
-      goods = line.kind === "vente" ? -value : value;
-    }
-    if (line.kind === "vente") c.sales += money + goods;
-    else c.buybacks += money + goods;
-  }
-  c.total = c.stock + c.buybacks + c.sales + c.cash;
-  return c;
+  return result;
+}
+
+/**
+ * One line of a member's activity: a register line (sale, buyback, cash
+ * movement) or a stock movement made by hand on the Inventaire, which has no
+ * money. The stock movements of register lines are left out: their line says it.
+ */
+export type ActivityLine = {
+  source: "ligne" | "stock";
+  id: number;
+  /** The register line's kind, or "stock". */
+  kind: TransactionKind | "stock";
+  label: string;
+  /** Units: positive for a register line, signed (+ in, − out) for a stock movement. */
+  quantity: number;
+  amount: number;
+  /** Who paid or was paid, or the reason of a stock movement. */
+  detail: string | null;
+  notes: string | null;
+  createdAt: Date;
+  cancelledAt: Date | null;
+  cancelledBy: string | null;
+};
+
+function activitySource(memberId: number, from: Date, to: Date) {
+  const since = from.toISOString();
+  const until = to.toISOString();
+  return sql`
+    select 'ligne' as source, t.id, t.kind::text as kind, t.label, t.quantity, t.amount,
+      t.counterparty as detail, t.notes, t.created_at, t.cancelled_at, c.name as cancelled_by
+    from transactions t
+    left join members c on c.id = t.cancelled_by
+    where t.member_id = ${memberId} and t.created_at >= ${since}::timestamptz and t.created_at < ${until}::timestamptz
+    union all
+    select 'stock', m.id, 'stock', p.name, m.delta, 0,
+      m.reason, null, m.created_at, null, null
+    from stock_movements m
+    join products p on p.id = m.product_id
+    where m.member_id = ${memberId} and m.transaction_id is null
+      and m.created_at >= ${since}::timestamptz and m.created_at < ${until}::timestamptz`;
+}
+
+/** A member's activity between two instants, newest first. */
+export async function memberActivity(
+  memberId: number,
+  from: Date,
+  to: Date,
+  { limit, offset = 0 }: { limit: number; offset?: number },
+): Promise<ActivityLine[]> {
+  const rows = await getDb().execute<Record<string, unknown>>(sql`
+    select * from (${activitySource(memberId, from, to)}) a
+    order by created_at desc, source, id desc
+    limit ${limit} offset ${offset}`);
+  return rows.map((r) => ({
+    source: r.source as ActivityLine["source"],
+    id: Number(r.id),
+    kind: r.kind as ActivityLine["kind"],
+    label: String(r.label),
+    quantity: Number(r.quantity),
+    amount: Number(r.amount),
+    detail: (r.detail as string | null) ?? null,
+    notes: (r.notes as string | null) ?? null,
+    createdAt: new Date(r.created_at as string),
+    cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
+    cancelledBy: (r.cancelled_by as string | null) ?? null,
+  }));
+}
+
+/** Number of lines of a member's activity between two instants. */
+export async function memberActivityCount(memberId: number, from: Date, to: Date) {
+  const [row] = await getDb().execute<{ total: number }>(
+    sql`select count(*)::int as total from (${activitySource(memberId, from, to)}) a`,
+  );
+  return row.total;
 }
