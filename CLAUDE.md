@@ -129,8 +129,9 @@ l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
 
 ## Donner un lien pour essayer
 
-Chaque pull request reçoit une preview Vercel, avec sa propre base, construite
-une seule fois à son ouverture (README § Intégration et déploiement continus).
+Chaque pull request reçoit une preview Vercel, sur la base des previews
+(commune à toutes les PR, séparée de la prod), construite une seule fois à son
+ouverture (README § Intégration et déploiement continus).
 Les pushs suivants ne la refont pas : quand la branche est prête à essayer et
 que sa tête a changé depuis, relance le workflow « Preview » sur la branche
 (`actions_run_trigger`, `preview.yml`, `ref` = la branche), une fois, pas à
@@ -142,6 +143,19 @@ par exemple `…vercel.app/fournisseurs`), jamais la seule racine de la preview.
 Le propriétaire l'a demandé le 2026-11-10 : « donne moi TOUJOURS le lien de la
 page spécifique à tester ». Sur une base de preview vide, la première visite
 crée le compte du gérant.
+
+**Avant de donner le lien, la preview contient de quoi voir la
+fonctionnalité.** Une session ne peut pas écrire dans la base des previews
+(Supabase et `*.vercel.app` sont hors d'atteinte), et les essais des autres PR
+la modifient. Si ce qu'il faut voir demande des données que le seed n'apporte
+pas (une écriture de plusieurs lignes, un achat en attente de la caisse, un
+fournisseur…), étends `scripts/seed-preview.mjs` dans la même PR, sans rien
+écraser, et pour qu'il remette l'exemple quand un essai l'a consommé : sa
+condition compte ce qui reste à voir (des lignes encore en attente), pas ce qui
+a été créé un jour. Puis refais la preview,
+et dis dans le message quelles données regarder (« l'achat de Faendal, trois
+lignes »). Le propriétaire a dû en réclamer le 2026-11-11 : « met moi de la
+data pour tester ta feature ».
 
 ## Ouvrir une pull request pour chaque branche
 

@@ -38,6 +38,7 @@ npm run db:migrate
 Sur Vercel, les migrations sont appliquées par le build
 (`scripts/vercel-build.sh`), avant la mise en ligne du nouveau code. La prod
 utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
+commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone,
