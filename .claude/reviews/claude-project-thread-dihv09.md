@@ -56,3 +56,11 @@ Tête relue : a912eb53b4ad2fc85baf62f2373f93ed3cea6c5a
 - Aucune trouvaille. Suite e2e verte (93).
 
 Tête relue : a912eb53b4ad2fc85baf62f2373f93ed3cea6c5a
+
+# Passe 6 (PR #108, cartes encadrées)
+
+Tête relue : 9ecba066b96812faa00ff7036c72adfbb1cbc4bd
+
+- Aucune trouvaille. Écarté : une écriture coupée par la pagination montre son bouton sur chaque page (même total, même règlement, inoffensif). Suite verte (93).
+
+Tête relue : 9ecba066b96812faa00ff7036c72adfbb1cbc4bd
