@@ -19,8 +19,10 @@ La session ne joint pas `*.vercel.app` : la scène est un build de la branche
 (sinon `main`) lancé dans la session, avec les données d'une preview.
 
 - Postgres comme dans `CLAUDE.md` § Tests de bout en bout, mais une base
-  `comptoir_ux` (pas `test` : la suite e2e la viderait). `.env.local` avec
-  `DATABASE_URL` et `AUTH_SECRET`, puis `npm run db:migrate`.
+  `comptoir_ux` (pas `test` : la suite e2e la viderait). Exporte
+  `DATABASE_URL` vers `comptoir_ux` et `AUTH_SECRET` dans le shell qui lance
+  migration, seed, build et serveur : une variable déjà exportée (vers
+  `comptoir_test`) passe avant `.env.local`. Puis `npm run db:migrate`.
 - `VERCEL_ENV=preview node scripts/seed-preview.mjs` : les données de la
   preview (Lomone, Aela, stock, écritures). Donne aux comptes du seed un mot
   de passe connu par un petit script qui écrit `members.password_hash` au
