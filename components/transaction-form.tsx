@@ -137,16 +137,24 @@ export function TransactionForm({
                   />
                   {e.product && (
                     <span className="small muted" data-testid="stock-dispo">
-                      En stock : {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                      En stock :{" "}
+                      <strong className="tx-figure">
+                        {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                      </strong>
                     </span>
                   )}
                   {e.product && (
                     <span className="small muted" data-testid="prix-par-defaut">
-                      {e.unitPrice
-                        ? `Prix par défaut : ${rate(e.unitPrice.price, e.unitPrice.qty)}${
-                            e.unitPrice.bulk ? " (prix de gros)" : ""
-                          }${e.unitPrice.citizen ? " (prix citoyen d'Estemarche)" : ""}`
-                        : "Prix par défaut : aucun tarif"}
+                      Prix par défaut :{" "}
+                      {e.unitPrice ? (
+                        <>
+                          <strong className="tx-figure">{rate(e.unitPrice.price, e.unitPrice.qty)}</strong>
+                          {e.unitPrice.bulk ? " (prix de gros)" : ""}
+                          {e.unitPrice.citizen ? " (prix citoyen d'Estemarche)" : ""}
+                        </>
+                      ) : (
+                        "aucun tarif"
+                      )}
                     </span>
                   )}
                 </div>

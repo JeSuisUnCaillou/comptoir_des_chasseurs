@@ -956,6 +956,12 @@ tr.cancelled td:last-child {
   margin: 0;
 }
 
+/* The figures under a line's product: its stock and its default price. */
+.tx-figure {
+  color: var(--gold);
+  font-weight: 600;
+}
+
 .tariff-hint {
   display: flex;
   align-items: center;

@@ -301,6 +301,15 @@ test("sous le stock, le formulaire montre le prix utilisé par défaut", async (
   const purchase = page.getByRole("region", { name: "Inscrire un achat" });
   await pickProduct(purchase, product);
   await expect(purchase.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : 1 septim / 5 unités");
+  // Only the figures stand out in gold, not their labels.
+  const gold = "rgb(207, 174, 110)";
+  const price = purchase.getByTestId("prix-par-defaut").locator("strong");
+  await expect(price).toHaveText("1 septim / 5 unités");
+  await expect(price).toHaveCSS("color", gold);
+  await expect(purchase.getByTestId("prix-par-defaut")).not.toHaveCSS("color", gold);
+  const stock = purchase.getByTestId("stock-dispo").locator("strong");
+  await expect(stock).toHaveText("20 peaux");
+  await expect(stock).toHaveCSS("color", gold);
   await pickProduct(purchase, unpriced);
   await expect(purchase.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : aucun tarif");
 
