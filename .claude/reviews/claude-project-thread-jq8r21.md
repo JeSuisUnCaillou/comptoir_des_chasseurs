@@ -11,3 +11,12 @@ Tête relue : cf7b4fe00de7ca918e88cac26dd838a655b85e81
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : 99981bc4baf086b437bb6a1d9937951fc1140e5a
+
+# Passe 3
+
+Après le merge de main (#92, prix par défaut) dans la branche ; suite complète verte (91 tests).
+
+- relecteur-bugs : aucune trouvaille (les deux changements du formulaire tiennent ensemble).
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 2595a2aba022e6169d74a54273905016b5a12e9c
