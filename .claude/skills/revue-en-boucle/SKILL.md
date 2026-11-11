@@ -67,8 +67,9 @@ chaque passe s'y ajoute.
    attend que le propriétaire demande le merge de cette PR : une fois la
    boucle convergée, refais la preview si la tête a changé depuis
    l'ouverture de la PR, puis donne-lui le lien de la page à essayer sur la
-   preview publiée sur la PR (`CLAUDE.md` § Donner un lien pour essayer) et
-   ce qu'il peut y essayer, puis attends sa réponse, puisqu'il peut avoir des retours. Dans
+   preview publiée sur la PR (`CLAUDE.md` § Donner un lien pour essayer),
+   ce qu'il peut y essayer et les données à regarder, que la preview doit
+   déjà contenir (même §), puis attends sa réponse, puisqu'il peut avoir des retours. Dans
    le doute, ça attend. Choisi par le propriétaire le 2026-11-10 : « ne
    merge pas des choses sans mon accord, montre moi à chaque fois une
    preview avant de merge », puis « les seules choses que tu peux merge
