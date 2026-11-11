@@ -20,7 +20,8 @@ export function RegisterTable({
   entries: RegisterEntry[];
   member: Pick<Member, "id" | "role">;
   showNotes?: boolean;
-  highlight?: number;
+  /** Lines just written, shown fresh. */
+  highlight?: number[];
   empty?: string;
 }) {
   if (entries.length === 0) return <p className="muted">{empty}</p>;
@@ -51,7 +52,7 @@ export function RegisterTable({
             return (
               <tr
                 key={e.id}
-                className={cancelled ? "cancelled" : e.id === highlight ? "fresh" : undefined}
+                className={cancelled ? "cancelled" : highlight?.includes(e.id) ? "fresh" : undefined}
                 data-testid={`ligne-${e.id}`}
               >
                 <td className="num">{dateTime.format(e.createdAt)}</td>

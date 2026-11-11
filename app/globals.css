@@ -900,6 +900,25 @@ tr.cancelled td:last-child {
   grid-column: 1 / -1;
 }
 
+/* One merchandise of a sale or purchase. */
+.tx-line {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px 0;
+  margin: 0 0 12px;
+  min-width: 0;
+}
+
+.tx-line-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tx-total {
+  font-size: 1.1rem;
+}
+
 .tariff-hint {
   display: flex;
   align-items: center;

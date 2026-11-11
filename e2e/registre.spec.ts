@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import postgres from "postgres";
 import {
   createMember,
   createProduct,
@@ -24,7 +25,7 @@ async function record(
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill(String(quantity));
   // The tariff fills the amount on its own.
-  await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
+  await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
   if (counterparty) await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill(counterparty);
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
@@ -92,7 +93,7 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, "Autre article (hors stock)…");
   await form.getByLabel("Nom de l'article").fill(label);
-  await form.getByLabel("Montant total (septims)").fill("500");
+  await form.getByLabel("Montant (septims)").fill("500");
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
     `Vente inscrite : 1 × ${label}, 500 septims.`,
@@ -130,7 +131,7 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
     await expect(box).toHaveValue(product);
     await expect(form.getByRole("listbox")).toHaveCount(0);
     await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 3 peaux");
-    await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
+    await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
 
     // A name typed without picking anything keeps the product already chosen.
     await box.fill("introuvable-xyz");
@@ -270,7 +271,7 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
   const { page } = await newEmployeePage(browser, "lydia");
   await page.goto("/achat-vente/vente");
   const form = page.getByRole("region", { name: "Inscrire une vente" });
-  const amount = form.getByLabel("Montant total (septims)");
+  const amount = form.getByLabel("Montant (septims)");
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill("4");
   await expect(amount).toHaveValue("12");
@@ -484,4 +485,100 @@ test("le filtre par employé ne garde que ses lignes, page après page", async (
   await page.getByRole("link", { name: "Tout afficher" }).click();
   await expect(page).toHaveURL(/\/achat-vente$/);
   await expect(page.getByLabel("Employé").locator("option:checked")).toHaveText("Tous");
+});
+
+/** One merchandise of a sale or purchase form, by its number. */
+function line(form: ReturnType<Page["getByRole"]>, n: number) {
+  return form.getByRole("group", { name: `Marchandise ${n}`, exact: true });
+}
+
+test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en direct", async ({ browser }) => {
+  const hide = uniqueName("Peau de chèvre");
+  const meat = uniqueName("Viande de chèvre");
+  await createProduct(hide, { sellPrice: 3, stock: 10 });
+  await createProduct(meat, { sellPrice: 5, stock: 10, category: "viande", unit: "pièce" });
+  const { page } = await newEmployeePage(browser, "ysolda");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  const total = form.getByTestId("total");
+  await expect(total).toHaveText("Total de la vente : 0 septim");
+
+  await pickProduct(line(form, 1), hide);
+  await line(form, 1).getByLabel("Quantité").fill("2");
+  await expect(total).toHaveText("Total de la vente : 6 septims");
+
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), meat);
+  await line(form, 2).getByLabel("Quantité").fill("3");
+  await expect(total).toHaveText("Total de la vente : 21 septims");
+
+  // A third one, written by hand, then taken back.
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 3), "Autre article (hors stock)…");
+  await line(form, 3).getByLabel("Nom de l'article").fill("Corne");
+  await line(form, 3).getByLabel("Montant (septims)").fill("4");
+  await expect(total).toHaveText("Total de la vente : 25 septims");
+  await form.getByRole("button", { name: "Retirer la marchandise 3" }).click();
+  await expect(line(form, 3)).toHaveCount(0);
+  await expect(total).toHaveText("Total de la vente : 21 septims");
+
+  await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Ysolda");
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: hide })).toHaveText(
+    `Vente inscrite : 2 × ${hide}, 3 × ${meat}, 21 septims au total.`,
+  );
+  // One register line per merchandise, both with the client, both fresh.
+  const fresh = page.getByTestId("registre").locator("tr.fresh");
+  await expect(fresh).toHaveCount(2);
+  await expect(fresh.filter({ hasText: hide })).toContainText(/Vente.*2.*\+6 septims.*Ysolda/);
+  await expect(fresh.filter({ hasText: meat })).toContainText(/Vente.*3.*\+15 septims.*Ysolda/);
+
+  await expect(await stockOf(page, hide)).toHaveText("8");
+  await expect(await stockOf(page, meat)).toHaveText("7");
+});
+
+test("une marchandise vendue sur deux lignes doit avoir le stock des deux", async ({ browser }) => {
+  const product = uniqueName("Peau d'ours");
+  await createProduct(product, { stock: 3 });
+  const { page } = await newEmployeePage(browser, "mjoll");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(line(form, 1), product);
+  await line(form, 1).getByLabel("Quantité").fill("2");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), product);
+  await line(form, 2).getByLabel("Quantité").fill("2");
+  await expect(form.locator(ALERT)).toHaveText(`Stock insuffisant de ${product} : il ne reste que 3 peaux.`);
+  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeDisabled();
+  await line(form, 2).getByLabel("Quantité").fill("1");
+  await expect(form.locator(ALERT)).toHaveCount(0);
+  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeEnabled();
+});
+
+test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", async ({ browser }) => {
+  const first = uniqueName("Peau de renard");
+  const second = uniqueName("Peau de lynx");
+  await createProduct(first, { stock: 5 });
+  await createProduct(second, { stock: 4 });
+  const { page } = await newEmployeePage(browser, "uthgerd");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(line(form, 1), first);
+  await line(form, 1).getByLabel("Quantité").fill("2");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), second);
+  await line(form, 2).getByLabel("Quantité").fill("4");
+
+  // Someone else sells the lynx hides meanwhile.
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`update products set stock = 1 where name = ${second}`;
+  } finally {
+    await sql.end();
+  }
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Stock insuffisant pour cette vente.");
+  // What was typed stays, and the first line was not written either.
+  await expect(line(form, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(first);
+  await expect(await stockOf(page, first)).toHaveText("5");
 });
