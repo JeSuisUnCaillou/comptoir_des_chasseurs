@@ -26,6 +26,7 @@ quelque chose change, on met à jour son propriétaire, et lui seul.
 | --- | --- |
 | Ce que fait l'app, stack, lancer, tester, déployer, rôles | `README.md` |
 | Modèle de données | `lib/db/schema.ts`, migrations dans `drizzle/` |
+| Où vit le code, couches et sens des imports | `docs/architecture.md`, vérifié par `npm run lint` |
 | Reprise des données de l'ancienne app (`scripts/legacy/`) | `docs/reprise-ancienne-app.md` |
 | Tâches, bugs, idées, leur ordre | [issues GitHub](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues) |
 | Règles pour travailler ici | ce fichier ; les instructions du projet Claude et la mémoire d'équipe y renvoient |
