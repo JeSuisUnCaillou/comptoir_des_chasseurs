@@ -10,3 +10,12 @@ Tête relue : 25be980
 Correction mécanique (refactor sans changement de comportement, couverte par la suite) : pas de nouvelle passe nécessaire selon l'étape 5 (trouvaille non bloquante).
 
 Tête relue : c3d6a04ba19a85db6aeb6ab6fe63ef7c36bc894c
+
+# Passe 3
+
+Tête relue : 9e5308a (stock et prix par défaut en or, à la demande de Caillou)
+
+- relecteur-bugs : aucune trouvaille.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 9e5308af6890497206177f93adedd565c1a1945b
