@@ -95,8 +95,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une vente ou un achat peut
-  porter sur plusieurs marchandises à la fois (« Ajouter une marchandise »,
-  la corbeille pour en retirer une), avec le total en septims qui se met à
+  porter sur plusieurs marchandises à la fois, 25 au plus pour tenir sur une
+  page du registre (« Ajouter une marchandise », la corbeille pour en
+  retirer une ; une marchandise par ligne : article, quantité, montant), avec le total en septims qui se met à
   jour pendant qu'on remplit ; le client et les notes valent pour toutes, et
   chaque marchandise devient sa propre ligne du registre, toutes inscrites
   ensemble ou aucune. Chaque ligne porte sur une

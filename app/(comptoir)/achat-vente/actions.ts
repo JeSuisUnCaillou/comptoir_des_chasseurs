@@ -14,7 +14,6 @@ function revalidate() {
   for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/achat-vente/caisse", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
-
 /**
  * Records a sale or a purchase of one or more merchandises: one register line
  * each, sharing the client and the notes, written all together or not at all.
