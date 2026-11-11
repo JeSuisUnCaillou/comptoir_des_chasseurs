@@ -97,5 +97,31 @@ test("une sortie de stock de plusieurs marchandises s'inscrit entière ou pas du
   await page.goto("/inventaire");
   await page.getByLabel("Rechercher une marchandise").fill(hide);
   await expect(page.getByTestId(`stock-${hide}`).getByTestId("stock-value")).toHaveText("2");
-  await expect(page.getByTestId("historique")).not.toContainText(hide);
+  // No movement of that hide in the history.
+  await page.goto(`/inventaire?q=${encodeURIComponent(hide)}`);
+  await expect(page.getByText("Aucun mouvement ne correspond.")).toBeVisible();
+});
+
+test("les mouvements d'une vente de plusieurs lignes restent une ligne chacun dans l'historique", async ({ browser }) => {
+  const fox = uniqueName("Renard");
+  const wolf = uniqueName("Loup");
+  await createProduct(fox, { stock: 5 });
+  await createProduct(wolf, { stock: 5 });
+  const { page } = await newEmployeePage(browser, "vendeur");
+
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form.getByRole("group", { name: "Marchandise 1" }), fox);
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(form.getByRole("group", { name: "Marchandise 2" }), wolf);
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+,\d+$/);
+
+  // The sale is one entry of the register; its stock movements are not grouped by hand.
+  await page.goto("/inventaire");
+  for (const name of [fox, wolf]) {
+    const row = page.getByTestId("historique").getByRole("row").filter({ hasText: name });
+    await expect(row).toHaveClass(/\bentry-first\b.*\bentry-last\b/);
+    await expect(row.locator(".sr-only")).toHaveCount(0);
+  }
 });
