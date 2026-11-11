@@ -149,8 +149,10 @@ fonctionnalité.** Une session ne peut pas écrire dans la base des previews
 (Supabase et `*.vercel.app` sont hors d'atteinte), et les essais des autres PR
 la modifient. Si ce qu'il faut voir demande des données que le seed n'apporte
 pas (une écriture de plusieurs lignes, un achat en attente de la caisse, un
-fournisseur…), étends `scripts/seed-preview.mjs` dans la même PR : il n'écrase
-rien, et remet l'exemple quand un essai l'a consommé. Puis refais la preview,
+fournisseur…), étends `scripts/seed-preview.mjs` dans la même PR, sans rien
+écraser, et pour qu'il remette l'exemple quand un essai l'a consommé : sa
+condition compte ce qui reste à voir (des lignes encore en attente), pas ce qui
+a été créé un jour. Puis refais la preview,
 et dis dans le message quelles données regarder (« l'achat de Faendal, trois
 lignes »). Le propriétaire a dû en réclamer le 2026-11-11 : « met moi de la
 data pour tester ta feature ».
