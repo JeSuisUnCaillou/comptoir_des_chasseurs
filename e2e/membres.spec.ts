@@ -112,7 +112,6 @@ test("personne d'autre que le super admin ne touche à son compte", async ({ pag
   await page.goto("/membres");
   const row = page.getByTestId(`member-${boss}`);
   await expect(row.getByText("Super admin")).toBeVisible();
-  await expect(row.getByText("protégé")).toBeVisible();
   await expect(row.getByLabel("Rôle")).toHaveCount(0);
   await expect(row.getByLabel("Nom affiché")).toHaveCount(0);
   await expect(row.getByLabel("Nouveau mot de passe")).toHaveCount(0);
@@ -151,7 +150,8 @@ test("le serveur refuse de modifier le super admin, même par un formulaire ouve
 
   await row.getByLabel("Rôle").selectOption("desactive");
   await row.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(row.getByText("protégé")).toBeVisible();
+  await expect(row.getByText("Super admin")).toBeVisible();
+  await expect(row.getByLabel("Rôle")).toHaveCount(0);
   await expect(row.locator(".badge").first()).toHaveText("Gérant");
 
   // Still a gérant, with the old password.

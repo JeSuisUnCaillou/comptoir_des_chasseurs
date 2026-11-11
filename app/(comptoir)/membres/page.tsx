@@ -60,8 +60,8 @@ export default async function Membres({
         <h2 id="personnel">Comptes</h2>
         <p className="muted">
           Le nom affiché est celui utilisé dans les registres. Un compte désactivé ne peut plus
-          entrer, mais son nom reste dans l&apos;historique. Le compte du super admin est
-          protégé : lui seul peut le modifier.
+          entrer, mais son nom reste dans l&apos;historique. Seul le super admin peut modifier
+          son propre compte.
         </p>
         <div className="table-wrap">
           <table>
@@ -89,9 +89,7 @@ export default async function Membres({
                   </td>
                   <td>
                     {m.superAdmin && m.id !== me.id ? (
-                      <span>
-                        {m.name} <span className="muted small">· protégé</span>
-                      </span>
+                      <span>{m.name}</span>
                     ) : (
                       <form action={updateMember} className="inline-form">
                         <input type="hidden" name="id" value={m.id} />
