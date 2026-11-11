@@ -132,8 +132,13 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   *En attente de la caisse*, le stock bouge mais ses septims ne comptent pas
   dans la caisse (une tuile du registre en donne le total, et le filtre
   Opération « En attente de la caisse » les retrouve). Son auteur ou un gérant
-  clique ensuite sur « Septims déposés » ou « Septims pris » sur l'une de ses
-  lignes, dans le registre ou sur la page d'activité du membre : toutes les lignes de l'écriture comptent alors dans la caisse, et la confirmation, pour une écriture de plusieurs lignes, les liste avec leur total. Un **mouvement de caisse** fait entrer
+  clique ensuite sur le bouton de l'écriture, « 58 septims pris » ou « 60
+  septims déposés » (son total), dans le registre ou sur la page d'activité
+  du membre : toutes les lignes de l'écriture comptent alors dans la caisse,
+  et la confirmation, pour une écriture de plusieurs lignes, les liste avec
+  leur total. Dans ces deux listes, les lignes d'une même écriture forment un
+  bloc : une barre dorée à gauche, et la date, l'opération, le client,
+  l'employé et les notes écrits sur sa première ligne seulement. Un **mouvement de caisse** fait entrer
   ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,
   montant, motif, et l'aperçu de la caisse après lui. Tout membre peut en
   inscrire ; il a le badge *Caisse* dans le registre et son propre filtre.
@@ -190,8 +195,7 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   valeur au prix de vente d'aujourd'hui, gros compris) et les **mouvements
   de caisse** (septims entrés moins sortis, sans marchandise). Les lignes
   annulées ne comptent pas, ni celles en attente de la caisse, qui portent
-  ce statut dans la liste et le bouton « Septims déposés » ou « Septims
-  pris » ; une marchandise sans prix de vente est
+  ce statut dans la liste et le bouton de leur écriture ; une marchandise sans prix de vente est
   laissée hors de la valeur de l'inventaire, et la page le dit. Chaque
   mouvement de stock né d'une écriture (vente, achat ou son annulation)
   garde le numéro de sa ligne, pour le distinguer de ceux faits à la main.

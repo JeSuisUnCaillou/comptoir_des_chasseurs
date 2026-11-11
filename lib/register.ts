@@ -32,6 +32,16 @@ function pendingOfSameEntry(rows: EntryColumns, line: SQL) {
 }
 
 /**
+ * The same value for every line of one entry (see `pendingOfSameEntry`), to
+ * show them together. The instant is turned to text in SQL, which keeps its
+ * microseconds.
+ */
+export function entryKeyColumn() {
+  const t = schema.transactions;
+  return sql<string>`${t.memberId} || '/' || ${t.kind} || '/' || ${t.createdAt}::text`;
+}
+
+/**
  * For a line waiting for the till, what `settleEntry` would settle with it:
  * the number of lines of its entry still waiting, their total, and one
  * "quantity × label" per line. Correlated on the outer `transactions` row, so
@@ -83,6 +93,7 @@ export async function registerEntries(
       member: schema.members.name,
       memberId: t.memberId,
       cancelledBy: canceller.name,
+      entryKey: entryKeyColumn(),
       ...pendingEntryColumns(),
     })
     .from(t)

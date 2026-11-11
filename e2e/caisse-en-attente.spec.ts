@@ -48,14 +48,27 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   );
   await expect(colleague.getByRole("button", { name: /déposés dans la caisse/ })).toHaveCount(0);
 
-  // The confirmation says the click settles both lines, and their total.
+  // The two lines form one block, written once, with one button for the sale's total.
   await onlyLinesOf(page, username);
+  const sale = page.getByTestId("registre").getByRole("row").filter({ hasText: username });
+  await expect(sale).toHaveCount(2);
+  await expect(sale.first()).toHaveClass(/entry-first/);
+  await expect(sale.last()).toHaveClass(/entry-next/);
+  // The second line keeps its date, operation and member for screen readers only.
+  await expect(sale.first().locator(".sr-only")).toHaveCount(0);
+  await expect(sale.last().locator(".sr-only").filter({ hasText: username })).toHaveCount(1);
+  const settle = page.getByTestId("registre").getByRole("button", { name: /déposés dans la caisse/ });
+  await expect(settle).toHaveCount(1);
+  await expect(settle).toHaveText("11 septims déposés");
+  await expect(settle).toHaveAccessibleName("11 septims de cette vente de 2 lignes déposés dans la caisse");
+
+  // The confirmation says the click settles both lines, and their total.
   let question = "";
   page.once("dialog", (dialog) => {
     question = dialog.message();
     return dialog.accept();
   });
-  await rows.filter({ hasText: hide }).getByRole("button", { name: /déposés dans la caisse/ }).click();
+  await settle.click();
   await expect.poll(() => question).toBe(
     `Les septims de cette vente sont-ils déposés dans la caisse ?\n\n` +
       `Cela vaut pour ses 2 lignes, 11 septims en tout :\n• 2 × ${hide}\n• 1 × ${meat}`,
