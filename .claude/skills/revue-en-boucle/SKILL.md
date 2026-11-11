@@ -93,7 +93,11 @@ chaque passe s'y ajoute.
      `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
      qu'un commit poussé après la revue ne soit jamais mergé sans relecture.
      Puis ferme l'issue de son `Closes #n` si le merge ne l'a pas fait
-     (`CLAUDE.md` § Suivre le travail dans les issues).
+     (`CLAUDE.md` § Suivre le travail dans les issues). Puis fais le compte
+     de `CLAUDE.md` § Revue périodique, point 1 : si le seuil est atteint
+     sans issue `periodic-review` ouverte, dis au propriétaire dans ta
+     réponse que la revue est due, avec le nombre (personne ne l'avait
+     lancée après 50 PR, `.claude/audits/2026-11-11-harness.md`).
      En file ou en cours : un nouveau rappel dans 2 minutes. Rouge : c'est
      une correction, et la boucle repart.
    - Toujours pas fini 20 minutes après le push : dis au propriétaire quel
