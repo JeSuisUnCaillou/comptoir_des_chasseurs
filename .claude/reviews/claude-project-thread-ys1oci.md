@@ -14,3 +14,8 @@ Tête relue : 6fe6963609ff64ee0e1fb5bef738185ae12588eb
 
 Rebasée sur origin/claude/project-thread-ql68ke (aacff0b) sans conflit ; rien de cette PR n'a changé. tsc, drizzle-kit check, test:legacy et suite e2e (99 verts) repassés.
 Tête relue : c5c6693fd5b56f25e107f5aebcf8e2f11d6b9b06
+
+# Rebase sur main
+
+#112 mergée : branche rebasée sur origin/main (d2c0343, avec #116 et #119) sans conflit ; ALERT pris dans e2e/helpers.ts. Code de l'app inchangé. Base neuve migrée, test:legacy et suite e2e (104 verts) repassés.
+Tête relue : 5cf46779d5bd47b262dcb48f7eb0759a2a331775
