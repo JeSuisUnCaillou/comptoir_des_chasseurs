@@ -9,7 +9,7 @@ export type EntryPosition = {
   /** First row of its entry here: it shows what the lines share. */
   first: boolean;
   last: boolean;
-  /** The row that carries the entry's « Septims déposés / pris » button. */
+  /** The row that carries the entry's settle button (`SettleButton`). */
   settles: boolean;
 };
 
