@@ -168,8 +168,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
   s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
-- **Activité d'un membre** (gérants seulement) : le bouton « Activité » de
-  chaque ligne de Membres ouvre ce qu'il a fait sur une période, par défaut
+- **Activité d'un membre** : chacun ouvre la sienne en cliquant sur son nom,
+  en haut à droite ; un employé ne voit que la sienne, un gérant voit celle de
+  tous par le bouton « Activité » de chaque ligne de Membres. Elle montre ce
+  que le membre a fait sur une période, par défaut
   les 7 derniers jours, aujourd'hui compris (dates modifiables, heure de
   Paris), dans une seule liste paginée : ses achats, ventes, mouvements de
   caisse et mouvements de stock faits à la main (ceux des achats et des

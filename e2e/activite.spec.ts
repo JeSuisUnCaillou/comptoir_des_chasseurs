@@ -16,7 +16,7 @@ async function record(page: Page, kind: "vente" | "achat", product: string, quan
 
 /** Opens a member's activity from the Membres page, as a signed-in gérant. */
 async function openActivity(page: Page, username: string) {
-  await page.getByRole("link", { name: "Membres" }).click();
+  await page.getByRole("link", { name: "Membres", exact: true }).click();
   await page.getByTestId(`member-${username}`).getByRole("link", { name: "Activité" }).click();
   await expect(page).toHaveURL(/\/membres\/\d+$/);
   await expect(page.getByRole("heading", { level: 1, name: username })).toBeVisible();
@@ -98,13 +98,35 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   await expect(page.getByTestId("total-inventaire").locator(".stat-value")).toHaveText("+30 septims");
 });
 
-test("seul un gérant voit l'activité d'un membre", async ({ page, browser }) => {
+test("chacun ouvre son activité depuis son nom, un employé ne voit que la sienne", async ({ page, browser }) => {
   const { page: employee, username } = await newEmployeePage(browser, "aa-brand");
-  await loginAsGerant(page);
-  await openActivity(page, username);
-  const url = page.url();
-  await employee.goto(url);
+  const { page: other, username: otherName } = await newEmployeePage(browser, "aa-brun");
+
+  // The employee's name, top right, opens their own page, without the way back to Membres.
+  await employee.getByTestId("member-name").click();
+  await expect(employee).toHaveURL(/\/membres\/\d+$/);
+  await expect(employee.getByRole("heading", { level: 1, name: username })).toBeVisible();
+  await expect(employee.getByText("Mon activité")).toBeVisible();
+  await expect(employee.getByRole("link", { name: "Retour aux membres" })).toHaveCount(0);
+  const own = employee.url();
+
+  // Another employee's page sends them back to the Grand livre.
+  await other.getByTestId("member-name").click();
+  await expect(other.getByRole("heading", { level: 1, name: otherName })).toBeVisible();
+  await employee.goto(other.url());
   await expect(employee).toHaveURL(/\/$/);
+  // Nor can the other one open theirs.
+  await other.goto(own);
+  await expect(other).toHaveURL(/\/$/);
+
+  // A gérant opens their own from their name, and any member's from Membres.
+  await loginAsGerant(page);
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  await expect(page.getByText("Mon activité")).toBeVisible();
+  await openActivity(page, username);
+  expect(page.url()).toBe(own);
+  await expect(page.getByText("Activité d'un membre")).toBeVisible();
 
   // An id no member can have is a missing page, not a server error.
   for (const id of ["0", "abc", "99999999999"]) {

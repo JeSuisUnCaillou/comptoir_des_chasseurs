@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { MemberDateFilters } from "@/components/member-date-filters";
 import { ActivityTable } from "@/components/activity-table";
@@ -25,8 +25,11 @@ export default async function ActiviteMembre({
   params: Promise<{ id: string }>;
   searchParams: Promise<Search>;
 }) {
-  await requireMember(["gerant"]);
+  const viewer = await requireMember();
+  const gerant = viewer.role === "gerant";
   const id = Number((await params).id);
+  // An employee sees only their own page.
+  if (!gerant && id !== viewer.id) redirect("/");
   // Ids are Postgres integers: anything else is no member.
   if (!Number.isInteger(id) || id < 1 || id > 2_147_483_647) notFound();
   const [member] = await getDb().select().from(schema.members).where(eq(schema.members.id, id)).limit(1);
@@ -50,10 +53,12 @@ export default async function ActiviteMembre({
 
   return (
     <>
-      <PageHead eyebrow="Activité d'un membre" title={member.name}>
-        <Link href="/membres" className="small">
-          <ArrowLeft size={14} style={{ verticalAlign: "-2px" }} /> Retour aux membres
-        </Link>
+      <PageHead eyebrow={member.id === viewer.id ? "Mon activité" : "Activité d'un membre"} title={member.name}>
+        {gerant && (
+          <Link href="/membres" className="small">
+            <ArrowLeft size={14} style={{ verticalAlign: "-2px" }} /> Retour aux membres
+          </Link>
+        )}
       </PageHead>
 
       <section className="panel" aria-labelledby="valeur">
