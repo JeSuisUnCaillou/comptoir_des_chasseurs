@@ -19,3 +19,12 @@ Tête relue : 9e5308a (stock et prix par défaut en or, à la demande de Caillou
 - relecteur-architecte : aucune trouvaille.
 
 Tête relue : 9e5308af6890497206177f93adedd565c1a1945b
+
+# Passe 4
+
+Tête relue : 9896790 (merge de main, pour le contournement CI de #94 ; sans conflit, suite locale verte, 89)
+
+- relecteur-bugs : aucune trouvaille.
+- relecteur-architecte : aucune trouvaille.
+
+Tête relue : 9896790ae18a7efd992f3727bf5bd9f589dd47a0
