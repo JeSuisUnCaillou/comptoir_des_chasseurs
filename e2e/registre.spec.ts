@@ -91,6 +91,8 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
   await expect(page.getByTestId("registre")).toHaveCount(0);
   const form = page.getByRole("region", { name: "Inscrire une vente" });
+  // No explanatory sentence about the amount under the lines.
+  await expect(form.getByText("Le montant de chaque marchandise")).toHaveCount(0);
   await pickProduct(form, "Autre article (hors stock)…");
   await form.getByLabel("Nom de l'article").fill(label);
   await form.getByLabel("Montant (septims)").fill("500");
