@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb, isUniqueViolation, schema } from "@/lib/db";
 import { memberRole, type MemberRole } from "@/lib/db/schema";
@@ -41,6 +41,17 @@ export async function createMember(_prev: MemberFormState, formData: FormData): 
   return { ok: true, message: `Compte « ${username} » créé. Donne-lui son mot de passe.` };
 }
 
+/**
+ * Only the super admin themself may change their account; to anyone else the
+ * update matches no row.
+ */
+function editableBy(me: { id: number }, id: number) {
+  return and(
+    eq(schema.members.id, id),
+    or(eq(schema.members.superAdmin, false), eq(schema.members.id, me.id)),
+  );
+}
+
 export async function updateMember(formData: FormData) {
   const me = await requireMember(["gerant"]);
   const id = Number(formData.get("id"));
@@ -51,21 +62,23 @@ export async function updateMember(formData: FormData) {
   await getDb()
     .update(schema.members)
     .set({ name, role: id === me.id ? "gerant" : role })
-    .where(eq(schema.members.id, id));
+    .where(editableBy(me, id));
   revalidatePath("/", "layout");
 }
 
 export async function resetPassword(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
-  await requireMember(["gerant"]);
+  const me = await requireMember(["gerant"]);
   const id = Number(formData.get("id"));
   const password = String(formData.get("password") ?? "");
   if (!Number.isInteger(id)) return { ok: false, message: "Membre inconnu." };
   if (password.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, message: `${MIN_PASSWORD_LENGTH} caractères minimum.` };
   }
-  await getDb()
+  const changed = await getDb()
     .update(schema.members)
     .set({ passwordHash: await hashPassword(password) })
-    .where(eq(schema.members.id, id));
+    .where(editableBy(me, id))
+    .returning({ id: schema.members.id });
+  if (changed.length === 0) return { ok: false, message: "Ce compte est protégé." };
   return { ok: true, message: "Mot de passe changé." };
 }

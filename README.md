@@ -41,7 +41,7 @@ utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
 commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
-Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone,
+Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
 un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
@@ -214,7 +214,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 ## Rôles
 
-- Au premier lancement, la page de connexion crée le compte du **gérant**.
+- Au premier lancement, la page de connexion crée le compte du **gérant**,
+  qui est aussi le **super admin** : il a toujours tous les droits d'un
+  gérant, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;
+  aucun autre gérant ne peut le rétrograder, le désactiver ni changer son mot
+  de passe. Dans une base qui existait avant ce rôle, la migration le donne au
+  compte `jesuisuncaillou` (le propriétaire), s'il existe.
 - Un visiteur non connecté qui ouvre une page du comptoir passe par la page
   de connexion, puis revient sur cette page, avec ses filtres (paramètre
   `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;

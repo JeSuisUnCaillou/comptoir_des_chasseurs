@@ -121,7 +121,10 @@ propre base Supabase (variables préfixées `PREVIEW_`, préférées par
 `lib/db/url.mjs`) ; la prod n'est connectée qu'à Production. Pendant le build
 de prod, l'ancien code tourne encore sur la base migrée : **une migration
 reste compatible avec le code en prod** (ajouter des tables ou des colonnes ;
-supprimer ou renommer se fait en deux PR).
+supprimer ou renommer se fait en deux PR). Drizzle applique les migrations
+en attente dans une seule transaction : une valeur ajoutée à un enum
+(`ALTER TYPE … ADD VALUE`) ne peut pas servir dans le même lot, donc son
+usage part dans une PR suivante.
 
 Les secrets vivent dans les variables d'environnement de Vercel (`AUTH_SECRET`,
 `POSTGRES_URL`…), jamais dans le dépôt. L'adresse et les identifiants de

@@ -47,6 +47,16 @@ export async function createMember(
   }
 }
 
+/** Makes a gérant the super admin, straight in the database. */
+export async function makeSuperAdmin(username: string) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`update members set super_admin = true where username = ${username.toLowerCase()}`;
+  } finally {
+    await sql.end();
+  }
+}
+
 /** Changes a member's role straight in the database. */
 export async function setRole(username: string, role: "gerant" | "employe" | "desactive") {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
