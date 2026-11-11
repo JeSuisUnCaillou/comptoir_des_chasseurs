@@ -31,3 +31,12 @@ Tête relue : 1a1c1ce51712ca32c1ab06d3a4a4064e7f423bed
 - Aucune trouvaille bloquante. Écartés : la petite fonction shared répétée dans les deux tables (goût), le libellé « pris » d'un achat non vérifié (même code que la vente).
 
 Tête relue : 1a1c1ce51712ca32c1ab06d3a4a4064e7f423bed
+
+# Passe 3 (PR #108, seed des écritures groupées)
+
+Tête relue : 02b82e365c818644d0271b2c0daead5fc7c83085
+
+- Architecte : commentaire de lib/entry-groups.ts encore sur l'ancien libellé du bouton. Non bloquant, corrigé en 1dfe81d.
+- Bugs : aucune trouvaille. Écarté : le stock de la base de preview dérive à chaque nouveau lot d'exemples (voulu, dit au README).
+
+Tête relue : 1dfe81d52babc809884ed30afb16bf8c1d39b0ce
