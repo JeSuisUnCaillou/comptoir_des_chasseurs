@@ -23,8 +23,8 @@ const GERANT = {
 };
 
 // A second gérant, with Lomone's password, to see from another gérant's seat
-// that the super admin's account (the first gérant, see the members migration)
-// cannot be changed. Never made super admin here.
+// that the super admin's account (Lomone, or the first gérant on a database
+// older than the role) cannot be changed. Never made super admin here.
 const SECOND_GERANT = { username: "aela", name: "Aela" };
 
 // Starting stock, by product name.
@@ -103,6 +103,15 @@ try {
       on conflict (username) do nothing
       returning id`;
     console.log(gerant ? "Gérant Lomone créé." : "Gérant Lomone déjà présent.");
+
+    // On a fresh database the members migration found nobody to make super
+    // admin: Lomone becomes it, unless someone already is.
+    const [boss] = await tx`
+      update members set super_admin = true
+      where username = ${GERANT.username} and role = 'gerant'
+        and not exists (select 1 from members where super_admin)
+      returning id`;
+    if (boss) console.log("Lomone est super admin.");
 
     const [second] = await tx`
       insert into members (username, name, password_hash, role)

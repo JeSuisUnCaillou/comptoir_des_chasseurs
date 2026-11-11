@@ -41,7 +41,7 @@ utilise la base Supabase de prod ; les previews ont leur propre base Supabase,
 commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
-Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, une seconde gérante, Aela (même mot de passe, jamais super admin),
+Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
 un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
