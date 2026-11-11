@@ -4,7 +4,14 @@ import { alias } from "drizzle-orm/pg-core";
 import { byName, getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
 
-export type RegisterFilter = { kinds?: TransactionKind[]; from?: Date; to?: Date; memberId?: number };
+export type RegisterFilter = {
+  kinds?: TransactionKind[];
+  from?: Date;
+  to?: Date;
+  memberId?: number;
+  /** Only the lines waiting for the till. */
+  tillPending?: boolean;
+};
 
 const canceller = alias(schema.members, "canceller");
 
@@ -15,6 +22,7 @@ function conditions(filter: RegisterFilter) {
   if (filter.from) where.push(gte(t.createdAt, filter.from));
   if (filter.to) where.push(lt(t.createdAt, filter.to));
   if (filter.memberId) where.push(eq(t.memberId, filter.memberId));
+  if (filter.tillPending) where.push(eq(t.tillPending, true));
   return where;
 }
 
@@ -34,6 +42,7 @@ export async function registerEntries(
       amount: t.amount,
       counterparty: t.counterparty,
       notes: t.notes,
+      tillPending: t.tillPending,
       createdAt: t.createdAt,
       cancelledAt: t.cancelledAt,
       member: schema.members.name,
@@ -117,13 +126,28 @@ function tillFrom<P extends string>(row: Record<string, number>, prefix: P): Til
   return till({ sales: pick("sales"), buybacks: pick("buybacks"), inflows: pick("inflows"), outflows: pick("outflows") });
 }
 
-/** Money in and out of the till, ignoring cancelled lines. */
+/** Lines not cancelled, whose money is in the till, or still waiting for it when `pending`. */
+function live(pending = false) {
+  const t = schema.transactions;
+  return [isNull(t.cancelledAt), eq(t.tillPending, pending)];
+}
+
+/** Money in and out of the till, ignoring cancelled lines and those waiting for the till. */
 export async function tillTotals(filter: RegisterFilter = {}): Promise<Till> {
+  return totalsOf(filter, false);
+}
+
+/** The money of the lines waiting for the till: not counted in it yet. */
+export async function pendingTotals(filter: RegisterFilter = {}): Promise<Till> {
+  return totalsOf(filter, true);
+}
+
+async function totalsOf(filter: RegisterFilter, pending: boolean) {
   const t = schema.transactions;
   const [row] = await getDb()
     .select(tillColumns("all"))
     .from(t)
-    .where(and(isNull(t.cancelledAt), ...conditions(filter)));
+    .where(and(...live(pending), ...conditions(filter)));
   return tillFrom(row, "all");
 }
 
@@ -138,7 +162,7 @@ export async function tillSummary(now = new Date()) {
       ...tillColumns("all"),
     })
     .from(t)
-    .where(isNull(t.cancelledAt));
+    .where(and(...live()));
   return { day: tillFrom(row, "day"), week: tillFrom(row, "week"), all: tillFrom(row, "all") };
 }
 

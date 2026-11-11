@@ -126,6 +126,9 @@ export const transactions = pgTable(
     amount: integer("amount").notNull(),
     counterparty: text("counterparty"),
     notes: text("notes"),
+    // A sale or buyback whose septims the member has not yet put in or taken
+    // from the till: it does not count in the till until then.
+    tillPending: boolean("till_pending").notNull().default(false),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id),

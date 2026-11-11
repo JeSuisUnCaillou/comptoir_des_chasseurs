@@ -6,13 +6,13 @@ import { Pagination } from "@/components/pagination";
 import { RegisterTable } from "@/components/register-table";
 import { TillStat } from "@/components/till-stat";
 import { requireMember } from "@/lib/auth/session";
-import type { TransactionKind } from "@/lib/db/schema";
 import { septims } from "@/lib/pricing";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import {
   dayRange,
   memberNames,
+  pendingTotals,
   registerCount,
   registerEntries,
   tillTotals,
@@ -23,12 +23,13 @@ type Search = Record<"type" | "employe" | "du" | "au" | "page" | "inscrit", stri
 
 const PATH = "/achat-vente";
 
-/** What the "Opération" filter offers, and the kinds of lines each shows. */
+/** What the "Opération" filter offers, and the lines each shows. */
 const OPERATIONS = {
-  vente: ["vente"],
-  rachat: ["rachat"],
-  caisse: [...CASH_KINDS],
-} satisfies Record<string, TransactionKind[]>;
+  vente: { kinds: ["vente"] },
+  rachat: { kinds: ["rachat"] },
+  caisse: { kinds: [...CASH_KINDS] },
+  attente: { tillPending: true },
+} satisfies Record<string, Pick<RegisterFilter, "kinds" | "tillPending">>;
 
 function asOperation(value: string | undefined) {
   return value && Object.hasOwn(OPERATIONS, value) ? (value as keyof typeof OPERATIONS) : undefined;
@@ -45,17 +46,19 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   const employe = author && String(author.id);
   const filters = { type: operation, employe, du, au };
   const filter: RegisterFilter = {
-    kinds: operation && OPERATIONS[operation],
+    ...(operation && OPERATIONS[operation]),
     memberId: author?.id,
     from,
     to,
   };
 
-  const [entries, total, totals] = await Promise.all([
+  const [entries, total, totals, waiting] = await Promise.all([
     registerEntries(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     registerCount(filter),
     tillTotals(filter),
+    pendingTotals(filter),
   ]);
+  const anyWaiting = waiting.sales > 0 || waiting.buybacks > 0;
   const filtered = Boolean(operation || employe || du || au);
   // Coming back from the entry form: confirm the lines just written, in the order they were typed.
   const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
@@ -101,7 +104,8 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
               {first.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} :{" "}
               {written.map((e) => `${e.quantity} × ${e.label}`).join(", ")},{" "}
               {septims(written.reduce((sum, e) => sum + e.amount, 0))}
-              {written.length > 1 ? " au total" : ""}.
+              {written.length > 1 ? " au total" : ""}
+              {first.tillPending ? ", en attente de la caisse" : ""}.
             </>
           )}
         </p>
@@ -118,12 +122,24 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             <option value="vente">Ventes</option>
             <option value="rachat">Achats</option>
             <option value="caisse">Mouvements de caisse</option>
+            <option value="attente">En attente de la caisse</option>
           </select>
         </MemberDateFilters>
         <div className="stats">
           <TillStat title={filtered ? "Caisse sur la sélection" : "Caisse depuis l'ouverture"} till={totals} testId="totaux-registre" />
+          {anyWaiting && (
+            <div className="stat" data-testid="en-attente">
+              <div className="stat-label">En attente de la caisse</div>
+              <div className="stat-value muted">{septims(waiting.balance, { signed: true })}</div>
+              <div className="small muted">
+                {septims(waiting.sales)} à déposer · {septims(waiting.buybacks)} à prendre, pas encore dans la caisse
+              </div>
+            </div>
+          )}
         </div>
-        <p className="small muted">Les lignes annulées sont barrées et ne comptent pas dans la caisse.</p>
+        <p className="small muted">
+          Les lignes annulées sont barrées et ne comptent pas dans la caisse, pas plus que celles en attente de la caisse.
+        </p>
         <RegisterTable entries={entries} member={member} highlight={written.map((e) => e.id)} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />
       </section>

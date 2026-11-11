@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
@@ -26,6 +26,8 @@ export async function recordTransaction(
   const kind = formData.get("kind");
   const counterparty = String(formData.get("counterparty") ?? "").trim().slice(0, 100) || null;
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 500) || null;
+  // The member has not yet put the septims in the till, or taken them out.
+  const tillPending = formData.get("tillPending") === "on";
   const productIds = formData.getAll("productId").map(String);
   const labels = formData.getAll("label").map(String);
   const quantities = formData.getAll("quantity").map(Number);
@@ -88,6 +90,7 @@ export async function recordTransaction(
           amount,
           counterparty,
           notes,
+          tillPending,
           memberId: member.id,
         }).returning({ id: schema.transactions.id });
         if (productId != null) {
@@ -137,6 +140,49 @@ export async function recordCashMovement(
     .returning({ id: schema.transactions.id });
   revalidate();
   redirect(`/achat-vente?inscrit=${line.id}`);
+}
+
+/**
+ * The septims of a sale or buyback waiting for the till are now in it, or out
+ * of it: every line of the same entry counts in the till from now on.
+ * Gérants, or the member who wrote it.
+ */
+export async function settleTransaction(
+  _prev: TransactionState,
+  formData: FormData,
+): Promise<TransactionState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
+  const t = schema.transactions;
+  const db = getDb();
+  const [line] = await db
+    .select({ memberId: t.memberId, kind: t.kind })
+    .from(t)
+    .where(and(eq(t.id, id), eq(t.tillPending, true), isNull(t.cancelledAt)))
+    .limit(1);
+  if (!line) return { ok: false, message: "Cette ligne n'attend plus la caisse." };
+  if (member.role !== "gerant" && line.memberId !== member.id) {
+    return { ok: false, message: "Seul un gérant peut le faire pour la ligne d'un autre membre." };
+  }
+  // The lines of one entry are written in one database transaction, so they
+  // share their author, their kind and their instant (now() is the start of
+  // the transaction): that is what makes them one entry. The instant is
+  // compared in SQL, which keeps its microseconds.
+  await db
+    .update(t)
+    .set({ tillPending: false })
+    .where(
+      and(
+        eq(t.memberId, line.memberId),
+        eq(t.kind, line.kind),
+        sql`${t.createdAt} = (select ${t.createdAt} from ${t} where ${t.id} = ${id})`,
+        eq(t.tillPending, true),
+        isNull(t.cancelledAt),
+      ),
+    );
+  revalidate();
+  return { ok: true, message: "Les septims comptent dans la caisse." };
 }
 
 /** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */

@@ -320,7 +320,18 @@ h3 {
   margin-top: 6px;
 }
 
-.citizen-price .badge {
+.citizen-price .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.row-actions .btn {
+  white-space: nowrap;
+}
+
+.badge {
   font-size: 12px;
 }
 

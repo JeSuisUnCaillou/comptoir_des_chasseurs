@@ -76,6 +76,8 @@ export type ActivityLine = {
   /** Who paid or was paid, or the reason of a stock movement. */
   detail: string | null;
   notes: string | null;
+  /** A sale or buyback whose septims are not in the till yet. */
+  tillPending: boolean;
   createdAt: Date;
   cancelledAt: Date | null;
   cancelledBy: string | null;
@@ -93,12 +95,12 @@ function activitySource(memberId: number, from: Date, to: Date) {
   return sql`
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
-      ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by
+      ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
     where ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, ${m.createdAt}, null, null
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.memberId} = ${memberId} and ${m.transactionId} is null
@@ -125,6 +127,7 @@ export async function memberActivity(
     amount: Number(r.amount),
     detail: (r.detail as string | null) ?? null,
     notes: (r.notes as string | null) ?? null,
+    tillPending: r.till_pending === true,
     createdAt: new Date(r.created_at as string),
     cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
     cancelledBy: (r.cancelled_by as string | null) ?? null,

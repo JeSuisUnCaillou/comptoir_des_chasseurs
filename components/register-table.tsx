@@ -1,5 +1,6 @@
 import { CancelButton } from "@/components/cancel-button";
-import { OperationBadge } from "@/components/operation-badge";
+import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
+import { SettleButton } from "@/components/settle-button";
 import type { Member } from "@/lib/db/schema";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -46,7 +47,10 @@ export function RegisterTable({
             const cash = isCashKind(e.kind);
             const amount = signedAmount(e.kind, e.amount);
             const cancelled = e.cancelledAt != null;
-            const canCancel = !cancelled && (member.role === "gerant" || e.memberId === member.id);
+            const mine = member.role === "gerant" || e.memberId === member.id;
+            const canCancel = !cancelled && mine;
+            // Its septims are not in the till yet: shown, but not counted.
+            const waiting = !cancelled && e.tillPending;
             const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
             return (
               <tr
@@ -60,8 +64,14 @@ export function RegisterTable({
                 </td>
                 <td>{e.label}</td>
                 <td className="num">{cash ? "—" : formatNumber(e.quantity)}</td>
-                <td className={`num ${cancelled ? "" : amount >= 0 ? "plus" : "minus"}`}>
+                <td className={`num ${cancelled ? "" : waiting ? "muted" : amount >= 0 ? "plus" : "minus"}`}>
                   {septims(amount, { signed: true })}
+                  {waiting && (
+                    <>
+                      <br />
+                      <TillPendingBadge />
+                    </>
+                  )}
                 </td>
                 <td>{e.counterparty ?? "—"}</td>
                 <td>{e.member}</td>
@@ -71,7 +81,9 @@ export function RegisterTable({
                     <span className="small muted">Annulée{e.cancelledBy ? ` par ${e.cancelledBy}` : ""}</span>
                   ) : (
                     canCancel && (
-                      <CancelButton
+                      <div className="row-actions">
+                        {waiting && <SettleButton id={e.id} sale={sale} />}
+                        <CancelButton
                         id={e.id}
                         label={label}
                         effect={
@@ -84,6 +96,7 @@ export function RegisterTable({
                                 : `${e.quantity} ${e.label} sortiront du stock.`
                         }
                       />
+                      </div>
                     )
                   )}
                 </td>
