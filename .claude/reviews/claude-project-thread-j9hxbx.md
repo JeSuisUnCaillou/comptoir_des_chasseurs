@@ -14,3 +14,10 @@ Tête relue : 65312d635922df42ef6e1da772f9bef7aa286bfa
 - Aucune trouvaille (relecteur-bugs, relecteur-architecte).
 
 Tête relue : 65312d635922df42ef6e1da772f9bef7aa286bfa
+
+# Passe 3
+
+Tête relue : 3c17a8cd0f43554e3b60565a074fc71d49346ccf
+
+- Limite de 25 marchandises sans test (relecteur-bugs) : confirmée ; le formulaire grise maintenant « Ajouter une marchandise » à 25 et un test e2e le vérifie, en 1b3e6a6.
+- Écriture au registre et stock dans la Server Action plutôt que dans lib/ (relecteur-architecte) : rejetée pour cette PR, l'emplacement existait avant la branche et il n'y a qu'une entrée qui inscrit des ventes ; le relecteur la dit lui-même modeste.
