@@ -48,3 +48,11 @@ Tête relue : aecdcbe695d8e69ddda355df98c6e3f5751fcdec
 - Aucune trouvaille bloquante. Écartés : libellé visible « N septims pris » d'un rachat non testé (même code que la vente, nom accessible testé), fonction shared répétée (goût).
 
 Tête relue : aecdcbe695d8e69ddda355df98c6e3f5751fcdec
+
+# Passe 5 (PR #108, bloc pour chaque écriture)
+
+Tête relue : a912eb53b4ad2fc85baf62f2373f93ed3cea6c5a
+
+- Aucune trouvaille. Suite e2e verte (93).
+
+Tête relue : a912eb53b4ad2fc85baf62f2373f93ed3cea6c5a
