@@ -91,9 +91,8 @@ chaque passe s'y ajoute.
      avec `merge_pull_request`, en squash (`CLAUDE.md` § Qui merge), avec
      `expectedHeadSha` égal au commit qui a fermé le fichier de revue, pour
      qu'un commit poussé après la revue ne soit jamais mergé sans relecture.
-     Puis vérifie que l'issue de la PR est fermée (`issue_read`) ; sinon
-     ferme-la avec un commentaire qui renvoie à la PR (`CLAUDE.md` § Suivre
-     le travail dans les issues).
+     Puis ferme l'issue de son `Closes #n` si le merge ne l'a pas fait
+     (`CLAUDE.md` § Suivre le travail dans les issues).
      En file ou en cours : un nouveau rappel dans 2 minutes. Rouge : c'est
      une correction, et la boucle repart.
    - Toujours pas fini 20 minutes après le push : dis au propriétaire quel
