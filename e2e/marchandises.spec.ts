@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+import { ALERT, createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 test("un gérant crée puis modifie une marchandise, visible dans les tarifs", async ({ page }) => {
   const name = uniqueName("Peau de chèvre des glaces");

@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createMember, loginAs, loginAsGerant, makeSuperAdmin, memberRow, newEmployeePage, uniqueName } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+import { ALERT, createMember, loginAs, loginAsGerant, makeSuperAdmin, memberRow, newEmployeePage, uniqueName } from "./helpers";
 
 test("un gérant crée un compte employé, qui peut entrer", async ({ page, browser }) => {
   const username = uniqueName("einar").toLowerCase();

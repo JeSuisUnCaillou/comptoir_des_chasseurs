@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  ALERT,
   createMember,
   createProduct,
   loginAs,
@@ -9,8 +10,6 @@ import {
   setRole,
   uniqueName,
 } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
 /** Shows only this member's lines in the register. */
 async function onlyLinesOf(page: Page, name: string) {

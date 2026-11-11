@@ -2,6 +2,9 @@ import { expect, type Browser, type Locator, type Page } from "@playwright/test"
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
 
+/** An error message on the page, without the route announcer Next adds to every page. */
+export const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+
 export const GERANT = { username: "lomone", password: "lomone-secret", name: "Lomone" };
 
 /** Signs in through the real sign-in form. */

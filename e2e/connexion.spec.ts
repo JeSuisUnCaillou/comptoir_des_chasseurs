@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GERANT, createMember, loginAs, loginAsGerant, uniqueName } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+import { ALERT, GERANT, createMember, loginAs, loginAsGerant, uniqueName } from "./helpers";
 
 test("un visiteur non connecté arrive sur la page de connexion", async ({ page }) => {
   await page.goto("/inventaire");

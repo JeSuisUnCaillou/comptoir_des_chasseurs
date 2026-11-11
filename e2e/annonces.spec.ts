@@ -113,7 +113,10 @@ test("le serveur refuse de décrocher le parchemin d'un autre à qui n'est plus 
   await expect(takeDown).toBeVisible();
 
   await setRole(username, "employe");
+  // The server action answers without a message: wait for its answer before looking.
+  const answered = page.waitForResponse((r) => r.request().method() === "POST" && !!r.request().headers()["next-action"]);
   await takeDown.click();
+  await answered;
   await author.reload();
   await expect(parchment(author, title)).toBeVisible();
   await page.reload();

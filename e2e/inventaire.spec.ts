@@ -1,8 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+import { ALERT, createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 async function addProduct(page: Page, name: string) {
   await page.goto("/marchandises");
