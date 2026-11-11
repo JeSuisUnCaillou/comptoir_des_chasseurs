@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createMember, loginAs, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createMember, loginAs, loginAsGerant, memberRow, newEmployeePage, uniqueName } from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -14,7 +14,7 @@ test("un gérant crée un compte employé, qui peut entrer", async ({ page, brow
   await form.getByLabel("Mot de passe provisoire").fill("provisoire");
   await form.getByRole("button", { name: "Créer le compte" }).click();
   await expect(form.getByRole("status")).toContainText(`Compte « ${username} » créé`);
-  await expect(page.getByTestId(`member-${username}`).locator(".badge")).toHaveText("Employé");
+  await expect((await memberRow(page, username)).locator(".badge")).toHaveText("Employé");
 
   const employee = await (await browser.newContext()).newPage();
   await loginAs(employee, username, "provisoire");
@@ -39,8 +39,7 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
   const { page: employee, username } = await newEmployeePage(browser, "intrus");
 
   await loginAsGerant(page);
-  await page.goto("/membres");
-  const row = page.getByTestId(`member-${username}`);
+  const row = await memberRow(page, username);
   await row.getByLabel("Rôle").selectOption("desactive");
   await row.getByRole("button", { name: "Enregistrer" }).click();
   await expect(row.locator(".badge")).toHaveText("Désactivé");
@@ -56,8 +55,7 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
 test("un gérant réinitialise un mot de passe oublié", async ({ page, browser }) => {
   const { page: employee, username } = await newEmployeePage(browser, "sariel");
   await loginAsGerant(page);
-  await page.goto("/membres");
-  const row = page.getByTestId(`member-${username}`);
+  const row = await memberRow(page, username);
   await row.getByLabel("Nouveau mot de passe").fill("tout-neuf-123");
   await row.getByRole("button", { name: "Changer" }).click();
   await expect(row.getByRole("status")).toHaveText("Mot de passe changé.");
@@ -101,36 +99,33 @@ test("la liste des comptes est paginée", async ({ page }) => {
 });
 
 test("un gérant nomme un employé gérant, qui gère alors les comptes", async ({ page, browser }) => {
-  // "Aa" sorts them first, so they stay on the first page of the accounts.
-  const { page: employee, username } = await newEmployeePage(browser, "aa-brina");
+  const { page: employee, username } = await newEmployeePage(browser, "brina");
   await expect(employee.getByRole("link", { name: "Membres" })).toHaveCount(0);
 
   await loginAsGerant(page);
-  await page.goto("/membres");
-  const row = page.getByTestId(`member-${username}`);
-  await row.getByLabel("Nom affiché").fill("Aa Brina Merilis");
+  const row = await memberRow(page, username);
+  // The new name sorts right after the old one: the row stays on its page.
+  await row.getByLabel("Nom affiché").fill(`${username} Merilis`);
   await row.getByLabel("Rôle").selectOption("gerant");
   await row.getByRole("button", { name: "Enregistrer" }).click();
   await expect(row.locator(".badge")).toHaveText("Gérant");
 
   await employee.reload();
-  await expect(employee.getByTestId("member-name")).toHaveText("Aa Brina Merilis");
+  await expect(employee.getByTestId("member-name")).toHaveText(`${username} Merilis`);
   await employee.getByRole("link", { name: "Membres" }).click();
   await expect(employee.getByRole("heading", { name: "Créer un compte" })).toBeVisible();
 });
 
 test("un gérant ne peut pas se retirer son propre rôle de gérant", async ({ browser }) => {
-  // "Aa" sorts them first, so they stay on the first page of the accounts.
-  const username = uniqueName("aa-vignar").toLowerCase();
-  await createMember(username, "mot-de-passe", "gerant", "Aa Vignar");
+  const username = uniqueName("vignar").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
   const page = await (await browser.newContext()).newPage();
   await loginAs(page, username, "mot-de-passe");
-  await page.goto("/membres");
-  const row = page.getByTestId(`member-${username}`);
+  const row = await memberRow(page, username);
   // No role to pick on their own row, only the name.
   await expect(row.getByLabel("Rôle")).toHaveCount(0);
-  await row.getByLabel("Nom affiché").fill("Aa Vignar Grisecrinière");
+  await row.getByLabel("Nom affiché").fill(`${username} Grisecrinière`);
   await row.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(page.getByTestId("member-name")).toHaveText("Aa Vignar Grisecrinière");
+  await expect(page.getByTestId("member-name")).toHaveText(`${username} Grisecrinière`);
   await expect(row.locator(".badge")).toHaveText("Gérant");
 });

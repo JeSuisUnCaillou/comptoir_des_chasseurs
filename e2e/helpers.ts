@@ -144,3 +144,19 @@ export async function createAnnouncements(username: string, n: number, title = "
     await sql.end();
   }
 }
+
+/**
+ * Opens the Membres page on which a member's row is, and returns the row: the
+ * accounts are paginated and sorted by name, and the other tests' members can
+ * push any row past the first page.
+ */
+export async function memberRow(page: Page, username: string) {
+  const row = page.getByTestId(`member-${username.toLowerCase()}`);
+  const next = page.getByRole("navigation", { name: "Pages des comptes" }).getByRole("link", { name: "Suivant" });
+  for (let n = 1; ; n++) {
+    await page.goto(`/membres?page=${n}`);
+    await expect(page.getByRole("heading", { name: "Comptes" })).toBeVisible();
+    if ((await row.count()) > 0) return row;
+    if ((await next.count()) === 0) throw new Error(`Aucun compte « ${username} » dans Membres.`);
+  }
+}
