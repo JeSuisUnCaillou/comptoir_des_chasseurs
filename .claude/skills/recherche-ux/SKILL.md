@@ -30,6 +30,10 @@ La session ne joint pas `*.vercel.app` : la scène est un build de la branche
   dans ton scratchpad, une capture après chaque geste, que tu regardes. Un
   gérant qui fait ses comptes est sur ordinateur ; un employé en jeu consulte
   souvent l'app sur son téléphone (`devices['iPhone 13']`).
+- Pièges de la scène : attends la fin de « CHARGEMENT… » avant une capture ;
+  les confirmations sont des `confirm()` (`page.on('dialog')`) ; après un
+  envoi, attends l'URL suivante, pas `networkidle`. Toute la semaine se joue
+  le même jour réel : les vues par date ne se testent pas, dis-le.
 
 ## 2. Écrire la semaine
 
