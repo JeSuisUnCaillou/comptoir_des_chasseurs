@@ -1,6 +1,6 @@
 "use server";
 
-import { MIN_PASSWORD_LENGTH, hashPassword, normalizeUsername, usernameError } from "@/lib/auth/password";
+import { MIN_PASSWORD_LENGTH, hashPassword, newPasswordError, normalizeUsername, usernameError } from "@/lib/auth/password";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
@@ -16,11 +16,8 @@ export async function createMember(_prev: MemberFormState, formData: FormData): 
   const password = String(formData.get("password") ?? "");
   const role = readRole(formData);
   if (!username || !name || !role) return { ok: false, message: "Tous les champs sont obligatoires." };
-  const invalid = usernameError(username);
+  const invalid = usernameError(username) ?? newPasswordError(password);
   if (invalid) return { ok: false, message: invalid };
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, message: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
-  }
   const passwordHash = await hashPassword(password);
   const result = await attempt(() => createAccount(me.shopId, { username, name, role, passwordHash }));
   if (!result.ok) return result;

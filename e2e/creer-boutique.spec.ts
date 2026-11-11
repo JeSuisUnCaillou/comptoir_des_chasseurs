@@ -134,6 +134,17 @@ test("un compte existant prend une invitation en se connectant d'abord", async (
   await expect(guest.getByRole("link", { name: "Membres" })).toHaveCount(0);
 });
 
+test("connecté avec un autre compte, on se déconnecte sans perdre l'invitation", async ({ page, browser }) => {
+  const shop = uniqueName("Étal de Riverwood");
+  const link = await invite(page, shop);
+  const { page: someone } = await newEmployeePage(browser, "sven");
+  await someone.goto(link);
+  await expect(someone.getByRole("button", { name: `Devenir gérant de « ${shop} »` })).toBeVisible();
+  await someone.getByRole("button", { name: "Se déconnecter" }).click();
+  await expect(someone.getByRole("button", { name: "Créer mon compte et entrer" })).toBeVisible();
+  expect(someone.url()).toBe(link);
+});
+
 test("un lien d'invitation inconnu n'ouvre rien", async ({ page }) => {
   await page.goto(`/invitation/${uniqueName("faux-lien")}`);
   await expect(page.locator(ALERT)).toContainText("Cette invitation n'est plus valable");

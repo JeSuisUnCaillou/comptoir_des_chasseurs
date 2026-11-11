@@ -31,6 +31,13 @@ export function normalizeUsername(raw: unknown) {
   return String(raw ?? "").trim().toLowerCase().slice(0, 40);
 }
 
+/** Why a new password (typed twice when `confirm` is given) can't be used, or null. */
+export function newPasswordError(password: string, confirm?: FormDataEntryValue | null) {
+  if (password.length < MIN_PASSWORD_LENGTH) return `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`;
+  if (confirm !== undefined && password !== confirm) return "Les deux mots de passe ne correspondent pas.";
+  return null;
+}
+
 /** Why a new username can't be used, or null. */
 export function usernameError(username: string) {
   return /^[a-z0-9._-]+$/.test(username)

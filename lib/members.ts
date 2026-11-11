@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, eq, exists, ne, or, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
-import { byName, getDb, isUniqueViolation, schema } from "@/lib/db";
+import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
@@ -55,23 +55,25 @@ export async function createFirstGerant(
   });
 }
 
-/** Creates an account with its role in the gérant's shop. */
-export async function createAccount(
-  shopId: number,
-  { username, name, role, passwordHash }: { username: string; name: string; role: MemberRole; passwordHash: string },
-) {
+type NewAccount = { username: string; name: string; passwordHash: string };
+
+/** Creates an account, with no shop yet, inside `tx`. Refuses a username already taken. */
+export async function insertAccount(tx: Tx, { username, name, passwordHash }: NewAccount, role: MemberRole = "employe") {
   try {
-    await getDb().transaction(async (tx) => {
-      const [member] = await tx
-        .insert(schema.members)
-        .values({ username, name, role, passwordHash })
-        .returning({ id: schema.members.id });
-      await tx.insert(schema.shopMembers).values({ shopId, memberId: member.id, role });
-    });
+    const [member] = await tx.insert(schema.members).values({ username, name, role, passwordHash }).returning();
+    return member;
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError("Cet identifiant est déjà pris.");
     throw error;
   }
+}
+
+/** Creates an account with its role in the gérant's shop. */
+export async function createAccount(shopId: number, { role, ...account }: NewAccount & { role: MemberRole }) {
+  await getDb().transaction(async (tx) => {
+    const member = await insertAccount(tx, account, role);
+    await tx.insert(schema.shopMembers).values({ shopId, memberId: member.id, role });
+  });
 }
 
 /**

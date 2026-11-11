@@ -1,9 +1,10 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
+import { getDb, schema, type Tx } from "@/lib/db";
 import type { Member, Shop } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
+import { insertAccount } from "@/lib/members";
 import { insertShop } from "@/lib/shops";
 
 /**
@@ -12,7 +13,7 @@ import { insertShop } from "@/lib/shops";
  * account or a new one. A link works once.
  */
 
-const SPENT = "Cette invitation n'est plus valable : elle a déjà servi, ou le lien est incomplet.";
+export const SPENT = "Cette invitation n'est plus valable : elle a déjà servi, ou le lien est incomplet.";
 
 /** Opens a shop named `name` with no member yet, and the token of the link that makes someone its gérant. */
 export async function createShopInvitation(superAdmin: Pick<Member, "id">, name: string) {
@@ -75,13 +76,7 @@ export async function signUpWithInvitation(
   { username, name, passwordHash }: { username: string; name: string; passwordHash: string },
 ): Promise<{ member: Member; shop: Shop }> {
   return getDb().transaction(async (tx) => {
-    let member: Member;
-    try {
-      [member] = await tx.insert(schema.members).values({ username, name, passwordHash, role: "gerant" }).returning();
-    } catch (error) {
-      if (isUniqueViolation(error)) throw new UserError("Cet identifiant est déjà pris.");
-      throw error;
-    }
+    const member = await insertAccount(tx, { username, name, passwordHash }, "gerant");
     return { member, shop: await spend(tx, token, member.id) };
   });
 }

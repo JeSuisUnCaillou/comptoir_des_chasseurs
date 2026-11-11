@@ -4,7 +4,7 @@ import { InvitationSignupForm, JoinShopForm } from "@/components/shop-forms";
 import { logout } from "@/app/connexion/actions";
 import { RETURN_PARAM, loginUrl } from "@/lib/auth/return-path";
 import { currentAccount } from "@/lib/auth/session";
-import { invitedShop } from "@/lib/invitations";
+import { SPENT, invitedShop } from "@/lib/invitations";
 import { invitationPath } from "@/lib/paths";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export default async function Invitation({ params }: { params: Promise<{ token: 
         {!shop ? (
           <>
             <p className="notice error" role="alert">
-              Cette invitation n&apos;est plus valable : elle a déjà servi, ou le lien est incomplet.
+              {SPENT}
             </p>
             <Link className="btn" href="/">
               Aller à mes boutiques

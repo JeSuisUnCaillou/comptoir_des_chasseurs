@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import {
-  MIN_PASSWORD_LENGTH,
   hashPassword,
+  newPasswordError,
   normalizeUsername,
   verifyPassword,
 } from "@/lib/auth/password";
@@ -37,12 +37,8 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
   const name = text(formData, "name", 60);
   const password = String(formData.get("password") ?? "");
   if (!username || !name) return { error: "Identifiant et nom sont obligatoires." };
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
-  }
-  if (password !== formData.get("confirm")) {
-    return { error: "Les deux mots de passe ne correspondent pas." };
-  }
+  const invalid = newPasswordError(password, formData.get("confirm"));
+  if (invalid) return { error: invalid };
   const passwordHash = await hashPassword(password);
 
   const created = await createFirst((await firstShop()).id, { username, name, passwordHash });

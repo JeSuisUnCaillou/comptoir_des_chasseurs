@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { MIN_PASSWORD_LENGTH, hashPassword, normalizeUsername, usernameError } from "@/lib/auth/password";
+import { hashPassword, newPasswordError, normalizeUsername, usernameError } from "@/lib/auth/password";
 import { requireAccount, startSession } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { text } from "@/lib/forms";
@@ -26,12 +26,8 @@ export async function signUp(_prev: InvitationState, formData: FormData): Promis
   const name = text(formData, "name", 60);
   const password = String(formData.get("password") ?? "");
   if (!username || !name) return { error: "Identifiant et nom sont obligatoires." };
-  const invalid = usernameError(username);
+  const invalid = usernameError(username) ?? newPasswordError(password, formData.get("confirm"));
   if (invalid) return { error: invalid };
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
-  }
-  if (password !== formData.get("confirm")) return { error: "Les deux mots de passe ne correspondent pas." };
   const passwordHash = await hashPassword(password);
   const result = await attempt(() => signUpWithInvitation(token, { username, name, passwordHash }));
   if (!result.ok) return { error: result.message };

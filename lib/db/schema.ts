@@ -71,8 +71,8 @@ export const members = pgTable(
     // Name shown in the registers (RP name).
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
-    // Replaced by the role in each shop (shopMembers.role): neither read nor
-    // written any more, dropped by a later migration.
+    // Replaced by the role in each shop (shopMembers.role): no longer read,
+    // dropped by a later migration.
     role: memberRole("role").notNull().default("employe"),
     // The comptoir's owner: always a gérant, and nobody else can change their
     // account (name, role, password).
