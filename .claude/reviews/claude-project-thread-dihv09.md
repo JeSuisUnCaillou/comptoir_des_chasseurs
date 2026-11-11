@@ -16,3 +16,18 @@ Tête relue : 9c5da16168fa7493e12075bff98208f719ddd916
 - Bugs : aucune trouvaille.
 
 Tête relue : 2413c0f5cbd772373a97be7de57fd4538f230e15
+
+# Passe 1 (PR #108, écritures en bloc)
+
+Tête relue : 041cc8cd2b58f55497a7d73c637a075471569cc8
+
+- Architecte : la définition d'une écriture était écrite deux fois (pendingOfSameEntry, entryKeyColumn). Non bloquante, corrigée en 1a1c1ce (entryOf partagé).
+- Bugs : la page d'activité et le cas « ligne du haut annulée » n'étaient pas testés. Bloquante (changement sans test), corrigée en 1a1c1ce ; le test échoue sans place.settles dans activity-table, passe avec. Suite verte (93).
+
+# Passe 2 (PR #108)
+
+Tête relue : 1a1c1ce51712ca32c1ab06d3a4a4064e7f423bed
+
+- Aucune trouvaille bloquante. Écartés : la petite fonction shared répétée dans les deux tables (goût), le libellé « pris » d'un achat non vérifié (même code que la vente).
+
+Tête relue : 1a1c1ce51712ca32c1ab06d3a4a4064e7f423bed
