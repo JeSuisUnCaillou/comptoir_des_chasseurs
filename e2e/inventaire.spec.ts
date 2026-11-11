@@ -213,3 +213,32 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await p.getByLabel("Rechercher une marchandise").fill(name);
   await expect(card.getByTestId("stock-value")).toHaveText("3");
 });
+
+test("l'inventaire montre les septims en caisse, sans ceux qui attendent la caisse", async ({ page, browser }) => {
+  // Amounts far above what other tests write, so their lines cannot blur the deltas.
+  const { username } = await newEmployeePage(browser, "ralof");
+  const tile = page.getByTestId("caisse-inventaire");
+  const read = async () => {
+    await page.goto("/inventaire");
+    await expect(tile).toContainText("Septims en caisse");
+    return Number((await tile.locator(".stat-value").textContent())!.replace(/[^\d−-]/g, "").replace("−", "-"));
+  };
+  const near = (delta: number, expected: number) => {
+    expect(delta).toBeGreaterThan(expected - 10_000);
+    expect(delta).toBeLessThan(expected + 10_000);
+  };
+  await loginAsGerant(page);
+
+  const before = await read();
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into transactions (kind, label, quantity, amount, member_id, till_pending)
+      select 'vente'::transaction_kind, ${uniqueName("Vente encaissée")}, 1, 5000000, id, false from members where username = ${username}
+      union all
+      select 'vente'::transaction_kind, ${uniqueName("Vente en attente")}, 1, 7000000, id, true from members where username = ${username}`;
+  } finally {
+    await sql.end();
+  }
+  near((await read()) - before, 5_000_000);
+});

@@ -142,7 +142,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   ou une marchandise. Tout le monde les consulte ; seuls les gérants en
   ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
   suppriment, par les boutons de la page.
-- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; le bouton
+- **Tarifs**, **Inventaire** (en tête, les septims en caisse, calculés comme
+  la trésorerie du Grand livre, sans les septims en attente de la caisse ;
+  entrées et sorties avec motif ; le bouton
   « Nouvelle marchandise » fait entrer en stock une marchandise qui n'existe
   pas encore : tout membre la crée, sans prix, avec nom, catégorie, unité,
   quantité et motif, et un gérant règle ses prix ensuite dans Gérer les
