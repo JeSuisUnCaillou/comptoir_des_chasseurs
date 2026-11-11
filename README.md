@@ -137,7 +137,7 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   du membre : toutes les lignes de l'écriture comptent alors dans la caisse,
   et la confirmation, pour une écriture de plusieurs lignes, les liste avec
   leur total. Dans ces deux listes, chaque écriture forme un bloc, même d'une
-  seule ligne : une barre dorée à gauche, un espace autour, et la date, l'opération, le client,
+  seule ligne : une carte encadrée d'un trait fin, une barre dorée à gauche, un espace entre deux cartes, et la date, l'opération, le client,
   l'employé et les notes écrits sur sa première ligne seulement. Un **mouvement de caisse** fait entrer
   ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,
   montant, motif, et l'aperçu de la caisse après lui. Tout membre peut en
