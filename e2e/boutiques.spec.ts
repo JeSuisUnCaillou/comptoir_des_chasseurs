@@ -231,3 +231,34 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
     await check.end();
   }
 });
+
+test("un membre désactivé au comptoir mais actif ailleurs est renvoyé vers sa boutique", async ({ page }) => {
+  const other = await createOtherShop(uniqueName("Hydromel"));
+  const username = uniqueName("Farkas").toLowerCase();
+  await createMember(username, "mot-de-passe", "desactive");
+  const sql = db();
+  try {
+    await sql`
+      insert into shop_members (shop_id, member_id, role)
+      select ${other.shopId}, id, 'employe' from members where username = ${username}`;
+  } finally {
+    await sql.end();
+  }
+  await page.goto(`/connexion?suite=${encodeURIComponent(`${COMPTOIR}/inventaire`)}`);
+  await page.getByLabel("Identifiant").fill(username);
+  await page.getByLabel("Mot de passe").fill("mot-de-passe");
+  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  // Deactivated at the comptoir, they land in the shop they still belong to.
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
+  await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
+});
+
+test("une ancienne adresse du comptoir garde sa page et ses filtres", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  const own = new URL(page.url()).pathname.split("/").pop();
+  await page.goto(`/membres/${own}?du=2020-01-01&au=2020-01-31`);
+  await expect(page).toHaveURL(new RegExp(`${COMPTOIR}/membres/${own}\\?du=2020-01-01&au=2020-01-31$`));
+  await expect(page.getByRole("heading", { level: 1, name: "Lomone" })).toBeVisible();
+});

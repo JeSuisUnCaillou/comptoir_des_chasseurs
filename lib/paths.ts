@@ -19,7 +19,7 @@ export const SHOP_PAGES = [
 ] as const;
 
 /** First segments that are no shop: the app's own pages, and the old addresses of the comptoir's pages. */
-export const RESERVED_SLUGS: readonly string[] = ["connexion", "boutiques", "invitation", "api", ...SHOP_PAGES];
+export const RESERVED_SLUGS: readonly string[] = ["connexion", "api", ...SHOP_PAGES];
 
 /** The address of `path` ("/inventaire", "/" for its Grand livre) in the shop `slug`. */
 export function shopPath(slug: string, path = "/") {
