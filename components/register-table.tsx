@@ -82,7 +82,7 @@ export function RegisterTable({
                   ) : (
                     canCancel && (
                       <div className="row-actions">
-                        {waiting && <SettleButton id={e.id} sale={sale} />}
+                        {waiting && <SettleButton id={e.id} sale={sale} entry={e} />}
                         <CancelButton
                           id={e.id}
                           label={label}

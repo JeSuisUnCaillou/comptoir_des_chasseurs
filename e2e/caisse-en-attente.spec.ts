@@ -48,9 +48,18 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   );
   await expect(colleague.getByRole("button", { name: /déposés dans la caisse/ })).toHaveCount(0);
 
+  // The confirmation says the click settles both lines, and their total.
   await onlyLinesOf(page, username);
-  page.once("dialog", (dialog) => dialog.accept());
+  let question = "";
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
   await rows.filter({ hasText: hide }).getByRole("button", { name: /déposés dans la caisse/ }).click();
+  await expect.poll(() => question).toBe(
+    `Les septims de cette vente sont-ils déposés dans la caisse ?\n\n` +
+      `Cela vaut pour ses 2 lignes, 11 septims en tout :\n• 2 × ${hide}\n• 1 × ${meat}`,
+  );
   await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(0);
   await expect(page.getByTestId("totaux-registre").locator(".stat-value")).toHaveText("+11 septims");
   await expect(page.getByTestId("en-attente")).toHaveCount(0);
@@ -83,8 +92,13 @@ test("un gérant dit que les septims d'un achat d'employé sont pris dans la cai
   await expect(row).toContainText("−12 septims");
   await expect(page.getByTestId("en-attente")).toContainText("12 septims à prendre");
 
-  page.once("dialog", (dialog) => dialog.accept());
+  let question = "";
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
   await row.getByRole("button", { name: /pris dans la caisse/ }).click();
+  await expect.poll(() => question).toMatch(/^Les septims de l'achat n°\d+ sont-ils pris dans la caisse \?$/);
   await expect(row).toHaveCount(0);
   await page.getByLabel("Opération").selectOption("Toutes");
   await page.getByRole("button", { name: "Filtrer" }).click();

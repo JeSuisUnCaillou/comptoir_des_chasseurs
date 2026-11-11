@@ -14,6 +14,27 @@ export type RegisterFilter = {
 };
 
 const canceller = alias(schema.members, "canceller");
+const sameEntry = alias(schema.transactions, "same_entry");
+
+/**
+ * For a line waiting for the till, what `settleEntry` would settle with it:
+ * the number of lines of its entry still waiting, their total, and one
+ * "quantity × label" per line. Correlated on the outer `transactions` row, so
+ * the confirmation can say what one click settles.
+ */
+export function pendingEntryColumns() {
+  const t = schema.transactions;
+  const s = sameEntry;
+  const from = sql`from ${schema.transactions} ${s}
+    where ${s.memberId} = ${t.memberId} and ${s.kind} = ${t.kind} and ${s.createdAt} = ${t.createdAt}
+      and ${s.tillPending} and ${s.cancelledAt} is null`;
+  const pending = sql`${t.tillPending} and ${t.cancelledAt} is null`;
+  return {
+    entryLines: sql<number>`case when ${pending} then (select count(*)::int ${from}) else 0 end`,
+    entryTotal: sql<number>`case when ${pending} then (select coalesce(sum(${s.amount}), 0)::int ${from}) else 0 end`,
+    entryItems: sql<string>`case when ${pending} then (select string_agg(${s.quantity} || ' × ' || ${s.label}, E'\n' order by ${s.id}) ${from}) else '' end`,
+  };
+}
 
 function conditions(filter: RegisterFilter) {
   const t = schema.transactions;
@@ -48,6 +69,7 @@ export async function registerEntries(
       member: schema.members.name,
       memberId: t.memberId,
       cancelledBy: canceller.name,
+      ...pendingEntryColumns(),
     })
     .from(t)
     .innerJoin(schema.members, eq(schema.members.id, t.memberId))

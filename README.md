@@ -132,7 +132,7 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   dans la caisse (une tuile du registre en donne le total, et le filtre
   Opération « En attente de la caisse » les retrouve). Son auteur ou un gérant
   clique ensuite sur « Septims déposés » ou « Septims pris » sur l'une de ses
-  lignes, dans le registre ou sur la page d'activité du membre : toutes les lignes de l'écriture comptent alors dans la caisse. Un **mouvement de caisse** fait entrer
+  lignes, dans le registre ou sur la page d'activité du membre : toutes les lignes de l'écriture comptent alors dans la caisse, et la confirmation, pour une écriture de plusieurs lignes, les liste avec leur total. Un **mouvement de caisse** fait entrer
   ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,
   montant, motif, et l'aperçu de la caisse après lui. Tout membre peut en
   inscrire ; il a le badge *Caisse* dans le registre et son propre filtre.
