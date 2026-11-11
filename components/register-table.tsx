@@ -1,4 +1,5 @@
 import { CancelButton } from "@/components/cancel-button";
+import { OperationBadge } from "@/components/operation-badge";
 import type { Member } from "@/lib/db/schema";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -15,16 +16,14 @@ export function RegisterTable({
   member,
   showNotes = true,
   highlight,
-  empty = "Aucune écriture pour l'instant.",
 }: {
   entries: RegisterEntry[];
   member: Pick<Member, "id" | "role">;
   showNotes?: boolean;
   /** Lines just written, shown fresh. */
   highlight?: number[];
-  empty?: string;
 }) {
-  if (entries.length === 0) return <p className="muted">{empty}</p>;
+  if (entries.length === 0) return <p className="muted">Aucune écriture pour l&apos;instant.</p>;
   return (
     <div className="table-wrap">
       <table data-testid="registre">
@@ -57,9 +56,7 @@ export function RegisterTable({
               >
                 <td className="num">{dateTime.format(e.createdAt)}</td>
                 <td>
-                  <span className={`badge ${cash ? "badge-blue" : sale ? "badge-green" : "badge-gold"}`}>
-                    {cash ? "Caisse" : sale ? "Vente" : "Achat"}
-                  </span>
+                  <OperationBadge kind={e.kind} />
                 </td>
                 <td>{e.label}</td>
                 <td className="num">{cash ? "—" : formatNumber(e.quantity)}</td>

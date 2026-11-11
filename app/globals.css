@@ -310,12 +310,6 @@ h3 {
   margin-top: 6px;
 }
 
-/* The value a member brought, on their activity page */
-.stat-total {
-  border-color: var(--border-gold);
-  border-left: 3px solid var(--gold);
-}
-
 /* The citizens of Estemarche's buyback price, on Tarifs */
 .stat-citizen {
   border-color: var(--border-gold);
