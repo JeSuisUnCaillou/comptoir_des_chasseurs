@@ -1416,7 +1416,7 @@ tr.fresh td {
 
 /* The lines of one entry (written together) form a block in the register
    and on a member's activity page: a gold bar on the left, no rule between
-   its lines, what they share written on the first one only. */
+   its lines, room around it, what they share written on the first one only. */
 tr.entry td:first-child {
   box-shadow: inset 3px 0 0 var(--border-gold);
 }
@@ -1428,6 +1428,15 @@ tr.entry:not(.entry-last) td {
 
 tr.entry-next td {
   padding-top: 4px;
+}
+
+/* Room around each block, so two blocks never touch. */
+tr.entry-first:not(:first-child) td {
+  border-top: 14px solid transparent;
+}
+
+tr.entry-last td {
+  border-bottom: 14px solid transparent;
 }
 
 .sr-only {
