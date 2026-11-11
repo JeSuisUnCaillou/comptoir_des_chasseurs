@@ -33,7 +33,7 @@ export function uniqueName(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Creates a member straight in the database. */
+/** Creates a member of the first shop (the one the app shows) straight in the database. */
 export async function createMember(
   username: string,
   password: string,
@@ -43,8 +43,13 @@ export async function createMember(
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into members (username, name, password_hash, role)
-      values (${username.toLowerCase()}, ${name}, ${await hashPassword(password)}, ${role})`;
+      with member as (
+        insert into members (username, name, password_hash, role)
+        values (${username.toLowerCase()}, ${name}, ${await hashPassword(password)}, ${role})
+        returning id
+      )
+      insert into shop_members (shop_id, member_id, role)
+      select (select min(id) from shops), id, ${role} from member`;
   } finally {
     await sql.end();
   }
@@ -60,11 +65,14 @@ export async function makeSuperAdmin(username: string) {
   }
 }
 
-/** Changes a member's role straight in the database. */
+/** Changes a member's role in the first shop straight in the database. */
 export async function setRole(username: string, role: "gerant" | "employe" | "desactive") {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    await sql`update members set role = ${role} where username = ${username.toLowerCase()}`;
+    await sql`
+      update shop_members set role = ${role}
+      where shop_id = (select min(id) from shops)
+        and member_id = (select id from members where username = ${username.toLowerCase()})`;
   } finally {
     await sql.end();
   }

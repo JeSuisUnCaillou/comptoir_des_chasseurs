@@ -7,8 +7,8 @@ import { tillTotals } from "@/lib/register";
 
 /** /achat-vente/caisse: septims in or out of the till, with no merchandise. */
 export default async function MouvementDeCaisse() {
-  await requireMember();
-  const till = await tillTotals();
+  const member = await requireMember();
+  const till = await tillTotals(member.shopId);
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
@@ -22,7 +22,7 @@ function id(formData: FormData, key = "id") {
 
 /** Creates a supplier, or updates it when the form carries its id. */
 export async function saveSupplier(_prev: SupplierFormState, formData: FormData): Promise<SupplierFormState> {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const supplierId = id(formData);
   const values = {
     name: text(formData, "name", 100),
@@ -38,13 +38,13 @@ export async function saveSupplier(_prev: SupplierFormState, formData: FormData)
       const updated = await getDb()
         .update(schema.suppliers)
         .set(values)
-        .where(eq(schema.suppliers.id, supplierId))
+        .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId)))
         .returning({ id: schema.suppliers.id });
       if (updated.length === 0) return { ok: false, message: "Ce fournisseur n'existe plus." };
     } else {
       const [created] = await getDb()
         .insert(schema.suppliers)
-        .values(values)
+        .values({ ...values, shopId: member.shopId })
         .returning({ id: schema.suppliers.id });
       savedId = created.id;
     }
@@ -60,7 +60,7 @@ export async function saveSupplier(_prev: SupplierFormState, formData: FormData)
 
 /** Adds a merchandise to a supplier, or changes its price if already offered. */
 export async function saveOffer(_prev: SupplierFormState, formData: FormData): Promise<SupplierFormState> {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const supplierId = id(formData, "supplierId");
   const productId = id(formData, "productId");
   const price = Number(formData.get("price"));
@@ -74,8 +74,14 @@ export async function saveOffer(_prev: SupplierFormState, formData: FormData): P
   }
   const db = getDb();
   const [[supplier], [product]] = await Promise.all([
-    db.select({ id: schema.suppliers.id }).from(schema.suppliers).where(eq(schema.suppliers.id, supplierId)),
-    db.select({ id: schema.products.id }).from(schema.products).where(eq(schema.products.id, productId)),
+    db
+      .select({ id: schema.suppliers.id })
+      .from(schema.suppliers)
+      .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId))),
+    db
+      .select({ id: schema.products.id })
+      .from(schema.products)
+      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, member.shopId))),
   ]);
   if (!supplier) return { ok: false, message: "Ce fournisseur n'existe plus." };
   if (!product) return { ok: false, message: "Marchandise inconnue." };
@@ -91,22 +97,36 @@ export async function saveOffer(_prev: SupplierFormState, formData: FormData): P
 }
 
 export async function removeOffer(formData: FormData) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const offerId = id(formData);
   const supplierId = id(formData, "supplierId");
   if (!offerId || !supplierId) return;
   await getDb()
     .delete(schema.supplierOffers)
-    .where(and(eq(schema.supplierOffers.id, offerId), eq(schema.supplierOffers.supplierId, supplierId)));
+    .where(
+      and(
+        eq(schema.supplierOffers.id, offerId),
+        eq(schema.supplierOffers.supplierId, supplierId),
+        inArray(
+          schema.supplierOffers.supplierId,
+          getDb()
+            .select({ id: schema.suppliers.id })
+            .from(schema.suppliers)
+            .where(eq(schema.suppliers.shopId, member.shopId)),
+        ),
+      ),
+    );
   revalidatePath("/fournisseurs", "layout");
 }
 
 export async function deleteSupplier(formData: FormData) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const supplierId = id(formData);
   if (supplierId) {
     // Its offers go with it (on delete cascade).
-    await getDb().delete(schema.suppliers).where(eq(schema.suppliers.id, supplierId));
+    await getDb()
+      .delete(schema.suppliers)
+      .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId)));
   }
   revalidatePath("/fournisseurs", "layout");
   redirect("/fournisseurs");

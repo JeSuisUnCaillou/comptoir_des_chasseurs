@@ -16,17 +16,17 @@ export type RegisterFilter = {
 const canceller = alias(schema.members, "canceller");
 const sameEntry = alias(schema.transactions, "same_entry");
 
-type EntryColumns = Record<"memberId" | "kind" | "createdAt" | "tillPending" | "cancelledAt", AnyColumn>;
+type EntryColumns = Record<"shopId" | "memberId" | "kind" | "createdAt" | "tillPending" | "cancelledAt", AnyColumn>;
 
 /**
  * What makes lines one entry: `recordTransaction` writes them in one database
- * transaction, so they share their author, their kind and their instant
- * (now() is the start of the transaction). The instant stays in SQL, which
+ * transaction, so they share their shop, their author, their kind and their
+ * instant (now() is the start of the transaction). The instant stays in SQL, which
  * keeps its microseconds. Settling, saying what settling settles and showing
  * an entry as one block all read it from here.
  */
 function entryOf(rows: EntryColumns) {
-  return sql`(${rows.memberId}, ${rows.kind}, ${rows.createdAt})`;
+  return sql`(${rows.shopId}, ${rows.memberId}, ${rows.kind}, ${rows.createdAt})`;
 }
 
 /** The lines of `rows` still waiting for the till in the entry `line` (an `entryOf`). */
@@ -58,9 +58,10 @@ export function pendingEntryColumns() {
   };
 }
 
-function conditions(filter: RegisterFilter) {
+/** The shop's lines matching the filter. */
+function conditions(shopId: number, filter: RegisterFilter) {
   const t = schema.transactions;
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(t.shopId, shopId)];
   if (filter.kinds?.length) where.push(inArray(t.kind, filter.kinds));
   if (filter.from) where.push(gte(t.createdAt, filter.from));
   if (filter.to) where.push(lt(t.createdAt, filter.to));
@@ -70,11 +71,12 @@ function conditions(filter: RegisterFilter) {
 }
 
 export async function registerEntries(
-  filter: RegisterFilter = {},
+  shopId: number,
+  filter: RegisterFilter,
   { limit, offset = 0 }: { limit: number; offset?: number },
 ) {
   const t = schema.transactions;
-  const where = conditions(filter);
+  const where = conditions(shopId, filter);
   return getDb()
     .select({
       id: t.id,
@@ -97,41 +99,45 @@ export async function registerEntries(
     .from(t)
     .innerJoin(schema.members, eq(schema.members.id, t.memberId))
     .leftJoin(canceller, eq(canceller.id, t.cancelledBy))
-    .where(where.length ? and(...where) : undefined)
+    .where(and(...where))
     .orderBy(desc(t.createdAt), desc(t.id))
     .limit(limit)
     .offset(offset);
 }
 
-/** Every member, deactivated ones included, for the "Employé" filters. */
-export async function memberNames() {
+/** Every member of the shop, deactivated ones included, for the "Employé" filters. */
+export async function memberNames(shopId: number) {
   const m = schema.members;
-  return getDb().select({ id: m.id, name: m.name }).from(m).orderBy(byName(m.name), asc(m.id));
+  return getDb()
+    .select({ id: m.id, name: m.name })
+    .from(m)
+    .innerJoin(schema.shopMembers, eq(schema.shopMembers.memberId, m.id))
+    .where(eq(schema.shopMembers.shopId, shopId))
+    .orderBy(byName(m.name), asc(m.id));
 }
 
 export type RegisterEntry = Awaited<ReturnType<typeof registerEntries>>[number];
 
 /** Number of lines (cancelled ones included) matching the filter. */
-export async function registerCount(filter: RegisterFilter = {}) {
-  const where = conditions(filter);
+export async function registerCount(shopId: number, filter: RegisterFilter = {}) {
   const [row] = await getDb()
     .select({ total: count() })
     .from(schema.transactions)
-    .where(where.length ? and(...where) : undefined);
+    .where(and(...conditions(shopId, filter)));
   return row.total;
 }
 
 /**
- * The septims of the entry holding line `id` are now in the till, or out of it:
- * every line of that entry waiting for the till counts in it from now on
- * (see `pendingOfSameEntry`).
+ * The septims of the entry holding line `id` of the shop are now in the till,
+ * or out of it: every line of that entry waiting for the till counts in it
+ * from now on (see `pendingOfSameEntry`).
  */
-export async function settleEntry(id: number) {
+export async function settleEntry(shopId: number, id: number) {
   const t = schema.transactions;
   const line = getDb()
-    .select({ memberId: t.memberId, kind: t.kind, createdAt: t.createdAt })
+    .select({ shopId: t.shopId, memberId: t.memberId, kind: t.kind, createdAt: t.createdAt })
     .from(t)
-    .where(eq(t.id, id));
+    .where(and(eq(t.id, id), eq(t.shopId, shopId)));
   await getDb()
     .update(t)
     .set({ tillPending: false })
@@ -195,26 +201,26 @@ function live(pending = false) {
 }
 
 /** Money in and out of the till, ignoring cancelled lines and those waiting for the till. */
-export async function tillTotals(filter: RegisterFilter = {}): Promise<Till> {
-  return totalsOf(filter, false);
+export async function tillTotals(shopId: number, filter: RegisterFilter = {}): Promise<Till> {
+  return totalsOf(shopId, filter, false);
 }
 
 /** The money of the lines waiting for the till: not counted in it yet. */
-export async function pendingTotals(filter: RegisterFilter = {}): Promise<Till> {
-  return totalsOf(filter, true);
+export async function pendingTotals(shopId: number, filter: RegisterFilter = {}): Promise<Till> {
+  return totalsOf(shopId, filter, true);
 }
 
-async function totalsOf(filter: RegisterFilter, pending: boolean) {
+async function totalsOf(shopId: number, filter: RegisterFilter, pending: boolean) {
   const t = schema.transactions;
   const [row] = await getDb()
     .select(tillColumns("all"))
     .from(t)
-    .where(and(...live(pending), ...conditions(filter)));
+    .where(and(...live(pending), ...conditions(shopId, filter)));
   return tillFrom(row, "all");
 }
 
-/** The till today, over the last 7 days and since the opening, in one query. */
-export async function tillSummary(now = new Date()) {
+/** The shop's till today, over the last 7 days and since the opening, in one query. */
+export async function tillSummary(shopId: number, now = new Date()) {
   const t = schema.transactions;
   const today = parisToday(now);
   const [row] = await getDb()
@@ -224,7 +230,7 @@ export async function tillSummary(now = new Date()) {
       ...tillColumns("all"),
     })
     .from(t)
-    .where(and(...live()));
+    .where(and(eq(t.shopId, shopId), ...live()));
   return { day: tillFrom(row, "day"), week: tillFrom(row, "week"), all: tillFrom(row, "all") };
 }
 

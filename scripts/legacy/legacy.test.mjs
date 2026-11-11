@@ -157,6 +157,7 @@ before(async () => {
     insert into members (username, name, password_hash, role) values
       ('lomone', 'Lomone', 'x', 'gerant'),
       ('einar', 'Einar', 'x', 'employe')`;
+  await admin`insert into shop_members (shop_id, member_id, role) select 1, id, role from members`;
 });
 
 after(async () => {

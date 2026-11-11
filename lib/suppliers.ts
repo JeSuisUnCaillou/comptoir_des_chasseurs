@@ -16,21 +16,25 @@ export type SupplierOfferRow = {
 
 export type SupplierWithOffers = typeof schema.suppliers.$inferSelect & { offers: SupplierOfferRow[] };
 
-/** Matches a supplier's name, place, note, or a merchandise it offers. */
-function searchWhere(q: string) {
-  if (!q) return undefined;
+/** The shop's suppliers matching a name, place, note, or a merchandise they offer. */
+function searchWhere(shopId: number, q: string) {
+  const inShop = eq(schema.suppliers.shopId, shopId);
+  if (!q) return inShop;
   const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
   const { suppliers, supplierOffers, products } = schema;
-  return or(
-    ilike(suppliers.name, pattern),
-    ilike(suppliers.place, pattern),
-    ilike(suppliers.notes, pattern),
-    exists(
-      getDb()
-        .select({ one: supplierOffers.id })
-        .from(supplierOffers)
-        .innerJoin(products, eq(products.id, supplierOffers.productId))
-        .where(and(eq(supplierOffers.supplierId, suppliers.id), ilike(products.name, pattern))),
+  return and(
+    inShop,
+    or(
+      ilike(suppliers.name, pattern),
+      ilike(suppliers.place, pattern),
+      ilike(suppliers.notes, pattern),
+      exists(
+        getDb()
+          .select({ one: supplierOffers.id })
+          .from(supplierOffers)
+          .innerJoin(products, eq(products.id, supplierOffers.productId))
+          .where(and(eq(supplierOffers.supplierId, suppliers.id), ilike(products.name, pattern))),
+      ),
     ),
   );
 }
@@ -59,8 +63,8 @@ export async function offersOf(supplierIds: number[]) {
 }
 
 /** One page of suppliers, by name, with what they offer. */
-export async function supplierPage(q: string, page: number) {
-  const where = searchWhere(q);
+export async function supplierPage(shopId: number, q: string, page: number) {
+  const where = searchWhere(shopId, q);
   const db = getDb();
   const [rows, [{ total }]] = await Promise.all([
     db

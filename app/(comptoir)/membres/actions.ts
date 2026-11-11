@@ -1,11 +1,11 @@
 "use server";
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, exists, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb, isUniqueViolation, schema } from "@/lib/db";
 import { memberRole, type MemberRole } from "@/lib/db/schema";
 import { MIN_PASSWORD_LENGTH, hashPassword, normalizeUsername } from "@/lib/auth/password";
-import { requireMember } from "@/lib/auth/session";
+import { requireMember, type ShopMember } from "@/lib/auth/session";
 
 export type MemberFormState = { ok: boolean; message: string } | null;
 
@@ -15,7 +15,7 @@ function readRole(formData: FormData): MemberRole | null {
 }
 
 export async function createMember(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
-  await requireMember(["gerant"]);
+  const me = await requireMember(["gerant"]);
   const username = normalizeUsername(formData.get("username"));
   const name = String(formData.get("name") ?? "").trim().slice(0, 60);
   const password = String(formData.get("password") ?? "");
@@ -27,10 +27,15 @@ export async function createMember(_prev: MemberFormState, formData: FormData): 
   if (password.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, message: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
   }
+  const passwordHash = await hashPassword(password);
   try {
-    await getDb()
-      .insert(schema.members)
-      .values({ username, name, role, passwordHash: await hashPassword(password) });
+    await getDb().transaction(async (tx) => {
+      const [member] = await tx
+        .insert(schema.members)
+        .values({ username, name, role, passwordHash })
+        .returning({ id: schema.members.id });
+      await tx.insert(schema.shopMembers).values({ shopId: me.shopId, memberId: member.id, role });
+    });
   } catch (error) {
     if (isUniqueViolation(error)) {
       return { ok: false, message: "Cet identifiant est déjà pris." };
@@ -42,13 +47,19 @@ export async function createMember(_prev: MemberFormState, formData: FormData): 
 }
 
 /**
- * Only the super admin themself may change their account; to anyone else the
- * update matches no row.
+ * The accounts a gérant may change: those of their shop. Only the super admin
+ * themself may change their account; to anyone else the update matches no row.
  */
-function editableBy(me: { id: number }, id: number) {
+function editableBy(me: ShopMember, id: number) {
   return and(
     eq(schema.members.id, id),
     or(eq(schema.members.superAdmin, false), eq(schema.members.id, me.id)),
+    exists(
+      getDb()
+        .select({ one: sql`1` })
+        .from(schema.shopMembers)
+        .where(and(eq(schema.shopMembers.shopId, me.shopId), eq(schema.shopMembers.memberId, schema.members.id))),
+    ),
   );
 }
 
@@ -58,11 +69,19 @@ export async function updateMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim().slice(0, 60);
   const role = readRole(formData);
   if (!Number.isInteger(id) || !name || !role) return;
-  // A gérant cannot demote themself, so the comptoir always keeps a gérant.
-  await getDb()
-    .update(schema.members)
-    .set({ name, role: id === me.id ? "gerant" : role })
-    .where(editableBy(me, id));
+  // A gérant cannot demote themself, so the shop always keeps a gérant.
+  await getDb().transaction(async (tx) => {
+    const [member] = await tx
+      .update(schema.members)
+      .set({ name })
+      .where(editableBy(me, id))
+      .returning({ id: schema.members.id, superAdmin: schema.members.superAdmin });
+    if (!member) return;
+    await tx
+      .update(schema.shopMembers)
+      .set({ role: id === me.id || member.superAdmin ? "gerant" : role })
+      .where(and(eq(schema.shopMembers.shopId, me.shopId), eq(schema.shopMembers.memberId, id)));
+  });
   revalidatePath("/", "layout");
 }
 

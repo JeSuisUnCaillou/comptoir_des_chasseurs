@@ -6,6 +6,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -13,6 +14,36 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const memberRole = pgEnum("member_role", ["gerant", "employe", "desactive"]);
+
+/**
+ * A shop hosted by the app, such as "Le Comptoir Des Chasseurs": its own
+ * merchandises, register, board and suppliers, and its own members.
+ */
+export const shops = pgTable(
+  "shops",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    // Its address in the app: /<slug>/…
+    slug: text("slug").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("shops_slug_idx").on(t.slug)],
+);
+
+export type Shop = typeof shops.$inferSelect;
+
+/**
+ * Every shop's data belongs to one shop. Until every write names its shop,
+ * rows written without one go to the first shop, created by the shops
+ * migration with id 1.
+ */
+function shopColumn() {
+  return integer("shop_id")
+    .notNull()
+    .default(1)
+    .references(() => shops.id);
+}
 
 export const members = pgTable(
   "members",
@@ -23,6 +54,8 @@ export const members = pgTable(
     // Name shown in the registers (RP name).
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
+    // Replaced by the role in each shop (shopMembers.role): no longer read,
+    // dropped once the code in production no longer writes it.
     role: memberRole("role").notNull().default("employe"),
     // The comptoir's owner: always a gérant, and nobody else can change their
     // account (name, role, password).
@@ -38,6 +71,25 @@ export const members = pgTable(
 
 export type Member = typeof members.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
+
+/** Who may enter a shop, and as what. One account can belong to several shops. */
+export const shopMembers = pgTable(
+  "shop_members",
+  {
+    shopId: integer("shop_id")
+      .notNull()
+      .references(() => shops.id),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    role: memberRole("role").notNull().default("employe"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.shopId, t.memberId] }),
+    index("shop_members_member_idx").on(t.memberId),
+  ],
+);
 
 export const productCategory = pgEnum("product_category", [
   "peau",
@@ -56,6 +108,7 @@ export const products = pgTable(
   "products",
   {
     id: serial("id").primaryKey(),
+    shopId: shopColumn(),
     name: text("name").notNull(),
     category: productCategory("category").notNull(),
     unit: text("unit").notNull().default("pièce"),
@@ -78,7 +131,7 @@ export const products = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex("products_name_idx").on(t.name),
+    uniqueIndex("products_shop_name_idx").on(t.shopId, t.name),
     check("products_stock_positive", sql`${t.stock} >= 0`),
     check(
       "products_quantities_positive",
@@ -89,6 +142,7 @@ export const products = pgTable(
 
 export const stockMovements = pgTable("stock_movements", {
   id: serial("id").primaryKey(),
+  shopId: shopColumn(),
   productId: integer("product_id")
     .notNull()
     .references(() => products.id),
@@ -104,11 +158,18 @@ export const stockMovements = pgTable("stock_movements", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Comptoir-wide numbers, such as the price the blacksmith pays for a leather. */
-export const settings = pgTable("settings", {
-  key: text("key").primaryKey(),
-  value: integer("value").notNull(),
-});
+/** A shop's numbers, such as the price the blacksmith pays for a leather. */
+export const settings = pgTable(
+  "settings",
+  {
+    // Still the primary key alone while the code in production writes
+    // without a shop; (shop_id, key) becomes the key when shops are created.
+    key: text("key").primaryKey(),
+    shopId: shopColumn(),
+    value: integer("value").notNull(),
+  },
+  (t) => [uniqueIndex("settings_shop_key_idx").on(t.shopId, t.key)],
+);
 
 export type Product = typeof products.$inferSelect;
 export type ProductCategory = (typeof productCategory.enumValues)[number];
@@ -125,6 +186,7 @@ export const transactions = pgTable(
   "transactions",
   {
     id: serial("id").primaryKey(),
+    shopId: shopColumn(),
     kind: transactionKind("kind").notNull(),
     productId: integer("product_id").references(() => products.id),
     // Product name at the time, or free text ("Salaires", ...).
@@ -144,6 +206,7 @@ export const transactions = pgTable(
     cancelledBy: integer("cancelled_by").references(() => members.id),
   },
   (t) => [
+    index("transactions_shop_created_at_idx").on(t.shopId, t.createdAt),
     check("transactions_quantity_positive", sql`${t.quantity} > 0`),
     check("transactions_amount_positive", sql`${t.amount} >= 0`),
   ],
@@ -159,6 +222,7 @@ export const announcements = pgTable(
   "announcements",
   {
     id: serial("id").primaryKey(),
+    shopId: shopColumn(),
     title: text("title").notNull(),
     body: text("body").notNull(),
     // What holds the parchment on the board.
@@ -168,7 +232,7 @@ export const announcements = pgTable(
       .references(() => members.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("announcements_created_at_idx").on(t.createdAt)],
+  (t) => [index("announcements_shop_created_at_idx").on(t.shopId, t.createdAt)],
 );
 
 export type Announcement = typeof announcements.$inferSelect;
@@ -179,6 +243,7 @@ export const suppliers = pgTable(
   "suppliers",
   {
     id: serial("id").primaryKey(),
+    shopId: shopColumn(),
     name: text("name").notNull(),
     // Where to find them ("Vendeaume").
     place: text("place").notNull().default(""),
@@ -186,7 +251,7 @@ export const suppliers = pgTable(
     notes: text("notes").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("suppliers_name_idx").on(t.name)],
+  (t) => [uniqueIndex("suppliers_shop_name_idx").on(t.shopId, t.name)],
 );
 
 /** A merchandise a supplier sells: price septims for qty units. */

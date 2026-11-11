@@ -77,7 +77,13 @@ export async function recordTransaction(
           const [product] = await tx
             .select({ name: schema.products.name })
             .from(schema.products)
-            .where(and(eq(schema.products.id, productId), eq(schema.products.archived, false)))
+            .where(
+              and(
+                eq(schema.products.id, productId),
+                eq(schema.products.shopId, member.shopId),
+                eq(schema.products.archived, false),
+              ),
+            )
             .limit(1);
           if (!product) throw new UserError(at(i, "Marchandise inconnue."));
           label = product.name;
@@ -86,6 +92,7 @@ export async function recordTransaction(
         }
         if (!label) throw new UserError(at(i, "Indique l'article ou la marchandise."));
         const [line] = await tx.insert(schema.transactions).values({
+          shopId: member.shopId,
           kind,
           productId,
           label,
@@ -98,7 +105,7 @@ export async function recordTransaction(
         }).returning({ id: schema.transactions.id });
         if (productId != null) {
           // Throwing rolls back every line with its movement.
-          const moved = await moveStock(tx, productId, delta, member.id, reason, line.id);
+          const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id);
           if (!moved.ok) throw new UserError(at(i, "Stock insuffisant pour cette vente."));
         }
         written.push(line.id);
@@ -139,7 +146,17 @@ export async function recordCashMovement(
 
   const [line] = await getDb()
     .insert(schema.transactions)
-    .values({ kind, productId: null, label, quantity: 1, amount, counterparty, notes, memberId: member.id })
+    .values({
+      shopId: member.shopId,
+      kind,
+      productId: null,
+      label,
+      quantity: 1,
+      amount,
+      counterparty,
+      notes,
+      memberId: member.id,
+    })
     .returning({ id: schema.transactions.id });
   revalidate();
   redirect(`/achat-vente?inscrit=${line.id}`);
@@ -161,13 +178,13 @@ export async function settleTransaction(
   const [line] = await getDb()
     .select({ memberId: t.memberId, kind: t.kind })
     .from(t)
-    .where(and(eq(t.id, id), eq(t.tillPending, true), isNull(t.cancelledAt)))
+    .where(and(eq(t.id, id), eq(t.shopId, member.shopId), eq(t.tillPending, true), isNull(t.cancelledAt)))
     .limit(1);
   if (!line) return { ok: false, message: "Cette ligne n'attend plus la caisse." };
   if (member.role !== "gerant" && line.memberId !== member.id) {
     return { ok: false, message: "Seul un gérant peut le faire pour la ligne d'un autre membre." };
   }
-  await settleEntry(id);
+  await settleEntry(member.shopId, id);
   revalidate();
   return { ok: true, message: "Les septims comptent dans la caisse." };
 }
@@ -186,7 +203,13 @@ export async function cancelTransaction(
       const [line] = await tx
         .select()
         .from(schema.transactions)
-        .where(and(eq(schema.transactions.id, id), isNull(schema.transactions.cancelledAt)))
+        .where(
+          and(
+            eq(schema.transactions.id, id),
+            eq(schema.transactions.shopId, member.shopId),
+            isNull(schema.transactions.cancelledAt),
+          ),
+        )
         .for("update")
         .limit(1);
       if (!line) throw new UserError("Cette ligne est introuvable ou déjà annulée.");
@@ -195,7 +218,7 @@ export async function cancelTransaction(
       }
       if (line.productId != null) {
         const delta = line.kind === "vente" ? line.quantity : -line.quantity;
-        const moved = await moveStock(tx, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`, line.id);
+        const moved = await moveStock(tx, member.shopId, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`, line.id);
         // A cancelled buyback whose goods are already gone cannot be undone.
         if (!moved.ok) throw new UserError("Impossible d'annuler : la marchandise rachetée a déjà été vendue.");
       }

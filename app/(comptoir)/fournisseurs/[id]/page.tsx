@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
@@ -10,17 +10,21 @@ import { offersOf } from "@/lib/suppliers";
 import { removeOffer } from "../actions";
 
 export default async function EditSupplier({ params }: { params: Promise<{ id: string }> }) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const db = getDb();
   const [[supplier], offers, products] = await Promise.all([
-    db.select().from(schema.suppliers).where(eq(schema.suppliers.id, id)).limit(1),
+    db
+      .select()
+      .from(schema.suppliers)
+      .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, member.shopId)))
+      .limit(1),
     offersOf([id]),
     db
       .select({ id: schema.products.id, name: schema.products.name, unit: schema.products.unit })
       .from(schema.products)
-      .where(eq(schema.products.archived, false))
+      .where(and(eq(schema.products.shopId, member.shopId), eq(schema.products.archived, false)))
       .orderBy(byName(schema.products.name), asc(schema.products.id)),
   ]);
   if (!supplier) notFound();

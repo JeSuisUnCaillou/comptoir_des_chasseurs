@@ -21,22 +21,25 @@ export function readProductIdentity(formData: FormData) {
   return { name, category, unit, error };
 }
 
-export async function activeProducts() {
+export async function activeProducts(shopId: number) {
   return getDb()
     .select()
     .from(schema.products)
-    .where(eq(schema.products.archived, false))
+    .where(and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false)))
     .orderBy(byName(schema.products.name), asc(schema.products.id));
 }
 
-export async function blacksmithLeatherPrice() {
+export async function blacksmithLeatherPrice(shopId: number) {
   const [row] = await getDb()
     .select()
     .from(schema.settings)
-    .where(eq(schema.settings.key, "prix_forgeron_cuir"))
+    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, BLACKSMITH_LEATHER_PRICE)))
     .limit(1);
   return row?.value ?? 6;
 }
+
+/** Settings key of the price the blacksmith pays for a leather. */
+export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
 
 export type MovementFilter = {
   /** Part of the merchandise's name. */
@@ -47,28 +50,29 @@ export type MovementFilter = {
   to?: Date;
 };
 
-function movementConditions(filter: MovementFilter) {
+function movementConditions(shopId: number, filter: MovementFilter) {
   const m = schema.stockMovements;
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(m.shopId, shopId)];
   if (filter.q) where.push(ilike(schema.products.name, `%${filter.q.replace(/[\\%_]/g, "\\$&")}%`));
   if (filter.memberId) where.push(eq(m.memberId, filter.memberId));
   if (filter.direction) where.push(filter.direction === "in" ? gt(m.delta, 0) : lt(m.delta, 0));
   if (filter.from) where.push(gte(m.createdAt, filter.from));
   if (filter.to) where.push(lt(m.createdAt, filter.to));
-  return where.length ? and(...where) : undefined;
+  return and(...where);
 }
 
 /** Number of stock movements matching the filter. */
-export async function movementCount(filter: MovementFilter = {}) {
+export async function movementCount(shopId: number, filter: MovementFilter = {}) {
   const [row] = await getDb()
     .select({ total: count() })
     .from(schema.stockMovements)
     .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
-    .where(movementConditions(filter));
+    .where(movementConditions(shopId, filter));
   return row.total;
 }
 
 export async function recentMovements(
+  shopId: number,
   filter: MovementFilter,
   { limit, offset = 0 }: { limit: number; offset?: number },
 ) {
@@ -86,7 +90,7 @@ export async function recentMovements(
     .from(schema.stockMovements)
     .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
     .innerJoin(schema.members, eq(schema.members.id, schema.stockMovements.memberId))
-    .where(movementConditions(filter))
+    .where(movementConditions(shopId, filter))
     .orderBy(desc(schema.stockMovements.createdAt), desc(schema.stockMovements.id))
     .limit(limit)
     .offset(offset);
@@ -97,12 +101,14 @@ export type Movement = Awaited<ReturnType<typeof recentMovements>>[number];
 export type MoveResult = { ok: true; stock: number } | { ok: false; error: string };
 
 /**
- * Adds `delta` units to a product's stock and records the movement, tied to
- * the register line that caused it when there is one.
- * Refuses to go below zero. Runs inside the given transaction if any.
+ * Adds `delta` units to a product of the shop and records the movement, tied
+ * to the register line that caused it when there is one.
+ * Refuses to go below zero, and a product of another shop. Runs inside the
+ * given transaction.
  */
 export async function moveStock(
   tx: Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0],
+  shopId: number,
   productId: number,
   delta: number,
   memberId: number,
@@ -112,10 +118,17 @@ export async function moveStock(
   const [updated] = await tx
     .update(schema.products)
     .set({ stock: sql`${schema.products.stock} + ${delta}` })
-    .where(and(eq(schema.products.id, productId), sql`${schema.products.stock} + ${delta} >= 0`))
+    .where(
+      and(
+        eq(schema.products.id, productId),
+        eq(schema.products.shopId, shopId),
+        sql`${schema.products.stock} + ${delta} >= 0`,
+      ),
+    )
     .returning({ stock: schema.products.stock });
   if (!updated) return { ok: false, error: "Stock insuffisant pour cette sortie." };
   await tx.insert(schema.stockMovements).values({
+    shopId,
     productId,
     delta,
     stockAfter: updated.stock,

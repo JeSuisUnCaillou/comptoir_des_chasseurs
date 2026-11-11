@@ -12,9 +12,9 @@ import { registerEntries, tillSummary } from "@/lib/register";
 export default async function GrandLivre() {
   const member = await requireMember();
   const [till, recent, announcements] = await Promise.all([
-    tillSummary(),
-    registerEntries({}, { limit: 10 }),
-    announcementList(),
+    tillSummary(member.shopId),
+    registerEntries(member.shopId, {}, { limit: 10 }),
+    announcementList(member.shopId),
   ]);
 
   return (

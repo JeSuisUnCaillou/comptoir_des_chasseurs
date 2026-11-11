@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
@@ -22,7 +22,7 @@ export async function postAnnouncement(_prev: AnnouncementState, formData: FormD
 
   const [posted] = await getDb()
     .insert(schema.announcements)
-    .values({ title, body, pin, memberId: member.id })
+    .values({ shopId: member.shopId, title, body, pin, memberId: member.id })
     .returning({ id: schema.announcements.id });
   revalidatePath("/");
   revalidatePath("/annonces");
@@ -38,7 +38,7 @@ export async function takeDownAnnouncement(formData: FormData) {
   const [announcement] = await db
     .select({ memberId: schema.announcements.memberId })
     .from(schema.announcements)
-    .where(eq(schema.announcements.id, id));
+    .where(and(eq(schema.announcements.id, id), eq(schema.announcements.shopId, member.shopId)));
   if (!announcement || !canTakeDown(member, announcement)) return;
   await db.delete(schema.announcements).where(eq(schema.announcements.id, id));
   revalidatePath("/");

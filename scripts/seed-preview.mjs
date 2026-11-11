@@ -121,6 +121,11 @@ try {
     console.log(second ? "Gérante Aela créée." : "Gérante Aela déjà présente.");
 
     const [{ id: memberId }] = await tx`select id from members where username = ${GERANT.username}`;
+    // Both are gérants of the first shop (the comptoir); kept if already there.
+    await tx`
+      insert into shop_members (shop_id, member_id, role)
+      select 1, id, 'gerant' from members where username in (${GERANT.username}, ${SECOND_GERANT.username})
+      on conflict do nothing`;
 
     const [{ posted }] = await tx`select count(*)::int as posted from announcements`;
     if (posted === 0) {

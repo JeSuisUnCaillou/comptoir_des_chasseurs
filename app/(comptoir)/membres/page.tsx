@@ -1,4 +1,4 @@
-import { asc, count } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { ScrollText } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
@@ -22,6 +22,11 @@ const BADGE: Record<MemberRole, string> = {
   desactive: "badge badge-red",
 };
 
+/** The super admin is a gérant in every shop, whatever their role there says. */
+function roleOf(member: { role: MemberRole; superAdmin: boolean }): MemberRole {
+  return member.superAdmin ? "gerant" : member.role;
+}
+
 export default async function Membres({
   searchParams,
 }: {
@@ -29,14 +34,19 @@ export default async function Membres({
 }) {
   const me = await requireMember(["gerant"]);
   const page = pageParam((await searchParams).page);
+  const m = schema.members;
+  const sm = schema.shopMembers;
+  const inShop = eq(sm.shopId, me.shopId);
   const [members, [{ total }]] = await Promise.all([
     getDb()
-      .select()
-      .from(schema.members)
-      .orderBy(byName(schema.members.name), asc(schema.members.id))
+      .select({ id: m.id, username: m.username, name: m.name, superAdmin: m.superAdmin, role: sm.role })
+      .from(m)
+      .innerJoin(sm, eq(sm.memberId, m.id))
+      .where(inShop)
+      .orderBy(byName(m.name), asc(m.id))
       .limit(PAGE_SIZE)
       .offset(offsetOf(page)),
-    getDb().select({ total: count() }).from(schema.members),
+    getDb().select({ total: count() }).from(sm).where(inShop),
   ]);
 
   return (
@@ -79,7 +89,7 @@ export default async function Membres({
                 <tr key={m.id} data-testid={`member-${m.username}`}>
                   <td>{m.username}</td>
                   <td>
-                    <span className={BADGE[m.role]}>{ROLES.find((r) => r.value === m.role)?.label}</span>
+                    <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
                     {m.superAdmin && (
                       <>
                         {" "}
@@ -97,7 +107,7 @@ export default async function Membres({
                         {m.id === me.id ? (
                           <input type="hidden" name="role" value="gerant" />
                         ) : (
-                          <select name="role" defaultValue={m.role} aria-label="Rôle">
+                          <select name="role" defaultValue={roleOf(m)} aria-label="Rôle">
                             {ROLES.map((r) => (
                               <option key={r.value} value={r.value}>
                                 {r.label}

@@ -17,9 +17,18 @@ export default async function globalSetup() {
     // Members and everything they recorded go; the seeded price grid stays.
     await sql`truncate members restart identity cascade`;
     await sql`update products set stock = 0`;
+    // Shops other than the first are made by the tests: they go with what they sell.
+    await sql`delete from suppliers where shop_id <> 1`;
+    await sql`delete from products where shop_id <> 1`;
+    await sql`delete from settings where shop_id <> 1`;
+    await sql`delete from shops where id <> 1`;
     await sql`
-      insert into members (username, name, password_hash, role, super_admin)
-      values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant', true)`;
+      with gerant as (
+        insert into members (username, name, password_hash, role, super_admin)
+        values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant', true)
+        returning id
+      )
+      insert into shop_members (shop_id, member_id, role) select 1, id, 'gerant' from gerant`;
   } finally {
     await sql.end();
   }

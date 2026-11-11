@@ -41,7 +41,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   const operation = asOperation(param(search.type));
   const { du, au, from, to } = dayRange(param(search.du), param(search.au));
   const page = pageParam(search.page);
-  const authors = await memberNames();
+  const authors = await memberNames(member.shopId);
   const author = authors.find((a) => String(a.id) === param(search.employe));
   const employe = author && String(author.id);
   const filters = { type: operation, employe, du, au };
@@ -53,10 +53,10 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   };
 
   const [entries, total, totals, waiting] = await Promise.all([
-    registerEntries(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
-    registerCount(filter),
-    tillTotals(filter),
-    pendingTotals(filter),
+    registerEntries(member.shopId, filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
+    registerCount(member.shopId, filter),
+    tillTotals(member.shopId, filter),
+    pendingTotals(member.shopId, filter),
   ]);
   const anyWaiting = waiting.sales > 0 || waiting.buybacks > 0;
   const filtered = Boolean(operation || employe || du || au);
