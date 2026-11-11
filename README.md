@@ -72,10 +72,11 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   déploiements par jour, et un build ignoré compte quand même.
 - **Preview** (`.github/workflows/preview.yml`) : à l'ouverture (ou la
   réouverture) d'une pull request, une preview est construite sur Vercel avec
-  les variables de l'environnement Preview, et son lien est posté en
-  commentaire sur la PR. Les pushs suivants ne la mettent pas à jour : pour
-  la refaire, lancer le workflow « Preview » sur la branche (onglet Actions,
-  « Run workflow »), et le commentaire est mis à jour. Il faut trois secrets
+  les variables de l'environnement Preview, et son lien est écrit à la fin de
+  la description de la PR (pas en commentaire : chaque commentaire envoie un
+  e-mail à l'auteur de la PR). Les pushs suivants ne la mettent pas à jour :
+  pour la refaire, lancer le workflow « Preview » sur la branche (onglet
+  Actions, « Run workflow »), et le lien est remplacé dans la description. Il faut trois secrets
   dans le dépôt (Settings → Secrets and variables → Actions) :
   `VERCEL_TOKEN` (un jeton créé sur vercel.com/account/tokens),
   `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` (dans les réglages du compte et du

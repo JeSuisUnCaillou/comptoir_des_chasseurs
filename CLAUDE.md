@@ -135,8 +135,9 @@ Les pushs suivants ne la refont pas : quand la branche est prête à essayer et
 que sa tête a changé depuis, relance le workflow « Preview » sur la branche
 (`actions_run_trigger`, `preview.yml`, `ref` = la branche), une fois, pas à
 chaque push : l'offre Hobby compte 100 déploiements par jour. Donne au
-propriétaire le lien de la preview que ce workflow publie en commentaire sur la
-PR, **toujours vers la page précise à essayer** (chemin complet,
+propriétaire le lien de la preview que ce workflow écrit dans la description de
+la PR, entre `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce
+bloc si tu réécris la description), **toujours vers la page précise à essayer** (chemin complet,
 par exemple `…vercel.app/fournisseurs`), jamais la seule racine de la preview.
 Le propriétaire l'a demandé le 2026-11-10 : « donne moi TOUJOURS le lien de la
 page spécifique à tester ». Sur une base de preview vide, la première visite

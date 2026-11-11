@@ -8,7 +8,8 @@
 #
 # The build runs on Vercel, with the Preview environment variables, so it
 # migrates and seeds the preview database exactly as before
-# (scripts/vercel-build.sh). Needs the repository secrets VERCEL_TOKEN,
+# (scripts/vercel-build.sh). The preview link is written in the pull request
+# description. Needs the repository secrets VERCEL_TOKEN,
 # VERCEL_ORG_ID and VERCEL_PROJECT_ID.
 name: Preview
 
@@ -61,7 +62,7 @@ jobs:
           url=$(npx --yes vercel@65.2.0 deploy --yes --environment=preview --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview : $url" >> "$GITHUB_STEP_SUMMARY"
-      - name: Lien sur la pull request
+      - name: Lien dans la description de la pull request
         if: steps.deploy.outputs.url
         uses: actions/github-script@v7
         env:
@@ -79,16 +80,20 @@ jobs:
               number = data[0]?.number;
             }
             if (!number) return core.notice(`Aucune PR ouverte pour ${process.env.BRANCH}.`);
-            const marker = "<!-- preview-vercel -->";
-            const body = `${marker}\n**Preview Vercel** : ${process.env.PREVIEW_URL}\n\n` +
+            // The link goes in the pull request description, not in a comment:
+            // GitHub emails the PR author for every bot comment, never for a
+            // description edit.
+            const start = "<!-- preview-vercel -->";
+            const end = "<!-- /preview-vercel -->";
+            const block = `${start}\n**Preview Vercel** : ${process.env.PREVIEW_URL}\n\n` +
               `Construite sur \`${process.env.SHA.slice(0, 7)}\`. Les pushs suivants ne la ` +
-              `mettent pas à jour : relancer le workflow « Preview » sur la branche.`;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner, repo, issue_number: number,
-            });
-            const mine = comments.find((c) => c.body?.startsWith(marker));
-            if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
-            }
+              `mettent pas à jour : relancer le workflow « Preview » sur la branche.\n${end}`;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            const current = pr.body ?? "";
+            // Markers count only on their own line (CRLF too, as GitHub's editor
+            // writes), so a description that quotes them in its text is kept.
+            const previous = /^<!-- preview-vercel -->\r?$[\s\S]*?^<!-- \/preview-vercel -->\r?$/m;
+            const body = previous.test(current)
+              ? current.replace(previous, () => block)
+              : `${current.trimEnd()}\n\n${block}`;
+            await github.rest.pulls.update({ owner, repo, pull_number: number, body });
