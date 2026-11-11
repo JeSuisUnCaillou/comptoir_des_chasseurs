@@ -2,6 +2,9 @@ import { expect, type Browser, type Locator, type Page } from "@playwright/test"
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
 
+/** An error message on the page, without the route announcer Next adds to every page. */
+export const ALERT = "[role=alert]:not(#__next-route-announcer__)";
+
 export const GERANT = { username: "lomone", password: "lomone-secret", name: "Lomone" };
 
 /** Signs in through the real sign-in form. */
@@ -152,5 +155,21 @@ export async function createAnnouncements(username: string, n: number, title = "
       where m.username = ${username.toLowerCase()}`;
   } finally {
     await sql.end();
+  }
+}
+
+/**
+ * Opens the Membres page on which a member's row is, and returns the row: the
+ * accounts are paginated and sorted by name, and the other tests' members can
+ * push any row past the first page.
+ */
+export async function memberRow(page: Page, username: string) {
+  const row = page.getByTestId(`member-${username.toLowerCase()}`);
+  const next = page.getByRole("navigation", { name: "Pages des comptes" }).getByRole("link", { name: "Suivant" });
+  for (let n = 1; ; n++) {
+    await page.goto(`/membres?page=${n}`);
+    await expect(page.getByRole("heading", { name: "Comptes" })).toBeVisible();
+    if ((await row.count()) > 0) return row;
+    if ((await next.count()) === 0) throw new Error(`Aucun compte « ${username} » dans Membres.`);
   }
 }

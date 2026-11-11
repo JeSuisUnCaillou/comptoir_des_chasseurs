@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createAnnouncements, GERANT, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import {
+  createAnnouncements,
+  createMember,
+  GERANT,
+  loginAs,
+  loginAsGerant,
+  newEmployeePage,
+  setRole,
+  uniqueName,
+} from "./helpers";
 
 function parchment(page: Page, title: string) {
   return page.getByRole("article", { name: title, exact: true });
@@ -88,4 +97,29 @@ test("le menu du gérant : Fournisseurs et Annonces sous Inventaire, plus de Mar
   await loginAsGerant(page);
   const links = page.getByRole("navigation", { name: "Menu principal" }).getByRole("link");
   await expect(links).toHaveText(["Grand livre", "Achat / Vente", "Tarifs", "Inventaire", "Fournisseurs", "Annonces", "Membres"]);
+});
+
+test("le serveur refuse de décrocher le parchemin d'un autre à qui n'est plus gérant", async ({ browser }) => {
+  const { page: author } = await newEmployeePage(browser, "brenuin");
+  const title = uniqueName("Cherche fourrures");
+  await pinParchment(author, title, "Pour l'hiver");
+
+  const username = uniqueName("jorgen").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
+  const page = await (await browser.newContext()).newPage();
+  await loginAs(page, username, "mot-de-passe");
+  await page.goto("/annonces");
+  const takeDown = page.getByRole("button", { name: `Décrocher « ${title} »` });
+  await expect(takeDown).toBeVisible();
+
+  await setRole(username, "employe");
+  // The server action answers without a message: wait for its answer before looking.
+  const answered = page.waitForResponse((r) => r.request().method() === "POST" && !!r.request().headers()["next-action"]);
+  await takeDown.click();
+  await answered;
+  await author.reload();
+  await expect(parchment(author, title)).toBeVisible();
+  await page.reload();
+  await expect(parchment(page, title)).toBeVisible();
+  await expect(page.getByRole("button", { name: `Décrocher « ${title} »` })).toHaveCount(0);
 });

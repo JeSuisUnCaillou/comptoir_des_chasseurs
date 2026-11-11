@@ -1,5 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
+import {
+  ALERT,
+  createMember,
+  createProduct,
+  loginAs,
+  loginAsGerant,
+  newEmployeePage,
+  pickProduct,
+  setRole,
+  uniqueName,
+} from "./helpers";
 
 /** Shows only this member's lines in the register. */
 async function onlyLinesOf(page: Page, name: string) {
@@ -265,4 +275,35 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
   await expect(settle).toHaveCount(1);
   await expect(settle).toHaveText("11 septims déposés");
   await expect(sale.nth(1).getByRole("button", { name: /dans la caisse/ })).toHaveCount(1);
+});
+
+// The hidden button is not the only guard: a gérant demoted while the
+// register is open still sees the button, and the server refuses.
+test("le serveur refuse de régler la caisse d'un autre à qui n'est plus gérant", async ({ browser }) => {
+  const product = uniqueName("Peau de chien");
+  await createProduct(product, { sellPrice: 5, stock: 2 });
+  const { page: author, username: authorName } = await newEmployeePage(browser, "hroki");
+  await author.goto("/achat-vente/vente");
+  const form = author.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form, product);
+  await form.getByLabel("Quantité").fill("1");
+  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(author.getByRole("status").filter({ hasText: product })).toContainText("en attente de la caisse");
+
+  const username = uniqueName("idgrod").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
+  const page = await (await browser.newContext()).newPage();
+  await loginAs(page, username, "mot-de-passe");
+  await onlyLinesOf(page, authorName);
+  const row = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
+  const settle = row.getByRole("button", { name: /déposés dans la caisse/ });
+  await expect(settle).toBeVisible();
+
+  await setRole(username, "employe");
+  page.once("dialog", (dialog) => dialog.accept());
+  await settle.click();
+  await expect(row.locator(ALERT)).toHaveText("Seul un gérant peut le faire pour la ligne d'un autre membre.");
+  await page.reload();
+  await expect(row).toContainText("En attente de la caisse");
 });

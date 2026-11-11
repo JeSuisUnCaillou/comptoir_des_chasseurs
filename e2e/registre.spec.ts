@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
 import {
+  ALERT,
   createMember,
   createProduct,
   createTransactions,
@@ -11,8 +12,6 @@ import {
   setRole,
   uniqueName,
 } from "./helpers";
-
-const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
 /** Writes a line through its form; the form then brings the member back to the register. */
 async function record(

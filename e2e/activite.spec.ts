@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, createTransactions, loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
+import { createProduct, createTransactions, loginAsGerant, memberRow, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
 /** Writes a sale or a purchase at the tariff through its form, and returns the test id of its register row. */
 async function record(page: Page, kind: "vente" | "achat", product: string, quantity: number) {
@@ -16,8 +16,7 @@ async function record(page: Page, kind: "vente" | "achat", product: string, quan
 
 /** Opens a member's activity from the Membres page, as a signed-in gérant. */
 async function openActivity(page: Page, username: string) {
-  await page.getByRole("link", { name: "Membres", exact: true }).click();
-  await page.getByTestId(`member-${username}`).getByRole("link", { name: "Activité" }).click();
+  await (await memberRow(page, username)).getByRole("link", { name: "Activité" }).click();
   await expect(page).toHaveURL(/\/membres\/\d+$/);
   await expect(page.getByRole("heading", { level: 1, name: username })).toBeVisible();
 }
