@@ -1,3 +1,4 @@
+import { OperationBadge } from "@/components/operation-badge";
 import type { ActivityLine } from "@/lib/activity";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -7,14 +8,6 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
   timeStyle: "short",
   timeZone: "Europe/Paris",
 });
-
-const BADGES = {
-  vente: { label: "Vente", className: "badge-green" },
-  rachat: { label: "Achat", className: "badge-gold" },
-  entree: { label: "Caisse", className: "badge-blue" },
-  sortie: { label: "Caisse", className: "badge-blue" },
-  stock: { label: "Stock", className: "" },
-} as const;
 
 /** A member's sales, buybacks, cash movements and hand stock movements, in one list. */
 export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: string }) {
@@ -37,7 +30,6 @@ export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: 
         <tbody>
           {lines.map((l) => {
             const kind = l.kind;
-            const badge = BADGES[kind];
             // What the line did to the till; null for a stock movement, which has no money.
             const money = kind === "stock" ? null : signedAmount(kind, l.amount);
             const quantity =
@@ -51,7 +43,7 @@ export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: 
               <tr key={`${l.source}-${l.id}`} className={cancelled ? "cancelled" : undefined}>
                 <td className="num">{dateTime.format(l.createdAt)}</td>
                 <td>
-                  <span className={`badge ${badge.className}`}>{badge.label}</span>
+                  <OperationBadge kind={kind} />
                 </td>
                 <td>{l.label}</td>
                 <td className={`num ${kind === "stock" ? (l.quantity > 0 ? "plus" : "minus") : ""}`}>{quantity}</td>

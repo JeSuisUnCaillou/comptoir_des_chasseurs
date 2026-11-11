@@ -1,5 +1,6 @@
 import "server-only";
 import { and, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
@@ -80,22 +81,28 @@ export type ActivityLine = {
   cancelledBy: string | null;
 };
 
+const canceller = alias(schema.members, "canceller");
+
+/** Both kinds of activity lines as one SQL source; columns come from the schema so tsc checks them. */
 function activitySource(memberId: number, from: Date, to: Date) {
-  const since = from.toISOString();
-  const until = to.toISOString();
+  const t = schema.transactions;
+  const m = schema.stockMovements;
+  const p = schema.products;
+  const since = sql`${from.toISOString()}::timestamptz`;
+  const until = sql`${to.toISOString()}::timestamptz`;
   return sql`
-    select 'ligne' as source, t.id, t.kind::text as kind, t.label, t.quantity, t.amount,
-      t.counterparty as detail, t.notes, t.created_at, t.cancelled_at, c.name as cancelled_by
-    from transactions t
-    left join members c on c.id = t.cancelled_by
-    where t.member_id = ${memberId} and t.created_at >= ${since}::timestamptz and t.created_at < ${until}::timestamptz
+    select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
+      ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
+      ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by
+    from ${t}
+    left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
+    where ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', m.id, 'stock', p.name, m.delta, 0,
-      m.reason, null, m.created_at, null, null
-    from stock_movements m
-    join products p on p.id = m.product_id
-    where m.member_id = ${memberId} and m.transaction_id is null
-      and m.created_at >= ${since}::timestamptz and m.created_at < ${until}::timestamptz`;
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, ${m.createdAt}, null, null
+    from ${m}
+    join ${p} on ${p.id} = ${m.productId}
+    where ${m.memberId} = ${memberId} and ${m.transactionId} is null
+      and ${m.createdAt} >= ${since} and ${m.createdAt} < ${until}`;
 }
 
 /** A member's activity between two instants, newest first. */
