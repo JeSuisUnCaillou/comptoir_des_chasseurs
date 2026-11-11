@@ -324,6 +324,17 @@ h3 {
   font-size: 12px;
 }
 
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.row-actions .btn {
+  white-space: nowrap;
+}
+
 /* The four tiles of the till on the Grand livre */
 .till-overview .stat {
   border-left-width: 3px;

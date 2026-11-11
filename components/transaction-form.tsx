@@ -271,6 +271,18 @@ export function TransactionForm({
           <label htmlFor="t-notes">Notes (facultatif)</label>
           <textarea id="t-notes" name="notes" rows={3} maxLength={500} />
         </div>
+        <div className="field full">
+          <label className="check">
+            <input type="checkbox" name="tillPending" />{" "}
+            {sale
+              ? "Je n'ai pas encore déposé les septims dans la caisse"
+              : "Je n'ai pas encore pris les septims dans la caisse"}
+          </label>
+          <span className="small muted">
+            {sale ? "La vente" : "L'achat"} reste « En attente de la caisse » et ne compte pas dans la caisse
+            tant que tu n&apos;as pas cliqué sur « {sale ? "Septims déposés" : "Septims pris"} » dans le registre.
+          </span>
+        </div>
       </div>
       {short.map((p) => (
         <p key={p.id} className="notice error" role="alert">

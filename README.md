@@ -119,7 +119,14 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   filtre par opération, par employé (le membre qui a inscrit la ligne) et par
   dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
-  et le stock revient à l'état d'avant. Un **mouvement de caisse** fait entrer
+  et le stock revient à l'état d'avant. Qui n'a pas encore déposé (vente) ou
+  pris (achat) les septims dans la caisse coche « Je n'ai pas encore déposé /
+  pris les septims dans la caisse » : toute l'écriture porte alors le statut
+  *En attente de la caisse*, le stock bouge mais ses septims ne comptent pas
+  dans la caisse (une tuile du registre en donne le total, et le filtre
+  Opération « En attente de la caisse » les retrouve). Son auteur ou un gérant
+  clique ensuite sur « Septims déposés » ou « Septims pris » sur l'une de ses
+  lignes : toutes les lignes de l'écriture comptent alors dans la caisse. Un **mouvement de caisse** fait entrer
   ou sortir des septims sans marchandise (salaires, apport du gérant…) : sens,
   montant, motif, et l'aperçu de la caisse après lui. Tout membre peut en
   inscrire ; il a le badge *Caisse* dans le registre et son propre filtre.
@@ -171,7 +178,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   (unités entrées et sorties à la main, hors achats et ventes, et leur
   valeur au prix de vente d'aujourd'hui, gros compris) et les **mouvements
   de caisse** (septims entrés moins sortis, sans marchandise). Les lignes
-  annulées ne comptent pas ; une marchandise sans prix de vente est
+  annulées ne comptent pas, ni celles en attente de la caisse, qui portent
+  ce statut dans la liste ; une marchandise sans prix de vente est
   laissée hors de la valeur de l'inventaire, et la page le dit. Chaque
   mouvement de stock né d'une écriture (vente, achat ou son annulation)
   garde le numéro de sa ligne, pour le distinguer de ceux faits à la main.

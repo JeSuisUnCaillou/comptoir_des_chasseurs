@@ -64,6 +64,13 @@
       "when": 1794337671841,
       "tag": "0008_stock-movement-transaction",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794403819234,
+      "tag": "0009_septims-en-attente-de-caisse",
+      "breakpoints": true
     }
   ]
 }

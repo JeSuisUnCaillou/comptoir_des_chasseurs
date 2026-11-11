@@ -1,4 +1,4 @@
-import { OperationBadge } from "@/components/operation-badge";
+import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
 import type { ActivityLine } from "@/lib/activity";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -39,6 +39,7 @@ export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: 
                   ? "—"
                   : formatNumber(l.quantity);
             const cancelled = l.cancelledAt != null;
+            const waiting = !cancelled && l.tillPending;
             return (
               <tr key={`${l.source}-${l.id}`} className={cancelled ? "cancelled" : undefined}>
                 <td className="num">{dateTime.format(l.createdAt)}</td>
@@ -47,8 +48,14 @@ export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: 
                 </td>
                 <td>{l.label}</td>
                 <td className={`num ${kind === "stock" ? (l.quantity > 0 ? "plus" : "minus") : ""}`}>{quantity}</td>
-                <td className={`num ${money == null || cancelled ? "" : money >= 0 ? "plus" : "minus"}`}>
+                <td className={`num ${money == null || cancelled ? "" : waiting ? "muted" : money >= 0 ? "plus" : "minus"}`}>
                   {money == null ? "—" : septims(money, { signed: true })}
+                  {waiting && (
+                    <>
+                      <br />
+                      <TillPendingBadge />
+                    </>
+                  )}
                 </td>
                 <td>{l.detail ?? "—"}</td>
                 <td className="small">{l.notes ?? ""}</td>
