@@ -109,6 +109,13 @@ test("à l'achat de plusieurs marchandises, une seule case citoyen pour le vende
   await expect(line(1).getByLabel("Montant (septims)")).toHaveValue("4");
   await expect(line(2).getByLabel("Montant (septims)")).toHaveValue("40");
   await expect(total).toHaveText("Total de l'achat : 44 septims");
+  // Without the leather the box goes away, and comes back unticked.
+  await pickProduct(line(2), hide);
+  await expect(citizen).toHaveCount(0);
+  await pickProduct(line(2), leather);
+  await expect(citizen).not.toBeChecked();
+  await expect(total).toHaveText("Total de l'achat : 34 septims");
+  await citizen.check();
   await purchase.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: leather })).toHaveText(
     `Achat inscrit : 2 × ${hide}, 10 × ${leather}, 44 septims au total.`,

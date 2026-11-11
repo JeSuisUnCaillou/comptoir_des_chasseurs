@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
+import { PAGE_SIZE } from "@/lib/pagination";
 import { moveStock } from "@/lib/products";
 
 export type TransactionState = { ok: boolean; message: string } | null;
@@ -13,8 +14,8 @@ function revalidate() {
   for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/achat-vente/caisse", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
-/** Most merchandises one sale or purchase may carry. */
-const MAX_LINES = 50;
+/** Most merchandises one sale or purchase may carry: one register page, so the confirmation shows them all. */
+const MAX_LINES = PAGE_SIZE;
 
 /**
  * Records a sale or a purchase of one or more merchandises: one register line

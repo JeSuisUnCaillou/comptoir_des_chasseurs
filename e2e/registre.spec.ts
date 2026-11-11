@@ -538,7 +538,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
 });
 
 test("une marchandise vendue sur deux lignes doit avoir le stock des deux", async ({ browser }) => {
-  const product = uniqueName("Peau d'ours");
+  const product = uniqueName("Peau de sabrecat");
   await createProduct(product, { stock: 3 });
   const { page } = await newEmployeePage(browser, "mjoll");
   await page.goto("/achat-vente/vente");
