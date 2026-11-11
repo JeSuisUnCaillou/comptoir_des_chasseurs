@@ -17,8 +17,8 @@ export function SettleButton({ id, sale }: { id: number; sale: boolean }) {
         aria-label={sale ? `Septims de ${what} déposés dans la caisse` : `Septims de ${what} pris dans la caisse`}
         onClick={(e) => {
           const question = sale
-            ? `Les septims de ${what} sont-ils déposés dans la caisse ? Ils y compteront, pour toute la vente.`
-            : `Les septims de ${what} sont-ils pris dans la caisse ? Ils en sortiront, pour tout l'achat.`;
+            ? `Les septims de ${what} sont-ils déposés dans la caisse ?`
+            : `Les septims de ${what} sont-ils pris dans la caisse ?`;
           if (!window.confirm(question)) e.preventDefault();
         }}
       >
