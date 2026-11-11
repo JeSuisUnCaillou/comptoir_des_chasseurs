@@ -57,9 +57,10 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
     tillTotals(filter),
   ]);
   const filtered = Boolean(operation || employe || du || au);
-  // Coming back from the entry form: confirm the line just written.
-  const writtenId = Number(param(search.inscrit));
-  const written = entries.find((e) => e.id === writtenId);
+  // Coming back from the entry form: confirm the lines just written, in the order they were typed.
+  const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
+  const written = writtenIds.flatMap((id) => entries.filter((e) => e.id === id));
+  const first = written[0];
 
   return (
     <>
@@ -88,17 +89,19 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
         </Link>
       </div>
 
-      {written && (
+      {first && (
         <p className="notice" role="status">
-          {isCashKind(written.kind) ? (
+          {isCashKind(first.kind) ? (
             <>
-              Mouvement inscrit : {written.label},{" "}
-              {septims(signedAmount(written.kind, written.amount), { signed: true })}.
+              Mouvement inscrit : {first.label},{" "}
+              {septims(signedAmount(first.kind, first.amount), { signed: true })}.
             </>
           ) : (
             <>
-              {written.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} : {written.quantity} × {written.label},{" "}
-              {septims(written.amount)}.
+              {first.kind === "vente" ? "Vente inscrite" : "Achat inscrit"} :{" "}
+              {written.map((e) => `${e.quantity} × ${e.label}`).join(", ")},{" "}
+              {septims(written.reduce((sum, e) => sum + e.amount, 0))}
+              {written.length > 1 ? " au total" : ""}.
             </>
           )}
         </p>
@@ -121,7 +124,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           <TillStat title={filtered ? "Caisse sur la sélection" : "Caisse depuis l'ouverture"} till={totals} testId="totaux-registre" />
         </div>
         <p className="small muted">Les lignes annulées sont barrées et ne comptent pas dans la caisse.</p>
-        <RegisterTable entries={entries} member={member} highlight={written?.id} />
+        <RegisterTable entries={entries} member={member} highlight={written.map((e) => e.id)} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />
       </section>
     </>

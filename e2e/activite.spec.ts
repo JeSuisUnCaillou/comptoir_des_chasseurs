@@ -7,7 +7,7 @@ async function record(page: Page, kind: "vente" | "achat", product: string, quan
   const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill(String(quantity));
-  await expect(form.getByLabel("Montant total (septims)")).not.toHaveValue("");
+  await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   // Once cancelled, the row is no longer the fresh one: give its line's test id.

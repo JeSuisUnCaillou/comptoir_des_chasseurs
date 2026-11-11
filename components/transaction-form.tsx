@@ -1,12 +1,13 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
 import { ProductCombobox } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
-import { CATEGORY_LABELS, buyTotal, plural, rate, sellTotal, septims } from "@/lib/pricing";
+import { MAX_LINES } from "@/lib/transaction-kinds";
+import { CATEGORY_LABELS, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
   Product,
@@ -27,6 +28,48 @@ export type TransactionProduct = Pick<
 
 const OTHER = "autre";
 
+/** One merchandise of the entry, as the member is filling it in. */
+type Line = {
+  key: number;
+  productId: string;
+  quantity: string;
+  amount: string;
+  // The amount follows the tariff until the member takes it over with the pencil.
+  manual: boolean;
+};
+
+function newLine(key: number): Line {
+  return { key, productId: "", quantity: "1", amount: "", manual: false };
+}
+
+/** What a line computes from the tariff, and what it adds to the total. */
+function evaluate(line: Line, kind: TransactionKind, products: TransactionProduct[], citizen: boolean) {
+  const product = products.find((p) => String(p.id) === line.productId);
+  const qty = Number(line.quantity);
+  const validQty = Number.isInteger(qty) && qty > 0;
+  // Only buybacks have a citizens' price, and only for the products that set one.
+  const citizenPrice = kind === "rachat" && product?.citizenBuyPrice != null;
+  const tariff: (Total & { bulk?: boolean }) | null =
+    product && validQty
+      ? kind === "vente"
+        ? sellTotal(product, qty)
+        : buyTotal(product, qty, { citizen: citizenPrice && citizen })
+      : null;
+  const suggested = tariff ? Math.round(tariff.value) : null;
+  const auto = suggested != null && !line.manual;
+  const amount = auto ? suggested : Number(line.amount);
+  return {
+    product,
+    qty: validQty ? qty : 0,
+    citizenPrice,
+    tariff,
+    suggested,
+    auto,
+    shownAmount: auto ? String(suggested) : line.amount,
+    value: Number.isInteger(amount) && amount > 0 ? amount : 0,
+  };
+}
+
 export function TransactionForm({
   kind,
   products,
@@ -35,28 +78,24 @@ export function TransactionForm({
   products: TransactionProduct[];
 }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
-  const submitLabel = kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat";
-  const [productId, setProductId] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [amount, setAmount] = useState("");
-  // The amount follows the tariff until the member takes it over with the pencil.
-  const [manual, setManual] = useState(false);
+  const sale = kind === "vente";
+  const submitLabel = sale ? "Confirmer la vente" : "Confirmer l'achat";
+  const [lines, setLines] = useState<Line[]>([newLine(0)]);
+  const nextKey = useRef(1);
+  // One seller for the whole purchase: the box applies to every line that has a citizens' price.
   const [citizen, setCitizen] = useState(false);
-  const amountInput = useRef<HTMLInputElement>(null);
-  const product = products.find((p) => String(p.id) === productId);
-  const qty = Number(quantity);
-  const validQty = Number.isInteger(qty) && qty > 0;
-  // Only buybacks have a citizens' price, and only for the products that set one.
-  const citizenPrice = kind === "rachat" && product?.citizenBuyPrice != null;
-  const tariff =
-    product && validQty
-      ? kind === "vente"
-        ? sellTotal(product, qty)
-        : buyTotal(product, qty, { citizen: citizenPrice && citizen })
-      : null;
-  const suggested = tariff ? Math.round(tariff.value) : null;
-  const auto = suggested != null && !manual;
-  const short = kind === "vente" && product && validQty && qty > product.stock;
+  const evaluated = lines.map((line) => evaluate(line, kind, products, citizen));
+  const total = evaluated.reduce((sum, e) => sum + e.value, 0);
+  const citizenProducts = evaluated.flatMap((e) => (e.citizenPrice && e.product ? [e.product] : []));
+  const uniqueCitizenProducts = citizenProducts.filter((p, i) => citizenProducts.indexOf(p) === i);
+  // Once no line has a citizens' price, the box goes away unticked: it never comes back ticked on its own.
+  if (citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
+
+  // A product sold on several lines must have enough stock for all of them.
+  const wanted = new Map<TransactionProduct, number>();
+  if (sale) for (const e of evaluated) if (e.product) wanted.set(e.product, (wanted.get(e.product) ?? 0) + e.qty);
+  const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
+
   // Groups keep the catalogue's category order; names are sorted inside each.
   const choices = (Object.keys(CATEGORY_LABELS) as Product["category"][]).flatMap((category) =>
     products
@@ -64,114 +103,164 @@ export function TransactionForm({
       .map((p) => ({ id: String(p.id), name: p.name, group: CATEGORY_LABELS[category] })),
   );
 
+  function update(key: number, change: Partial<Line>) {
+    setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));
+  }
+
   return (
     <form onSubmit={keepValues(action)}>
       <input type="hidden" name="kind" value={kind} />
-      <div className="tx-grid">
-        <div className="field full">
-          <label htmlFor="t-product">Article ou marchandise</label>
-          <ProductCombobox
-            id="t-product"
-            name="productId"
-            required
-            placeholder="Choisir ou taper un nom…"
-            products={choices}
-            extras={[{ id: OTHER, name: "Autre article (hors stock)…" }]}
-            value={productId || null}
-            onChange={(id) => {
-              setProductId(id);
-              // Each seller says again whether they are a citizen.
-              setCitizen(false);
-            }}
-          />
-          {product && (
-            <span className="small muted" data-testid="stock-dispo">
-              En stock : {product.stock} {plural(product.unit, product.stock)}
-            </span>
-          )}
-        </div>
-        {productId === OTHER && (
-          <div className="field full">
-            <label htmlFor="t-label">Nom de l&apos;article</label>
-            <input id="t-label" name="label" required maxLength={100} />
-          </div>
-        )}
-        <div className="field">
-          <label htmlFor="t-quantity">Quantité</label>
-          <input
-            id="t-quantity"
-            name="quantity"
-            type="number"
-            min={1}
-            step={1}
-            required
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="t-amount">Montant total (septims)</label>
-          <div className="amount-row">
-            <input
-              ref={amountInput}
-              id="t-amount"
-              name="amount"
-              type="number"
-              min={0}
-              step={1}
-              required
-              readOnly={auto}
-              value={auto ? String(suggested) : amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            {auto && (
-              <button
-                type="button"
-                className="icon-btn"
-                title="Modifier le montant"
-                aria-label="Modifier le montant"
-                onClick={() => {
-                  setAmount(String(suggested));
-                  setManual(true);
-                  requestAnimationFrame(() => amountInput.current?.focus());
-                }}
-              >
-                <Pencil size={18} />
-              </button>
-            )}
-          </div>
-          {suggested != null && (
-            <span className="small muted tariff-hint" data-testid="tarif">
-              {auto ? "Calculé avec le tarif" : `Tarif : ${septims(suggested)}`}
-              {tariff && "bulk" in tariff && tariff.bulk ? " (prix de gros)" : ""}
-              {citizenPrice && citizen ? " (prix citoyen d'Estemarche)" : ""}
-              {tariff && !tariff.complete ? " (lot incomplet, arrondi)" : ""}
-              {!auto && (
-                <button type="button" className="btn btn-small btn-ghost" onClick={() => setManual(false)}>
-                  Revenir au tarif
-                </button>
+      <div className="tx-lines">
+        {lines.map((line, index) => {
+          const e = evaluated[index];
+          const id = `t-${line.key}`;
+          return (
+            <fieldset
+              key={line.key}
+              className="tx-line"
+              aria-label={`Marchandise ${index + 1}`}
+            >
+              <div className="tx-line-row">
+                <div className="field tx-product">
+                  <label htmlFor={`${id}-product`}>Article ou marchandise</label>
+                  <ProductCombobox
+                    id={`${id}-product`}
+                    name="productId"
+                    required
+                    placeholder="Choisir ou taper un nom…"
+                    products={choices}
+                    extras={[{ id: OTHER, name: "Autre article (hors stock)…" }]}
+                    value={line.productId || null}
+                    onChange={(productId) => update(line.key, { productId })}
+                  />
+                  {e.product && (
+                    <span className="small muted" data-testid="stock-dispo">
+                      En stock : {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                    </span>
+                  )}
+                </div>
+                <div className="field tx-qty">
+                  <label htmlFor={`${id}-quantity`}>Quantité</label>
+                  <input
+                    id={`${id}-quantity`}
+                    name="quantity"
+                    type="number"
+                    min={1}
+                    step={1}
+                    required
+                    value={line.quantity}
+                    onChange={(ev) => update(line.key, { quantity: ev.target.value })}
+                  />
+                </div>
+                <div className="field tx-amount">
+                  <label htmlFor={`${id}-amount`}>Montant (septims)</label>
+                  <div className="amount-row">
+                    <input
+                      id={`${id}-amount`}
+                      name="amount"
+                      type="number"
+                      min={0}
+                      step={1}
+                      required
+                      readOnly={e.auto}
+                      value={e.shownAmount}
+                      onChange={(ev) => update(line.key, { amount: ev.target.value })}
+                    />
+                    {e.auto && (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title="Modifier le montant"
+                        aria-label="Modifier le montant"
+                        onClick={(ev) => {
+                          const input = ev.currentTarget.parentElement?.querySelector("input");
+                          update(line.key, { amount: String(e.suggested), manual: true });
+                          requestAnimationFrame(() => input?.focus());
+                        }}
+                      >
+                        <Pencil size={18} />
+                      </button>
+                    )}
+                  </div>
+                  {e.suggested != null && (
+                    <span className="small muted tariff-hint" data-testid="tarif">
+                      {e.auto ? "Calculé avec le tarif" : `Tarif : ${septims(e.suggested)}`}
+                      {e.tariff?.bulk ? " (prix de gros)" : ""}
+                      {e.citizenPrice && citizen ? " (prix citoyen d'Estemarche)" : ""}
+                      {e.tariff && !e.tariff.complete ? " (lot incomplet, arrondi)" : ""}
+                      {!e.auto && (
+                        <button
+                          type="button"
+                          className="btn btn-small btn-ghost"
+                          onClick={() => update(line.key, { manual: false })}
+                        >
+                          Revenir au tarif
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  {e.product && e.suggested == null && (
+                    <span className="small muted">Pas de tarif pour cette opération : indique le montant.</span>
+                  )}
+                </div>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    className="icon-btn tx-remove"
+                    title="Retirer cette marchandise"
+                    aria-label={`Retirer la marchandise ${index + 1}`}
+                    onClick={() => setLines((all) => all.filter((l) => l.key !== line.key))}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+              {line.productId === OTHER ? (
+                <div className="field">
+                  <label htmlFor={`${id}-label`}>Nom de l&apos;article</label>
+                  <input id={`${id}-label`} name="label" required maxLength={100} />
+                </div>
+              ) : (
+                // Keeps the fields of every line aligned in the submitted form.
+                <input type="hidden" name="label" value="" />
               )}
-            </span>
-          )}
-          {product && suggested == null && (
-            <span className="small muted">Pas de tarif pour cette opération : indique le montant.</span>
-          )}
-        </div>
-        {citizenPrice && (
+            </fieldset>
+          );
+        })}
+      </div>
+      <div className="tx-total-row">
+        <button
+          type="button"
+          className="btn btn-small"
+          disabled={lines.length >= MAX_LINES}
+          title={lines.length >= MAX_LINES ? `${MAX_LINES} marchandises au plus` : undefined}
+          onClick={() => setLines((all) => [...all, newLine(nextKey.current++)])}
+        >
+          <Plus size={14} /> Ajouter une marchandise
+        </button>
+        <p className="tx-total" data-testid="total" aria-live="polite">
+          {sale ? "Total de la vente" : "Total de l'achat"} : <strong>{septims(total)}</strong>
+        </p>
+      </div>
+      <div className="tx-grid">
+        {uniqueCitizenProducts.length > 0 && (
           <div className="field full">
             <label className="check">
               <input
                 type="checkbox"
                 name="citizen"
                 checked={citizen}
-                onChange={(e) => setCitizen(e.target.checked)}
+                onChange={(ev) => setCitizen(ev.target.checked)}
               />{" "}
               Le vendeur est citoyen d&apos;Estemarche
             </label>
-            <span className="small muted">
-              Citoyens : {rate(product.citizenBuyPrice!, product.buyQty)}
-              {product.buyPrice != null && ` · autres vendeurs : ${rate(product.buyPrice, product.buyQty)}`}
-            </span>
+            {uniqueCitizenProducts.map((p) => (
+              <span key={p.id} className="small muted">
+                {uniqueCitizenProducts.length > 1 && `${p.name} · `}
+                Citoyens : {rate(p.citizenBuyPrice!, p.buyQty)}
+                {p.buyPrice != null && ` · autres vendeurs : ${rate(p.buyPrice, p.buyQty)}`}
+              </span>
+            ))}
           </div>
         )}
         <div className="field full">
@@ -183,18 +272,19 @@ export function TransactionForm({
           <textarea id="t-notes" name="notes" rows={3} maxLength={500} />
         </div>
       </div>
-      {short && (
-        <p className="notice error" role="alert">
-          Stock insuffisant : il ne reste que {product.stock} {plural(product.unit, product.stock)}.
+      {short.map((p) => (
+        <p key={p.id} className="notice error" role="alert">
+          Stock insuffisant{lines.length > 1 ? ` de ${p.name}` : ""} : il ne reste que {p.stock}{" "}
+          {plural(p.unit, p.stock)}.
         </p>
-      )}
+      ))}
       {state && (
         <p className="notice error" role="alert">
           {state.message}
         </p>
       )}
-      <p className="small muted">Le montant indiqué est le total pour la quantité saisie.</p>
-      <button className="btn btn-primary" type="submit" disabled={pending || !!short}>
+      <p className="small muted">Le montant de chaque marchandise est le total pour sa quantité.</p>
+      <button className="btn btn-primary" type="submit" disabled={pending || short.length > 0}>
         <Plus size={16} /> {submitLabel}
       </button>
     </form>

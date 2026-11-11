@@ -100,13 +100,21 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   les dernières écritures.
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
-  l'écriture enregistrée ramène au registre. Une écriture porte sur une
+  l'écriture enregistrée ramène au registre. Une vente ou un achat peut
+  porter sur plusieurs marchandises à la fois, 25 au plus pour tenir sur une
+  page du registre (« Ajouter une marchandise », la corbeille pour en
+  retirer une ; une marchandise par ligne : article, quantité, montant), avec le total en septims qui se met à
+  jour pendant qu'on remplit ; le client et les notes valent pour toutes, et
+  chaque marchandise devient sa propre ligne du registre, toutes inscrites
+  ensemble ou aucune. Chaque ligne porte sur une
   marchandise du stock ou sur un article libre hors stock ; la marchandise
   se choisit dans un champ où l'on tape son nom, comme dans le calculateur
   des Tarifs, la liste gardant ses catégories. Le montant est
   calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
-  vendeur est citoyen d'Estemarche » calcule le montant à ce prix. Le stock bouge :
+  vendeur est citoyen d'Estemarche » calcule le montant à ce prix ; il n'y a
+  qu'une case par achat, pour le vendeur, qui vaut pour toutes ses
+  marchandises qui ont ce prix. Le stock bouge :
   +quantité à l'achat, −quantité à la vente, jamais sous zéro. Le registre se
   filtre par opération, par employé (le membre qui a inscrit la ligne) et par
   dates (heure de Paris). L'auteur d'une ligne ou

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { moveStock } from "@/lib/products";
+import { MAX_LINES } from "@/lib/transaction-kinds";
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
@@ -13,65 +14,90 @@ function revalidate() {
   for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/achat-vente/caisse", "/inventaire", "/tarifs"]) revalidatePath(path);
 }
 
+/**
+ * Records a sale or a purchase of one or more merchandises: one register line
+ * each, sharing the client and the notes, written all together or not at all.
+ */
 export async function recordTransaction(
   _prev: TransactionState,
   formData: FormData,
 ): Promise<TransactionState> {
   const member = await requireMember();
   const kind = formData.get("kind");
-  const productRaw = String(formData.get("productId") ?? "");
-  const productId = productRaw === "" || productRaw === "autre" ? null : Number(productRaw);
-  const quantity = Number(formData.get("quantity"));
-  const amount = Number(formData.get("amount"));
   const counterparty = String(formData.get("counterparty") ?? "").trim().slice(0, 100) || null;
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 500) || null;
-  let label = String(formData.get("label") ?? "").trim().slice(0, 100);
+  const productIds = formData.getAll("productId").map(String);
+  const labels = formData.getAll("label").map(String);
+  const quantities = formData.getAll("quantity").map(Number);
+  const amounts = formData.getAll("amount").map(Number);
 
   if (kind !== "vente" && kind !== "rachat") return { ok: false, message: "Opération inconnue." };
-  if (productId != null && !Number.isInteger(productId)) {
-    return { ok: false, message: "Marchandise inconnue." };
+  const count = productIds.length;
+  if (count === 0) return { ok: false, message: "Indique l'article ou la marchandise." };
+  if (count > MAX_LINES) return { ok: false, message: `Pas plus de ${MAX_LINES} marchandises à la fois.` };
+  if (labels.length !== count || quantities.length !== count || amounts.length !== count) {
+    return { ok: false, message: "Formulaire incomplet, recharge la page." };
   }
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return { ok: false, message: "La quantité doit être un nombre entier positif." };
-  }
-  if (!Number.isInteger(amount) || amount < 0) {
-    return { ok: false, message: "Le montant doit être un nombre entier de septims." };
+  // With several lines, each message says which one is wrong.
+  const at = (i: number, message: string) => (count > 1 ? `Marchandise ${i + 1} : ${message}` : message);
+
+  const lines: { productId: number | null; quantity: number; amount: number; label: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const raw = productIds[i];
+    const productId = raw === "" || raw === "autre" ? null : Number(raw);
+    const quantity = quantities[i];
+    const amount = amounts[i];
+    if (productId != null && !Number.isInteger(productId)) {
+      return { ok: false, message: at(i, "Marchandise inconnue.") };
+    }
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return { ok: false, message: at(i, "La quantité doit être un nombre entier positif.") };
+    }
+    if (!Number.isInteger(amount) || amount < 0) {
+      return { ok: false, message: at(i, "Le montant doit être un nombre entier de septims.") };
+    }
+    lines.push({ productId, quantity, amount, label: labels[i].trim().slice(0, 100) });
   }
 
   const db = getDb();
-  let id: number;
+  let ids: number[];
   try {
-    id = await db.transaction(async (tx) => {
-      let delta = 0;
-      let reason = "";
-      if (productId != null) {
-        const [product] = await tx
-          .select({ name: schema.products.name })
-          .from(schema.products)
-          .where(and(eq(schema.products.id, productId), eq(schema.products.archived, false)))
-          .limit(1);
-        if (!product) throw new UserError("Marchandise inconnue.");
-        label = product.name;
-        delta = kind === "vente" ? -quantity : quantity;
-        reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
+    ids = await db.transaction(async (tx) => {
+      const written: number[] = [];
+      for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
+        let label = typed;
+        let delta = 0;
+        let reason = "";
+        if (productId != null) {
+          const [product] = await tx
+            .select({ name: schema.products.name })
+            .from(schema.products)
+            .where(and(eq(schema.products.id, productId), eq(schema.products.archived, false)))
+            .limit(1);
+          if (!product) throw new UserError(at(i, "Marchandise inconnue."));
+          label = product.name;
+          delta = kind === "vente" ? -quantity : quantity;
+          reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
+        }
+        if (!label) throw new UserError(at(i, "Indique l'article ou la marchandise."));
+        const [line] = await tx.insert(schema.transactions).values({
+          kind,
+          productId,
+          label,
+          quantity,
+          amount,
+          counterparty,
+          notes,
+          memberId: member.id,
+        }).returning({ id: schema.transactions.id });
+        if (productId != null) {
+          // Throwing rolls back every line with its movement.
+          const moved = await moveStock(tx, productId, delta, member.id, reason, line.id);
+          if (!moved.ok) throw new UserError(at(i, "Stock insuffisant pour cette vente."));
+        }
+        written.push(line.id);
       }
-      if (!label) throw new UserError("Indique l'article ou la marchandise.");
-      const [line] = await tx.insert(schema.transactions).values({
-        kind,
-        productId,
-        label,
-        quantity,
-        amount,
-        counterparty,
-        notes,
-        memberId: member.id,
-      }).returning({ id: schema.transactions.id });
-      if (productId != null) {
-        // Throwing rolls the line back with the movement.
-        const moved = await moveStock(tx, productId, delta, member.id, reason, line.id);
-        if (!moved.ok) throw new UserError("Stock insuffisant pour cette vente.");
-      }
-      return line.id;
+      return written;
     });
   } catch (error) {
     if (error instanceof UserError) return { ok: false, message: error.message };
@@ -79,8 +105,8 @@ export async function recordTransaction(
   }
 
   revalidate();
-  // Back to the register, which shows the new line.
-  redirect(`/achat-vente?inscrit=${id}`);
+  // Back to the register, which shows the new lines.
+  redirect(`/achat-vente?inscrit=${ids.join(",")}`);
 }
 
 class UserError extends Error {}
