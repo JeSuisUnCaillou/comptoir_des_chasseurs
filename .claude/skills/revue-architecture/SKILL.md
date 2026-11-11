@@ -1,6 +1,6 @@
 ---
 name: revue-architecture
-description: Relit tout le code du Comptoir des chasseurs sur main pour l'architecture et l'écart avec la doc, et ouvre une issue par trouvaille confirmée ; ne change aucun code. Lancée par la revue périodique toutes les 20 PR mergées. Déclencheurs : « revue-architecture », « relis tout le code », « revue d'architecture ».
+description: Relit tout le code du Comptoir des chasseurs sur main pour l'architecture et l'écart avec la doc, et ouvre une issue par trouvaille confirmée ; ne change aucun code. Proposée au propriétaire toutes les 20 PR mergées (`CLAUDE.md` § Revue périodique). Déclencheurs : « revue-architecture », « relis tout le code », « revue d'architecture ».
 ---
 
 # revue-architecture
@@ -19,10 +19,9 @@ autre travail (`CLAUDE.md` § Suivre le travail dans les issues).
    Fini quand `git status` montre un `HEAD` détaché sur `origin/main`.
 
 2. **Rassemble ce qui est déjà connu**, avec les outils GitHub MCP : les
-   issues ouvertes et fermées étiquetées `architecture`, et le commentaire
-   laissé par la dernière revue d'architecture sur l'issue `periodic-review`
-   précédente, avec les trouvailles qu'elle a rejetées. Fini quand tu tiens
-   les deux listes.
+   issues étiquetées `architecture`, ouvertes et fermées, dont le rapport de
+   la revue précédente (« Revue d'architecture AAAA-MM-JJ ») et les
+   trouvailles qu'elle a rejetées. Fini quand tu tiens cette liste.
 
 3. **Fais relire par les deux agents** en parallèle, avec l'outil Agent, au
    premier plan : `subagent_type: "relecteur-architecte"` et
@@ -43,11 +42,11 @@ autre travail (`CLAUDE.md` § Suivre le travail dans les issues).
    grossi, sinon rien. Fini quand chaque trouvaille confirmée a son issue ou
    son commentaire.
 
-6. **Rends compte** dans un commentaire sur l'issue `periodic-review` (au
-   propriétaire si lancée seule) : la PR du harness, les issues ouvertes, les
+6. **Rends compte** dans une issue « Revue d'architecture AAAA-MM-JJ »,
+   étiquetée `architecture` et fermée aussitôt : les issues ouvertes, les
    choix laissés au propriétaire, et chaque trouvaille rejetée avec sa
-   raison, que la prochaine revue lit à l'étape 2. Fini quand le commentaire
-   est posté.
+   raison, que la prochaine revue lit à l'étape 2. Puis réponds au
+   propriétaire avec son lien.
 
 ## Les messages aux relecteurs
 
