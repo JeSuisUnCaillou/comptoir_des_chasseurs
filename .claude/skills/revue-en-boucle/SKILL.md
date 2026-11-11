@@ -48,7 +48,9 @@ Puis merge ou attends le propriétaire selon `CLAUDE.md` § Qui merge.
 
 Une ligne dans la description de la PR et dans ta réponse : combien de
 passes, ce qu'elles ont corrigé, ce qui est laissé au propriétaire, les
-issues ouvertes.
+issues ouvertes. Si la PR attend le propriétaire et que la tête a changé
+depuis la preview, refais la preview avant de donner son lien (`CLAUDE.md`
+§ Donner un lien pour essayer).
 
 ## Garde-fous
 

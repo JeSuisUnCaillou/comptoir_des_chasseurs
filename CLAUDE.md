@@ -28,10 +28,11 @@ quelque chose change, on met à jour son propriétaire, et lui seul.
 | Modèle de données | `lib/db/schema.ts`, migrations dans `drizzle/` |
 | Reprise des données de l'ancienne app (`scripts/legacy/`) | `docs/reprise-ancienne-app.md` |
 | Tâches, bugs, idées, leur ordre | [issues GitHub](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues) |
-| Règles pour travailler ici | ce fichier ; les instructions du projet Claude et la mémoire d'équipe y renvoient |
+| Règles pour travailler ici | ce fichier et `.claude/` ; la mémoire d'équipe y renvoie |
 
 Un changement qui modifie un comportement, le schéma ou une convention met à
-jour le document propriétaire dans le même commit. La mémoire d'équipe ne
+jour le document propriétaire dans le même commit ; un document en désaccord
+avec le code est un bug. La mémoire d'équipe ne
 porte aucune règle que le dépôt ne porte pas ; s'ils divergent, le dépôt
 gagne.
 
@@ -169,8 +170,9 @@ Pour merger :
 - La fin de la CI ne réveille pas toujours la session. Un tour qui finit en
   attendant la CI programme un rappel `send_later` de 3 minutes ; à chaque
   réveil, lis le check « Build et tests e2e » de la tête (`pull_request_read`,
-  `get_check_runs`). Une PR en conflit avec `main` n'a pas de CI : merge
-  `main` dedans d'abord.
+  `get_check_runs`) ; encore en file ou en cours, reprogramme un rappel de
+  2 minutes. Une PR en conflit avec `main` n'a pas de CI : merge `main`
+  dedans, lance la suite, pousse, et relis (nouvelle tête, nouvelle passe).
 - Vert : `merge_pull_request` en squash (le titre finit par `(#n)`), avec
   `expectedHeadSha` égal à la tête relue. Rouge : corrige, et relis.
 - Après le merge, vérifie que l'issue du `Closes #n` est fermée.
