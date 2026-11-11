@@ -1,6 +1,6 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
 // gérant account, some stock, a few announcements, the old app's suppliers and
-// a purchase and a sale waiting for the till. Runs on preview builds
+// purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
 //
@@ -54,14 +54,17 @@ const ANNOUNCEMENTS = [
   },
 ];
 
-// One purchase and one sale of several lines whose septims are not in the
-// till yet, to try « Septims pris / déposés » on a whole entry:
-// [kind, counterparty, [product name, quantity, septims]].
-const PENDING = [
-  ["rachat", "Faendal", [["Cuir", 10, 30], ["Loup", 2, 8], ["Venaison", 20, 20]]],
-  ["vente", "Taverne de la Jument pie", [["Venaison", 30, 45], ["Viande d'horqueur", 10, 15]]],
+// Purchases and sales of several lines, some whose septims are not in the
+// till yet, to see entries as blocks and try « … septims pris / déposés »:
+// [kind, counterparty, waiting for the till, [product name, quantity, septims]].
+const SAMPLES = [
+  ["vente", "Jarl de Vendeaume", false, [["Flèches d'acier", 50, 25], ["Venaison", 10, 15]]],
+  ["rachat", "Markir", false, [["Biche", 3, 6], ["Renard", 4, 4], ["Ours", 1, 5]]],
+  ["vente", "Do'Dran", true, [["Cuir", 5, 25], ["Kit débutant", 1, 30]]],
+  ["rachat", "Faendal", true, [["Cuir", 10, 30], ["Loup", 2, 8], ["Venaison", 20, 20]]],
+  ["vente", "Taverne de la Jument pie", true, [["Venaison", 30, 45], ["Viande d'horqueur", 10, 15]]],
 ];
-const PENDING_NOTE = "Exemple en attente de la caisse (preview)";
+const SAMPLE_NOTE = "Exemple d'écriture groupée (preview)";
 
 // The old app's suppliers, with what they sell: [product name, septims, units].
 const SUPPLIERS = [
@@ -137,13 +140,16 @@ try {
       console.log("Stock de départ ajouté.");
     }
 
-    const [{ waiting }] = await tx`select count(*)::int as waiting from transactions where notes = ${PENDING_NOTE}`;
+    // Again on each build once every sample waiting for the till has been settled or cancelled.
+    const [{ waiting }] = await tx`
+      select count(*)::int as waiting from transactions
+      where notes = ${SAMPLE_NOTE} and till_pending and cancelled_at is null`;
     if (waiting === 0) {
       // Each entry at its own instant; the lines of one entry share theirs.
       // Mirrors recordTransaction and moveStock (app/(comptoir)/achat-vente/actions.ts,
       // lib/products.ts): follow them if they change.
-      for (const [i, [kind, counterparty, lines]] of PENDING.entries()) {
-        const ago = `${PENDING.length - i} minutes`;
+      for (const [i, [kind, counterparty, pending, lines]] of SAMPLES.entries()) {
+        const at = sql`now() - ${`${(SAMPLES.length - i) * 7} minutes`}::interval`;
         for (const [name, quantity, amount] of lines) {
           const delta = kind === "rachat" ? quantity : -quantity;
           const [product] = await tx`
@@ -152,16 +158,15 @@ try {
           if (!product) continue;
           const [line] = await tx`
             insert into transactions (kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id, created_at)
-            values (${kind}, ${product.id}, ${name}, ${quantity}, ${amount}, ${counterparty}, ${PENDING_NOTE}, true, ${memberId},
-              date_trunc('minute', now()) - ${ago}::interval)
+            values (${kind}, ${product.id}, ${name}, ${quantity}, ${amount}, ${counterparty}, ${SAMPLE_NOTE}, ${pending}, ${memberId}, ${at})
             returning id`;
           await tx`
             insert into stock_movements (product_id, delta, stock_after, member_id, reason, transaction_id, created_at)
             values (${product.id}, ${delta}, ${product.stock}, ${memberId},
-              ${`${kind === "rachat" ? "Achat" : "Vente"} · ${counterparty}`}, ${line.id}, date_trunc('minute', now()) - ${ago}::interval)`;
+              ${`${kind === "rachat" ? "Achat" : "Vente"} · ${counterparty}`}, ${line.id}, ${at})`;
         }
       }
-      console.log("Achat et vente en attente de la caisse ajoutés.");
+      console.log("Achats et ventes groupés d'exemple ajoutés.");
     }
   });
 } finally {
