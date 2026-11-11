@@ -13,12 +13,13 @@ export default async function globalSetup() {
   }
   const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {
+    // The gérant is the super admin, as the first gérant of a real comptoir.
     // Members and everything they recorded go; the seeded price grid stays.
     await sql`truncate members restart identity cascade`;
     await sql`update products set stock = 0`;
     await sql`
-      insert into members (username, name, password_hash, role)
-      values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant')`;
+      insert into members (username, name, password_hash, role, super_admin)
+      values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant', true)`;
   } finally {
     await sql.end();
   }
