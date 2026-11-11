@@ -1,5 +1,6 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account, some stock, a few announcements and the old app's suppliers. Runs on preview builds
+// gérant account, some stock, a few announcements, the old app's suppliers and
+// a purchase and a sale waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
 //
@@ -52,6 +53,15 @@ const ANNOUNCEMENTS = [
     pin: "couteau",
   },
 ];
+
+// One purchase and one sale of several lines whose septims are not in the
+// till yet, to try « Septims pris / déposés » on a whole entry:
+// [kind, counterparty, [product name, quantity, septims]].
+const PENDING = [
+  ["rachat", "Faendal", [["Cuir", 10, 30], ["Loup", 2, 8], ["Venaison", 20, 20]]],
+  ["vente", "Taverne de la Jument pie", [["Venaison", 30, 45], ["Viande d'horqueur", 10, 15]]],
+];
+const PENDING_NOTE = "Exemple en attente de la caisse (preview)";
 
 // The old app's suppliers, with what they sell: [product name, septims, units].
 const SUPPLIERS = [
@@ -114,17 +124,45 @@ try {
     }
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;
-    if (moved > 0) return;
-    for (const [name, quantity] of Object.entries(STOCK)) {
-      const [product] = await tx`
-        update products set stock = stock + ${quantity}
-        where name = ${name} returning id, stock`;
-      if (!product) continue;
-      await tx`
-        insert into stock_movements (product_id, delta, stock_after, member_id, reason)
-        values (${product.id}, ${quantity}, ${product.stock}, ${memberId}, 'Stock de départ (preview)')`;
+    if (moved === 0) {
+      for (const [name, quantity] of Object.entries(STOCK)) {
+        const [product] = await tx`
+          update products set stock = stock + ${quantity}
+          where name = ${name} returning id, stock`;
+        if (!product) continue;
+        await tx`
+          insert into stock_movements (product_id, delta, stock_after, member_id, reason)
+          values (${product.id}, ${quantity}, ${product.stock}, ${memberId}, 'Stock de départ (preview)')`;
+      }
+      console.log("Stock de départ ajouté.");
     }
-    console.log("Stock de départ ajouté.");
+
+    const [{ waiting }] = await tx`select count(*)::int as waiting from transactions where notes = ${PENDING_NOTE}`;
+    if (waiting === 0) {
+      // Each entry at its own instant; the lines of one entry share theirs.
+      // Mirrors recordTransaction and moveStock (app/(comptoir)/achat-vente/actions.ts,
+      // lib/products.ts): follow them if they change.
+      for (const [i, [kind, counterparty, lines]] of PENDING.entries()) {
+        const ago = `${PENDING.length - i} minutes`;
+        for (const [name, quantity, amount] of lines) {
+          const delta = kind === "rachat" ? quantity : -quantity;
+          const [product] = await tx`
+            update products set stock = stock + ${delta}
+            where name = ${name} and stock + ${delta} >= 0 returning id, stock`;
+          if (!product) continue;
+          const [line] = await tx`
+            insert into transactions (kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id, created_at)
+            values (${kind}, ${product.id}, ${name}, ${quantity}, ${amount}, ${counterparty}, ${PENDING_NOTE}, true, ${memberId},
+              date_trunc('minute', now()) - ${ago}::interval)
+            returning id`;
+          await tx`
+            insert into stock_movements (product_id, delta, stock_after, member_id, reason, transaction_id, created_at)
+            values (${product.id}, ${delta}, ${product.stock}, ${memberId},
+              ${`${kind === "rachat" ? "Achat" : "Vente"} · ${counterparty}`}, ${line.id}, date_trunc('minute', now()) - ${ago}::interval)`;
+        }
+      }
+      console.log("Achat et vente en attente de la caisse ajoutés.");
+    }
   });
 } finally {
   await sql.end();
