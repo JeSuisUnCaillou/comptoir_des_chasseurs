@@ -1483,3 +1483,17 @@ tr.entry.fresh td {
   white-space: nowrap;
   border: 0;
 }
+
+/* The choice of shops, on / */
+.shop-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.shop-link {
+  width: 100%;
+  justify-content: flex-start;
+}

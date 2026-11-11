@@ -6,7 +6,7 @@ import {
   saveOffer,
   saveSupplier,
   type SupplierFormState,
-} from "@/app/(comptoir)/fournisseurs/actions";
+} from "@/app/[boutique]/fournisseurs/actions";
 import type { Supplier } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
 

@@ -1,5 +1,5 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, a few announcements, the old app's suppliers and
+// gérant account and a second gérant, some stock, a second shop (La Taverne du Port), a few announcements, the old app's suppliers and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -71,6 +71,21 @@ const SAMPLES = [
 ];
 const SAMPLE_NOTE = "Exemple d'écriture groupée (preview)";
 
+// A second shop, with a few goods of its own and a parchment.
+const TAVERN = {
+  name: "La Taverne du Port",
+  slug: "taverne-du-port",
+  products: [
+    ["Hydromel Black-Briar", "autre", 24, 8],
+    ["Ragoût de venaison", "viande", 10, 5],
+    ["Pain de miel", "autre", 30, 2],
+  ],
+  announcement: {
+    title: "Soirée des bardes",
+    body: "Vendredi soir, hydromel à moitié prix pour qui chante.",
+  },
+};
+
 // The old app's suppliers, with what they sell: [product name, septims, units].
 const SUPPLIERS = [
   {
@@ -127,7 +142,7 @@ try {
       select 1, id, 'gerant' from members where username in (${GERANT.username}, ${SECOND_GERANT.username})
       on conflict do nothing`;
 
-    const [{ posted }] = await tx`select count(*)::int as posted from announcements`;
+    const [{ posted }] = await tx`select count(*)::int as posted from announcements where shop_id = 1`;
     if (posted === 0) {
       for (const [i, { title, body, pin }] of ANNOUNCEMENTS.entries()) {
         await tx`
@@ -137,7 +152,7 @@ try {
       console.log("Annonces d'exemple affichées.");
     }
 
-    const [{ listed }] = await tx`select count(*)::int as listed from suppliers`;
+    const [{ listed }] = await tx`select count(*)::int as listed from suppliers where shop_id = 1`;
     if (listed === 0) {
       for (const { name, place, notes, offers } of SUPPLIERS) {
         const [{ id }] = await tx`
@@ -146,7 +161,7 @@ try {
           // Only merchandise this database knows.
           await tx`
             insert into supplier_offers (supplier_id, product_id, price, qty)
-            select ${id}, id, ${price}, ${qty} from products where name = ${product}`;
+            select ${id}, id, ${price}, ${qty} from products where shop_id = 1 and name = ${product}`;
         }
       }
       console.log("Fournisseurs d'exemple ajoutés.");
@@ -157,7 +172,7 @@ try {
       for (const [name, quantity] of Object.entries(STOCK)) {
         const [product] = await tx`
           update products set stock = stock + ${quantity}
-          where name = ${name} returning id, stock`;
+          where shop_id = 1 and name = ${name} returning id, stock`;
         if (!product) continue;
         await tx`
           insert into stock_movements (product_id, delta, stock_after, member_id, reason)
@@ -172,7 +187,7 @@ try {
       where notes = ${SAMPLE_NOTE} and till_pending and cancelled_at is null`;
     if (waiting === 0) {
       // Each entry at its own instant; the lines of one entry share theirs.
-      // Mirrors recordTransaction and moveStock (app/(comptoir)/achat-vente/actions.ts,
+      // Mirrors recordTransaction and moveStock (app/[boutique]/achat-vente/actions.ts,
       // lib/products.ts): follow them if they change.
       for (const [i, [kind, counterparty, pending, lines]] of SAMPLES.entries()) {
         const at = sql`now() - ${`${(SAMPLES.length - i) * 7} minutes`}::interval`;
@@ -180,7 +195,7 @@ try {
           const delta = kind === "rachat" ? quantity : -quantity;
           const [product] = await tx`
             update products set stock = stock + ${delta}
-            where name = ${name} and stock + ${delta} >= 0 returning id, stock`;
+            where shop_id = 1 and name = ${name} and stock + ${delta} >= 0 returning id, stock`;
           if (!product) continue;
           const [line] = await tx`
             insert into transactions (kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id, created_at)
@@ -193,6 +208,28 @@ try {
         }
       }
       console.log("Achats et ventes groupés d'exemple ajoutés.");
+    }
+
+    // A second shop, to see shops side by side: Aela is gérante of both, so
+    // she chooses between them; Lomone, super admin, enters both.
+    const [tavern] = await tx`
+      insert into shops (name, slug) values (${TAVERN.name}, ${TAVERN.slug})
+      on conflict (slug) do nothing
+      returning id`;
+    if (tavern) {
+      await tx`
+        insert into shop_members (shop_id, member_id, role)
+        select ${tavern.id}, id, 'gerant' from members where username = ${SECOND_GERANT.username}`;
+      for (const [name, category, stock, sell] of TAVERN.products) {
+        await tx`
+          insert into products (shop_id, name, category, stock, sell_price)
+          values (${tavern.id}, ${name}, ${category}, ${stock}, ${sell})`;
+      }
+      const [{ id: aela }] = await tx`select id from members where username = ${SECOND_GERANT.username}`;
+      await tx`
+        insert into announcements (shop_id, title, body, pin, member_id)
+        values (${tavern.id}, ${TAVERN.announcement.title}, ${TAVERN.announcement.body}, 'viande', ${aela})`;
+      console.log("Boutique d'exemple « La Taverne du Port » créée.");
     }
   });
 } finally {

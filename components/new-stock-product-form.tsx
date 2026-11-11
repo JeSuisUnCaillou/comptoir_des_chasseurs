@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useId } from "react";
-import { createAndStock, type CreateState } from "@/app/(comptoir)/inventaire/actions";
+import { createAndStock, type CreateState } from "@/app/[boutique]/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";

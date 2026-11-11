@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { takeDownAnnouncement } from "@/app/(comptoir)/annonces/actions";
+import { takeDownAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { PINS } from "@/lib/announcement-rules";
 import { canActOn } from "@/lib/policies";

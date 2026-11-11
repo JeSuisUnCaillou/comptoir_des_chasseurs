@@ -7,9 +7,12 @@ export const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
 export const GERANT = { username: "lomone", password: "lomone-secret", name: "Lomone" };
 
-/** Signs in through the real sign-in form. */
+/** Address of the comptoir, the first shop, which the tests drive. */
+export const COMPTOIR = "/le-comptoir-des-chasseurs";
+
+/** Signs in through the real sign-in form, into the comptoir. */
 export async function loginAs(page: Page, username: string, password: string) {
-  await page.goto("/connexion");
+  await page.goto(`/connexion?suite=${encodeURIComponent(COMPTOIR)}`);
   await page.getByLabel("Identifiant").fill(username);
   await page.getByLabel("Mot de passe").fill(password);
   await page.getByRole("button", { name: "Entrer au comptoir" }).click();

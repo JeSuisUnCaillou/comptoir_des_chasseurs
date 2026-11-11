@@ -3,6 +3,7 @@ import postgres from "postgres";
 import {
   ALERT,
   createMember,
+  COMPTOIR,
   createProduct,
   createTransactions,
   loginAs,
@@ -217,7 +218,7 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
 
 test("le grand livre met l'achat et la vente en avant, pas le mouvement de caisse", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "brand-shei");
-  await page.goto("/");
+  await page.goto(COMPTOIR);
   await expect(page.getByRole("link", { name: "Nouvel achat" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Nouvelle vente" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Mouvement de caisse" })).not.toHaveClass(/btn-primary/);
@@ -329,7 +330,7 @@ test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page,
   // deltas: a purchase they record meanwhile only takes a few septims off.
   const { username } = await newEmployeePage(browser, "brynjolf");
   const till = async () => {
-    await page.goto("/");
+    await page.goto(COMPTOIR);
     const read = async (id: string) =>
       Number(((await page.getByTestId(id).locator(".stat-value").textContent()) ?? "").replace(/\D/g, ""));
     return { day: await read("caisse-jour"), week: await read("caisse-semaine"), all: await read("caisse-totale") };
@@ -443,7 +444,7 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   // Amounts far above what other tests write, so their lines cannot blur the deltas.
   const { username } = await newEmployeePage(browser, "hadvar");
   const tiles = async () => {
-    await page.goto("/");
+    await page.goto(COMPTOIR);
     const read = async (id: string) =>
       septimsValue((await page.getByTestId(id).locator(".stat-value").textContent())!);
     return {

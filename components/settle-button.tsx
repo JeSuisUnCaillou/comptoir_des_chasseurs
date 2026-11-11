@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { settleTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { settleTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import { septims } from "@/lib/pricing";
 
 /** The lines a click settles together: those of one entry, see `pendingEntryColumns`. */

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { loginAsGerant } from "./helpers";
+import { COMPTOIR, loginAsGerant } from "./helpers";
 
 /**
  * Holds every request for `path` made from now on until the returned function
@@ -26,7 +26,7 @@ test("une page déjà préchargée montre tout de suite le chargement", async ({
   await loginAsGerant(page);
   // Let the menu links prefetch, as they do while a member reads the page.
   await page.waitForLoadState("networkidle");
-  const release = await holdRequests(page, "/inventaire");
+  const release = await holdRequests(page, `${COMPTOIR}/inventaire`);
 
   await menuLink(page, "Inventaire").click();
   await expect(page.getByRole("status")).toContainText("Chargement…");
@@ -37,7 +37,7 @@ test("une page déjà préchargée montre tout de suite le chargement", async ({
 });
 
 test("un lien cliqué avant son préchargement montre qu'il travaille", async ({ page }) => {
-  const release = await holdRequests(page, "/inventaire");
+  const release = await holdRequests(page, `${COMPTOIR}/inventaire`);
   await loginAsGerant(page);
 
   const link = menuLink(page, "Inventaire");
@@ -52,7 +52,7 @@ test("un lien cliqué avant son préchargement montre qu'il travaille", async ({
 test("les pages n'affichent plus la mention « Registres » en tête", async ({ page }) => {
   await loginAsGerant(page);
   for (const [path, title] of [
-    ["/", "Grand livre"],
+    [COMPTOIR, "Grand livre"],
     ["/inventaire", "Inventaire"],
     ["/marchandises", "Gérer les tarifs"],
     ["/membres", "Membres"],

@@ -4,7 +4,8 @@ import { ALERT, GERANT, createMember, loginAs, loginAsGerant, uniqueName } from 
 test("un visiteur non connecté arrive sur la page de connexion", async ({ page }) => {
   await page.goto("/inventaire");
 
-  await expect(page).toHaveURL(/\/connexion\?suite=%2Finventaire$/);
+  // The comptoir's old address leads to its page in the shop.
+  await expect(page).toHaveURL(/\/connexion\?suite=%2Fle-comptoir-des-chasseurs%2Finventaire$/);
   await expect(page.getByRole("heading", { name: /Comptoir\s*de Chasse/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
 });
@@ -36,7 +37,7 @@ test("un mauvais mot de passe garde la page à rejoindre", async ({ page }) => {
 });
 
 for (const suite of ["//example.com", "https://example.com/", "/\\example.com", "/.//example.com", "/a/..//example.com"]) {
-  test(`un lien de connexion vers un autre site (${suite}) ramène au Grand livre`, async ({
+  test(`un lien de connexion vers un autre site (${suite}) ramène à ses boutiques`, async ({
     page,
   }) => {
     await page.goto(`/connexion?suite=${encodeURIComponent(suite)}`);
@@ -44,13 +45,13 @@ for (const suite of ["//example.com", "https://example.com/", "/\\example.com", 
     await page.getByLabel("Mot de passe").fill(GERANT.password);
     await page.getByRole("button", { name: "Entrer au comptoir" }).click();
 
-    await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe("/");
+    // The super admin's own shops: the comptoir, or the choice of shops when tests made others.
+    const home = /^http:\/\/localhost:\d+\/(le-comptoir-des-chasseurs)?$/;
+    await expect(page).toHaveURL(home);
 
     // Already signed in, the same link redirects straight away.
     await page.goto(`/connexion?suite=${encodeURIComponent(suite)}`);
-    await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe("/");
+    await expect(page).toHaveURL(home);
   });
 }
 

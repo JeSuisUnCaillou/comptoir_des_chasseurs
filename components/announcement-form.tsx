@@ -2,7 +2,7 @@
 
 import { Megaphone } from "lucide-react";
 import { useActionState } from "react";
-import { postAnnouncement } from "@/app/(comptoir)/annonces/actions";
+import { postAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { BODY_MAX, PINS, TITLE_MAX } from "@/lib/announcement-rules";
 import { keepValues } from "@/components/keep-values";

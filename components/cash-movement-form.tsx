@@ -2,7 +2,7 @@
 
 import { ArrowDownToLine, ArrowUpFromLine, Plus } from "lucide-react";
 import { useActionState, useState } from "react";
-import { recordCashMovement, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { recordCashMovement, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import { keepValues } from "@/components/keep-values";
 import { septims } from "@/lib/pricing";
 import { signedAmount } from "@/lib/transaction-kinds";

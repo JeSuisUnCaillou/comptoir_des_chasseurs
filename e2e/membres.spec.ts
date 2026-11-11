@@ -19,7 +19,7 @@ test("un gérant crée un compte employé, qui peut entrer", async ({ page, brow
   await expect(employee.getByTestId("member-name")).toHaveText("Einar le Chasseur");
   await expect(employee.getByRole("link", { name: "Membres" })).toHaveCount(0);
   await employee.goto("/membres");
-  await expect(employee).toHaveURL(/\/$/);
+  await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 });
 
 test("un identifiant déjà pris est refusé", async ({ page }) => {

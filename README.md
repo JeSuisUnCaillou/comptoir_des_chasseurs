@@ -38,7 +38,6 @@ registre, les annonces, les fournisseurs et les réglages appartiennent chacun �
 une boutique (`shop_id`), et chaque page ou action ne lit et n'écrit que ceux de
 la boutique visitée (`currentShop`, `lib/shops.ts`). La migration des boutiques
 a rangé tout l'existant dans la première, « Le Comptoir Des Chasseurs »
-(`le-comptoir-des-chasseurs`), la seule que l'app montre pour l'instant
 ([#113](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues/113)).
 
 Après une modification du schéma :
@@ -55,7 +54,7 @@ commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
-un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
+un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, une seconde boutique, « La Taverne du Port » (`/taverne-du-port`, Aela gérante, quelques marchandises et une annonce) si elle manque, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
 
@@ -106,6 +105,15 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   protection sur `main` exigeant le check « Build et tests e2e ».
 
 ## Pages
+
+Chaque boutique a ses pages sous son adresse : `/<slug>` pour son Grand livre,
+`/<slug>/inventaire`, `/<slug>/achat-vente`… (`lib/paths.ts`). Le comptoir est
+`/le-comptoir-des-chasseurs` ; ses anciennes adresses (`/inventaire`,
+`/achat-vente/vente`…) y mènent toujours (`next.config.ts`). Une adresse qui
+ne nomme aucune boutique n'existe pas. La racine `/` ouvre la boutique du
+membre s'il n'en a qu'une, et sinon la liste de ses boutiques (« Mes
+boutiques », avec son rôle dans chacune) ; « Changer de boutique », en haut
+des pages, y ramène. Le nom de la boutique est en haut de chaque page.
 
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
@@ -237,10 +245,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   aucun autre gérant ne peut le rétrograder, le désactiver ni changer son mot
   de passe. Dans une base qui existait avant ce rôle, la migration le donne au
   compte `jesuisuncaillou` (le propriétaire), s'il existe.
-- Un visiteur non connecté qui ouvre une page du comptoir passe par la page
-  de connexion, puis revient sur cette page, avec ses filtres (paramètre
-  `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;
-  tout autre lien ramène au Grand livre.
+- Un visiteur non connecté qui ouvre une page d'une boutique passe par la
+  page de connexion, puis revient sur cette page, avec ses filtres (paramètre
+  `suite` de `/connexion`). Seul un chemin de l'app elle-même est suivi ;
+  tout autre lien ramène à `/`. Un compte qui ouvre une boutique où il n'a
+  pas de rôle revient à `/` ; un employé qui ouvre une page de gérant revient
+  au Grand livre de sa boutique.
 - Le gérant crée les comptes des **employés** de sa boutique (identifiant +
   mot de passe provisoire) depuis la page Membres, qui ne montre que les
   membres de la boutique ; il peut réinitialiser un mot de passe ou

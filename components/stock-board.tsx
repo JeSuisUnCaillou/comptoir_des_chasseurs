@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
-import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
+import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";

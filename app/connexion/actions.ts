@@ -11,7 +11,7 @@ import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { endSession, startSession } from "@/lib/auth/session";
 import { text } from "@/lib/forms";
 import { accountByUsername, createFirstGerant as createFirst, hasActiveShop } from "@/lib/members";
-import { currentShop } from "@/lib/shops";
+import { firstShop } from "@/lib/shops";
 
 export type AuthState = { error: string } | null;
 
@@ -45,7 +45,7 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
   }
   const passwordHash = await hashPassword(password);
 
-  const created = await createFirst((await currentShop()).id, { username, name, passwordHash });
+  const created = await createFirst((await firstShop()).id, { username, name, passwordHash });
   if (!created) return { error: "Le comptoir a déjà un gérant. Connecte-toi." };
   await startSession(created);
   redirect("/");

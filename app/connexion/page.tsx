@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
-import { authConfigured, currentMember } from "@/lib/auth/session";
-import { accountCount } from "@/lib/members";
+import { authConfigured, currentAccount } from "@/lib/auth/session";
+import { accountCount, hasActiveShop } from "@/lib/members";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,10 @@ export default async function Connexion({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const returnPath = safeReturnPath((await searchParams)[RETURN_PARAM]);
-  if (await currentMember()) redirect(returnPath);
+  // Signed in and able to enter a shop: nothing to do here. An account
+  // deactivated everywhere sees the form, which refuses it.
+  const account = await currentAccount();
+  if (account && (account.superAdmin || (await hasActiveShop(account.id)))) redirect(returnPath);
   const total = await accountCount();
 
   return (
