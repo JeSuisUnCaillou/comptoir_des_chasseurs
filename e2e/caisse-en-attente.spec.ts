@@ -114,6 +114,47 @@ test("l'activité d'un membre montre sa vente en attente de la caisse, hors de s
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
 });
 
+test("depuis sa page d'activité, l'auteur dit que les septims sont déposés ou pris", async ({ page, browser }) => {
+  const product = uniqueName("Peau de horker");
+  await createProduct(product, { stock: 4, buyPrice: 2, sellPrice: 5 });
+  const { page: employee } = await newEmployeePage(browser, "jordis");
+  for (const [kind, form, box] of [
+    ["vente", "Inscrire une vente", "Je n'ai pas encore déposé les septims dans la caisse"],
+    ["achat", "Inscrire un achat", "Je n'ai pas encore pris les septims dans la caisse"],
+  ] as const) {
+    await employee.goto(`/achat-vente/${kind}`);
+    const region = employee.getByRole("region", { name: form });
+    await pickProduct(region, product);
+    await region.getByLabel("Quantité").fill("2");
+    await region.getByLabel(box).check();
+    await region.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
+    await expect(employee.getByRole("status").filter({ hasText: product })).toContainText("en attente de la caisse");
+  }
+
+  // Mon activité, reached by the member's name at the top right.
+  await employee.getByTestId("member-name").click();
+  await expect(employee).toHaveURL(/\/membres\/\d+$/);
+  const memberPath = new URL(employee.url()).pathname;
+  const rows = employee.getByTestId("activite").getByRole("row").filter({ hasText: product });
+  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(2);
+  await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
+
+  employee.once("dialog", (dialog) => dialog.accept());
+  await rows.getByRole("button", { name: /déposés dans la caisse/ }).click();
+  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(1);
+  await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+10 septims");
+
+  // A gérant settles the purchase from the same page.
+  await loginAsGerant(page);
+  await page.goto(memberPath);
+  const gerantRows = page.getByTestId("activite").getByRole("row").filter({ hasText: product });
+  page.once("dialog", (dialog) => dialog.accept());
+  await gerantRows.getByRole("button", { name: /pris dans la caisse/ }).click();
+  await expect(gerantRows.filter({ hasText: "En attente de la caisse" })).toHaveCount(0);
+  await expect(page.getByTestId("total-achats").locator(".stat-value")).toHaveText("−4 septims");
+  await expect(gerantRows.getByRole("button", { name: /dans la caisse/ })).toHaveCount(0);
+});
+
 test("le grand livre et la page Mouvement de caisse ne comptent une vente en attente qu'une fois les septims déposés", async ({ browser }) => {
   // An amount far above what other tests write, so their lines cannot blur the deltas.
   const label = uniqueName("Couronne de jarl");

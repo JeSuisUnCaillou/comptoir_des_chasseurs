@@ -1,4 +1,5 @@
 import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
+import { SettleButton } from "@/components/settle-button";
 import type { ActivityLine } from "@/lib/activity";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -9,8 +10,20 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
 });
 
-/** A member's sales, buybacks, cash movements and hand stock movements, in one list. */
-export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: string }) {
+/**
+ * A member's sales, buybacks, cash movements and hand stock movements, in one list.
+ * With `canSettle` (a gérant, or the member themself), a line waiting for the
+ * till gets the button saying its septims are now in it, or out of it.
+ */
+export function ActivityTable({
+  lines,
+  empty,
+  canSettle = false,
+}: {
+  lines: ActivityLine[];
+  empty: string;
+  canSettle?: boolean;
+}) {
   if (lines.length === 0) return <p className="muted">{empty}</p>;
   return (
     <div className="table-wrap">
@@ -60,8 +73,10 @@ export function ActivityTable({ lines, empty }: { lines: ActivityLine[]; empty: 
                 <td>{l.detail ?? "—"}</td>
                 <td className="small">{l.notes ?? ""}</td>
                 <td>
-                  {cancelled && (
+                  {cancelled ? (
                     <span className="small muted">Annulée{l.cancelledBy ? ` par ${l.cancelledBy}` : ""}</span>
+                  ) : (
+                    waiting && canSettle && <SettleButton id={l.id} sale={kind === "vente"} />
                   )}
                 </td>
               </tr>
