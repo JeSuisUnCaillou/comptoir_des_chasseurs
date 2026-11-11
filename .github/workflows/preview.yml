@@ -90,9 +90,10 @@ jobs:
               `mettent pas à jour : relancer le workflow « Preview » sur la branche.\n${end}`;
             const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
             const current = pr.body ?? "";
-            const i = current.indexOf(start);
-            const j = current.indexOf(end, i);
-            const body = i >= 0 && j >= 0
-              ? current.slice(0, i) + block + current.slice(j + end.length)
+            // Markers count only on their own line (CRLF too, as GitHub's editor
+            // writes), so a description that quotes them in its text is kept.
+            const previous = /^<!-- preview-vercel -->\r?$[\s\S]*?^<!-- \/preview-vercel -->\r?$/m;
+            const body = previous.test(current)
+              ? current.replace(previous, () => block)
               : `${current.trimEnd()}\n\n${block}`;
             await github.rest.pulls.update({ owner, repo, pull_number: number, body });
