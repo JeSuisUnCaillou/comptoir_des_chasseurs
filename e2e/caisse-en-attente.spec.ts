@@ -217,3 +217,50 @@ test("le grand livre et la page Mouvement de caisse ne comptent une vente en att
   expect(settled.all - waiting.all).toBeGreaterThan(900_000);
   expect(settled.page - waiting.page).toBeGreaterThan(900_000);
 });
+
+test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bouton unique, même une ligne annulée", async ({ browser }) => {
+  const fur = uniqueName("Fourrure de loup");
+  const tusk = uniqueName("Défense de horqueur");
+  const salt = uniqueName("Sel de cuisine");
+  await createProduct(fur, { stock: 5, sellPrice: 4 });
+  await createProduct(tusk, { stock: 5, sellPrice: 7 });
+  await createProduct(salt, { stock: 5, sellPrice: 1 });
+  const { page, username } = await newEmployeePage(browser, "brelyna");
+
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form, fur);
+  for (const [n, product] of [[2, tusk], [3, salt]] as const) {
+    await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+    await pickProduct(form.getByRole("group", { name: `Marchandise ${n}`, exact: true }), product);
+  }
+  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: fur })).toContainText("en attente de la caisse");
+
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  const memberPath = new URL(page.url()).pathname;
+  const sale = page.getByTestId("activite").getByRole("row").filter({ hasText: /Fourrure de loup|Défense de horqueur|Sel de cuisine/ });
+  await expect(sale).toHaveCount(3);
+  await expect(sale.first()).toHaveClass(/entry-first/);
+  await expect(sale.nth(1)).toHaveClass(/entry-next/);
+  await expect(sale.last()).toHaveClass(/entry-last/);
+  const settle = page.getByTestId("activite").getByRole("button", { name: /déposés? dans la caisse/ });
+  await expect(settle).toHaveCount(1);
+  await expect(settle).toHaveText("12 septims déposés");
+  await expect(sale.first().getByRole("button", { name: /dans la caisse/ })).toHaveCount(1);
+
+  // The line on top is cancelled: the button moves to the next line, with what is left.
+  await page.goto("/achat-vente");
+  const top = page.getByTestId("registre").getByRole("row").filter({ hasText: username }).first();
+  await expect(top).toContainText(salt);
+  page.once("dialog", (dialog) => dialog.accept());
+  await top.getByRole("button", { name: /Annuler/ }).click();
+  await expect(top).toContainText("Annulée");
+
+  await page.goto(memberPath);
+  await expect(settle).toHaveCount(1);
+  await expect(settle).toHaveText("11 septims déposés");
+  await expect(sale.nth(1).getByRole("button", { name: /dans la caisse/ })).toHaveCount(1);
+});
