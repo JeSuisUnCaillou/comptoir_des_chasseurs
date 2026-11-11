@@ -502,6 +502,15 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   const total = form.getByTestId("total");
   await expect(total).toHaveText("Total de la vente : 0 septim");
+  // The total sits beside "Ajouter une marchandise", above the client's name.
+  const add = (await form.getByRole("button", { name: "Ajouter une marchandise" }).boundingBox())!;
+  const sum = (await total.boundingBox())!;
+  const client = (await form.getByLabel("Nom du client / vendeur RP (facultatif)").boundingBox())!;
+  expect(Math.abs(sum.y + sum.height / 2 - (add.y + add.height / 2))).toBeLessThan(4);
+  expect(sum.x).toBeGreaterThan(add.x + add.width);
+  // Right-aligned, on the right edge of the fields.
+  expect(Math.abs(sum.x + sum.width - (client.x + client.width))).toBeLessThan(2);
+  expect(sum.y + sum.height).toBeLessThan(client.y);
 
   await pickProduct(line(form, 1), hide);
   await line(form, 1).getByLabel("Quantité").fill("2");

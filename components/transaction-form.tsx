@@ -230,7 +230,7 @@ export function TransactionForm({
           );
         })}
       </div>
-      <p>
+      <div className="tx-total-row">
         <button
           type="button"
           className="btn btn-small"
@@ -238,7 +238,10 @@ export function TransactionForm({
         >
           <Plus size={14} /> Ajouter une marchandise
         </button>
-      </p>
+        <p className="tx-total" data-testid="total" aria-live="polite">
+          {sale ? "Total de la vente" : "Total de l'achat"} : <strong>{septims(total)}</strong>
+        </p>
+      </div>
       <div className="tx-grid">
         {uniqueCitizenProducts.length > 0 && (
           <div className="field full">
@@ -281,9 +284,6 @@ export function TransactionForm({
         </p>
       )}
       <p className="small muted">Le montant de chaque marchandise est le total pour sa quantité.</p>
-      <p className="tx-total" data-testid="total" aria-live="polite">
-        {sale ? "Total de la vente" : "Total de l'achat"} : <strong>{septims(total)}</strong>
-      </p>
       <button className="btn btn-primary" type="submit" disabled={pending || short.length > 0}>
         <Plus size={16} /> {submitLabel}
       </button>

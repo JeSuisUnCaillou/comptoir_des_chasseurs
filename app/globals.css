@@ -915,8 +915,19 @@ tr.cancelled td:last-child {
   align-items: center;
 }
 
+/* "Ajouter une marchandise" on the left, the running total on the right. */
+.tx-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+
 .tx-total {
   font-size: 1.1rem;
+  margin: 0;
 }
 
 .tariff-hint {
