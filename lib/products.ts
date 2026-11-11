@@ -60,13 +60,14 @@ export async function movementCount(shopId: number, filter: MovementFilter = {})
 }
 
 /**
- * The same text for the movements one member wrote together: one database
- * transaction (a multi-line Mouvement de stock, or the lines of a sale), so
- * the same instant. They show as one entry.
+ * The same text for the hand movements one member wrote together: one
+ * Mouvement de stock, written in one database transaction, so at the same
+ * instant. They show as one entry. Null for the movement of a register line
+ * (a sale, a buyback, a cancellation), which stays a row of its own.
  */
 export function movementEntryKey() {
   const m = schema.stockMovements;
-  return sql<string>`(${m.memberId}, ${m.createdAt})::text`;
+  return sql<string | null>`case when ${m.transactionId} is null then (${m.memberId}, ${m.createdAt})::text end`;
 }
 
 export async function recentMovements(
