@@ -28,19 +28,13 @@ quelque chose change, on met à jour son propriétaire, et lui seul.
 | Modèle de données | `lib/db/schema.ts`, migrations dans `drizzle/` |
 | Reprise des données de l'ancienne app (`scripts/legacy/`) | `docs/reprise-ancienne-app.md` |
 | Tâches, bugs, idées, leur ordre | [issues GitHub](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues) |
-| Règles pour travailler ici | ce fichier ; les instructions du projet Claude et la mémoire d'équipe y renvoient |
+| Règles pour travailler ici | ce fichier et `.claude/` ; la mémoire d'équipe y renvoie |
 
-Quand le README devient trop long pour un sujet (architecture, glossaire,
-décisions), ce sujet part dans un fichier de `docs/` qui en devient le
-propriétaire, et ce tableau le dit.
-
-Les instructions du projet Claude et la mémoire d'équipe ne portent aucune
-règle que ce fichier ou un skill ne porte pas : le skill `harness-engineer` les
-rapatrie à chaque passe. S'ils divergent, le dépôt gagne.
-
-Un changement qui modifie un comportement, le rôle d'un fichier, le schéma ou
-une convention met à jour le document propriétaire dans le même commit. Un
-document en désaccord avec le code est un bug : corrige celui qui a tort.
+Un changement qui modifie un comportement, le schéma ou une convention met à
+jour le document propriétaire dans le même commit ; un document en désaccord
+avec le code est un bug. La mémoire d'équipe ne
+porte aucune règle que le dépôt ne porte pas ; s'ils divergent, le dépôt
+gagne.
 
 ## Langue
 
@@ -58,10 +52,8 @@ et laisse l'issue ouverte. Après le merge d'une PR qui dit `Closes #n`,
 vérifie que l'issue est bien fermée et, sinon, ferme-la avec un commentaire
 qui renvoie à la PR : le propriétaire ne veut pas d'issues réglées qui
 traînent (2026-11-11). Ce qu'on découvre en route sans le faire part dans une
-nouvelle issue, pas dans un commentaire TODO ; l'étape 8 de la revue en boucle
-pèse ces restes à la fin du travail. Quand tu proposes du travail, dis quelles
-propositions ont déjà une issue, et pèse le gain contre le coût : c'est une
-petite app pour une dizaine de joueurs.
+nouvelle issue, pas dans un commentaire TODO. Pèse le gain contre le coût :
+c'est une petite app pour une dizaine de joueurs.
 
 ## Tests de bout en bout
 
@@ -132,67 +124,64 @@ l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
 
 ## Donner un lien pour essayer
 
-Chaque pull request reçoit une preview Vercel, sur la base des previews
-(commune à toutes les PR, séparée de la prod), construite une seule fois à son
-ouverture (README § Intégration et déploiement continus).
-Les pushs suivants ne la refont pas : quand la branche est prête à essayer et
-que sa tête a changé depuis, relance le workflow « Preview » sur la branche
-(`actions_run_trigger`, `preview.yml`, `ref` = la branche), une fois, pas à
-chaque push : l'offre Hobby compte 100 déploiements par jour. Donne au
-propriétaire le lien de la preview que ce workflow écrit dans la description de
-la PR, entre `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce
-bloc si tu réécris la description), **toujours vers la page précise à essayer** (chemin complet,
-par exemple `…vercel.app/fournisseurs`), jamais la seule racine de la preview.
-Le propriétaire l'a demandé le 2026-11-10 : « donne moi TOUJOURS le lien de la
-page spécifique à tester ». Sur une base de preview vide, la première visite
-crée le compte du gérant.
+Chaque PR reçoit à son ouverture une preview Vercel, sur la base des previews
+(commune à toutes les PR, séparée de la prod). Les pushs suivants ne la
+refont pas : quand la branche est prête à essayer et que sa tête a changé,
+relance une fois le workflow « Preview » (`actions_run_trigger`,
+`preview.yml`, `ref` = la branche) ; l'offre Hobby compte 100 déploiements
+par jour. Le lien est dans la description de la PR, entre
+`<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
+réécris la description).
 
-**Avant de donner le lien, la preview contient de quoi voir la
-fonctionnalité.** Une session ne peut pas écrire dans la base des previews
-(Supabase et `*.vercel.app` sont hors d'atteinte), et les essais des autres PR
-la modifient. Si ce qu'il faut voir demande des données que le seed n'apporte
-pas (une écriture de plusieurs lignes, un achat en attente de la caisse, un
-fournisseur…), étends `scripts/seed-preview.mjs` dans la même PR, sans rien
-écraser, et pour qu'il remette l'exemple quand un essai l'a consommé : sa
-condition compte ce qui reste à voir (des lignes encore en attente), pas ce qui
-a été créé un jour. Puis refais la preview,
-et dis dans le message quelles données regarder (« l'achat de Faendal, trois
-lignes »). Le propriétaire a dû en réclamer le 2026-11-11 : « met moi de la
-data pour tester ta feature ».
+Donne **toujours le lien de la page précise à essayer** (`…vercel.app/fournisseurs`),
+jamais la racine (« donne moi TOUJOURS le lien de la page spécifique à
+tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
+écrire dans la base des previews, donc si la fonctionnalité demande des
+données que le seed n'apporte pas, étends `scripts/seed-preview.mjs` dans la
+même PR, sans rien écraser, avec une condition qui remet l'exemple une fois
+consommé. Dis quelles données regarder (« l'achat de Faendal, trois
+lignes ») ; « met moi de la data pour tester ta feature », 2026-11-11.
 
 ## Ouvrir une pull request pour chaque branche
 
-Dès qu'une branche est poussée, ouvre sa pull request vers `main` sans
-attendre qu'on le demande. Titre et description disent ce qui change et
-pourquoi. Un travail séparé part sur sa propre branche et sa propre PR, même
-si une autre attend.
+Dès qu'une branche est poussée, ouvre sa pull request vers `main`. Titre et
+description disent ce qui change et pourquoi. Un travail séparé part sur sa
+propre branche et sa propre PR.
 
-N'assigne jamais Caillou (`JeSuisUnCaillou`) à une PR ou une issue et ne lui
-demande pas de relecture sur GitHub, même si la session le propose : ça lui
-envoie des e-mails. Il reçoit le lien de la preview dans la discussion.
+Les PR sont ouvertes sous le compte de Caillou : tout commentaire et toute
+assignation lui envoient un e-mail. Ne l'assigne jamais, ne lui demande pas
+de relecture sur GitHub (même si la session le propose), ne commente pas les
+PR sans raison : il reçoit tout dans le fil du projet.
 
 ## Qui merge
 
-Merger sur `main` met en production. Une fois le travail poussé, relis-le avec
-`Skill(skill: "revue-en-boucle")` avant de le rendre ; un hook Stop la lance
-sinon. Claude ne merge seul que la doc, les tests, le harness et les petits
-correctifs ; le reste attend l'accord du propriétaire, donné après qu'il a vu
-la preview. L'étape 7 du skill dit comment.
+Merger sur `main` met en production. Une fois la branche poussée, relis-la
+avec `Skill(skill: "revue-en-boucle")` ; un hook Stop la réclame sinon.
 
-Merge en squash, pour que le titre finisse par le numéro de la PR, `… (#n)`.
+Claude ne merge seul que la doc, les tests, le harness et les petits
+correctifs. Le reste attend que le propriétaire demande le merge, après avoir
+vu la preview (§ Donner un lien pour essayer) : il peut avoir des retours.
+Dans le doute, ça attend. Ses mots, le 2026-11-10 : « les seules choses que
+tu peux merge tout seul sont la doc, les tests, et le harness, ou les petits
+fixs ». Pas d'auto-merge GitHub : il l'a refusé.
+
+Pour merger :
+
+- La fin de la CI ne réveille pas toujours la session. Un tour qui finit en
+  attendant la CI programme un rappel `send_later` de 3 minutes ; à chaque
+  réveil, lis le check « Build et tests e2e » de la tête (`pull_request_read`,
+  `get_check_runs`) ; encore en file ou en cours, reprogramme un rappel de
+  2 minutes. Une PR en conflit avec `main` n'a pas de CI : merge `main`
+  dedans, lance la suite, pousse, et relis (nouvelle tête, nouvelle passe).
+- Vert : `merge_pull_request` en squash (le titre finit par `(#n)`), avec
+  `expectedHeadSha` égal à la tête relue. Rouge : corrige, et relis.
+- Après le merge, vérifie que l'issue du `Closes #n` est fermée.
+- Toujours pas vert 20 minutes après le push : dis au propriétaire quel check
+  bloque.
 
 ## Revue périodique
 
-Toutes les 20 pull requests mergées dans `main`, le harness et tout le code
-passent en revue. Une session lancée pour ça suit cette section :
-
-1. Si une issue étiquetée `periodic-review` est ouverte, une passe précédente
-   a été coupée : reprends-la à l'étape atteinte. Sinon compte les PR mergées
-   dans `main` depuis la fermeture de la plus récente, ou depuis la PR qui a
-   ajouté `.claude/` s'il n'y en a pas. Moins de 20 : arrête et dis-le.
-2. Ouvre une issue `periodic-review`, « Revue périodique après #n ». C'est
-   aussi l'issue de la passe du harness : elle n'en ouvre pas d'autre, et sa
-   PR dit `Refs #n`, pour que son merge laisse cette issue à l'étape 4.
-3. Lance `Skill(skill: "harness-engineer")` et la revue en boucle sur sa
-   branche, puis `Skill(skill: "revue-architecture")`.
-4. Ferme l'issue une fois que la revue d'architecture y a posté son rapport.
+Après chaque merge, compte les PR mergées depuis la dernière passe du harness
+(le plus récent `.claude/audits/*-harness*.md`). À 20 ou plus, propose au
+propriétaire une passe `harness-engineer` et une `revue-architecture`. Il
+décide.
