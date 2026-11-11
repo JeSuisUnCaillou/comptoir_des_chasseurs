@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
+import { pendingEntryColumns } from "@/lib/register";
 
 export type HandStock = {
   /** Units put in and taken out. */
@@ -78,6 +79,10 @@ export type ActivityLine = {
   notes: string | null;
   /** A sale or buyback whose septims are not in the till yet. */
   tillPending: boolean;
+  /** What settling it settles with it: see `pendingEntryColumns`. */
+  entryLines: number;
+  entryTotal: number;
+  entryItems: string;
   createdAt: Date;
   cancelledAt: Date | null;
   cancelledBy: string | null;
@@ -92,15 +97,17 @@ function activitySource(memberId: number, from: Date, to: Date) {
   const p = schema.products;
   const since = sql`${from.toISOString()}::timestamptz`;
   const until = sql`${to.toISOString()}::timestamptz`;
+  const entry = pendingEntryColumns();
   return sql`
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
-      ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by
+      ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by,
+      ${entry.entryLines} as entry_lines, ${entry.entryTotal} as entry_total, ${entry.entryItems} as entry_items
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
     where ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, ''
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.memberId} = ${memberId} and ${m.transactionId} is null
@@ -128,6 +135,9 @@ export async function memberActivity(
     detail: (r.detail as string | null) ?? null,
     notes: (r.notes as string | null) ?? null,
     tillPending: r.till_pending === true,
+    entryLines: Number(r.entry_lines),
+    entryTotal: Number(r.entry_total),
+    entryItems: String(r.entry_items ?? ""),
     createdAt: new Date(r.created_at as string),
     cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
     cancelledBy: (r.cancelled_by as string | null) ?? null,

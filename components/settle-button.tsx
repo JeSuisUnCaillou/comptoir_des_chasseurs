@@ -2,9 +2,29 @@
 
 import { useActionState } from "react";
 import { settleTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { septims } from "@/lib/pricing";
+
+/** The lines a click settles together: those of one entry, see `pendingEntryColumns`. */
+export type PendingEntry = { entryLines: number; entryTotal: number; entryItems: string };
+
+/** What the confirmation asks: one line, or every line of the entry with their total. */
+export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
+  const verb = sale ? "déposés dans" : "pris dans";
+  if (entry.entryLines <= 1) {
+    return `Les septims de ${sale ? `la vente n°${id}` : `l'achat n°${id}`} sont-ils ${verb} la caisse ?`;
+  }
+  const items = entry.entryItems
+    .split("\n")
+    .map((item) => `• ${item}`)
+    .join("\n");
+  return (
+    `Les septims de ${sale ? "cette vente" : "cet achat"} sont-ils ${verb} la caisse ?\n\n` +
+    `Cela vaut pour ses ${entry.entryLines} lignes, ${septims(entry.entryTotal)} en tout :\n${items}`
+  );
+}
 
 /** Says the septims of a line waiting for the till are now in it (a sale) or out of it (a buyback). */
-export function SettleButton({ id, sale }: { id: number; sale: boolean }) {
+export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; entry: PendingEntry }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(settleTransaction, null);
   const what = sale ? `la vente n°${id}` : `l'achat n°${id}`;
   return (
@@ -16,10 +36,7 @@ export function SettleButton({ id, sale }: { id: number; sale: boolean }) {
         disabled={pending}
         aria-label={sale ? `Septims de ${what} déposés dans la caisse` : `Septims de ${what} pris dans la caisse`}
         onClick={(e) => {
-          const question = sale
-            ? `Les septims de ${what} sont-ils déposés dans la caisse ?`
-            : `Les septims de ${what} sont-ils pris dans la caisse ?`;
-          if (!window.confirm(question)) e.preventDefault();
+          if (!window.confirm(settleQuestion(id, sale, entry))) e.preventDefault();
         }}
       >
         {sale ? "Septims déposés" : "Septims pris"}
