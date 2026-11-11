@@ -5,7 +5,7 @@ import { useActionState, useCallback, useEffect, useId, useMemo, useState } from
 import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 import { NewStockProductForm } from "@/components/new-stock-product-form";
 
 export type StockItem = {

@@ -18,4 +18,19 @@ Tête relue : 08689fb (fusion de main, conflit résolu dans membres.spec.ts en g
 
 Tête relue : 799cc6a. Les deux relecteurs n'ont rien trouvé.
 
-Tête relue : 799cc6a04547c2bf48bce95db9757ab6b459e167
+
+# Passe 4 (PR #122, refactor des couches, diff contre la branche de #115)
+
+Tête relue : 9cada85.
+
+- relecteur-bugs : aucun changement de comportement. `createStocked` lève maintenant un `UserError` là où il levait une `Error` simple, sur un cas impossible (quantité positive, marchandise neuve) : rejetée.
+- relecteur-architecte : `readProductIdentity` lisait un `FormData` dans un service. Corrigée en 3deec10 (déplacée dans `lib/forms.ts`).
+- relecteur-architecte : `membres/actions.ts` importait `memberRole` du schéma. Corrigée en 3deec10 (`readRole` dans `lib/forms.ts`), et la doc dit que le schéma sert partout pour ses types et ses énumérations.
+- relecteur-architecte : la doc ne rangeait pas `auth/password.ts` ni `auth/return-path.ts`, et sa cellule « domaine pur » était confuse. Corrigée en 3deec10.
+- relecteur-architecte : `recordMovement` refuse par `{ ok: false }` et non par `UserError`. Rejetée : la forme vient de `moveStock`, antérieure à la branche.
+
+# Passe 5
+
+Tête relue : 135a35b. Les deux relecteurs n'ont rien trouvé.
+
+Tête relue : 135a35b7943f518dd963f090bba65444a155a028

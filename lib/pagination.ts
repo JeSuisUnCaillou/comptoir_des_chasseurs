@@ -7,6 +7,11 @@ export function param(value: Param) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+/** A search typed in the query string, trimmed and cut to 100 characters; "" when none. */
+export function searchParam(value: Param) {
+  return (param(value) ?? "").trim().slice(0, 100);
+}
+
 /** Page number from the query string, starting at 1. */
 export function pageParam(value: Param) {
   const n = Number(param(value));

@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { saveProduct, type ProductFormState } from "@/app/(comptoir)/marchandises/actions";
 import type { Product, ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 
 function NumberField({
   name,

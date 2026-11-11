@@ -1,25 +1,12 @@
 import "server-only";
 import { and, asc, count, desc, eq, gt, gte, ilike, lt, sql, type SQL } from "drizzle-orm";
-import { byName, getDb, schema } from "@/lib/db";
-import { productCategory, type ProductCategory } from "@/lib/db/schema";
+import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
+import type { ProductCategory } from "@/lib/db/schema";
+import type { ShopMember } from "@/lib/auth/session";
+import { UserError } from "@/lib/errors";
+import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 
 export const DUPLICATE_PRODUCT_NAME = "Une marchandise porte déjà ce nom.";
-
-/**
- * Reads a merchandise's name, category and unit from a form, the same way for
- * every form that creates one. `error` says what is wrong, if anything.
- */
-export function readProductIdentity(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
-  const category = String(formData.get("category")) as ProductCategory;
-  const unit = String(formData.get("unit") ?? "").trim().slice(0, 30) || "pièce";
-  const error = !name
-    ? "Le nom est obligatoire."
-    : !productCategory.enumValues.includes(category)
-      ? "Catégorie inconnue."
-      : undefined;
-  return { name, category, unit, error };
-}
 
 export async function activeProducts(shopId: number) {
   return getDb()
@@ -53,7 +40,7 @@ export type MovementFilter = {
 function movementConditions(shopId: number, filter: MovementFilter) {
   const m = schema.stockMovements;
   const where: SQL[] = [eq(m.shopId, shopId)];
-  if (filter.q) where.push(ilike(schema.products.name, `%${filter.q.replace(/[\\%_]/g, "\\$&")}%`));
+  if (filter.q) where.push(ilike(schema.products.name, containing(filter.q)));
   if (filter.memberId) where.push(eq(m.memberId, filter.memberId));
   if (filter.direction) where.push(filter.direction === "in" ? gt(m.delta, 0) : lt(m.delta, 0));
   if (filter.from) where.push(gte(m.createdAt, filter.from));
@@ -137,4 +124,94 @@ export async function moveStock(
     transactionId,
   });
   return { ok: true, stock: updated.stock };
+}
+
+type Actor = Pick<ShopMember, "id" | "shopId">;
+
+/** A stock movement entered by hand on the Inventaire (a hunt, a loss…). */
+export async function recordMovement(member: Actor, productId: number, delta: number, reason: string) {
+  return getDb().transaction((tx) => moveStock(tx, member.shopId, productId, delta, member.id, reason));
+}
+
+/**
+ * Creates a merchandise that does not exist yet, without prices, and records
+ * its first entry in stock.
+ */
+export async function createStocked(
+  member: Actor,
+  identity: { name: string; category: ProductCategory; unit: string },
+  quantity: number,
+  reason: string,
+) {
+  try {
+    await getDb().transaction(async (tx) => {
+      const [product] = await tx
+        .insert(schema.products)
+        .values({ ...identity, shopId: member.shopId })
+        .returning({ id: schema.products.id });
+      const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
+      if (!result.ok) throw new UserError(result.error);
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : voir Gérer les tarifs.`);
+    }
+    throw error;
+  }
+}
+
+/** What Gérer les tarifs sets on a merchandise. */
+export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "shopId" | "stock" | "createdAt">;
+
+/** Creates a merchandise of the shop, or updates it when `id` is given. */
+export async function saveProduct(shopId: number, id: number | null, values: ProductValues) {
+  const db = getDb();
+  try {
+    if (id != null) {
+      await db
+        .update(schema.products)
+        .set(values)
+        .where(and(eq(schema.products.id, id), eq(schema.products.shopId, shopId)));
+    } else {
+      await db.insert(schema.products).values({ ...values, shopId });
+    }
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_PRODUCT_NAME);
+    throw error;
+  }
+}
+
+export async function setBlacksmithLeatherPrice(shopId: number, value: number) {
+  await getDb()
+    .insert(schema.settings)
+    .values({ shopId, key: BLACKSMITH_LEATHER_PRICE, value })
+    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+}
+
+/** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name. */
+export async function productPage(shopId: number, q: string, page: number) {
+  const inShop = eq(schema.products.shopId, shopId);
+  const where = q ? and(inShop, ilike(schema.products.name, containing(q))) : inShop;
+  const db = getDb();
+  const [products, [{ total }]] = await Promise.all([
+    db
+      .select()
+      .from(schema.products)
+      .where(where)
+      .orderBy(asc(schema.products.archived), byName(schema.products.name), asc(schema.products.id))
+      .limit(PAGE_SIZE)
+      .offset(offsetOf(page)),
+    db.select({ total: count() }).from(schema.products).where(where),
+  ]);
+  return { products, total };
+}
+
+/** A merchandise of the shop, archived or not, or undefined. */
+export async function productOf(shopId: number, id: number) {
+  const [product] = await getDb()
+    .select()
+    .from(schema.products)
+    .where(and(eq(schema.products.id, id), eq(schema.products.shopId, shopId)))
+    .limit(1);
+  return product;
 }

@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -9,7 +8,8 @@ import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { memberActivity, memberActivityCount, memberHandStock } from "@/lib/activity";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { shopMemberOf } from "@/lib/members";
+import { canActOn, isGerant } from "@/lib/policies";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { formatNumber, septims } from "@/lib/pricing";
 import { lastDays, parisDay, tillTotals } from "@/lib/register";
@@ -26,19 +26,14 @@ export default async function ActiviteMembre({
   searchParams: Promise<Search>;
 }) {
   const viewer = await requireMember();
-  const gerant = viewer.role === "gerant";
+  const gerant = isGerant(viewer);
   const id = Number((await params).id);
   // An employee sees only their own page.
   if (!gerant && id !== viewer.id) redirect("/");
   // Ids are Postgres integers: anything else is no member.
   if (!Number.isInteger(id) || id < 1 || id > 2_147_483_647) notFound();
   // Members of this shop only.
-  const [member] = await getDb()
-    .select({ id: schema.members.id, name: schema.members.name })
-    .from(schema.members)
-    .innerJoin(schema.shopMembers, eq(schema.shopMembers.memberId, schema.members.id))
-    .where(and(eq(schema.members.id, id), eq(schema.shopMembers.shopId, viewer.shopId)))
-    .limit(1);
+  const member = await shopMemberOf(viewer.shopId, id);
   if (!member) notFound();
 
   const search = await searchParams;
@@ -110,7 +105,7 @@ export default async function ActiviteMembre({
           Les lignes annulées sont barrées et ne comptent pas, ni celles en attente de la caisse.
         </p>
         {/* The author or a gérant settles a line waiting for the till, as in the register. */}
-        <ActivityTable lines={lines} empty="Rien sur la période." canSettle={gerant || member.id === viewer.id} />
+        <ActivityTable lines={lines} empty="Rien sur la période." canSettle={canActOn(viewer, { memberId: member.id })} />
         <Pagination page={page} total={lineTotal} path={path} params={filters} label="Pages de l'activité" noun="opération" />
       </section>
     </>

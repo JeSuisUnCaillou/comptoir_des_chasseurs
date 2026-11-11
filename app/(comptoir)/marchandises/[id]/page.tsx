@@ -1,10 +1,9 @@
-import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { productOf } from "@/lib/products";
 
 export default async function EditProduct({
   params,
@@ -18,11 +17,7 @@ export default async function EditProduct({
   const fromTarifs = (await searchParams).depuis === "tarifs";
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
-  const [product] = await getDb()
-    .select()
-    .from(schema.products)
-    .where(and(eq(schema.products.id, id), eq(schema.products.shopId, member.shopId)))
-    .limit(1);
+  const product = await productOf(member.shopId, id);
   if (!product) notFound();
 
   return (

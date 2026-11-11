@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, isUniqueViolation, schema } from "@/lib/db";
-import { DUPLICATE_PRODUCT_NAME, moveStock, readProductIdentity } from "@/lib/products";
+import { attempt } from "@/lib/errors";
+import { readProductIdentity, text } from "@/lib/forms";
+import { createStocked, recordMovement as moveByHand } from "@/lib/products";
 
 export type MoveState = { ok: boolean; message: string } | null;
 
@@ -12,7 +13,7 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   const productId = Number(formData.get("productId"));
   const direction = formData.get("direction");
   const quantity = Number(formData.get("quantity"));
-  const reason = String(formData.get("reason") ?? "").trim().slice(0, 200);
+  const reason = text(formData, "reason", 200);
 
   if (!Number.isInteger(productId) || (direction !== "in" && direction !== "out")) {
     return { ok: false, message: "Mouvement invalide." };
@@ -22,10 +23,7 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   }
   if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
 
-  const delta = direction === "in" ? quantity : -quantity;
-  const result = await getDb().transaction((tx) =>
-    moveStock(tx, member.shopId, productId, delta, member.id, reason),
-  );
+  const result = await moveByHand(member, productId, direction === "in" ? quantity : -quantity, reason);
   if (!result.ok) return { ok: false, message: result.error };
 
   revalidatePath("/inventaire");
@@ -41,9 +39,9 @@ export type CreateState = { ok: true; name: string } | { ok: false; message: str
  */
 export async function createAndStock(_prev: CreateState, formData: FormData): Promise<CreateState> {
   const member = await requireMember();
-  const { name, category, unit, error } = readProductIdentity(formData);
+  const { error, ...identity } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
-  const reason = String(formData.get("reason") ?? "").trim().slice(0, 200);
+  const reason = text(formData, "reason", 200);
 
   if (error) return { ok: false, message: error };
   if (!Number.isInteger(quantity) || quantity <= 0) {
@@ -51,22 +49,9 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   }
   if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
 
-  try {
-    await getDb().transaction(async (tx) => {
-      const [product] = await tx
-        .insert(schema.products)
-        .values({ shopId: member.shopId, name, category, unit })
-        .returning({ id: schema.products.id });
-      const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
-      if (!result.ok) throw new Error(result.error);
-    });
-  } catch (e) {
-    if (isUniqueViolation(e)) {
-      return { ok: false, message: `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : voir Gérer les tarifs.` };
-    }
-    throw e;
-  }
+  const result = await attempt(() => createStocked(member, identity, quantity, reason));
+  if (!result.ok) return result;
 
   revalidatePath("/", "layout");
-  return { ok: true, name };
+  return { ok: true, name: identity.name };
 }

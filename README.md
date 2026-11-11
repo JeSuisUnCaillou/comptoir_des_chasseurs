@@ -12,6 +12,10 @@ de Vendeaume, pour le serveur Skyrim RP Keizaal.
 - Connexion : identifiant + mot de passe (scrypt), session signée dans un cookie
 - Tests e2e : [Playwright](https://playwright.dev)
 
+Où vit le code (pages, Server Actions, services de `lib/`, domaine pur) :
+[docs/architecture.md](docs/architecture.md). `npm run lint` vérifie les types
+et le sens des imports.
+
 ## Développer en local
 
 Il faut Node 22 et un Postgres local.

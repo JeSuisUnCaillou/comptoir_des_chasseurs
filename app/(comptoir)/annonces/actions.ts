@@ -1,12 +1,16 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
-import { BODY_MAX, canTakeDown, PINS, TITLE_MAX } from "@/lib/announcement-rules";
+import { BODY_MAX, PINS, TITLE_MAX } from "@/lib/announcement-rules";
+import { postAnnouncement as post, takeDown } from "@/lib/announcements";
 
 export type AnnouncementState = { ok: boolean; message: string; id?: number } | null;
+
+function revalidate() {
+  revalidatePath("/");
+  revalidatePath("/annonces");
+}
 
 export async function postAnnouncement(_prev: AnnouncementState, formData: FormData): Promise<AnnouncementState> {
   const member = await requireMember();
@@ -20,13 +24,9 @@ export async function postAnnouncement(_prev: AnnouncementState, formData: FormD
   if (body.length > BODY_MAX) return { ok: false, message: `Le texte dépasse ${BODY_MAX} caractères.` };
   if (!pin) return { ok: false, message: "Choisis comment fixer le parchemin." };
 
-  const [posted] = await getDb()
-    .insert(schema.announcements)
-    .values({ shopId: member.shopId, title, body, pin, memberId: member.id })
-    .returning({ id: schema.announcements.id });
-  revalidatePath("/");
-  revalidatePath("/annonces");
-  return { ok: true, message: "Le parchemin est accroché au tableau.", id: posted.id };
+  const id = await post(member, { title, body, pin });
+  revalidate();
+  return { ok: true, message: "Le parchemin est accroché au tableau.", id };
 }
 
 /** Takes a parchment off the board: its author or a gérant may. */
@@ -34,13 +34,5 @@ export async function takeDownAnnouncement(formData: FormData) {
   const member = await requireMember();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return;
-  const db = getDb();
-  const [announcement] = await db
-    .select({ memberId: schema.announcements.memberId })
-    .from(schema.announcements)
-    .where(and(eq(schema.announcements.id, id), eq(schema.announcements.shopId, member.shopId)));
-  if (!announcement || !canTakeDown(member, announcement)) return;
-  await db.delete(schema.announcements).where(eq(schema.announcements.id, id));
-  revalidatePath("/");
-  revalidatePath("/annonces");
+  if (await takeDown(member, id)) revalidate();
 }

@@ -4,7 +4,7 @@ import { useActionState, useEffect, useId } from "react";
 import { createAndStock, type CreateState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 
 /**
  * Brings a merchandise that does not exist yet into stock: creates it without

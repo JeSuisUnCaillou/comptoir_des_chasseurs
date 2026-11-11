@@ -7,6 +7,7 @@ import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
+import { canActOn } from "@/lib/policies";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
@@ -54,7 +55,7 @@ export function RegisterTable({
             const cash = isCashKind(e.kind);
             const amount = signedAmount(e.kind, e.amount);
             const cancelled = e.cancelledAt != null;
-            const mine = member.role === "gerant" || e.memberId === member.id;
+            const mine = canActOn(member, e);
             const canCancel = !cancelled && mine;
             // Its septims are not in the till yet: shown, but not counted.
             const waiting = !cancelled && e.tillPending;

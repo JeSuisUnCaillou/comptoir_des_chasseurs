@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, count, eq, exists, ilike, inArray, or } from "drizzle-orm";
-import { byName, getDb, schema } from "@/lib/db";
+import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
+import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
 
 export const SUPPLIER_PAGE_SIZE = 12;
@@ -20,7 +21,7 @@ export type SupplierWithOffers = typeof schema.suppliers.$inferSelect & { offers
 function searchWhere(shopId: number, q: string) {
   const inShop = eq(schema.suppliers.shopId, shopId);
   if (!q) return inShop;
-  const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+  const pattern = containing(q);
   const { suppliers, supplierOffers, products } = schema;
   return and(
     inShop,
@@ -79,4 +80,91 @@ export async function supplierPage(shopId: number, q: string, page: number) {
   const offers = await offersOf(rows.map((s) => s.id));
   const suppliers: SupplierWithOffers[] = rows.map((s) => ({ ...s, offers: offers.get(s.id) ?? [] }));
   return { suppliers, total };
+}
+
+/** A supplier of the shop, or undefined. */
+export async function supplierOf(shopId: number, id: number) {
+  const [supplier] = await getDb()
+    .select()
+    .from(schema.suppliers)
+    .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, shopId)))
+    .limit(1);
+  return supplier;
+}
+
+/** Creates a supplier of the shop, or updates it when `id` is given. Returns its id. */
+export async function saveSupplier(
+  shopId: number,
+  id: number | null,
+  values: { name: string; place: string; notes: string },
+) {
+  try {
+    if (id != null) {
+      const updated = await getDb()
+        .update(schema.suppliers)
+        .set(values)
+        .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, shopId)))
+        .returning({ id: schema.suppliers.id });
+      if (updated.length === 0) throw new UserError("Ce fournisseur n'existe plus.");
+      return id;
+    }
+    const [created] = await getDb()
+      .insert(schema.suppliers)
+      .values({ ...values, shopId })
+      .returning({ id: schema.suppliers.id });
+    return created.id;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError("Un fournisseur porte déjà ce nom.");
+    throw error;
+  }
+}
+
+/** Adds a merchandise to a supplier of the shop, or changes its price if already offered. */
+export async function saveOffer(
+  shopId: number,
+  { supplierId, productId, price, qty }: { supplierId: number; productId: number; price: number; qty: number },
+) {
+  const db = getDb();
+  const [[supplier], [product]] = await Promise.all([
+    db
+      .select({ id: schema.suppliers.id })
+      .from(schema.suppliers)
+      .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, shopId))),
+    db
+      .select({ id: schema.products.id })
+      .from(schema.products)
+      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, shopId))),
+  ]);
+  if (!supplier) throw new UserError("Ce fournisseur n'existe plus.");
+  if (!product) throw new UserError("Marchandise inconnue.");
+  await db
+    .insert(schema.supplierOffers)
+    .values({ supplierId, productId, price, qty })
+    .onConflictDoUpdate({
+      target: [schema.supplierOffers.supplierId, schema.supplierOffers.productId],
+      set: { price, qty },
+    });
+}
+
+/** Takes a merchandise off a supplier of the shop. */
+export async function removeOffer(shopId: number, supplierId: number, offerId: number) {
+  await getDb()
+    .delete(schema.supplierOffers)
+    .where(
+      and(
+        eq(schema.supplierOffers.id, offerId),
+        eq(schema.supplierOffers.supplierId, supplierId),
+        inArray(
+          schema.supplierOffers.supplierId,
+          getDb().select({ id: schema.suppliers.id }).from(schema.suppliers).where(eq(schema.suppliers.shopId, shopId)),
+        ),
+      ),
+    );
+}
+
+/** Deletes a supplier of the shop; its offers go with it (on delete cascade). */
+export async function deleteSupplier(shopId: number, id: number) {
+  await getDb()
+    .delete(schema.suppliers)
+    .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, shopId)));
 }

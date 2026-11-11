@@ -7,7 +7,7 @@ import { useActionState, useRef, useState } from "react";
 import { ProductCombobox } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 import { DRAFT_PARAM, encodeDraft, type TransactionDraft } from "@/lib/transaction-draft";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 import { CATEGORY_LABELS, appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";

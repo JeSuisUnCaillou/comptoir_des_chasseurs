@@ -1,29 +1,19 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, isUniqueViolation, schema } from "@/lib/db";
+import { attempt } from "@/lib/errors";
+import { optionalId, text } from "@/lib/forms";
+import { deleteSupplier as remove, removeOffer as unoffer, saveOffer as offer, saveSupplier as save } from "@/lib/suppliers";
 
 // `at` changes on every success, so a form can clear itself by key.
 export type SupplierFormState = { ok: boolean; message: string; at?: number } | null;
 
-function text(formData: FormData, key: string, max: number) {
-  return String(formData.get(key) ?? "").trim().slice(0, max);
-}
-
-function id(formData: FormData, key = "id") {
-  const raw = String(formData.get(key) ?? "").trim();
-  if (raw === "") return null;
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : NaN;
-}
-
 /** Creates a supplier, or updates it when the form carries its id. */
 export async function saveSupplier(_prev: SupplierFormState, formData: FormData): Promise<SupplierFormState> {
   const member = await requireMember(["gerant"]);
-  const supplierId = id(formData);
+  const supplierId = optionalId(formData);
   const values = {
     name: text(formData, "name", 100),
     place: text(formData, "place", 100),
@@ -32,37 +22,19 @@ export async function saveSupplier(_prev: SupplierFormState, formData: FormData)
   if (Number.isNaN(supplierId)) return { ok: false, message: "Fournisseur inconnu." };
   if (!values.name) return { ok: false, message: "Le nom est obligatoire." };
 
-  let savedId = supplierId;
-  try {
-    if (supplierId != null) {
-      const updated = await getDb()
-        .update(schema.suppliers)
-        .set(values)
-        .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId)))
-        .returning({ id: schema.suppliers.id });
-      if (updated.length === 0) return { ok: false, message: "Ce fournisseur n'existe plus." };
-    } else {
-      const [created] = await getDb()
-        .insert(schema.suppliers)
-        .values({ ...values, shopId: member.shopId })
-        .returning({ id: schema.suppliers.id });
-      savedId = created.id;
-    }
-  } catch (error) {
-    if (isUniqueViolation(error)) return { ok: false, message: "Un fournisseur porte déjà ce nom." };
-    throw error;
-  }
+  const result = await attempt(() => save(member.shopId, supplierId, values));
+  if (!result.ok) return result;
   revalidatePath("/fournisseurs", "layout");
   // A new supplier goes straight to its page, to add what it sells.
-  if (supplierId == null) redirect(`/fournisseurs/${savedId}`);
+  if (supplierId == null) redirect(`/fournisseurs/${result.value}`);
   return { ok: true, message: "Fournisseur enregistré." };
 }
 
 /** Adds a merchandise to a supplier, or changes its price if already offered. */
 export async function saveOffer(_prev: SupplierFormState, formData: FormData): Promise<SupplierFormState> {
   const member = await requireMember(["gerant"]);
-  const supplierId = id(formData, "supplierId");
-  const productId = id(formData, "productId");
+  const supplierId = optionalId(formData, "supplierId");
+  const productId = optionalId(formData, "productId");
   const price = Number(formData.get("price"));
   const qty = Number(formData.get("qty") || 1);
   if (!supplierId || !productId) return { ok: false, message: "Choisis une marchandise." };
@@ -72,62 +44,25 @@ export async function saveOffer(_prev: SupplierFormState, formData: FormData): P
   if (!Number.isInteger(qty) || qty < 1 || qty > 1_000_000) {
     return { ok: false, message: "Un prix se donne pour au moins 1 unité." };
   }
-  const db = getDb();
-  const [[supplier], [product]] = await Promise.all([
-    db
-      .select({ id: schema.suppliers.id })
-      .from(schema.suppliers)
-      .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId))),
-    db
-      .select({ id: schema.products.id })
-      .from(schema.products)
-      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, member.shopId))),
-  ]);
-  if (!supplier) return { ok: false, message: "Ce fournisseur n'existe plus." };
-  if (!product) return { ok: false, message: "Marchandise inconnue." };
-  await db
-    .insert(schema.supplierOffers)
-    .values({ supplierId, productId, price, qty })
-    .onConflictDoUpdate({
-      target: [schema.supplierOffers.supplierId, schema.supplierOffers.productId],
-      set: { price, qty },
-    });
+  const result = await attempt(() => offer(member.shopId, { supplierId, productId, price, qty }));
+  if (!result.ok) return result;
   revalidatePath("/fournisseurs", "layout");
   return { ok: true, message: "Marchandise enregistrée.", at: Date.now() };
 }
 
 export async function removeOffer(formData: FormData) {
   const member = await requireMember(["gerant"]);
-  const offerId = id(formData);
-  const supplierId = id(formData, "supplierId");
+  const offerId = optionalId(formData);
+  const supplierId = optionalId(formData, "supplierId");
   if (!offerId || !supplierId) return;
-  await getDb()
-    .delete(schema.supplierOffers)
-    .where(
-      and(
-        eq(schema.supplierOffers.id, offerId),
-        eq(schema.supplierOffers.supplierId, supplierId),
-        inArray(
-          schema.supplierOffers.supplierId,
-          getDb()
-            .select({ id: schema.suppliers.id })
-            .from(schema.suppliers)
-            .where(eq(schema.suppliers.shopId, member.shopId)),
-        ),
-      ),
-    );
+  await unoffer(member.shopId, supplierId, offerId);
   revalidatePath("/fournisseurs", "layout");
 }
 
 export async function deleteSupplier(formData: FormData) {
   const member = await requireMember(["gerant"]);
-  const supplierId = id(formData);
-  if (supplierId) {
-    // Its offers go with it (on delete cascade).
-    await getDb()
-      .delete(schema.suppliers)
-      .where(and(eq(schema.suppliers.id, supplierId), eq(schema.suppliers.shopId, member.shopId)));
-  }
+  const supplierId = optionalId(formData);
+  if (supplierId) await remove(member.shopId, supplierId);
   revalidatePath("/fournisseurs", "layout");
   redirect("/fournisseurs");
 }

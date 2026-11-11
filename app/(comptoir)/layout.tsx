@@ -16,12 +16,13 @@ import { BrandMark } from "@/components/brand";
 import { NavLink } from "@/components/nav-link";
 import { logout } from "@/app/connexion/actions";
 import { requireMember } from "@/lib/auth/session";
+import { isGerant } from "@/lib/policies";
 
 export const dynamic = "force-dynamic";
 
 export default async function ComptoirLayout({ children }: { children: ReactNode }) {
   const member = await requireMember();
-  const gerant = member.role === "gerant";
+  const gerant = isGerant(member);
 
   return (
     <div className="shell">
