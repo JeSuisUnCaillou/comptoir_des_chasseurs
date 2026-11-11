@@ -164,14 +164,14 @@ test("un membre de deux boutiques choisit la sienne, et en change", async ({ pag
   await shops.getByRole("link", { name: new RegExp(`${other.shop} · Gérant`) }).click();
 
   await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
-  await expect(page.getByTestId("shop-name")).toContainText(other.shop);
+  await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
   // Gérant there: the Membres page is theirs.
   await expect(page.getByRole("link", { name: "Membres" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Changer de boutique" }).click();
+  await page.getByRole("link", { name: "Mes boutiques" }).click();
   await shops.getByRole("link", { name: /Le Comptoir Des Chasseurs/ }).click();
   await expect(page).toHaveURL(new RegExp(`${COMPTOIR}$`));
-  await expect(page.getByTestId("shop-name")).toContainText("Le Comptoir Des Chasseurs");
+  await expect(page.getByTestId("shop-name")).toHaveText("Le Comptoir Des Chasseurs");
   // Employé here: no Membres page.
   await expect(page.getByRole("link", { name: "Membres" })).toHaveCount(0);
 });
@@ -190,8 +190,8 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   const sql = db();
   try {
     await sql`
-      insert into transactions (kind, label, quantity, amount, till_pending, member_id)
-      values ('vente', ${label}, 1, 4, true, (select id from members where username = ${GERANT.username}))`;
+      insert into transactions (shop_id, kind, label, quantity, amount, till_pending, member_id)
+      values (1, 'vente', ${label}, 1, 4, true, (select id from members where username = ${GERANT.username}))`;
   } finally {
     await sql.end();
   }
@@ -210,7 +210,7 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   const mine = uniqueName("Peau du comptoir");
   const sql2 = db();
   try {
-    await sql2`insert into products (name, category, unit) values (${mine}, 'peau', 'peau')`;
+    await sql2`insert into products (shop_id, name, category, unit) values (1, ${mine}, 'peau', 'peau')`;
   } finally {
     await sql2.end();
   }

@@ -51,7 +51,9 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
   redirect("/");
 }
 
-export async function logout() {
+/** Signs out, to the login page or, when the form names one, back to a page (an invitation). */
+export async function logout(formData?: FormData) {
   await endSession();
-  redirect("/connexion");
+  const back = formData?.get(RETURN_PARAM);
+  redirect(back ? safeReturnPath(back) : "/connexion");
 }

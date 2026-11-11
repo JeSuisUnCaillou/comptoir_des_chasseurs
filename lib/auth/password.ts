@@ -30,3 +30,10 @@ export const MIN_PASSWORD_LENGTH = 8;
 export function normalizeUsername(raw: unknown) {
   return String(raw ?? "").trim().toLowerCase().slice(0, 40);
 }
+
+/** Why a new username can't be used, or null. */
+export function usernameError(username: string) {
+  return /^[a-z0-9._-]+$/.test(username)
+    ? null
+    : "L'identifiant ne peut contenir que des lettres, chiffres, points et tirets.";
+}

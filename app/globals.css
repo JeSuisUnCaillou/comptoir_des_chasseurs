@@ -1497,3 +1497,29 @@ tr.entry.fresh td {
   width: 100%;
   justify-content: flex-start;
 }
+
+.gate-card-wide {
+  max-width: 560px;
+}
+
+.gate-section {
+  text-align: left;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  margin-top: 18px;
+}
+
+.gate-section h2 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.gate-section h3 {
+  font-size: 16px;
+  margin: 18px 0 8px;
+}
+
+.invitation-link {
+  width: 100%;
+  font-size: 12px;
+}

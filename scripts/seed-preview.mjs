@@ -146,8 +146,8 @@ try {
     if (posted === 0) {
       for (const [i, { title, body, pin }] of ANNOUNCEMENTS.entries()) {
         await tx`
-          insert into announcements (title, body, pin, member_id, created_at)
-          values (${title}, ${body}, ${pin}, ${memberId}, now() - ${`${ANNOUNCEMENTS.length - i} hours`}::interval)`;
+          insert into announcements (shop_id, title, body, pin, member_id, created_at)
+          values (1, ${title}, ${body}, ${pin}, ${memberId}, now() - ${`${ANNOUNCEMENTS.length - i} hours`}::interval)`;
       }
       console.log("Annonces d'exemple affichées.");
     }
@@ -156,7 +156,7 @@ try {
     if (listed === 0) {
       for (const { name, place, notes, offers } of SUPPLIERS) {
         const [{ id }] = await tx`
-          insert into suppliers (name, place, notes) values (${name}, ${place}, ${notes}) returning id`;
+          insert into suppliers (shop_id, name, place, notes) values (1, ${name}, ${place}, ${notes}) returning id`;
         for (const [product, price, qty] of offers) {
           // Only merchandise this database knows.
           await tx`
@@ -175,8 +175,8 @@ try {
           where shop_id = 1 and name = ${name} returning id, stock`;
         if (!product) continue;
         await tx`
-          insert into stock_movements (product_id, delta, stock_after, member_id, reason)
-          values (${product.id}, ${quantity}, ${product.stock}, ${memberId}, 'Stock de départ (preview)')`;
+          insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason)
+          values (1, ${product.id}, ${quantity}, ${product.stock}, ${memberId}, 'Stock de départ (preview)')`;
       }
       console.log("Stock de départ ajouté.");
     }
@@ -198,12 +198,12 @@ try {
             where shop_id = 1 and name = ${name} and stock + ${delta} >= 0 returning id, stock`;
           if (!product) continue;
           const [line] = await tx`
-            insert into transactions (kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id, created_at)
-            values (${kind}, ${product.id}, ${name}, ${quantity}, ${amount}, ${counterparty}, ${SAMPLE_NOTE}, ${pending}, ${memberId}, ${at})
+            insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id, created_at)
+            values (1, ${kind}, ${product.id}, ${name}, ${quantity}, ${amount}, ${counterparty}, ${SAMPLE_NOTE}, ${pending}, ${memberId}, ${at})
             returning id`;
           await tx`
-            insert into stock_movements (product_id, delta, stock_after, member_id, reason, transaction_id, created_at)
-            values (${product.id}, ${delta}, ${product.stock}, ${memberId},
+            insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason, transaction_id, created_at)
+            values (1, ${product.id}, ${delta}, ${product.stock}, ${memberId},
               ${`${kind === "rachat" ? "Achat" : "Vente"} · ${counterparty}`}, ${line.id}, ${at})`;
         }
       }

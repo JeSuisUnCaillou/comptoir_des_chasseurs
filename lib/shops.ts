@@ -4,9 +4,10 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { and, asc, eq, ne } from "drizzle-orm";
 import { PATH_HEADER } from "@/lib/auth/return-path";
-import { byName, getDb, schema } from "@/lib/db";
+import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
-import { slugOf } from "@/lib/paths";
+import { UserError } from "@/lib/errors";
+import { RESERVED_SLUGS, slugOf, slugify } from "@/lib/paths";
 
 export async function shopBySlug(slug: string): Promise<Shop | undefined> {
   const [shop] = await getDb().select().from(schema.shops).where(eq(schema.shops.slug, slug)).limit(1);
@@ -55,4 +56,31 @@ export async function accountShops(account: Pick<Member, "id" | "superAdmin">): 
     .innerJoin(sm, eq(sm.shopId, s.id))
     .where(and(eq(sm.memberId, account.id), ne(sm.role, "desactive")))
     .orderBy(byName(s.name), asc(s.id));
+}
+
+/**
+ * Opens a shop named `name` at the address made from it, inside `tx`. Refuses
+ * a name with no letter or digit, an address the app uses, or one another
+ * shop already has.
+ */
+export async function insertShop(tx: Tx, name: string): Promise<Shop> {
+  const slug = slugify(name);
+  if (!slug) throw new UserError("Le nom de la boutique doit contenir au moins une lettre ou un chiffre.");
+  if (RESERVED_SLUGS.includes(slug)) throw new UserError(`L'adresse /${slug} est réservée : choisis un autre nom.`);
+  try {
+    const [shop] = await tx.insert(schema.shops).values({ name, slug }).returning();
+    return shop;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError(`Une boutique a déjà l'adresse /${slug} : choisis un autre nom.`);
+    throw error;
+  }
+}
+
+/** Opens a shop named `name`, whose first gérant is the account that opens it. */
+export async function createShop(account: Pick<Member, "id">, name: string): Promise<Shop> {
+  return getDb().transaction(async (tx) => {
+    const shop = await insertShop(tx, name);
+    await tx.insert(schema.shopMembers).values({ shopId: shop.id, memberId: account.id, role: "gerant" });
+    return shop;
+  });
 }

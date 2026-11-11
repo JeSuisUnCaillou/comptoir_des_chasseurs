@@ -111,9 +111,20 @@ Chaque boutique a ses pages sous son adresse : `/<slug>` pour son Grand livre,
 `/le-comptoir-des-chasseurs` ; ses anciennes adresses (`/inventaire`,
 `/achat-vente/vente`…) y mènent toujours (`next.config.ts`). Une adresse qui
 ne nomme aucune boutique n'existe pas. La racine `/` ouvre la boutique du
-membre s'il n'en a qu'une, et sinon la liste de ses boutiques (« Mes
-boutiques », avec son rôle dans chacune) ; « Changer de boutique », en haut
-des pages, y ramène. Le nom de la boutique est en haut de chaque page.
+membre s'il n'en a qu'une, et sinon « Mes boutiques ». Le nom de la boutique
+est en haut de chaque page, à côté du lien « Mes boutiques ».
+
+- **Mes boutiques** (`/boutiques`) : les boutiques du compte, avec son rôle
+  dans chacune. Tout compte y **ouvre une boutique** en lui donnant un nom :
+  il en devient le gérant, et elle prend l'adresse tirée du nom (« Forge de
+  Vendeaume » → `/forge-de-vendeaume`). Un nom dont l'adresse est déjà prise,
+  ou réservée par l'app (`connexion`, `inventaire`…), est refusé. Le super
+  admin y **ouvre aussi une boutique pour quelqu'un** : il reçoit un lien
+  d'invitation (`/invitation/<jeton>`) à lui donner, et voit les liens pas
+  encore utilisés.
+- **Invitation** (`/invitation/<jeton>`) : qui ouvre le lien devient gérant
+  de la boutique, avec son compte (connecté, ou après « J'ai déjà un compte »)
+  ou un compte qu'il crée là. Le lien ne sert qu'une fois.
 
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
@@ -251,6 +262,9 @@ des pages, y ramène. Le nom de la boutique est en haut de chaque page.
   tout autre lien ramène à `/`. Un compte qui ouvre une boutique où il n'a
   pas de rôle revient à `/` ; un employé qui ouvre une page de gérant revient
   au Grand livre de sa boutique.
+- Tout compte peut ouvrir sa propre boutique, dont il est le gérant ; le
+  super admin peut en ouvrir une pour quelqu'un d'autre, par un lien
+  d'invitation (voir Mes boutiques).
 - Le gérant crée les comptes des **employés** de sa boutique (identifiant +
   mot de passe provisoire) depuis la page Membres, qui ne montre que les
   membres de la boutique ; il peut réinitialiser un mot de passe ou

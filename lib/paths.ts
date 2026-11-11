@@ -19,7 +19,32 @@ export const SHOP_PAGES = [
 ] as const;
 
 /** First segments that are no shop: the app's own pages, and the old addresses of the comptoir's pages. */
-export const RESERVED_SLUGS: readonly string[] = ["connexion", "api", ...SHOP_PAGES];
+export const RESERVED_SLUGS: readonly string[] = ["api", "boutiques", "connexion", "invitation", ...SHOP_PAGES];
+
+/** Longest shop address, the slash aside. */
+export const MAX_SLUG_LENGTH = 40;
+
+/**
+ * The address a shop named `name` gets: lower case, accents dropped, words
+ * joined by dashes: "La Taverne du Port" → "la-taverne-du-port". "" when
+ * the name has no letter or digit.
+ */
+export function slugify(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, MAX_SLUG_LENGTH)
+    .replace(/^-+|-+$/g, "");
+}
+
+/** The address of the invitation link `token`. */
+export function invitationPath(token: string) {
+  return `/invitation/${token}`;
+}
 
 /** The address of `path` ("/inventaire", "/" for its Grand livre) in the shop `slug`. */
 export function shopPath(slug: string, path = "/") {

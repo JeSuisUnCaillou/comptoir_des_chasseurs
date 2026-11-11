@@ -46,7 +46,7 @@ for (const suite of ["//example.com", "https://example.com/", "/\\example.com", 
     await page.getByRole("button", { name: "Entrer au comptoir" }).click();
 
     // The super admin's own shops: the comptoir, or the choice of shops when tests made others.
-    const home = /^http:\/\/localhost:\d+\/(le-comptoir-des-chasseurs)?$/;
+    const home = /^http:\/\/localhost:\d+\/(le-comptoir-des-chasseurs|boutiques)$/;
     await expect(page).toHaveURL(home);
 
     // Already signed in, the same link redirects straight away.

@@ -18,7 +18,6 @@ import { logout } from "@/app/connexion/actions";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
-import { accountShops } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +25,6 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
   const member = await requireMember();
   const gerant = isGerant(member);
   const at = (path: string) => shopPath(member.shop.slug, path);
-  const otherShops = (await accountShops(member)).length > 1;
 
   return (
     <div className="shell">
@@ -71,14 +69,10 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
       </aside>
       <div className="main">
         <header className="topbar">
-          <span className="eyebrow" data-testid="shop-name">
-            {member.shop.name}
-            {otherShops && (
-              <>
-                {" · "}
-                <Link href="/">Changer de boutique</Link>
-              </>
-            )}
+          <span className="eyebrow">
+            <span data-testid="shop-name">{member.shop.name}</span>
+            {" · "}
+            <Link href="/boutiques">Mes boutiques</Link>
           </span>
           <div className="topbar-user">
             <Link className="topbar-name" href={at(`/membres/${member.id}`)} title="Voir mon activité" data-testid="member-name">

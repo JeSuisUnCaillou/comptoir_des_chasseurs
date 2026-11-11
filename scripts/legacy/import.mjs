@@ -166,7 +166,7 @@ async function write(sql, plan) {
     }
     for (const [key, value] of Object.entries(plan.settings)) {
       await tx`
-        insert into settings (key, value) values (${key}, ${value})
+        insert into settings (shop_id, key, value) values (1, ${key}, ${value})
         on conflict (shop_id, key) do update set value = excluded.value`;
     }
     for (const chunk of chunks(plan.movements)) {
@@ -200,7 +200,7 @@ async function insertSuppliers(tx, suppliers) {
     for (const o of offers) {
       await tx`
         insert into supplier_offers (supplier_id, product_id, price, qty)
-        select ${id}, p.id, ${o.price}, ${o.qty} from products p where p.name = ${o.productName}`;
+        select ${id}, p.id, ${o.price}, ${o.qty} from products p where p.shop_id = 1 and p.name = ${o.productName}`;
     }
   }
 }
@@ -209,8 +209,12 @@ function* chunks(rows, size = 500) {
   for (let i = 0; i < rows.length; i += size) yield rows.slice(i, i + size);
 }
 
+/** A row of the plan as columns, in the first shop: the old app was the comptoir alone. */
 function snake(row) {
-  return Object.fromEntries(
-    Object.entries(row).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]),
-  );
+  return {
+    ...Object.fromEntries(
+      Object.entries(row).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]),
+    ),
+    shop_id: 1,
+  };
 }

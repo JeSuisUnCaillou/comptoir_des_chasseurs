@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
+import { hasActiveShop } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
 import { currentShop } from "@/lib/shops";
@@ -71,6 +72,17 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
     return null;
   }
 });
+
+/**
+ * The signed-in account, outside any shop (Mes boutiques, an invitation…).
+ * Not signed in, or deactivated everywhere (so unable to sign in again), it
+ * goes to the login page, which brings it back to `path`.
+ */
+export async function requireAccount(path: string): Promise<Member> {
+  const account = await currentAccount();
+  if (!account || !(account.superAdmin || (await hasActiveShop(account.id)))) redirect(loginUrl(path));
+  return account;
+}
 
 /**
  * A signed-in account inside the shop being visited: `role` is its role in
