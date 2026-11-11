@@ -31,3 +31,11 @@ Tête relue : abee34c0b78d56fa6232fd96e8a6c504c67b3f41
 - Rien de bloquant : la boucle s'arrête.
 
 Tête relue : 8093d2ff7449b4bdae59ffd08300526e4af1418c
+
+# Passe 5 (après le merge de main, conflit sur la prop highlight de RegisterTable)
+
+Tête relue : 7740e65cefa241e55ab8bcc4a91fb7632d7307d0
+
+- Aucune trouvaille bloquante. Écartés : un interblocage Postgres possible entre deux ventes multiples simultanées sur les mêmes marchandises en ordre inverse (une échoue sans rien écrire ; improbable à une dizaine de membres) ; la limite de 25 côté serveur sans test propre (inatteignable par le formulaire, que le test couvre).
+
+Tête relue : 7740e65cefa241e55ab8bcc4a91fb7632d7307d0
