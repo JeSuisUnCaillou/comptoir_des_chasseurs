@@ -103,7 +103,8 @@ export default async function ActiviteMembre({
           Achats, ventes, mouvements de caisse et mouvements de stock faits à la main, du plus récent au plus ancien.
           Les lignes annulées sont barrées et ne comptent pas, ni celles en attente de la caisse.
         </p>
-        <ActivityTable lines={lines} empty="Rien sur la période." />
+        {/* The author or a gérant settles a line waiting for the till, as in the register. */}
+        <ActivityTable lines={lines} empty="Rien sur la période." canSettle={gerant || member.id === viewer.id} />
         <Pagination page={page} total={lineTotal} path={path} params={filters} label="Pages de l'activité" noun="opération" />
       </section>
     </>

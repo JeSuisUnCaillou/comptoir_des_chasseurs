@@ -13,6 +13,8 @@ export type TransactionState = { ok: boolean; message: string } | null;
 
 function revalidate() {
   for (const path of ["/", "/achat-vente", "/achat-vente/vente", "/achat-vente/achat", "/achat-vente/caisse", "/inventaire", "/tarifs"]) revalidatePath(path);
+  // Members' activity pages show register lines too.
+  revalidatePath("/membres/[id]", "page");
 }
 
 /**
