@@ -39,3 +39,11 @@ Tête relue : 7740e65cefa241e55ab8bcc4a91fb7632d7307d0
 - Aucune trouvaille bloquante. Écartés : un interblocage Postgres possible entre deux ventes multiples simultanées sur les mêmes marchandises en ordre inverse (une échoue sans rien écrire ; improbable à une dizaine de membres) ; la limite de 25 côté serveur sans test propre (inatteignable par le formulaire, que le test couvre).
 
 Tête relue : 7740e65cefa241e55ab8bcc4a91fb7632d7307d0
+
+# Passe 6 (total en doré)
+
+Tête relue : 148756a434164af154c323f25e92a725eb1dd62f
+
+- Aucune trouvaille.
+
+Tête relue : 148756a434164af154c323f25e92a725eb1dd62f
