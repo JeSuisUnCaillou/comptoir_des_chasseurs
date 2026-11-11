@@ -219,7 +219,7 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   gérant, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;
   aucun autre gérant ne peut le rétrograder, le désactiver ni changer son mot
   de passe. Dans une base qui existait avant ce rôle, la migration le donne au
-  premier gérant créé.
+  compte `jesuisuncaillou` (le propriétaire), s'il existe.
 - Un visiteur non connecté qui ouvre une page du comptoir passe par la page
   de connexion, puis revient sur cette page, avec ses filtres (paramètre
   `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;
