@@ -113,7 +113,8 @@ export function TransactionForm({
   const citizenProducts = evaluated.flatMap((e) => (e.citizenPrice && e.product ? [e.product] : []));
   const uniqueCitizenProducts = citizenProducts.filter((p, i) => citizenProducts.indexOf(p) === i);
   // Once no line has a citizens' price, the box goes away unticked: it never comes back ticked on its own.
-  if (citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
+  // A sale has no box: it keeps the choice for a switch back to the purchase.
+  if (!sale && citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
 
   // A product sold on several lines must have enough stock for all of them.
   const wanted = new Map<TransactionProduct, number>();

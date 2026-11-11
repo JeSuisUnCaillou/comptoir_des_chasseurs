@@ -611,6 +611,9 @@ test("une écriture tient en 25 marchandises au plus", async ({ browser }) => {
 test("on passe d'un achat à une vente et retour sans rien retaper", async ({ browser }) => {
   const product = uniqueName("Peau de renard");
   await createProduct(product, { buyPrice: 2, sellPrice: 3, stock: 10 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  await sql`update products set citizen_buy_price = 3 where name = ${product}`;
+  await sql.end();
   const { page } = await newEmployeePage(browser, "brenuin");
   await page.goto("/achat-vente/achat");
   // The button sits right of "Retour au registre".
@@ -624,6 +627,8 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await pickProduct(line(purchase, 1), product);
   await line(purchase, 1).getByLabel("Quantité").fill("4");
   await expect(line(purchase, 1).getByLabel("Montant (septims)")).toHaveValue("8");
+  await purchase.getByLabel("Le vendeur est citoyen d'Estemarche").check();
+  await expect(line(purchase, 1).getByLabel("Montant (septims)")).toHaveValue("12");
   await purchase.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(line(purchase, 2), "Autre article (hors stock)…");
   await line(purchase, 2).getByLabel("Nom de l'article").fill("Corne");
@@ -657,6 +662,8 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   const again = page.getByRole("region", { name: "Inscrire un achat" });
   await expect(line(again, 1).getByLabel("Montant (septims)")).toHaveValue("10");
   await expect(line(again, 1).getByRole("button", { name: "Revenir au tarif" })).toBeVisible();
+  // The citizen box comes back as it was, though a sale has none.
+  await expect(again.getByLabel("Le vendeur est citoyen d'Estemarche")).toBeChecked();
   await again.getByLabel("Je n'ai pas encore pris les septims dans la caisse").uncheck();
   await again.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
