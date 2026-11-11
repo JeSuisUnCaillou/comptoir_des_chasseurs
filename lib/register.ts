@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { byName, getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
@@ -16,6 +16,21 @@ export type RegisterFilter = {
 const canceller = alias(schema.members, "canceller");
 const sameEntry = alias(schema.transactions, "same_entry");
 
+type EntryColumns = Record<"memberId" | "kind" | "createdAt" | "tillPending" | "cancelledAt", AnyColumn>;
+
+/**
+ * The lines of `rows` still waiting for the till in the same entry as `line`,
+ * a row `(member_id, kind, created_at)`. `recordTransaction` writes the lines
+ * of one entry in one database transaction, so they share their author, their
+ * kind and their instant (now() is the start of the transaction): that is
+ * what makes them one entry. The instant is compared in SQL, which keeps its
+ * microseconds. Used both to settle an entry and to say what settling settles.
+ */
+function pendingOfSameEntry(rows: EntryColumns, line: SQL) {
+  return sql`(${rows.memberId}, ${rows.kind}, ${rows.createdAt}) = ${line}
+    and ${rows.tillPending} and ${rows.cancelledAt} is null`;
+}
+
 /**
  * For a line waiting for the till, what `settleEntry` would settle with it:
  * the number of lines of its entry still waiting, their total, and one
@@ -26,8 +41,7 @@ export function pendingEntryColumns() {
   const t = schema.transactions;
   const s = sameEntry;
   const from = sql`from ${schema.transactions} ${s}
-    where ${s.memberId} = ${t.memberId} and ${s.kind} = ${t.kind} and ${s.createdAt} = ${t.createdAt}
-      and ${s.tillPending} and ${s.cancelledAt} is null`;
+    where ${pendingOfSameEntry(s, sql`(${t.memberId}, ${t.kind}, ${t.createdAt})`)}`;
   const pending = sql`${t.tillPending} and ${t.cancelledAt} is null`;
   return {
     entryLines: sql<number>`case when ${pending} then (select count(*)::int ${from}) else 0 end`,
@@ -100,11 +114,8 @@ export async function registerCount(filter: RegisterFilter = {}) {
 
 /**
  * The septims of the entry holding line `id` are now in the till, or out of it:
- * every line of that entry waiting for the till counts in it from now on.
- * `recordTransaction` writes the lines of one entry in one database
- * transaction, so they share their author, their kind and their instant
- * (now() is the start of the transaction): that is what makes them one entry.
- * The instant is compared in SQL, which keeps its microseconds.
+ * every line of that entry waiting for the till counts in it from now on
+ * (see `pendingOfSameEntry`).
  */
 export async function settleEntry(id: number) {
   const t = schema.transactions;
@@ -115,13 +126,7 @@ export async function settleEntry(id: number) {
   await getDb()
     .update(t)
     .set({ tillPending: false })
-    .where(
-      and(
-        sql`(${t.memberId}, ${t.kind}, ${t.createdAt}) = (${line})`,
-        eq(t.tillPending, true),
-        isNull(t.cancelledAt),
-      ),
-    );
+    .where(pendingOfSameEntry(t, sql`(${line})`));
 }
 
 export type Till = {
