@@ -1,12 +1,11 @@
-import { asc, count, eq } from "drizzle-orm";
 import { ScrollText } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
-import { PAGE_SIZE, offsetOf, pageParam } from "@/lib/pagination";
+import { pageParam } from "@/lib/pagination";
 import { NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
 import { requireMember } from "@/lib/auth/session";
-import { byName, getDb, schema } from "@/lib/db";
+import { shopMemberPage } from "@/lib/members";
 import type { MemberRole } from "@/lib/db/schema";
 import { updateMember } from "./actions";
 
@@ -34,20 +33,7 @@ export default async function Membres({
 }) {
   const me = await requireMember(["gerant"]);
   const page = pageParam((await searchParams).page);
-  const m = schema.members;
-  const sm = schema.shopMembers;
-  const inShop = eq(sm.shopId, me.shopId);
-  const [members, [{ total }]] = await Promise.all([
-    getDb()
-      .select({ id: m.id, username: m.username, name: m.name, superAdmin: m.superAdmin, role: sm.role })
-      .from(m)
-      .innerJoin(sm, eq(sm.memberId, m.id))
-      .where(inShop)
-      .orderBy(byName(m.name), asc(m.id))
-      .limit(PAGE_SIZE)
-      .offset(offsetOf(page)),
-    getDb().select({ total: count() }).from(sm).where(inShop),
-  ]);
+  const { members, total } = await shopMemberPage(me.shopId, page);
 
   return (
     <>

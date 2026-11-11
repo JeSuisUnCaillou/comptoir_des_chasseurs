@@ -1,13 +1,12 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
-import { moveStock } from "@/lib/products";
-import { settleEntry } from "@/lib/register";
-import { MAX_LINES } from "@/lib/transaction-kinds";
+import { attempt } from "@/lib/errors";
+import { checked, optionalText, text } from "@/lib/forms";
+import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
+import { cancelLine, recordCashLine, recordLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
@@ -27,10 +26,9 @@ export async function recordTransaction(
 ): Promise<TransactionState> {
   const member = await requireMember();
   const kind = formData.get("kind");
-  const counterparty = String(formData.get("counterparty") ?? "").trim().slice(0, 100) || null;
-  const notes = String(formData.get("notes") ?? "").trim().slice(0, 500) || null;
-  // The member has not yet put the septims in the till, or taken them out.
-  const tillPending = formData.get("tillPending") === "on";
+  const counterparty = optionalText(formData, "counterparty", 100);
+  const notes = optionalText(formData, "notes", 500);
+  const tillPending = checked(formData, "tillPending");
   const productIds = formData.getAll("productId").map(String);
   const labels = formData.getAll("label").map(String);
   const quantities = formData.getAll("quantity").map(Number);
@@ -44,9 +42,9 @@ export async function recordTransaction(
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
   }
   // With several lines, each message says which one is wrong.
-  const at = (i: number, message: string) => (count > 1 ? `Marchandise ${i + 1} : ${message}` : message);
+  const at = (i: number, message: string) => lineMessage(count, i, message);
 
-  const lines: { productId: number | null; quantity: number; amount: number; label: string }[] = [];
+  const lines: TransactionLine[] = [];
   for (let i = 0; i < count; i++) {
     const raw = productIds[i];
     const productId = raw === "" || raw === "autre" ? null : Number(raw);
@@ -64,65 +62,12 @@ export async function recordTransaction(
     lines.push({ productId, quantity, amount, label: labels[i].trim().slice(0, 100) });
   }
 
-  const db = getDb();
-  let ids: number[];
-  try {
-    ids = await db.transaction(async (tx) => {
-      const written: number[] = [];
-      for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
-        let label = typed;
-        let delta = 0;
-        let reason = "";
-        if (productId != null) {
-          const [product] = await tx
-            .select({ name: schema.products.name })
-            .from(schema.products)
-            .where(
-              and(
-                eq(schema.products.id, productId),
-                eq(schema.products.shopId, member.shopId),
-                eq(schema.products.archived, false),
-              ),
-            )
-            .limit(1);
-          if (!product) throw new UserError(at(i, "Marchandise inconnue."));
-          label = product.name;
-          delta = kind === "vente" ? -quantity : quantity;
-          reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
-        }
-        if (!label) throw new UserError(at(i, "Indique l'article ou la marchandise."));
-        const [line] = await tx.insert(schema.transactions).values({
-          shopId: member.shopId,
-          kind,
-          productId,
-          label,
-          quantity,
-          amount,
-          counterparty,
-          notes,
-          tillPending,
-          memberId: member.id,
-        }).returning({ id: schema.transactions.id });
-        if (productId != null) {
-          // Throwing rolls back every line with its movement.
-          const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id);
-          if (!moved.ok) throw new UserError(at(i, "Stock insuffisant pour cette vente."));
-        }
-        written.push(line.id);
-      }
-      return written;
-    });
-  } catch (error) {
-    if (error instanceof UserError) return { ok: false, message: error.message };
-    throw error;
-  }
-
+  const result = await attempt(() => recordLines(member, { kind, counterparty, notes, tillPending, lines }));
+  if (!result.ok) return result;
   revalidate();
   // Back to the register, which shows the new lines.
-  redirect(`/achat-vente?inscrit=${ids.join(",")}`);
+  redirect(`/achat-vente?inscrit=${result.value.join(",")}`);
 }
-
-class UserError extends Error {}
 
 /** Money in or out of the till alone, with no merchandise: wages, the gérant's deposits... */
 export async function recordCashMovement(
@@ -132,9 +77,9 @@ export async function recordCashMovement(
   const member = await requireMember();
   const kind = formData.get("kind");
   const amount = Number(formData.get("amount"));
-  const label = String(formData.get("label") ?? "").trim().slice(0, 100);
-  const counterparty = String(formData.get("counterparty") ?? "").trim().slice(0, 100) || null;
-  const notes = String(formData.get("notes") ?? "").trim().slice(0, 500) || null;
+  const label = text(formData, "label", 100);
+  const counterparty = optionalText(formData, "counterparty", 100);
+  const notes = optionalText(formData, "notes", 500);
 
   if (kind !== "entree" && kind !== "sortie") {
     return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
@@ -144,22 +89,9 @@ export async function recordCashMovement(
   }
   if (!label) return { ok: false, message: "Indique le motif du mouvement." };
 
-  const [line] = await getDb()
-    .insert(schema.transactions)
-    .values({
-      shopId: member.shopId,
-      kind,
-      productId: null,
-      label,
-      quantity: 1,
-      amount,
-      counterparty,
-      notes,
-      memberId: member.id,
-    })
-    .returning({ id: schema.transactions.id });
+  const id = await recordCashLine(member, { kind, label, amount, counterparty, notes });
   revalidate();
-  redirect(`/achat-vente?inscrit=${line.id}`);
+  redirect(`/achat-vente?inscrit=${id}`);
 }
 
 /**
@@ -174,17 +106,8 @@ export async function settleTransaction(
   const member = await requireMember();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
-  const t = schema.transactions;
-  const [line] = await getDb()
-    .select({ memberId: t.memberId, kind: t.kind })
-    .from(t)
-    .where(and(eq(t.id, id), eq(t.shopId, member.shopId), eq(t.tillPending, true), isNull(t.cancelledAt)))
-    .limit(1);
-  if (!line) return { ok: false, message: "Cette ligne n'attend plus la caisse." };
-  if (member.role !== "gerant" && line.memberId !== member.id) {
-    return { ok: false, message: "Seul un gérant peut le faire pour la ligne d'un autre membre." };
-  }
-  await settleEntry(member.shopId, id);
+  const result = await attempt(() => settleLine(member, id));
+  if (!result.ok) return result;
   revalidate();
   return { ok: true, message: "Les septims comptent dans la caisse." };
 }
@@ -197,40 +120,8 @@ export async function cancelTransaction(
   const member = await requireMember();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
-  const db = getDb();
-  try {
-    await db.transaction(async (tx) => {
-      const [line] = await tx
-        .select()
-        .from(schema.transactions)
-        .where(
-          and(
-            eq(schema.transactions.id, id),
-            eq(schema.transactions.shopId, member.shopId),
-            isNull(schema.transactions.cancelledAt),
-          ),
-        )
-        .for("update")
-        .limit(1);
-      if (!line) throw new UserError("Cette ligne est introuvable ou déjà annulée.");
-      if (member.role !== "gerant" && line.memberId !== member.id) {
-        throw new UserError("Seul un gérant peut annuler la ligne d'un autre membre.");
-      }
-      if (line.productId != null) {
-        const delta = line.kind === "vente" ? line.quantity : -line.quantity;
-        const moved = await moveStock(tx, member.shopId, line.productId, delta, member.id, `Annulation ${line.kind} n°${line.id}`, line.id);
-        // A cancelled buyback whose goods are already gone cannot be undone.
-        if (!moved.ok) throw new UserError("Impossible d'annuler : la marchandise rachetée a déjà été vendue.");
-      }
-      await tx
-        .update(schema.transactions)
-        .set({ cancelledAt: new Date(), cancelledBy: member.id })
-        .where(eq(schema.transactions.id, id));
-    });
-  } catch (error) {
-    if (error instanceof UserError) return { ok: false, message: error.message };
-    throw error;
-  }
+  const result = await attempt(() => cancelLine(member, id));
+  if (!result.ok) return result;
   revalidate();
   return { ok: true, message: "Ligne annulée, stock rétabli." };
 }

@@ -1,10 +1,9 @@
-import { count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { authConfigured, currentMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { accountCount } from "@/lib/members";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +14,7 @@ export default async function Connexion({
 }) {
   const returnPath = safeReturnPath((await searchParams)[RETURN_PARAM]);
   if (await currentMember()) redirect(returnPath);
-  const [{ total }] = await getDb().select({ total: count() }).from(schema.members);
+  const total = await accountCount();
 
   return (
     <main className="gate">

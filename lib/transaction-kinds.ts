@@ -15,3 +15,8 @@ export function isCashKind(kind: TransactionKind) {
 export function signedAmount(kind: TransactionKind, amount: number) {
   return kind === "vente" || kind === "entree" ? amount : -amount;
 }
+
+/** A refusal about line `i` of an entry of `count` lines: it names the line when there are several. */
+export function lineMessage(count: number, i: number, message: string) {
+  return count > 1 ? `Marchandise ${i + 1} : ${message}` : message;
+}

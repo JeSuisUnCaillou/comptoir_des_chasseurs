@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { changePassword } from "@/app/(comptoir)/mot-de-passe/actions";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 
 export function ChangePasswordForm() {
   const [state, action, pending] = useActionState(changePassword, null);

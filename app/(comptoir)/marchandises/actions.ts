@@ -1,22 +1,16 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
-import { getDb, isUniqueViolation, schema } from "@/lib/db";
-import { BLACKSMITH_LEATHER_PRICE, DUPLICATE_PRODUCT_NAME, readProductIdentity } from "@/lib/products";
+import { attempt } from "@/lib/errors";
+import { checked, optionalInt } from "@/lib/forms";
+import { readProductIdentity, saveProduct as save, setBlacksmithLeatherPrice } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
-function optionalInt(formData: FormData, key: string) {
-  const raw = String(formData.get(key) ?? "").trim();
-  if (raw === "") return null;
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 0 ? n : NaN;
-}
-
-function positiveInt(formData: FormData, key: string) {
+/** A quantity a price is given for: 1 when left empty. */
+function perQty(formData: FormData, key: string) {
   const n = optionalInt(formData, key);
   return n == null ? 1 : n;
 }
@@ -31,16 +25,16 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     category,
     unit,
     buyPrice: optionalInt(formData, "buyPrice"),
-    buyQty: positiveInt(formData, "buyQty"),
+    buyQty: perQty(formData, "buyQty"),
     citizenBuyPrice: optionalInt(formData, "citizenBuyPrice"),
     sellPrice: optionalInt(formData, "sellPrice"),
-    sellQty: positiveInt(formData, "sellQty"),
+    sellQty: perQty(formData, "sellQty"),
     bulkMin: optionalInt(formData, "bulkMin"),
     bulkPrice: optionalInt(formData, "bulkPrice"),
-    bulkQty: positiveInt(formData, "bulkQty"),
+    bulkQty: perQty(formData, "bulkQty"),
     hidesPerBatch: category === "peau" ? optionalInt(formData, "hidesPerBatch") : null,
     leatherPerBatch: category === "peau" ? optionalInt(formData, "leatherPerBatch") : null,
-    archived: formData.get("archived") === "on",
+    archived: checked(formData, "archived"),
   };
 
   if (Number.isNaN(id)) return { error: "Marchandise inconnue." };
@@ -56,22 +50,8 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: "Indique les peaux ET les cuirs de la transformation, ou aucun des deux." };
   }
 
-  const db = getDb();
-  try {
-    if (id != null) {
-      await db
-        .update(schema.products)
-        .set(values)
-        .where(and(eq(schema.products.id, id), eq(schema.products.shopId, member.shopId)));
-    } else {
-      await db.insert(schema.products).values({ ...values, shopId: member.shopId });
-    }
-  } catch (error) {
-    if (isUniqueViolation(error)) {
-      return { error: DUPLICATE_PRODUCT_NAME };
-    }
-    throw error;
-  }
+  const result = await attempt(() => save(member.shopId, id, values));
+  if (!result.ok) return { error: result.message };
   revalidatePath("/", "layout");
   redirect(formData.get("depuis") === "tarifs" ? "/tarifs" : "/marchandises");
 }
@@ -80,9 +60,6 @@ export async function saveBlacksmithPrice(formData: FormData) {
   const member = await requireMember(["gerant"]);
   const value = Number(formData.get("value"));
   if (!Number.isInteger(value) || value < 0) return;
-  await getDb()
-    .insert(schema.settings)
-    .values({ shopId: member.shopId, key: BLACKSMITH_LEATHER_PRICE, value })
-    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+  await setBlacksmithLeatherPrice(member.shopId, value);
   revalidatePath("/", "layout");
 }

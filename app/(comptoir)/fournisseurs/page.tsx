@@ -4,16 +4,17 @@ import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { SupplierCard } from "@/components/supplier-card";
 import { requireMember } from "@/lib/auth/session";
-import { pageParam, param } from "@/lib/pagination";
+import { pageParam, searchParam } from "@/lib/pagination";
 import { SUPPLIER_PAGE_SIZE, supplierPage } from "@/lib/suppliers";
+import { isGerant } from "@/lib/policies";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
 export default async function Fournisseurs({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
-  const gerant = member.role === "gerant";
+  const gerant = isGerant(member);
   const search = await searchParams;
-  const q = (param(search.q) ?? "").trim().slice(0, 100);
+  const q = searchParam(search.q);
   const page = pageParam(search.page);
   const { suppliers, total } = await supplierPage(member.shopId, q, page);
 

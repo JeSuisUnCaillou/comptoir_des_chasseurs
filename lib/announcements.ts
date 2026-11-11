@@ -1,6 +1,9 @@
 import "server-only";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
+import type { ShopMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
+import type { AnnouncementPin } from "@/lib/db/schema";
+import { canActOn } from "@/lib/policies";
 
 /** Parchments per page of the board on the Annonces page. */
 export const BOARD_SIZE = 12;
@@ -37,4 +40,28 @@ export async function announcementCount(shopId: number) {
     .from(schema.announcements)
     .where(eq(schema.announcements.shopId, shopId));
   return row.total;
+}
+
+type Actor = Pick<ShopMember, "id" | "role" | "shopId">;
+
+/** Pins a parchment on the shop's board. Returns its id. */
+export async function postAnnouncement(member: Actor, values: { title: string; body: string; pin: AnnouncementPin }) {
+  const [posted] = await getDb()
+    .insert(schema.announcements)
+    .values({ ...values, shopId: member.shopId, memberId: member.id })
+    .returning({ id: schema.announcements.id });
+  return posted.id;
+}
+
+/** Takes a parchment off the board: its author or a gérant may. False when it may not, or is gone. */
+export async function takeDown(member: Actor, id: number) {
+  const a = schema.announcements;
+  const db = getDb();
+  const [announcement] = await db
+    .select({ memberId: a.memberId })
+    .from(a)
+    .where(and(eq(a.id, id), eq(a.shopId, member.shopId)));
+  if (!announcement || !canActOn(member, announcement)) return false;
+  await db.delete(a).where(eq(a.id, id));
+  return true;
 }

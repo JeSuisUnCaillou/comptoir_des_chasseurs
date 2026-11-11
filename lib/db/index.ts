@@ -35,3 +35,8 @@ export function isUniqueViolation(error: unknown) {
 export function byName(column: AnyColumn) {
   return sql`${column} collate "fr-x-icu"`;
 }
+
+/** An `ilike` pattern matching text that contains `q`, its own % and _ taken literally. */
+export function containing(q: string) {
+  return `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+}

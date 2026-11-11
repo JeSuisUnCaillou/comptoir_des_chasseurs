@@ -6,7 +6,7 @@ import {
   resetPassword,
   type MemberFormState,
 } from "@/app/(comptoir)/membres/actions";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 
 function Status({ state }: { state: MemberFormState }) {
   if (!state) return null;

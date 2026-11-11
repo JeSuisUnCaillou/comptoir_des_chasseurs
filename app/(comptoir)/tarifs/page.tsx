@@ -5,7 +5,7 @@ import { PageHead } from "@/components/page-head";
 import { PendingSpinner } from "@/components/nav-link";
 import { PriceCalculator } from "@/components/price-calculator";
 import { requireMember } from "@/lib/auth/session";
-import { param } from "@/lib/pagination";
+import { param, searchParam } from "@/lib/pagination";
 import type { Product } from "@/lib/db/schema";
 import {
   CATEGORY_LABELS,
@@ -18,6 +18,7 @@ import {
   plural,
 } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice } from "@/lib/products";
+import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
   return p.buyPrice != null || p.sellPrice != null;
@@ -204,7 +205,7 @@ function Unpriced({
 
 /** Products whose name holds the search, ignoring case. */
 function matching(products: Product[], search: string | string[] | undefined) {
-  const q = (param(search) ?? "").trim().slice(0, 100).toLocaleLowerCase("fr");
+  const q = searchParam(search).toLocaleLowerCase("fr");
   return q ? products.filter((p) => p.name.toLocaleLowerCase("fr").includes(q)) : products;
 }
 
@@ -212,7 +213,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const member = await requireMember();
   const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
-  const canEdit = member.role === "gerant";
+  const canEdit = isGerant(member);
   const allHides = matching(products, search.peaux).filter((p) => p.category === "peau");
   const hides = allHides.filter(priced);
   const hunted = matching(products, search.chasse).filter((p) => p.category !== "peau" && p.category !== "cuir");

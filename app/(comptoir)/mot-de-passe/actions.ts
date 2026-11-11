@@ -1,9 +1,8 @@
 "use server";
 
-import { eq } from "drizzle-orm";
-import { getDb, schema } from "@/lib/db";
 import { MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { requireMember, startSession } from "@/lib/auth/session";
+import { setOwnPassword } from "@/lib/members";
 
 export type PasswordState = { ok: boolean; message: string } | null;
 
@@ -21,7 +20,7 @@ export async function changePassword(_prev: PasswordState, formData: FormData): 
     return { ok: false, message: "Les deux mots de passe ne correspondent pas." };
   }
   const passwordHash = await hashPassword(next);
-  await getDb().update(schema.members).set({ passwordHash }).where(eq(schema.members.id, member.id));
+  await setOwnPassword(member.id, passwordHash);
   // Other devices are signed out; this one gets a fresh session.
   await startSession({ id: member.id, passwordHash });
   return { ok: true, message: "Mot de passe changé." };

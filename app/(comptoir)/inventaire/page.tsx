@@ -8,7 +8,7 @@ import type { ProductCategory } from "@/lib/db/schema";
 import { MovementTable } from "@/components/movement-table";
 import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
-import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
+import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
@@ -33,7 +33,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
   const member = await requireMember();
   const search = await searchParams;
   const page = pageParam(search.page);
-  const q = (param(search.q) ?? "").trim().slice(0, 100) || undefined;
+  const q = searchParam(search.q) || undefined;
   const sens = asDirection(param(search.sens));
   const { du, au, from, to } = dayRange(param(search.du), param(search.au));
   const authors = await memberNames(member.shopId);

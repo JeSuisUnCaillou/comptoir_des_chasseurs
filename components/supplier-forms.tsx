@@ -8,7 +8,7 @@ import {
   type SupplierFormState,
 } from "@/app/(comptoir)/fournisseurs/actions";
 import type { Supplier } from "@/lib/db/schema";
-import { keepValues } from "@/lib/keep-values";
+import { keepValues } from "@/components/keep-values";
 
 function Status({ state }: { state: SupplierFormState }) {
   if (!state) return null;
