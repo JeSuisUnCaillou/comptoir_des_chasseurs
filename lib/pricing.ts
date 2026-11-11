@@ -37,41 +37,46 @@ function total(price: number, per: number, quantity: number): Total {
   return { value: (quantity * price) / per, complete: quantity % per === 0 };
 }
 
-/** What the comptoir pays a seller; citizens of Estemarche get their own price when it is set. */
-export function buyTotal(
-  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
-  quantity: number,
-  { citizen = false } = {},
-): Total | null {
-  const price = citizen && p.citizenBuyPrice != null ? p.citizenBuyPrice : p.buyPrice;
-  return price == null ? null : total(price, p.buyQty, quantity);
-}
-
 export function isBulk(p: Prices, quantity: number) {
   return p.bulkMin != null && p.bulkPrice != null && quantity >= p.bulkMin;
 }
 
-export function sellTotal(p: Prices, quantity: number): (Total & { bulk: boolean }) | null {
-  if (isBulk(p, quantity)) {
-    return { ...total(p.bulkPrice!, p.bulkQty, quantity), bulk: true };
-  }
-  if (p.sellPrice == null) return null;
-  return { ...total(p.sellPrice, p.sellQty, quantity), bulk: false };
-}
+export type Rate = { price: number; qty: number; bulk: boolean; citizen: boolean };
 
-/** The rate a sale or a buyback of `quantity` units is priced at by default, or null without a tariff. */
+/**
+ * The rate a sale or a buyback of `quantity` units is priced at, or null
+ * without a tariff: wholesale from its threshold on a sale, the citizens of
+ * Estemarche's own price on a buyback when it is set.
+ */
 export function appliedRate(
   p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
   kind: "vente" | "rachat",
   quantity: number,
   { citizen = false } = {},
-): { price: number; qty: number; bulk: boolean; citizen: boolean } | null {
+): Rate | null {
   if (kind === "vente") {
     if (isBulk(p, quantity)) return { price: p.bulkPrice!, qty: p.bulkQty, bulk: true, citizen: false };
     return p.sellPrice == null ? null : { price: p.sellPrice, qty: p.sellQty, bulk: false, citizen: false };
   }
-  if (citizen && p.citizenBuyPrice != null) return { price: p.citizenBuyPrice, qty: p.buyQty, bulk: false, citizen: true };
+  if (citizen && p.citizenBuyPrice != null) {
+    return { price: p.citizenBuyPrice, qty: p.buyQty, bulk: false, citizen: true };
+  }
   return p.buyPrice == null ? null : { price: p.buyPrice, qty: p.buyQty, bulk: false, citizen: false };
+}
+
+/** What the comptoir pays a seller. */
+export function buyTotal(
+  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
+  quantity: number,
+  { citizen = false } = {},
+): Total | null {
+  const r = appliedRate(p, "rachat", quantity, { citizen });
+  return r && total(r.price, r.qty, quantity);
+}
+
+export function sellTotal(p: Prices, quantity: number): (Total & { bulk: boolean }) | null {
+  const r = appliedRate(p, "vente", quantity);
+  return r && { ...total(r.price, r.qty, quantity), bulk: r.bulk };
 }
 
 /** The smallest quantity that makes whole lots on both sides, or the wholesale threshold. */
