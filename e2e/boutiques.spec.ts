@@ -1,9 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
-import { GERANT, loginAsGerant, uniqueName } from "./helpers";
-
-const ALERT = '[role="alert"]';
+import { ALERT, GERANT, loginAsGerant, uniqueName } from "./helpers";
 
 /** Points hidden "id" fields at another row, once the page is hydrated (React would put them back). */
 async function retarget(page: Page, inputs: Locator, id: number) {
