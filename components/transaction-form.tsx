@@ -295,7 +295,6 @@ export function TransactionForm({
           {state.message}
         </p>
       )}
-      <p className="small muted">Le montant de chaque marchandise est le total pour sa quantité.</p>
       <button className="btn btn-primary" type="submit" disabled={pending || short.length > 0}>
         <Plus size={16} /> {submitLabel}
       </button>
