@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -91,4 +91,41 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
   const above = await panel("Ajouter une marchandise").boundingBox();
   const catalogue = await panel("Toutes les marchandises").boundingBox();
   expect(catalogue!.y - (above!.y + above!.height)).toBeGreaterThanOrEqual(20);
+});
+
+test("une marchandise archivée quitte les tarifs et les ventes, puis y revient", async ({ page }) => {
+  const name = uniqueName("Bois de cerf");
+  await createProduct(name, { category: "ressource", unit: "bois", buyPrice: 2, sellPrice: 4 });
+  await loginAsGerant(page);
+
+  const search = async () => {
+    await page.goto("/marchandises");
+    await page.getByRole("searchbox", { name: "Chercher une marchandise" }).fill(name);
+    await expect(page).toHaveURL(/q=/);
+    return page.getByRole("row", { name: new RegExp(name) });
+  };
+  const setArchived = async (archived: boolean) => {
+    await (await search()).getByRole("link", { name: `Modifier ${name}` }).click();
+    await page.getByLabel(/Archivée/).setChecked(archived);
+    await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
+    await expect(page).toHaveURL(/\/marchandises$/);
+  };
+  const offeredForSale = async () => {
+    await page.goto("/achat-vente/vente");
+    const box = page.getByRole("combobox", { name: "Article ou marchandise" });
+    await box.fill(name);
+    return page.getByRole("option", { name, exact: true });
+  };
+
+  await setArchived(true);
+  await expect((await search()).getByText("Archivée", { exact: true })).toBeVisible();
+  await page.goto("/tarifs");
+  await expect(page.getByText(name)).toHaveCount(0);
+  await expect(await offeredForSale()).toHaveCount(0);
+
+  await setArchived(false);
+  await expect((await search()).getByText("Archivée", { exact: true })).toHaveCount(0);
+  await page.goto("/tarifs");
+  await expect(page.getByRole("row", { name: new RegExp(name) })).toBeVisible();
+  await expect(await offeredForSale()).toBeVisible();
 });

@@ -99,3 +99,38 @@ test("la liste des comptes est paginée", async ({ page }) => {
   }
   await expect(last).toBeVisible();
 });
+
+test("un gérant nomme un employé gérant, qui gère alors les comptes", async ({ page, browser }) => {
+  // "Aa" sorts them first, so they stay on the first page of the accounts.
+  const { page: employee, username } = await newEmployeePage(browser, "aa-brina");
+  await expect(employee.getByRole("link", { name: "Membres" })).toHaveCount(0);
+
+  await loginAsGerant(page);
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${username}`);
+  await row.getByLabel("Nom affiché").fill("Aa Brina Merilis");
+  await row.getByLabel("Rôle").selectOption("gerant");
+  await row.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(row.locator(".badge")).toHaveText("Gérant");
+
+  await employee.reload();
+  await expect(employee.getByTestId("member-name")).toHaveText("Aa Brina Merilis");
+  await employee.getByRole("link", { name: "Membres" }).click();
+  await expect(employee.getByRole("heading", { name: "Créer un compte" })).toBeVisible();
+});
+
+test("un gérant ne peut pas se retirer son propre rôle de gérant", async ({ browser }) => {
+  // "Aa" sorts them first, so they stay on the first page of the accounts.
+  const username = uniqueName("aa-vignar").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant", "Aa Vignar");
+  const page = await (await browser.newContext()).newPage();
+  await loginAs(page, username, "mot-de-passe");
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${username}`);
+  // No role to pick on their own row, only the name.
+  await expect(row.getByLabel("Rôle")).toHaveCount(0);
+  await row.getByLabel("Nom affiché").fill("Aa Vignar Grisecrinière");
+  await row.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByTestId("member-name")).toHaveText("Aa Vignar Grisecrinière");
+  await expect(row.locator(".badge")).toHaveText("Gérant");
+});
