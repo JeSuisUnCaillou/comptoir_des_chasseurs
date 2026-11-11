@@ -20,9 +20,12 @@ export function loginAsGerant(page: Page) {
   return loginAs(page, GERANT.username, GERANT.password);
 }
 
-/** Picks a product in the "Article ou marchandise" field of a sale or purchase form, by typing its name. */
-export async function pickProduct(form: Locator, name: string) {
-  const box = form.getByRole("combobox", { name: "Article ou marchandise" });
+/**
+ * Picks a product in a product field by typing its name: "Article ou
+ * marchandise" on a sale or purchase form, "Marchandise" on a stock movement.
+ */
+export async function pickProduct(form: Locator, name: string, label = "Article ou marchandise") {
+  const box = form.getByRole("combobox", { name: label, exact: true });
   await box.fill(name);
   await form.getByRole("option", { name, exact: true }).click();
   await expect(box).toHaveValue(name);

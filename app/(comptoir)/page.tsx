@@ -1,4 +1,4 @@
-import { Coins, Megaphone, ShoppingBasket, Wallet } from "lucide-react";
+import { ArrowLeftRight, Coins, Megaphone, ShoppingBasket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
 import { PageHead } from "@/components/page-head";
@@ -35,6 +35,9 @@ export default async function GrandLivre() {
             </Link>
             <Link className="btn" href="/achat-vente/caisse">
               <Wallet size={16} /> Mouvement de caisse
+            </Link>
+            <Link className="btn" href="/inventaire/mouvement">
+              <ArrowLeftRight size={16} /> Mouvement de stock
             </Link>
           </div>
         </div>

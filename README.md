@@ -111,8 +111,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
   moins les mouvements de caisse, dont elle donne le total), le total des
   ventes, le total des rachats et le solde ventes − rachats. En dessous, la caisse du jour et des 7 derniers
-  jours, les boutons Nouvel achat, Nouvelle vente et Mouvement de caisse, et
-  les dernières écritures.
+  jours, les boutons Nouvel achat, Nouvelle vente, Mouvement de caisse et
+  Mouvement de stock, et les dernières écritures.
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une vente ou un achat peut
@@ -170,7 +170,15 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   suppriment, par les boutons de la page.
 - **Tarifs**, **Inventaire** (en tête, les septims en caisse, calculés comme
   la trésorerie du Grand livre, sans les septims en attente de la caisse ;
-  entrées et sorties avec motif ; le bouton
+  entrées et sorties avec motif ; le bouton « Mouvement de stock », là et
+  sur le Grand livre, ouvre sur sa propre page un formulaire qui fait entrer
+  ou sortir plusieurs marchandises d'un coup, sans septims : le sens, une
+  marchandise par ligne avec sa quantité et son stock après le mouvement
+  (« Ajouter une marchandise », la corbeille, 25 au plus comme pour un
+  achat), et un motif commun ; tout est inscrit ensemble ou rien, jamais
+  sous zéro, et l'enregistrement ramène à l'Inventaire, qui le confirme. Dans
+  l'historique et l'activité du membre, les mouvements inscrits ensemble
+  forment une carte, comme une écriture du registre ; le bouton
   « Nouvelle marchandise » fait entrer en stock une marchandise qui n'existe
   pas encore : tout membre la crée, sans prix, avec nom, catégorie, unité,
   quantité et motif, et un gérant règle ses prix ensuite dans Gérer les
