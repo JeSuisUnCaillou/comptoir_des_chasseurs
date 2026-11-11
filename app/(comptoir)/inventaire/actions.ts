@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { text } from "@/lib/forms";
-import { createStocked, readProductIdentity, recordMovement as moveByHand } from "@/lib/products";
+import { readProductIdentity, text } from "@/lib/forms";
+import { createStocked, recordMovement as moveByHand } from "@/lib/products";
 
 export type MoveState = { ok: boolean; message: string } | null;
 

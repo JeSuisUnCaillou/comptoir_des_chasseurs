@@ -1,29 +1,12 @@
 import "server-only";
 import { and, asc, count, desc, eq, gt, gte, ilike, lt, sql, type SQL } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
-import { productCategory, type ProductCategory } from "@/lib/db/schema";
+import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
-import { text } from "@/lib/forms";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 
 export const DUPLICATE_PRODUCT_NAME = "Une marchandise porte déjà ce nom.";
-
-/**
- * Reads a merchandise's name, category and unit from a form, the same way for
- * every form that creates one. `error` says what is wrong, if anything.
- */
-export function readProductIdentity(formData: FormData) {
-  const name = text(formData, "name", 100);
-  const category = String(formData.get("category")) as ProductCategory;
-  const unit = text(formData, "unit", 30) || "pièce";
-  const error = !name
-    ? "Le nom est obligatoire."
-    : !productCategory.enumValues.includes(category)
-      ? "Catégorie inconnue."
-      : undefined;
-  return { name, category, unit, error };
-}
 
 export async function activeProducts(shopId: number) {
   return getDb()

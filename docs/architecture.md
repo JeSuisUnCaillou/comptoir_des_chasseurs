@@ -13,12 +13,14 @@ les règles marquées ✔.
 | Présentation | `app/**/page.tsx`, `layout.tsx`, `components/` | Lit avec les requêtes de `lib/`, dessine, appelle les actions. | ✔ Pas de `drizzle-orm` ni de `@/lib/db`. Pas de règle métier : un calcul ou une décision de droits passe par `lib/`. |
 | Actions | `app/**/actions.ts` (Server Actions) | Lit le formulaire (`lib/forms.ts`), vérifie la session et le rôle (`requireMember`), appelle **un** service de `lib/`, puis revalide et redirige. | ✔ Pas de SQL. Pas de règle métier au-delà de la forme des champs. |
 | Services et requêtes | `lib/<domaine>.ts` marqué `import "server-only"` : `transactions.ts` (écrire le registre), `register.ts` (le lire, la caisse), `products.ts` (stock, catalogue), `suppliers.ts`, `announcements.ts`, `members.ts`, `activity.ts`, `auth/session.ts`, `shops.ts` | Un cas d'usage par fonction (« inscrire une vente », « annuler une ligne »), avec sa transaction. Reçoit la boutique (`shopId`, ou le membre qui la porte) et ne lit ou n'écrit que ses lignes. Refuse avec `UserError` (`lib/errors.ts`), que l'action rend au formulaire avec `attempt`. | ✔ Ne connaît ni `app/` ni `components/`. Pas de `FormData` : il reçoit des valeurs déjà lues. |
-| Domaine pur | `pricing.ts`, `policies.ts`, `transaction-kinds.ts`, `announcement-rules.ts`, `entry-groups.ts`, `transaction-draft.ts`, `pagination.ts`, `forms.ts`, `errors.ts` | Calculs et règles sans base ni React : les prix, qui peut agir sur quoi (`isGerant`, `canActOn`), les messages. Utilisables côté client comme côté serveur. | ✔ Pas d'accès à la base (sinon `server-only`, et ce n'est plus du domaine pur). |
+| Domaine pur | `pricing.ts`, `policies.ts`, `transaction-kinds.ts`, `announcement-rules.ts`, `entry-groups.ts`, `transaction-draft.ts`, `pagination.ts`, `forms.ts`, `errors.ts`, `auth/password.ts`, `auth/return-path.ts` | Calculs et règles sans base ni React : les prix, qui peut agir sur quoi (`isGerant`, `canActOn`), la lecture des formulaires, les mots de passe. Sans état ni requête. | Pas d'accès à la base : un fichier qui lit la base est un service, il porte ✔ `server-only`. |
 | Infrastructure | `lib/db/` (`index.ts`, `schema.ts`, `url.mjs`), `drizzle/` | Client Postgres, schéma, migrations, petits outils SQL (`byName`, `containing`, `isUniqueViolation`). | Pas de règle métier. |
 
 Les imports descendent : présentation et actions → services → domaine pur et
-infrastructure. Les types du schéma (`import type … from "@/lib/db/schema"`)
-peuvent servir partout.
+infrastructure. Le schéma (`@/lib/db/schema`) peut servir partout pour ses
+types et ses énumérations (`memberRole.enumValues`…), jamais pour une requête.
+Un composant client qui n'est que de l'interface (`components/keep-values.ts`)
+reste dans `components/`.
 
 ## Où mettre quoi
 

@@ -1,19 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { memberRole, type MemberRole } from "@/lib/db/schema";
 import { MIN_PASSWORD_LENGTH, hashPassword, normalizeUsername } from "@/lib/auth/password";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { text } from "@/lib/forms";
+import { readRole, text } from "@/lib/forms";
 import { createAccount, resetAccountPassword, updateAccount } from "@/lib/members";
 
 export type MemberFormState = { ok: boolean; message: string } | null;
-
-function readRole(formData: FormData): MemberRole | null {
-  const role = String(formData.get("role")) as MemberRole;
-  return memberRole.enumValues.includes(role) ? role : null;
-}
 
 export async function createMember(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
   const me = await requireMember(["gerant"]);

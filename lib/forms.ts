@@ -1,5 +1,7 @@
 /** Reading the fields of a submitted form, the same way in every Server Action. */
 
+import { memberRole, productCategory, type MemberRole, type ProductCategory } from "@/lib/db/schema";
+
 /** A text field, trimmed and cut to `max` characters; "" when missing. */
 export function text(formData: FormData, key: string, max: number) {
   return String(formData.get(key) ?? "").trim().slice(0, max);
@@ -27,4 +29,26 @@ export function optionalId(formData: FormData, key = "id") {
 /** A checkbox: true when ticked. */
 export function checked(formData: FormData, key: string) {
   return formData.get(key) === "on";
+}
+
+/** A member's role in a shop; null when it is not one. */
+export function readRole(formData: FormData): MemberRole | null {
+  const role = String(formData.get("role")) as MemberRole;
+  return memberRole.enumValues.includes(role) ? role : null;
+}
+
+/**
+ * Reads a merchandise's name, category and unit from a form, the same way for
+ * every form that creates one. `error` says what is wrong, if anything.
+ */
+export function readProductIdentity(formData: FormData) {
+  const name = text(formData, "name", 100);
+  const category = String(formData.get("category")) as ProductCategory;
+  const unit = text(formData, "unit", 30) || "pièce";
+  const error = !name
+    ? "Le nom est obligatoire."
+    : !productCategory.enumValues.includes(category)
+      ? "Catégorie inconnue."
+      : undefined;
+  return { name, category, unit, error };
 }

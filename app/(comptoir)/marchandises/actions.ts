@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { checked, optionalInt } from "@/lib/forms";
-import { readProductIdentity, saveProduct as save, setBlacksmithLeatherPrice } from "@/lib/products";
+import { checked, optionalInt, readProductIdentity } from "@/lib/forms";
+import { saveProduct as save, setBlacksmithLeatherPrice } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
