@@ -52,8 +52,12 @@ anglais.
 ## Suivre le travail dans les issues
 
 Avant de commencer un travail, trouve son issue ou ouvres-en une qui dit quoi
-et pourquoi. La pull request y renvoie (`Closes #n`) pour que le merge la
-ferme. Ce qu'on découvre en route sans le faire part dans une nouvelle issue,
+et pourquoi. La pull request y renvoie par `Closes #n` dans sa description
+pour que le merge la ferme ; une PR qui n'en fait qu'une partie dit `Refs #n`,
+et ce qui reste part dans une issue à soi. Après chaque merge, vérifie que
+l'issue réglée est bien fermée et, sinon, ferme-la avec un commentaire qui
+renvoie à la PR : le propriétaire ne veut pas d'issues réglées qui traînent
+(2026-11-11). Ce qu'on découvre en route sans le faire part dans une nouvelle issue,
 pas dans un commentaire TODO ; l'étape 8 de la revue en boucle pèse ces
 restes à la fin du travail. Quand tu proposes du travail, dis quelles
 propositions ont déjà une issue, et pèse le gain contre le coût : c'est une
