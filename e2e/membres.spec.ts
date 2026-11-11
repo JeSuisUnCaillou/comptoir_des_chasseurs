@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createMember, loginAs, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createMember, loginAs, loginAsGerant, makeSuperAdmin, newEmployeePage, uniqueName } from "./helpers";
 
 const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
@@ -98,4 +98,64 @@ test("la liste des comptes est paginée", async ({ page }) => {
     await expect(pages).toContainText(`Page ${n} sur`);
   }
   await expect(last).toBeVisible();
+});
+
+test("personne d'autre que le super admin ne touche à son compte", async ({ page, browser }) => {
+  // "Aa" sorts both accounts on the first page of Membres.
+  const boss = uniqueName("aa-boss").toLowerCase();
+  const other = uniqueName("aa-gerant").toLowerCase();
+  await createMember(boss, "mot-de-passe", "gerant", `Aa ${boss}`);
+  await createMember(other, "mot-de-passe", "gerant", `Aa ${other}`);
+  await makeSuperAdmin(boss);
+
+  await loginAs(page, other, "mot-de-passe");
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${boss}`);
+  await expect(row.getByText("Super admin")).toBeVisible();
+  await expect(row.getByText("protégé")).toBeVisible();
+  await expect(row.getByLabel("Rôle")).toHaveCount(0);
+  await expect(row.getByLabel("Nom affiché")).toHaveCount(0);
+  await expect(row.getByLabel("Nouveau mot de passe")).toHaveCount(0);
+
+  // The super admin still runs the comptoir, and edits their own name.
+  const owner = await (await browser.newContext()).newPage();
+  await loginAs(owner, boss, "mot-de-passe");
+  await owner.goto("/membres");
+  const own = owner.getByTestId(`member-${boss}`);
+  await expect(own.getByLabel("Rôle")).toHaveCount(0);
+  await own.getByLabel("Nom affiché").fill(`Aa ${boss} le Patron`);
+  await own.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(owner.getByTestId("member-name")).toHaveText(`Aa ${boss} le Patron`);
+  const theirs = owner.getByTestId(`member-${other}`);
+  await theirs.getByLabel("Rôle").selectOption("employe");
+  await theirs.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(theirs.locator(".badge")).toHaveText("Employé");
+});
+
+test("le serveur refuse de modifier le super admin, même par un formulaire ouvert avant", async ({ page, browser }) => {
+  const boss = uniqueName("aa-chef").toLowerCase();
+  const other = uniqueName("aa-second").toLowerCase();
+  await createMember(boss, "mot-de-passe", "gerant", `Aa ${boss}`);
+  await createMember(other, "mot-de-passe", "gerant", `Aa ${other}`);
+
+  // The forms are on screen while the account is still an ordinary gérant.
+  await loginAs(page, other, "mot-de-passe");
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${boss}`);
+  await expect(row.getByLabel("Rôle")).toBeVisible();
+  await makeSuperAdmin(boss);
+
+  await row.getByLabel("Nouveau mot de passe").fill("vole-le-compte");
+  await row.getByRole("button", { name: "Changer" }).click();
+  await expect(row.locator(ALERT)).toHaveText("Ce compte est protégé.");
+
+  await row.getByLabel("Rôle").selectOption("desactive");
+  await row.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(row.getByText("protégé")).toBeVisible();
+  await expect(row.locator(".badge").first()).toHaveText("Gérant");
+
+  // Still a gérant, with the old password.
+  const owner = await (await browser.newContext()).newPage();
+  await loginAs(owner, boss, "mot-de-passe");
+  await expect(owner.getByRole("link", { name: "Membres" })).toBeVisible();
 });

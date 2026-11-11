@@ -54,7 +54,7 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
     if (total > 0) return null;
     const [member] = await tx
       .insert(schema.members)
-      .values({ username, name, passwordHash, role: "gerant" })
+      .values({ username, name, passwordHash, role: "gerant", superAdmin: true })
       .returning();
     return member;
   });

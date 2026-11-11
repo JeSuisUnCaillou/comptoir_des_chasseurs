@@ -1,5 +1,5 @@
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account, some stock, a few announcements, the old app's suppliers and
+// gérant account and a second gérant, some stock, a few announcements, the old app's suppliers and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -21,6 +21,11 @@ const GERANT = {
   passwordHash:
     "scrypt$nCyAZPZdFcvX4ZcPobSYXA==$fRPqmmGDJi4EBj/yJGJfdxePeTqbFU2f/pcUhtczR+2wHaDZgGOqNy939utA/AH8KB+L2AbvUE+1WD3P5DPzRQ==",
 };
+
+// A second gérant, with Lomone's password, to see from another gérant's seat
+// that the super admin's account (the first gérant, see the members migration)
+// cannot be changed. Never made super admin here.
+const SECOND_GERANT = { username: "aela", name: "Aela" };
 
 // Starting stock, by product name.
 const STOCK = {
@@ -98,6 +103,13 @@ try {
       on conflict (username) do nothing
       returning id`;
     console.log(gerant ? "Gérant Lomone créé." : "Gérant Lomone déjà présent.");
+
+    const [second] = await tx`
+      insert into members (username, name, password_hash, role)
+      values (${SECOND_GERANT.username}, ${SECOND_GERANT.name}, ${GERANT.passwordHash}, 'gerant')
+      on conflict (username) do nothing
+      returning id`;
+    console.log(second ? "Gérante Aela créée." : "Gérante Aela déjà présente.");
 
     const [{ id: memberId }] = await tx`select id from members where username = ${GERANT.username}`;
 

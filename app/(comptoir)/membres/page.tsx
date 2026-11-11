@@ -60,7 +60,8 @@ export default async function Membres({
         <h2 id="personnel">Comptes</h2>
         <p className="muted">
           Le nom affiché est celui utilisé dans les registres. Un compte désactivé ne peut plus
-          entrer, mais son nom reste dans l&apos;historique.
+          entrer, mais son nom reste dans l&apos;historique. Le compte du super admin est
+          protégé : lui seul peut le modifier.
         </p>
         <div className="table-wrap">
           <table>
@@ -79,28 +80,40 @@ export default async function Membres({
                   <td>{m.username}</td>
                   <td>
                     <span className={BADGE[m.role]}>{ROLES.find((r) => r.value === m.role)?.label}</span>
+                    {m.superAdmin && (
+                      <>
+                        {" "}
+                        <span className="badge badge-gold">Super admin</span>
+                      </>
+                    )}
                   </td>
                   <td>
-                    <form action={updateMember} className="inline-form">
-                      <input type="hidden" name="id" value={m.id} />
-                      <input name="name" defaultValue={m.name} aria-label="Nom affiché" required maxLength={60} />
-                      {m.id === me.id ? (
-                        <input type="hidden" name="role" value="gerant" />
-                      ) : (
-                        <select name="role" defaultValue={m.role} aria-label="Rôle">
-                          {ROLES.map((r) => (
-                            <option key={r.value} value={r.value}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      <button className="btn btn-small" type="submit">
-                        Enregistrer
-                      </button>
-                    </form>
+                    {m.superAdmin && m.id !== me.id ? (
+                      <span>
+                        {m.name} <span className="muted small">· protégé</span>
+                      </span>
+                    ) : (
+                      <form action={updateMember} className="inline-form">
+                        <input type="hidden" name="id" value={m.id} />
+                        <input name="name" defaultValue={m.name} aria-label="Nom affiché" required maxLength={60} />
+                        {m.id === me.id ? (
+                          <input type="hidden" name="role" value="gerant" />
+                        ) : (
+                          <select name="role" defaultValue={m.role} aria-label="Rôle">
+                            {ROLES.map((r) => (
+                              <option key={r.value} value={r.value}>
+                                {r.label}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <button className="btn btn-small" type="submit">
+                          Enregistrer
+                        </button>
+                      </form>
+                    )}
                   </td>
-                  <td>{m.id !== me.id && <ResetPasswordForm id={m.id} />}</td>
+                  <td>{m.id !== me.id && !m.superAdmin && <ResetPasswordForm id={m.id} />}</td>
                   <td>
                     <Link className="btn btn-small btn-ghost" href={`/membres/${m.id}`}>
                       <ScrollText size={14} /> Activité

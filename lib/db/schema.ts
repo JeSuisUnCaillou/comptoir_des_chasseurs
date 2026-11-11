@@ -24,9 +24,16 @@ export const members = pgTable(
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
     role: memberRole("role").notNull().default("employe"),
+    // The comptoir's owner: always a gérant, and nobody else can change their
+    // account (name, role, password).
+    superAdmin: boolean("super_admin").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("members_username_idx").on(t.username)],
+  (t) => [
+    uniqueIndex("members_username_idx").on(t.username),
+    // The super admin has every right, always: they stay a gérant.
+    check("members_super_admin_gerant", sql`not ${t.superAdmin} or ${t.role} = 'gerant'`),
+  ],
 );
 
 export type Member = typeof members.$inferSelect;
