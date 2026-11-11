@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
-import { pendingEntryColumns } from "@/lib/register";
+import { entryKeyColumn, pendingEntryColumns } from "@/lib/register";
 
 export type HandStock = {
   /** Units put in and taken out. */
@@ -79,6 +79,8 @@ export type ActivityLine = {
   notes: string | null;
   /** A sale or buyback whose septims are not in the till yet. */
   tillPending: boolean;
+  /** The same for every line of one entry, null for a stock movement: see `entryKeyColumn`. */
+  entryKey: string | null;
   /** What settling it settles with it: see `pendingEntryColumns`. */
   entryLines: number;
   entryTotal: number;
@@ -102,12 +104,13 @@ function activitySource(memberId: number, from: Date, to: Date) {
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
       ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by,
-      ${entry.entryLines} as entry_lines, ${entry.entryTotal} as entry_total, ${entry.entryItems} as entry_items
+      ${entry.entryLines} as entry_lines, ${entry.entryTotal} as entry_total, ${entry.entryItems} as entry_items,
+      ${entryKeyColumn()} as entry_key
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
     where ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, ''
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', null
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.memberId} = ${memberId} and ${m.transactionId} is null
@@ -138,6 +141,7 @@ export async function memberActivity(
     entryLines: Number(r.entry_lines),
     entryTotal: Number(r.entry_total),
     entryItems: String(r.entry_items ?? ""),
+    entryKey: (r.entry_key as string | null) ?? null,
     createdAt: new Date(r.created_at as string),
     cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
     cancelledBy: (r.cancelled_by as string | null) ?? null,

@@ -23,10 +23,20 @@ export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
   );
 }
 
-/** Says the septims of a line waiting for the till are now in it (a sale) or out of it (a buyback). */
+/**
+ * Says the septims of an entry waiting for the till are now in it (a sale) or
+ * out of it (a buyback): one button per entry, showing its total.
+ */
 export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; entry: PendingEntry }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(settleTransaction, null);
-  const what = sale ? `la vente n°${id}` : `l'achat n°${id}`;
+  const total = entry.entryTotal;
+  const done = `${sale ? "déposé" : "pris"}${sale && total >= 2 ? "s" : ""}`;
+  const what =
+    entry.entryLines > 1
+      ? `${sale ? "cette vente" : "cet achat"} de ${entry.entryLines} lignes`
+      : sale
+        ? `la vente n°${id}`
+        : `l'achat n°${id}`;
   return (
     <form action={action} className="inline-form">
       <input type="hidden" name="id" value={id} />
@@ -34,12 +44,12 @@ export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; e
         className="btn btn-small"
         type="submit"
         disabled={pending}
-        aria-label={sale ? `Septims de ${what} déposés dans la caisse` : `Septims de ${what} pris dans la caisse`}
+        aria-label={`${septims(total)} de ${what} ${done} dans la caisse`}
         onClick={(e) => {
           if (!window.confirm(settleQuestion(id, sale, entry))) e.preventDefault();
         }}
       >
-        {sale ? "Septims déposés" : "Septims pris"}
+        {septims(total)} {done}
       </button>
       {state && !state.ok && (
         <span className="small minus" role="alert">

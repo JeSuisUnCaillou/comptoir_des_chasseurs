@@ -19,16 +19,24 @@ const sameEntry = alias(schema.transactions, "same_entry");
 type EntryColumns = Record<"memberId" | "kind" | "createdAt" | "tillPending" | "cancelledAt", AnyColumn>;
 
 /**
- * The lines of `rows` still waiting for the till in the same entry as `line`,
- * a row `(member_id, kind, created_at)`. `recordTransaction` writes the lines
- * of one entry in one database transaction, so they share their author, their
- * kind and their instant (now() is the start of the transaction): that is
- * what makes them one entry. The instant is compared in SQL, which keeps its
- * microseconds. Used both to settle an entry and to say what settling settles.
+ * What makes lines one entry: `recordTransaction` writes them in one database
+ * transaction, so they share their author, their kind and their instant
+ * (now() is the start of the transaction). The instant stays in SQL, which
+ * keeps its microseconds. Settling, saying what settling settles and showing
+ * an entry as one block all read it from here.
  */
+function entryOf(rows: EntryColumns) {
+  return sql`(${rows.memberId}, ${rows.kind}, ${rows.createdAt})`;
+}
+
+/** The lines of `rows` still waiting for the till in the entry `line` (an `entryOf`). */
 function pendingOfSameEntry(rows: EntryColumns, line: SQL) {
-  return sql`(${rows.memberId}, ${rows.kind}, ${rows.createdAt}) = ${line}
-    and ${rows.tillPending} and ${rows.cancelledAt} is null`;
+  return sql`${entryOf(rows)} = ${line} and ${rows.tillPending} and ${rows.cancelledAt} is null`;
+}
+
+/** The same text for every line of one entry, to show them together. */
+export function entryKeyColumn() {
+  return sql<string>`${entryOf(schema.transactions)}::text`;
 }
 
 /**
@@ -41,7 +49,7 @@ export function pendingEntryColumns() {
   const t = schema.transactions;
   const s = sameEntry;
   const from = sql`from ${schema.transactions} ${s}
-    where ${pendingOfSameEntry(s, sql`(${t.memberId}, ${t.kind}, ${t.createdAt})`)}`;
+    where ${pendingOfSameEntry(s, entryOf(t))}`;
   const pending = sql`${t.tillPending} and ${t.cancelledAt} is null`;
   return {
     entryLines: sql<number>`case when ${pending} then (select count(*)::int ${from}) else 0 end`,
@@ -83,6 +91,7 @@ export async function registerEntries(
       member: schema.members.name,
       memberId: t.memberId,
       cancelledBy: canceller.name,
+      entryKey: entryKeyColumn(),
       ...pendingEntryColumns(),
     })
     .from(t)

@@ -1413,3 +1413,73 @@ tr.fresh td {
 .supplier-price strong {
   color: var(--gold-strong);
 }
+
+/* Every entry (the lines written together, or a single line) is a card in
+   the register and on a member's activity page: framed by thin rules, a gold
+   bar on its left, no rule between its lines, room between two cards, what
+   its lines share written on the first one only. Rules are inset shadows, so
+   the transparent borders that make the room stay empty. */
+tr.entry td {
+  --top: 0px;
+  --bottom: 0px;
+  --left: 0 0 transparent;
+  --right: 0 0 transparent;
+  border-bottom-color: transparent;
+  background-clip: padding-box;
+  background-color: rgb(255 255 255 / 0.025);
+  box-shadow:
+    inset 0 var(--top) 0 var(--border),
+    inset 0 calc(-1 * var(--bottom)) 0 var(--border),
+    inset var(--left),
+    inset var(--right);
+}
+
+tr.entry td:first-child {
+  --left: 3px 0 0 var(--border-gold);
+}
+
+tr.entry td:last-child {
+  --right: -1px 0 0 var(--border);
+}
+
+tr.entry-first td {
+  --top: 1px;
+}
+
+tr.entry-last td {
+  --bottom: 1px;
+}
+
+tr.entry:not(.entry-last) td {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+
+tr.entry-next td {
+  padding-top: 4px;
+}
+
+/* Room between cards; none above the first, to keep the header's rule. */
+tr.entry-first:not(:first-child) td {
+  border-top: 12px solid transparent;
+}
+
+tr.entry-last td {
+  border-bottom: 12px solid transparent;
+}
+
+tr.entry.fresh td {
+  background-color: rgba(201, 169, 106, 0.1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

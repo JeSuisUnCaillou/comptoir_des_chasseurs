@@ -368,7 +368,7 @@ export function TransactionForm({
           </label>
           <span className="small muted">
             {sale ? "La vente" : "L'achat"} reste « En attente de la caisse » et ne compte pas dans la caisse
-            tant que tu n&apos;as pas cliqué sur « {sale ? "Septims déposés" : "Septims pris"} » dans le registre.
+            tant que tu n&apos;as pas cliqué sur son bouton « … septims {sale ? "déposés" : "pris"} » dans le registre.
           </span>
         </div>
       </div>

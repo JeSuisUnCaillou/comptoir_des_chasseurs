@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
 import { SettleButton } from "@/components/settle-button";
 import type { ActivityLine } from "@/lib/activity";
+import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
 
@@ -25,6 +27,8 @@ export function ActivityTable({
   canSettle?: boolean;
 }) {
   if (lines.length === 0) return <p className="muted">{empty}</p>;
+  // The lines of one entry form a block; what they share is written on its first line.
+  const positions = entryPositions(lines, (l) => l.cancelledAt == null && l.tillPending);
   return (
     <div className="table-wrap">
       <table data-testid="activite">
@@ -41,7 +45,10 @@ export function ActivityTable({
           </tr>
         </thead>
         <tbody>
-          {lines.map((l) => {
+          {lines.map((l, i) => {
+            const place = positions[i];
+            const shared = (text: ReactNode) =>
+              place.first ? text : <span className="sr-only">{text}</span>;
             const kind = l.kind;
             // What the line did to the till; null for a stock movement, which has no money.
             const money = kind === "stock" ? null : signedAmount(kind, l.amount);
@@ -54,11 +61,12 @@ export function ActivityTable({
             const cancelled = l.cancelledAt != null;
             const waiting = !cancelled && l.tillPending;
             return (
-              <tr key={`${l.source}-${l.id}`} className={cancelled ? "cancelled" : undefined}>
-                <td className="num">{dateTime.format(l.createdAt)}</td>
-                <td>
-                  <OperationBadge kind={kind} />
-                </td>
+              <tr
+                key={`${l.source}-${l.id}`}
+                className={[...entryClasses(place), ...(cancelled ? ["cancelled"] : [])].join(" ") || undefined}
+              >
+                <td className="num">{shared(dateTime.format(l.createdAt))}</td>
+                <td>{shared(<OperationBadge kind={kind} />)}</td>
                 <td>{l.label}</td>
                 <td className={`num ${kind === "stock" ? (l.quantity > 0 ? "plus" : "minus") : ""}`}>{quantity}</td>
                 <td className={`num ${money == null || cancelled ? "" : waiting ? "muted" : money >= 0 ? "plus" : "minus"}`}>
@@ -70,13 +78,13 @@ export function ActivityTable({
                     </>
                   )}
                 </td>
-                <td>{l.detail ?? "—"}</td>
-                <td className="small">{l.notes ?? ""}</td>
+                <td>{shared(l.detail ?? "—")}</td>
+                <td className="small">{shared(l.notes ?? "")}</td>
                 <td>
                   {cancelled ? (
                     <span className="small muted">Annulée{l.cancelledBy ? ` par ${l.cancelledBy}` : ""}</span>
                   ) : (
-                    waiting && canSettle && <SettleButton id={l.id} sale={kind === "vente"} entry={l} />
+                    waiting && canSettle && place.settles && <SettleButton id={l.id} sale={kind === "vente"} entry={l} />
                   )}
                 </td>
               </tr>
