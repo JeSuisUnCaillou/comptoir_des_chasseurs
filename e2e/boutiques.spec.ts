@@ -1,7 +1,24 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
-import { loginAsGerant, uniqueName } from "./helpers";
+import { GERANT, loginAsGerant, uniqueName } from "./helpers";
+
+const ALERT = '[role="alert"]';
+
+/** Points hidden "id" fields at another row, once the page is hydrated (React would put them back). */
+async function retarget(page: Page, inputs: Locator, id: number) {
+  await page.waitForLoadState("networkidle");
+  await inputs.evaluateAll((elements, value) => {
+    for (const input of elements as HTMLInputElement[]) {
+      input.value = String(value);
+      input.setAttribute("value", String(value));
+    }
+  }, id);
+}
+
+function db() {
+  return postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+}
 
 /**
  * Another shop, made straight in the database, with a member, a merchandise
@@ -37,9 +54,10 @@ async function createOtherShop(product: string) {
       insert into announcements (shop_id, title, body, member_id)
       values (${shop.id}, ${names.announcement}, 'Pour tous les clients.', ${member.id})`;
     await sql`
-      insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, member_id)
-      values (${shop.id}, 'vente', ${item.id}, ${product}, 1, 2, ${names.counterparty}, ${member.id})`;
-    return { ...names, memberId: member.id, productId: item.id, supplierId: supplier.id };
+      insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, till_pending, member_id)
+      values (${shop.id}, 'vente', ${item.id}, ${product}, 1, 2, ${names.counterparty}, true, ${member.id})`;
+    const [line] = await sql`select id from transactions where shop_id = ${shop.id}`;
+    return { ...names, memberId: member.id, productId: item.id, supplierId: supplier.id, lineId: line.id as number };
   } finally {
     await sql.end();
   }
@@ -101,4 +119,67 @@ test("deux boutiques peuvent avoir une marchandise du même nom", async ({ page 
   await form.getByLabel("Motif").fill("brassé au comptoir");
   await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
   await expect(page.getByTestId(`stock-${product}`).getByTestId("stock-value")).toHaveText("2");
+});
+
+test("le gérant d'une autre boutique n'entre pas au comptoir", async ({ page }) => {
+  const other = await createOtherShop(uniqueName("Hydromel"));
+  await page.goto("/connexion");
+  await page.getByLabel("Identifiant").fill(other.member.toLowerCase());
+  await page.getByLabel("Mot de passe").fill("mot-de-passe");
+  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await expect(page).toHaveURL(/\/connexion/);
+  await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
+  await page.goto("/achat-vente");
+  await expect(page).toHaveURL(/\/connexion/);
+  await expect(page.getByRole("heading", { name: "Achat / Vente" })).toHaveCount(0);
+});
+
+test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en changeant son numéro", async ({ page }) => {
+  const product = uniqueName("Hydromel");
+  const other = await createOtherShop(product);
+  // A pending sale of the comptoir, whose buttons are turned toward the other shop's line.
+  const label = uniqueName("Article du comptoir");
+  const sql = db();
+  try {
+    await sql`
+      insert into transactions (kind, label, quantity, amount, till_pending, member_id)
+      values ('vente', ${label}, 1, 4, true, (select id from members where username = ${GERANT.username}))`;
+  } finally {
+    await sql.end();
+  }
+  await loginAsGerant(page);
+  page.on("dialog", (dialog) => dialog.accept());
+
+  await page.goto("/achat-vente?type=attente");
+  const row = page.getByTestId("registre").getByRole("row").filter({ hasText: label });
+  await retarget(page, row.locator('input[name="id"]'), other.lineId);
+  await row.getByRole("button", { name: /Annuler/ }).click();
+  await expect(row.locator(ALERT)).toHaveText("Cette ligne est introuvable ou déjà annulée.");
+  await row.getByRole("button", { name: /dans la caisse/ }).click();
+  await expect(page.locator(ALERT).filter({ hasText: "Cette ligne n'attend plus la caisse." })).toBeVisible();
+
+  // A merchandise of the comptoir saved under the other shop's merchandise's number.
+  const mine = uniqueName("Peau du comptoir");
+  const sql2 = db();
+  try {
+    await sql2`insert into products (name, category, unit) values (${mine}, 'peau', 'peau')`;
+  } finally {
+    await sql2.end();
+  }
+  await page.goto(`/marchandises?q=${encodeURIComponent(mine)}`);
+  await page.getByRole("link", { name: `Modifier ${mine}` }).click();
+  await retarget(page, page.locator('input[name="id"]'), other.productId);
+  await page.getByLabel("Nom").fill(uniqueName("Renommée"));
+  await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
+  await expect(page).toHaveURL(/\/marchandises$/);
+
+  const check = db();
+  try {
+    const [line] = await check`select cancelled_at, till_pending from transactions where id = ${other.lineId}`;
+    expect(line).toEqual({ cancelled_at: null, till_pending: true });
+    const [item] = await check`select name from products where id = ${other.productId}`;
+    expect(item.name).toBe(product);
+  } finally {
+    await check.end();
+  }
 });
