@@ -114,7 +114,11 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix ; il n'y a
   qu'une case par achat, pour le vendeur, qui vaut pour toutes ses
-  marchandises qui ont ce prix. Le stock bouge :
+  marchandises qui ont ce prix. À droite de « Retour au registre », « Passer
+  en vente » (ou « Passer en achat ») ouvre l'autre formulaire avec tout ce
+  qui est déjà rempli : marchandises, quantités, client, notes, cases ; un
+  montant calculé avec le tarif est recalculé avec celui de l'autre côté, un
+  montant tapé à la main est gardé. Le stock bouge :
   +quantité à l'achat, −quantité à la vente, jamais sous zéro. Le registre se
   filtre par opération, par employé (le membre qui a inscrit la ligne) et par
   dates (heure de Paris). L'auteur d'une ligne ou

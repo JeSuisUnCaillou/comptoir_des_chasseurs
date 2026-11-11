@@ -607,3 +607,59 @@ test("une écriture tient en 25 marchandises au plus", async ({ browser }) => {
   await form.getByRole("button", { name: "Retirer la marchandise 25" }).click();
   await expect(add).toBeEnabled();
 });
+
+test("on passe d'un achat à une vente et retour sans rien retaper", async ({ browser }) => {
+  const product = uniqueName("Peau de renard");
+  await createProduct(product, { buyPrice: 2, sellPrice: 3, stock: 10 });
+  const { page } = await newEmployeePage(browser, "brenuin");
+  await page.goto("/achat-vente/achat");
+  // The button sits right of "Retour au registre".
+  const back = (await page.getByRole("link", { name: "Retour au registre" }).boundingBox())!;
+  const toSale = page.getByRole("button", { name: "Passer en vente" });
+  const switchBox = (await toSale.boundingBox())!;
+  expect(Math.abs(switchBox.y - back.y)).toBeLessThan(4);
+  expect(switchBox.x).toBeGreaterThan(back.x + back.width);
+
+  const purchase = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(line(purchase, 1), product);
+  await line(purchase, 1).getByLabel("Quantité").fill("4");
+  await expect(line(purchase, 1).getByLabel("Montant (septims)")).toHaveValue("8");
+  await purchase.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(purchase, 2), "Autre article (hors stock)…");
+  await line(purchase, 2).getByLabel("Nom de l'article").fill("Corne");
+  await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
+  await purchase.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Brenuin");
+  await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
+  await purchase.getByLabel("Je n'ai pas encore pris les septims dans la caisse").check();
+  await toSale.click();
+
+  // Same goods, client and notes; the tariff amount follows the sale price, the typed one stays.
+  await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
+  const sale = page.getByRole("region", { name: "Inscrire une vente" });
+  await expect(line(sale, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(product);
+  await expect(line(sale, 1).getByLabel("Quantité")).toHaveValue("4");
+  await expect(line(sale, 1).getByLabel("Montant (septims)")).toHaveValue("12");
+  await expect(line(sale, 2).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(
+    "Autre article (hors stock)…",
+  );
+  await expect(line(sale, 2).getByLabel("Nom de l'article")).toHaveValue("Corne");
+  await expect(line(sale, 2).getByLabel("Montant (septims)")).toHaveValue("5");
+  await expect(sale.getByTestId("total")).toHaveText("Total de la vente : 17 septims");
+  await expect(sale.getByLabel("Nom du client / vendeur RP (facultatif)")).toHaveValue("Brenuin");
+  await expect(sale.getByLabel("Notes (facultatif)")).toHaveValue("Il a hésité");
+  await expect(sale.getByLabel("Je n'ai pas encore déposé les septims dans la caisse")).toBeChecked();
+
+  // An amount changed with the pencil comes back as it was typed.
+  await line(sale, 1).getByRole("button", { name: "Modifier le montant" }).click();
+  await line(sale, 1).getByLabel("Montant (septims)").fill("10");
+  await page.getByRole("button", { name: "Passer en achat" }).click();
+  await expect(page.getByRole("heading", { name: "Nouvel achat", level: 1 })).toBeVisible();
+  const again = page.getByRole("region", { name: "Inscrire un achat" });
+  await expect(line(again, 1).getByLabel("Montant (septims)")).toHaveValue("10");
+  await expect(line(again, 1).getByRole("button", { name: "Revenir au tarif" })).toBeVisible();
+  await again.getByLabel("Je n'ai pas encore pris les septims dans la caisse").uncheck();
+  await again.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
+    `Achat inscrit : 4 × ${product}, 1 × Corne, 15 septims au total.`,
+  );
+});
