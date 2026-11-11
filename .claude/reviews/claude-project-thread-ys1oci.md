@@ -9,3 +9,8 @@ Tête relue : 073a596 (diff contre origin/claude/project-thread-ql68ke, la PR du
 
 Suite e2e : 99 verts.
 Tête relue : 6fe6963609ff64ee0e1fb5bef738185ae12588eb
+
+# Rebase sur la branche du super admin
+
+Rebasée sur origin/claude/project-thread-ql68ke (aacff0b) sans conflit ; rien de cette PR n'a changé. tsc, drizzle-kit check, test:legacy et suite e2e (99 verts) repassés.
+Tête relue : c5c6693fd5b56f25e107f5aebcf8e2f11d6b9b06
