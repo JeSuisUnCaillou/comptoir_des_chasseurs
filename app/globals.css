@@ -240,6 +240,14 @@ h3 {
   font-size: 14px;
 }
 
+.topbar-name {
+  text-decoration: none;
+}
+
+.topbar-name:hover {
+  text-decoration: underline;
+}
+
 .content {
   padding: 40px 54px 60px;
   flex: 1;

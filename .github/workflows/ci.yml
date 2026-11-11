@@ -41,7 +41,10 @@ jobs:
       - name: Scripts de reprise de l'ancienne app
         run: npm run test:legacy
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      # The system packages come from the Ubuntu mirrors, which GitHub sometimes
+      # can't reach (2026-11-11): the runner image already has what Chromium
+      # needs to run, so fall back to the browser alone rather than fail.
+      - run: timeout 300 npx playwright install --with-deps chromium || npx playwright install chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
