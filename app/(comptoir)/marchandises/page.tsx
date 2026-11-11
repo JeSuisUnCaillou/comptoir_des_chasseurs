@@ -1,4 +1,4 @@
-import { asc, count, ilike } from "drizzle-orm";
+import { and, asc, count, eq, ilike } from "drizzle-orm";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
@@ -14,11 +14,12 @@ import { saveBlacksmithPrice } from "./actions";
 type Search = { q?: string | string[]; page?: string | string[] };
 
 export default async function Marchandises({ searchParams }: { searchParams: Promise<Search> }) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const search = await searchParams;
   const q = (param(search.q) ?? "").trim().slice(0, 100);
   const page = pageParam(search.page);
-  const where = q ? ilike(schema.products.name, `%${q.replace(/[\\%_]/g, "\\$&")}%`) : undefined;
+  const inShop = eq(schema.products.shopId, member.shopId);
+  const where = q ? and(inShop, ilike(schema.products.name, `%${q.replace(/[\\%_]/g, "\\$&")}%`)) : inShop;
   const [products, [{ total }], blacksmith] = await Promise.all([
     getDb()
       .select()
@@ -28,7 +29,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
       .limit(PAGE_SIZE)
       .offset(offsetOf(page)),
     getDb().select({ total: count() }).from(schema.products).where(where),
-    blacksmithLeatherPrice(),
+    blacksmithLeatherPrice(member.shopId),
   ]);
 
   return (

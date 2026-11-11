@@ -15,8 +15,8 @@ export default async function Annonces({
   const member = await requireMember();
   const page = pageParam((await searchParams).page);
   const [announcements, total] = await Promise.all([
-    announcementList({ limit: BOARD_SIZE, offset: offsetOf(page, BOARD_SIZE) }),
-    announcementCount(),
+    announcementList(member.shopId, { limit: BOARD_SIZE, offset: offsetOf(page, BOARD_SIZE) }),
+    announcementCount(member.shopId),
   ]);
 
   return (

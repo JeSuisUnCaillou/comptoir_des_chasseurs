@@ -15,7 +15,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
   const search = await searchParams;
   const q = (param(search.q) ?? "").trim().slice(0, 100);
   const page = pageParam(search.page);
-  const { suppliers, total } = await supplierPage(q, page);
+  const { suppliers, total } = await supplierPage(member.shopId, q, page);
 
   return (
     <>

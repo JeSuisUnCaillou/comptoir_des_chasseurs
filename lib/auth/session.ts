@@ -3,11 +3,12 @@ import { createHash } from "node:crypto";
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
 import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
+import { currentShop } from "@/lib/shops";
 
 const COOKIE = "comptoir_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
@@ -50,8 +51,8 @@ export async function endSession() {
   (await cookies()).delete(COOKIE);
 }
 
-/** The signed-in member, or null. Role is always read fresh from the database. */
-export const currentMember = cache(async function currentMember(): Promise<Member | null> {
+/** The signed-in account, whatever its shops, or null. */
+export const currentAccount = cache(async function currentAccount(): Promise<Member | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
@@ -64,11 +65,35 @@ export const currentMember = cache(async function currentMember(): Promise<Membe
       .where(eq(schema.members.id, id))
       .limit(1);
     if (!member || payload.pw !== passwordStamp(member.passwordHash)) return null;
-    // A deactivated member is signed out everywhere.
-    return member.role !== "desactive" ? member : null;
+    return member;
   } catch {
     return null;
   }
+});
+
+/**
+ * A signed-in account inside the shop being visited: `role` is its role in
+ * that shop, and `shopId` the shop every query of the page or action is about.
+ */
+export type ShopMember = Member & { shopId: number };
+
+/**
+ * The signed-in member of the current shop, or null. The role is always read
+ * fresh from the database. The super admin is a gérant in every shop; anyone
+ * else needs a role there, and a deactivated member is signed out of it.
+ */
+export const currentMember = cache(async function currentMember(): Promise<ShopMember | null> {
+  const account = await currentAccount();
+  if (!account) return null;
+  const shop = await currentShop();
+  if (account.superAdmin) return { ...account, role: "gerant", shopId: shop.id };
+  const [membership] = await getDb()
+    .select({ role: schema.shopMembers.role })
+    .from(schema.shopMembers)
+    .where(and(eq(schema.shopMembers.shopId, shop.id), eq(schema.shopMembers.memberId, account.id)))
+    .limit(1);
+  if (!membership || membership.role === "desactive") return null;
+  return { ...account, role: membership.role, shopId: shop.id };
 });
 
 /**
@@ -78,7 +103,7 @@ export const currentMember = cache(async function currentMember(): Promise<Membe
  */
 export async function requireMember(
   roles: MemberRole[] = ["gerant", "employe"],
-): Promise<Member> {
+): Promise<ShopMember> {
   const member = await currentMember();
   if (!member) redirect(loginUrl((await headers()).get(PATH_HEADER)));
   if (!roles.includes(member.role)) redirect("/");

@@ -23,7 +23,8 @@ frappe.
    `legacy-export/` (ignoré par git) : stock, mouvements, tarifs des peaux,
    du cuir et des viandes, registre complet, trésorerie, fournisseurs,
    annonces. Prendre un compte de gérant, sinon des routes manquent.
-2. `legacy:import` lit ce fichier et **remplace** dans la base cible les
+2. `legacy:import` lit ce fichier et **remplace** dans la première boutique
+   de la base cible (l'ancienne app n'était que le comptoir) les
    marchandises, l'historique du stock, le registre, les annonces et les
    fournisseurs, et met
    à jour le prix du cuir chez le forgeron. Les membres existants ne changent

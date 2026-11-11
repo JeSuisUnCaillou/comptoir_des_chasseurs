@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -32,7 +32,13 @@ export default async function ActiviteMembre({
   if (!gerant && id !== viewer.id) redirect("/");
   // Ids are Postgres integers: anything else is no member.
   if (!Number.isInteger(id) || id < 1 || id > 2_147_483_647) notFound();
-  const [member] = await getDb().select().from(schema.members).where(eq(schema.members.id, id)).limit(1);
+  // Members of this shop only.
+  const [member] = await getDb()
+    .select({ id: schema.members.id, name: schema.members.name })
+    .from(schema.members)
+    .innerJoin(schema.shopMembers, eq(schema.shopMembers.memberId, schema.members.id))
+    .where(and(eq(schema.members.id, id), eq(schema.shopMembers.shopId, viewer.shopId)))
+    .limit(1);
   if (!member) notFound();
 
   const search = await searchParams;
@@ -44,10 +50,10 @@ export default async function ActiviteMembre({
   const filter = { memberId: member.id, from, to };
 
   const [stock, totals, lines, lineTotal] = await Promise.all([
-    memberHandStock(member.id, from!, to!),
-    tillTotals(filter),
-    memberActivity(member.id, from!, to!, { limit: PAGE_SIZE, offset: offsetOf(page) }),
-    memberActivityCount(member.id, from!, to!),
+    memberHandStock(viewer.shopId, member.id, from!, to!),
+    tillTotals(viewer.shopId, filter),
+    memberActivity(viewer.shopId, member.id, from!, to!, { limit: PAGE_SIZE, offset: offsetOf(page) }),
+    memberActivityCount(viewer.shopId, member.id, from!, to!),
   ]);
   const period = `Du ${longDate.format(from!)} au ${longDate.format(parisDay(au)!)}`;
 

@@ -1,11 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { getDb, isUniqueViolation, schema } from "@/lib/db";
-import { DUPLICATE_PRODUCT_NAME, readProductIdentity } from "@/lib/products";
+import { BLACKSMITH_LEATHER_PRICE, DUPLICATE_PRODUCT_NAME, readProductIdentity } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -22,7 +22,7 @@ function positiveInt(formData: FormData, key: string) {
 }
 
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const id = optionalInt(formData, "id");
   const { name, category, unit, error: identityError } = readProductIdentity(formData);
 
@@ -59,9 +59,12 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const db = getDb();
   try {
     if (id != null) {
-      await db.update(schema.products).set(values).where(eq(schema.products.id, id));
+      await db
+        .update(schema.products)
+        .set(values)
+        .where(and(eq(schema.products.id, id), eq(schema.products.shopId, member.shopId)));
     } else {
-      await db.insert(schema.products).values(values);
+      await db.insert(schema.products).values({ ...values, shopId: member.shopId });
     }
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -74,12 +77,12 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 }
 
 export async function saveBlacksmithPrice(formData: FormData) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   const value = Number(formData.get("value"));
   if (!Number.isInteger(value) || value < 0) return;
   await getDb()
     .insert(schema.settings)
-    .values({ key: "prix_forgeron_cuir", value })
-    .onConflictDoUpdate({ target: schema.settings.key, set: { value } });
+    .values({ shopId: member.shopId, key: BLACKSMITH_LEATHER_PRICE, value })
+    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
   revalidatePath("/", "layout");
 }

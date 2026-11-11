@@ -211,7 +211,7 @@ function matching(products: Product[], search: string | string[] | undefined) {
 export default async function Tarifs({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
   const search = await searchParams;
-  const [products, blacksmith] = await Promise.all([activeProducts(), blacksmithLeatherPrice()]);
+  const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
   const canEdit = member.role === "gerant";
   const allHides = matching(products, search.peaux).filter((p) => p.category === "peau");
   const hides = allHides.filter(priced);

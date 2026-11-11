@@ -16,12 +16,12 @@ export default async function NouvelleEcriture({
   params: Promise<{ kind: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireMember();
+  const member = await requireMember();
   const { kind: segment } = await params;
   if (segment !== "vente" && segment !== "achat") notFound();
   const kind = segment === "vente" ? "vente" : "rachat";
   const sale = kind === "vente";
-  const products = await activeProducts();
+  const products = await activeProducts(member.shopId);
 
   return (
     <>

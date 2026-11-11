@@ -49,7 +49,13 @@ try {
   }
   sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 
-  const members = await sql`select id, username, name, role from members`;
+  // The old app was the comptoir alone: it is imported into the first shop,
+  // and only while there is no other shop, since the import empties the tables.
+  const [{ shops }] = await sql`select count(*)::int as shops from shops`;
+  if (shops > 1) throw new Error("La base héberge plusieurs boutiques : la reprise viderait les autres.");
+  const members = await sql`
+    select m.id, m.username, m.name, coalesce(s.role, 'employe') as role
+    from members m left join shop_members s on s.member_id = m.id and s.shop_id = 1`;
   const plan = mapLegacy(data, members);
   const [current] = await sql`
     select (select count(*) from products)::int as products,
@@ -149,6 +155,7 @@ async function write(sql, plan) {
       const [{ id }] = await tx`
         insert into members (username, name, password_hash, role)
         values (${m.username}, ${m.name}, '!', 'employe') returning id`;
+      await tx`insert into shop_members (shop_id, member_id, role) values (1, ${id}, 'employe')`;
       memberIds.set(m.ref, id);
     }
     const member = (row) => ({ ...row, memberId: memberIds.get(row.memberId) ?? row.memberId });
@@ -160,7 +167,7 @@ async function write(sql, plan) {
     for (const [key, value] of Object.entries(plan.settings)) {
       await tx`
         insert into settings (key, value) values (${key}, ${value})
-        on conflict (key) do update set value = excluded.value`;
+        on conflict (shop_id, key) do update set value = excluded.value`;
     }
     for (const chunk of chunks(plan.movements)) {
       const rows = chunk.map(({ productName, ...m }) => member({ ...m, productId: ids.get(productName) }));

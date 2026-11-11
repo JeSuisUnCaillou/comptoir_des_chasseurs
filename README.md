@@ -28,7 +28,16 @@ créer le compte du gérant.
 
 ## Base de données
 
-Le schéma est dans `lib/db/schema.ts`. Après une modification :
+Le schéma est dans `lib/db/schema.ts`. Une seule base héberge plusieurs
+**boutiques** (table `shops`) : les marchandises, l'historique du stock, le
+registre, les annonces, les fournisseurs et les réglages appartiennent chacun à
+une boutique (`shop_id`), et chaque page ou action ne lit et n'écrit que ceux de
+la boutique visitée (`currentShop`, `lib/shops.ts`). La migration des boutiques
+a rangé tout l'existant dans la première, « Le Comptoir Des Chasseurs »
+(`le-comptoir-des-chasseurs`), la seule que l'app montre pour l'instant
+([#113](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues/113)).
+
+Après une modification du schéma :
 
 ```bash
 npm run db:generate -- --name ce-qui-change   # écrit la migration SQL dans drizzle/
@@ -214,9 +223,13 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 ## Rôles
 
+- Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
+  plusieurs boutiques, avec un **rôle dans chacune** (`shop_members`) :
+  gérant, employé ou désactivé. Un compte désactivé partout ne peut plus se
+  connecter.
 - Au premier lancement, la page de connexion crée le compte du **gérant**,
-  qui est aussi le **super admin** : il a toujours tous les droits d'un
-  gérant, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;
+  qui est aussi le **super admin** : il est gérant dans toutes les
+  boutiques, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;
   aucun autre gérant ne peut le rétrograder, le désactiver ni changer son mot
   de passe. Dans une base qui existait avant ce rôle, la migration le donne au
   compte `jesuisuncaillou` (le propriétaire), s'il existe.
@@ -224,7 +237,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   de connexion, puis revient sur cette page, avec ses filtres (paramètre
   `suite` de `/connexion`). Seul un chemin du comptoir lui-même est suivi ;
   tout autre lien ramène au Grand livre.
-- Le gérant crée les comptes des **employés** (identifiant + mot de passe
-  provisoire) depuis la page Membres, peut réinitialiser un mot de passe ou
-  **désactiver** un compte.
+- Le gérant crée les comptes des **employés** de sa boutique (identifiant +
+  mot de passe provisoire) depuis la page Membres, qui ne montre que les
+  membres de la boutique ; il peut réinitialiser un mot de passe ou
+  **désactiver** un compte dans sa boutique.
 - Chacun change son mot de passe avec la clé, en haut à droite.

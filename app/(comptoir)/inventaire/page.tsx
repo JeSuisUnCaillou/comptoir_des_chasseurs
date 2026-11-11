@@ -30,13 +30,13 @@ const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { cuir: 0, viande:
 const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 3;
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
-  await requireMember();
+  const member = await requireMember();
   const search = await searchParams;
   const page = pageParam(search.page);
   const q = (param(search.q) ?? "").trim().slice(0, 100) || undefined;
   const sens = asDirection(param(search.sens));
   const { du, au, from, to } = dayRange(param(search.du), param(search.au));
-  const authors = await memberNames();
+  const authors = await memberNames(member.shopId);
   const author = authors.find((a) => String(a.id) === param(search.employe));
   const employe = author && String(author.id);
   const filters = { q, employe, sens, du, au };
@@ -49,10 +49,10 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
   };
   const filtered = Boolean(q || employe || sens || du || au);
   const [products, movements, total, till] = await Promise.all([
-    activeProducts(),
-    recentMovements(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
-    movementCount(filter),
-    tillTotals(),
+    activeProducts(member.shopId),
+    recentMovements(member.shopId, filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
+    movementCount(member.shopId, filter),
+    tillTotals(member.shopId),
   ]);
   const sum = (category: string) =>
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);

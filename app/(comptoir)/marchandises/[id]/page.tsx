@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
@@ -13,7 +13,7 @@ export default async function EditProduct({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ depuis?: string | string[] }>;
 }) {
-  await requireMember(["gerant"]);
+  const member = await requireMember(["gerant"]);
   // Opened by a pencil on the Tarifs page: going back and saving lead there.
   const fromTarifs = (await searchParams).depuis === "tarifs";
   const id = Number((await params).id);
@@ -21,7 +21,7 @@ export default async function EditProduct({
   const [product] = await getDb()
     .select()
     .from(schema.products)
-    .where(eq(schema.products.id, id))
+    .where(and(eq(schema.products.id, id), eq(schema.products.shopId, member.shopId)))
     .limit(1);
   if (!product) notFound();
 

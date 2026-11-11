@@ -23,7 +23,9 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
 
   const delta = direction === "in" ? quantity : -quantity;
-  const result = await getDb().transaction((tx) => moveStock(tx, productId, delta, member.id, reason));
+  const result = await getDb().transaction((tx) =>
+    moveStock(tx, member.shopId, productId, delta, member.id, reason),
+  );
   if (!result.ok) return { ok: false, message: result.error };
 
   revalidatePath("/inventaire");
@@ -53,9 +55,9 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
     await getDb().transaction(async (tx) => {
       const [product] = await tx
         .insert(schema.products)
-        .values({ name, category, unit })
+        .values({ shopId: member.shopId, name, category, unit })
         .returning({ id: schema.products.id });
-      const result = await moveStock(tx, product.id, quantity, member.id, reason);
+      const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
       if (!result.ok) throw new Error(result.error);
     });
   } catch (e) {
