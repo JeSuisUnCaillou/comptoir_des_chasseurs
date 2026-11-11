@@ -81,6 +81,12 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` (dans les réglages du compte et du
   projet Vercel). Sans eux, le workflow passe sans rien déployer.
 - Les tests tournent avant le merge, jamais sur la prod.
+- **Région** : les fonctions Vercel tournent à Francfort (`fra1`, `regions`
+  dans `vercel.json`), la région Vercel la plus proche de la base Supabase de
+  prod (Zurich, `eu-central-2`). Chaque page fait plusieurs requêtes à la base
+  l'une après l'autre : un serveur loin de la base paie un aller-retour
+  transatlantique à chacune. Si la base change de région, la région de
+  `vercel.json` la suit.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
 
