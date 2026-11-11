@@ -591,3 +591,15 @@ test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", a
   await expect(line(form, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(first);
   await expect(await stockOf(page, first)).toHaveText("5");
 });
+
+test("une écriture tient en 25 marchandises au plus", async ({ browser }) => {
+  const { page } = await newEmployeePage(browser, "hroki");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  const add = form.getByRole("button", { name: "Ajouter une marchandise" });
+  for (let i = 1; i < 25; i++) await add.click();
+  await expect(line(form, 25)).toBeVisible();
+  await expect(add).toBeDisabled();
+  await form.getByRole("button", { name: "Retirer la marchandise 25" }).click();
+  await expect(add).toBeEnabled();
+});

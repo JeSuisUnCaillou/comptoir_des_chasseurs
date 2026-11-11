@@ -6,6 +6,7 @@ import { ProductCombobox } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
+import { MAX_LINES } from "@/lib/transaction-kinds";
 import { CATEGORY_LABELS, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
@@ -119,22 +120,8 @@ export function TransactionForm({
               className="tx-line"
               aria-label={`Marchandise ${index + 1}`}
             >
-              {lines.length > 1 && (
-                <div className="tx-line-head">
-                  <span className="eyebrow">Marchandise {index + 1}</span>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    title="Retirer cette marchandise"
-                    aria-label={`Retirer la marchandise ${index + 1}`}
-                    onClick={() => setLines((all) => all.filter((l) => l.key !== line.key))}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )}
-              <div className="tx-grid">
-                <div className="field full">
+              <div className="tx-line-row">
+                <div className="field tx-product">
                   <label htmlFor={`${id}-product`}>Article ou marchandise</label>
                   <ProductCombobox
                     id={`${id}-product`}
@@ -152,16 +139,7 @@ export function TransactionForm({
                     </span>
                   )}
                 </div>
-                {line.productId === OTHER ? (
-                  <div className="field full">
-                    <label htmlFor={`${id}-label`}>Nom de l&apos;article</label>
-                    <input id={`${id}-label`} name="label" required maxLength={100} />
-                  </div>
-                ) : (
-                  // Keeps the fields of every line aligned in the submitted form.
-                  <input type="hidden" name="label" value="" />
-                )}
-                <div className="field">
+                <div className="field tx-qty">
                   <label htmlFor={`${id}-quantity`}>Quantité</label>
                   <input
                     id={`${id}-quantity`}
@@ -174,7 +152,7 @@ export function TransactionForm({
                     onChange={(ev) => update(line.key, { quantity: ev.target.value })}
                   />
                 </div>
-                <div className="field">
+                <div className="field tx-amount">
                   <label htmlFor={`${id}-amount`}>Montant (septims)</label>
                   <div className="amount-row">
                     <input
@@ -225,7 +203,27 @@ export function TransactionForm({
                     <span className="small muted">Pas de tarif pour cette opération : indique le montant.</span>
                   )}
                 </div>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    className="icon-btn tx-remove"
+                    title="Retirer cette marchandise"
+                    aria-label={`Retirer la marchandise ${index + 1}`}
+                    onClick={() => setLines((all) => all.filter((l) => l.key !== line.key))}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
+              {line.productId === OTHER ? (
+                <div className="field">
+                  <label htmlFor={`${id}-label`}>Nom de l&apos;article</label>
+                  <input id={`${id}-label`} name="label" required maxLength={100} />
+                </div>
+              ) : (
+                // Keeps the fields of every line aligned in the submitted form.
+                <input type="hidden" name="label" value="" />
+              )}
             </fieldset>
           );
         })}
@@ -234,6 +232,8 @@ export function TransactionForm({
         <button
           type="button"
           className="btn btn-small"
+          disabled={lines.length >= MAX_LINES}
+          title={lines.length >= MAX_LINES ? `${MAX_LINES} marchandises au plus` : undefined}
           onClick={() => setLines((all) => [...all, newLine(nextKey.current++)])}
         >
           <Plus size={14} /> Ajouter une marchandise

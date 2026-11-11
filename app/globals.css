@@ -900,19 +900,39 @@ tr.cancelled td:last-child {
   grid-column: 1 / -1;
 }
 
-/* One merchandise of a sale or purchase. */
+/* One merchandise of a sale or purchase, on a single row: product, quantity, amount, bin. */
 .tx-line {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 12px 0;
-  margin: 0 0 12px;
+  padding: 10px 12px 0;
+  margin: 0 0 10px;
   min-width: 0;
 }
 
-.tx-line-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.tx-line .field {
+  margin-bottom: 10px;
+  min-width: 0;
+}
+
+.tx-line-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 90px minmax(0, 1fr) auto;
+  gap: 0 10px;
+  align-items: start;
+}
+
+.tx-line-row .tx-remove {
+  /* Level with the inputs, below their labels. */
+  margin-top: 34px;
+}
+
+@media (max-width: 600px) {
+  .tx-line-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .tx-line-row .tx-product {
+    grid-column: 1 / -1;
+  }
 }
 
 /* "Ajouter une marchandise" on the left, the running total on the right. */
