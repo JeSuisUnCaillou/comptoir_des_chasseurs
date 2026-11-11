@@ -6,11 +6,11 @@ import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
 import type { ProductCategory } from "@/lib/db/schema";
 import { MovementTable } from "@/components/movement-table";
-import { formatNumber } from "@/lib/pricing";
+import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
-import { dayRange, memberNames } from "@/lib/register";
+import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page", string | string[] | undefined>;
 
@@ -48,10 +48,11 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     to,
   };
   const filtered = Boolean(q || employe || sens || du || au);
-  const [products, movements, total] = await Promise.all([
+  const [products, movements, total, till] = await Promise.all([
     activeProducts(),
     recentMovements(filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     movementCount(filter),
+    tillTotals(),
   ]);
   const sum = (category: string) =>
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
@@ -67,6 +68,10 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         </h2>
         <p className="muted">Entrées, sorties et quantités disponibles dans les réserves.</p>
         <div className="stats">
+          <div className="stat stat-accent-gold" data-testid="caisse-inventaire">
+            <div className="stat-label">Septims en caisse</div>
+            <div className={`stat-value ${till.balance < 0 ? "minus" : ""}`}>{septims(till.balance)}</div>
+          </div>
           <div className="stat">
             <div className="stat-label">Peaux en réserve</div>
             <div className="stat-value" data-testid="total-peaux">

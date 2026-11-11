@@ -68,7 +68,9 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
         <header className="topbar">
           <span className="eyebrow">Le comptoir de chasse</span>
           <div className="topbar-user">
-            <span data-testid="member-name">{member.name}</span>
+            <Link className="topbar-name" href={`/membres/${member.id}`} title="Voir mon activité" data-testid="member-name">
+              {member.name}
+            </Link>
             <Link className="icon-btn" href="/mot-de-passe" title="Changer mon mot de passe" aria-label="Changer mon mot de passe">
               <KeyRound size={20} />
             </Link>

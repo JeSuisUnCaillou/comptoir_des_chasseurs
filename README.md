@@ -110,7 +110,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise du stock ou sur un article libre hors stock ; la marchandise
   se choisit dans un champ où l'on tape son nom, comme dans le calculateur
   des Tarifs, la liste gardant ses catégories. Le montant est
-  calculé avec le tarif ; le crayon permet de le changer. À l'achat d'une
+  calculé avec le tarif ; le crayon permet de le changer. Sous le stock de
+  la marchandise choisie, la ligne montre le prix par défaut qui sert à ce
+  calcul (prix de rachat ou de vente, de gros ou citoyen selon le cas). À l'achat d'une
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix ; il n'y a
   qu'une case par achat, pour le vendeur, qui vaut pour toutes ses
@@ -146,7 +148,9 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   ou une marchandise. Tout le monde les consulte ; seuls les gérants en
   ajoutent, les modifient (nom, lieu, note, marchandises et prix) ou les
   suppriment, par les boutons de la page.
-- **Tarifs**, **Inventaire** (entrées et sorties avec motif ; le bouton
+- **Tarifs**, **Inventaire** (en tête, les septims en caisse, calculés comme
+  la trésorerie du Grand livre, sans les septims en attente de la caisse ;
+  entrées et sorties avec motif ; le bouton
   « Nouvelle marchandise » fait entrer en stock une marchandise qui n'existe
   pas encore : tout membre la crée, sans prix, avec nom, catégorie, unité,
   quantité et motif, et un gérant règle ses prix ensuite dans Gérer les
@@ -172,8 +176,10 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   table trouve moins de 10 marchandises, avec ou sans tarif, ses sans tarif
   s'affichent d'office, sans bouton. Pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
-- **Activité d'un membre** (gérants seulement) : le bouton « Activité » de
-  chaque ligne de Membres ouvre ce qu'il a fait sur une période, par défaut
+- **Activité d'un membre** : chacun ouvre la sienne en cliquant sur son nom,
+  en haut à droite ; un employé ne voit que la sienne, un gérant voit celle de
+  tous par le bouton « Activité » de chaque ligne de Membres. Elle montre ce
+  que le membre a fait sur une période, par défaut
   les 7 derniers jours, aujourd'hui compris (dates modifiables, heure de
   Paris), dans une seule liste paginée : ses achats, ventes, mouvements de
   caisse et mouvements de stock faits à la main (ceux des achats et des

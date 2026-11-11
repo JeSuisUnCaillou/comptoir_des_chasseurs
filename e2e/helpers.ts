@@ -74,6 +74,9 @@ export async function createProduct(
     stock = 0,
     unit = "peau",
     category = "peau",
+    buyQty = 1,
+    bulkMin = null,
+    bulkPrice = null,
   }: {
     /** null: no price, the product is "sans tarif" on that side. */
     buyPrice?: number | null;
@@ -81,13 +84,18 @@ export async function createProduct(
     stock?: number;
     unit?: string;
     category?: "peau" | "cuir" | "viande" | "ressource" | "autre";
+    /** The buy price is for this many units. */
+    buyQty?: number;
+    /** Wholesale: from bulkMin units, sold at bulkPrice each. */
+    bulkMin?: number | null;
+    bulkPrice?: number | null;
   } = {},
 ) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into products (name, category, unit, stock, buy_price, sell_price)
-      values (${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice})`;
+      insert into products (name, category, unit, stock, buy_price, sell_price, buy_qty, bulk_min, bulk_price)
+      values (${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice}, ${buyQty}, ${bulkMin}, ${bulkPrice})`;
   } finally {
     await sql.end();
   }
