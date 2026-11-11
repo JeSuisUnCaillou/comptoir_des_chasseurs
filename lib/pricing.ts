@@ -59,6 +59,21 @@ export function sellTotal(p: Prices, quantity: number): (Total & { bulk: boolean
   return { ...total(p.sellPrice, p.sellQty, quantity), bulk: false };
 }
 
+/** The rate a sale or a buyback of `quantity` units is priced at by default, or null without a tariff. */
+export function appliedRate(
+  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
+  kind: "vente" | "rachat",
+  quantity: number,
+  { citizen = false } = {},
+): { price: number; qty: number; bulk: boolean; citizen: boolean } | null {
+  if (kind === "vente") {
+    if (isBulk(p, quantity)) return { price: p.bulkPrice!, qty: p.bulkQty, bulk: true, citizen: false };
+    return p.sellPrice == null ? null : { price: p.sellPrice, qty: p.sellQty, bulk: false, citizen: false };
+  }
+  if (citizen && p.citizenBuyPrice != null) return { price: p.citizenBuyPrice, qty: p.buyQty, bulk: false, citizen: true };
+  return p.buyPrice == null ? null : { price: p.buyPrice, qty: p.buyQty, bulk: false, citizen: false };
+}
+
 /** The smallest quantity that makes whole lots on both sides, or the wholesale threshold. */
 export function referenceQuantity(p: Prices) {
   if (p.bulkMin != null && p.bulkPrice != null) return p.bulkMin;

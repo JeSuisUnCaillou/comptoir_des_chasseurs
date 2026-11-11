@@ -290,6 +290,32 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
   );
 });
 
+test("sous le stock, le formulaire montre le prix utilisé par défaut", async ({ browser }) => {
+  const product = uniqueName("Peau de chaurus");
+  const unpriced = uniqueName("Peau de netch");
+  await createProduct(product, { buyPrice: 1, buyQty: 5, sellPrice: 3, bulkMin: 10, bulkPrice: 2, stock: 20 });
+  await createProduct(unpriced, { buyPrice: null, sellPrice: null });
+  const { page } = await newEmployeePage(browser, "ralof");
+
+  await page.goto("/achat-vente/achat");
+  const purchase = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(purchase, product);
+  await expect(purchase.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : 1 septim / 5 unités");
+  await pickProduct(purchase, unpriced);
+  await expect(purchase.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : aucun tarif");
+
+  // A sale switches to the wholesale price from its threshold.
+  await page.goto("/achat-vente/vente");
+  const sale = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(sale, product);
+  await expect(sale.getByTestId("prix-par-defaut")).toHaveText("Prix par défaut : 3 septims / unité");
+  await sale.getByLabel("Quantité").fill("10");
+  await expect(sale.getByTestId("prix-par-defaut")).toHaveText(
+    "Prix par défaut : 2 septims / unité (prix de gros)",
+  );
+  await expect(sale.getByLabel("Montant (septims)")).toHaveValue("20");
+});
+
 test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page, browser }) => {
   // Amounts far above what other tests write, so their lines cannot blur the
   // deltas: a purchase they record meanwhile only takes a few septims off.
