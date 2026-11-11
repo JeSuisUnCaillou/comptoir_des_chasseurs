@@ -40,3 +40,11 @@ Tête relue : 02b82e365c818644d0271b2c0daead5fc7c83085
 - Bugs : aucune trouvaille. Écarté : le stock de la base de preview dérive à chaque nouveau lot d'exemples (voulu, dit au README).
 
 Tête relue : 1dfe81d52babc809884ed30afb16bf8c1d39b0ce
+
+# Passe 4 (PR #108, espace entre les blocs)
+
+Tête relue : aecdcbe695d8e69ddda355df98c6e3f5751fcdec
+
+- Aucune trouvaille bloquante. Écartés : libellé visible « N septims pris » d'un rachat non testé (même code que la vente, nom accessible testé), fonction shared répétée (goût).
+
+Tête relue : aecdcbe695d8e69ddda355df98c6e3f5751fcdec
