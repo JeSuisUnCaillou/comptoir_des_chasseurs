@@ -511,6 +511,8 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   // Right-aligned, on the right edge of the fields.
   expect(Math.abs(sum.x + sum.width - (client.x + client.width))).toBeLessThan(2);
   expect(sum.y + sum.height).toBeLessThan(client.y);
+  // In the comptoir's gold (--gold).
+  await expect(total).toHaveCSS("color", "rgb(207, 174, 110)");
 
   await pickProduct(line(form, 1), hide);
   await line(form, 1).getByLabel("Quantité").fill("2");

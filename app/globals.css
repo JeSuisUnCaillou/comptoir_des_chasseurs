@@ -940,6 +940,7 @@ tr.cancelled td:last-child {
 }
 
 .tx-total {
+  color: var(--gold);
   font-size: 1.1rem;
   margin: 0;
 }
