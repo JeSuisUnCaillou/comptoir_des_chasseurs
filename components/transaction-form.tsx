@@ -1,11 +1,14 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import { ProductCombobox } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/lib/keep-values";
+import { DRAFT_PARAM, encodeDraft, type TransactionDraft } from "@/lib/transaction-draft";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 import { CATEGORY_LABELS, appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
@@ -33,13 +36,27 @@ type Line = {
   key: number;
   productId: string;
   quantity: string;
+  label: string;
   amount: string;
   // The amount follows the tariff until the member takes it over with the pencil.
   manual: boolean;
 };
 
 function newLine(key: number): Line {
-  return { key, productId: "", quantity: "1", amount: "", manual: false };
+  return { key, productId: "", quantity: "1", label: "", amount: "", manual: false };
+}
+
+/** The lines carried over from the other form; an amount typed by hand stays typed by hand. */
+function draftLines(draft: TransactionDraft | null, products: TransactionProduct[]): Line[] {
+  if (!draft) return [newLine(0)];
+  return draft.lines.map((l, key) => ({
+    key,
+    productId: l.productId === OTHER || products.some((p) => String(p.id) === l.productId) ? l.productId : "",
+    quantity: l.quantity,
+    label: l.label,
+    amount: l.amount ?? "",
+    manual: l.amount != null,
+  }));
 }
 
 /** What a line computes from the tariff, and what it adds to the total. */
@@ -75,23 +92,31 @@ function evaluate(line: Line, kind: TransactionKind, products: TransactionProduc
 export function TransactionForm({
   kind,
   products,
+  draft,
 }: {
   kind: TransactionKind;
   products: TransactionProduct[];
+  /** What was filled in on the other form before switching to this one. */
+  draft: TransactionDraft | null;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
   const sale = kind === "vente";
   const submitLabel = sale ? "Confirmer la vente" : "Confirmer l'achat";
-  const [lines, setLines] = useState<Line[]>([newLine(0)]);
-  const nextKey = useRef(1);
+  const [lines, setLines] = useState<Line[]>(() => draftLines(draft, products));
+  const nextKey = useRef(lines.length);
   // One seller for the whole purchase: the box applies to every line that has a citizens' price.
-  const [citizen, setCitizen] = useState(false);
+  const [citizen, setCitizen] = useState(draft?.citizen ?? false);
+  const [counterparty, setCounterparty] = useState(draft?.counterparty ?? "");
+  const [notes, setNotes] = useState(draft?.notes ?? "");
+  const [tillPending, setTillPending] = useState(draft?.tillPending ?? false);
   const evaluated = lines.map((line) => evaluate(line, kind, products, citizen));
   const total = evaluated.reduce((sum, e) => sum + e.value, 0);
   const citizenProducts = evaluated.flatMap((e) => (e.citizenPrice && e.product ? [e.product] : []));
   const uniqueCitizenProducts = citizenProducts.filter((p, i) => citizenProducts.indexOf(p) === i);
   // Once no line has a citizens' price, the box goes away unticked: it never comes back ticked on its own.
-  if (citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
+  // A sale has no box: it keeps the choice for a switch back to the purchase.
+  if (!sale && citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
 
   // A product sold on several lines must have enough stock for all of them.
   const wanted = new Map<TransactionProduct, number>();
@@ -109,7 +134,26 @@ export function TransactionForm({
     setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));
   }
 
-  return (
+  /** Opens the other form with everything filled in so far. */
+  function switchKind() {
+    const carried: TransactionDraft = {
+      lines: lines.map((l, i) => ({
+        productId: l.productId,
+        quantity: l.quantity,
+        label: l.label,
+        // Only an amount the member typed; a tariff amount is recomputed with the other side's tariff.
+        amount: (l.manual || evaluated[i].suggested == null) && l.amount ? l.amount : null,
+      })),
+      counterparty,
+      notes,
+      tillPending,
+      citizen,
+    };
+    const params = new URLSearchParams({ [DRAFT_PARAM]: encodeDraft(carried) });
+    router.push(`/achat-vente/${sale ? "achat" : "vente"}?${params}`);
+  }
+
+  const form = (
     <form onSubmit={keepValues(action)}>
       <input type="hidden" name="kind" value={kind} />
       <div className="tx-lines">
@@ -237,7 +281,14 @@ export function TransactionForm({
               {line.productId === OTHER ? (
                 <div className="field">
                   <label htmlFor={`${id}-label`}>Nom de l&apos;article</label>
-                  <input id={`${id}-label`} name="label" required maxLength={100} />
+                  <input
+                    id={`${id}-label`}
+                    name="label"
+                    required
+                    maxLength={100}
+                    value={line.label}
+                    onChange={(ev) => update(line.key, { label: ev.target.value })}
+                  />
                 </div>
               ) : (
                 // Keeps the fields of every line aligned in the submitted form.
@@ -284,15 +335,33 @@ export function TransactionForm({
         )}
         <div className="field full">
           <label htmlFor="t-counterparty">Nom du client / vendeur RP (facultatif)</label>
-          <input id="t-counterparty" name="counterparty" maxLength={100} />
+          <input
+            id="t-counterparty"
+            name="counterparty"
+            maxLength={100}
+            value={counterparty}
+            onChange={(ev) => setCounterparty(ev.target.value)}
+          />
         </div>
         <div className="field full">
           <label htmlFor="t-notes">Notes (facultatif)</label>
-          <textarea id="t-notes" name="notes" rows={3} maxLength={500} />
+          <textarea
+            id="t-notes"
+            name="notes"
+            rows={3}
+            maxLength={500}
+            value={notes}
+            onChange={(ev) => setNotes(ev.target.value)}
+          />
         </div>
         <div className="field full">
           <label className="check">
-            <input type="checkbox" name="tillPending" />{" "}
+            <input
+              type="checkbox"
+              name="tillPending"
+              checked={tillPending}
+              onChange={(ev) => setTillPending(ev.target.checked)}
+            />{" "}
             {sale
               ? "Je n'ai pas encore déposé les septims dans la caisse"
               : "Je n'ai pas encore pris les septims dans la caisse"}
@@ -318,5 +387,23 @@ export function TransactionForm({
         <Plus size={16} /> {submitLabel}
       </button>
     </form>
+  );
+
+  return (
+    <>
+      <p className="row-actions">
+        <Link className="btn btn-small btn-ghost" href="/achat-vente">
+          <ArrowLeft size={14} /> Retour au registre
+        </Link>
+        <button type="button" className="btn btn-small btn-ghost" onClick={switchKind}>
+          <ArrowLeftRight size={14} /> {sale ? "Passer en achat" : "Passer en vente"}
+        </button>
+      </p>
+      <section className="panel" style={{ maxWidth: 760 }} aria-label={sale ? "Inscrire une vente" : "Inscrire un achat"}>
+        <div className="eyebrow">Nouvelle écriture</div>
+        <h2>{sale ? "Inscrire une vente" : "Inscrire un achat"}</h2>
+        {form}
+      </section>
+    </>
   );
 }

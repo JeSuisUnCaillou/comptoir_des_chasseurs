@@ -1,13 +1,21 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
 import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
 import { activeProducts } from "@/lib/products";
+import { DRAFT_PARAM, decodeDraft } from "@/lib/transaction-draft";
 
-/** /achat-vente/vente and /achat-vente/achat: the entry form, on a page of its own. */
-export default async function NouvelleEcriture({ params }: { params: Promise<{ kind: string }> }) {
+/**
+ * /achat-vente/vente and /achat-vente/achat: the entry form, on a page of its own.
+ * `?reprise=` carries what was filled in on the other one (lib/transaction-draft).
+ */
+export default async function NouvelleEcriture({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ kind: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireMember();
   const { kind: segment } = await params;
   if (segment !== "vente" && segment !== "achat") notFound();
@@ -22,37 +30,25 @@ export default async function NouvelleEcriture({ params }: { params: Promise<{ k
           ? "Un client paie : l'argent entre dans la caisse, la marchandise sort du stock."
           : "On paie un vendeur : l'argent sort de la caisse, la marchandise entre en stock."}
       </PageHead>
-      <p>
-        <Link className="btn btn-small btn-ghost" href="/achat-vente">
-          <ArrowLeft size={14} /> Retour au registre
-        </Link>
-      </p>
-      <section
-        className="panel"
-        style={{ maxWidth: 760 }}
-        aria-label={sale ? "Inscrire une vente" : "Inscrire un achat"}
-      >
-        <div className="eyebrow">Nouvelle écriture</div>
-        <h2>{sale ? "Inscrire une vente" : "Inscrire un achat"}</h2>
-        <TransactionForm
-          kind={kind}
-          products={products.map((p) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            unit: p.unit,
-            stock: p.stock,
-            buyPrice: p.buyPrice,
-            buyQty: p.buyQty,
-            citizenBuyPrice: p.citizenBuyPrice,
-            sellPrice: p.sellPrice,
-            sellQty: p.sellQty,
-            bulkMin: p.bulkMin,
-            bulkPrice: p.bulkPrice,
-            bulkQty: p.bulkQty,
-          }))}
-        />
-      </section>
+      <TransactionForm
+        kind={kind}
+        products={products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          unit: p.unit,
+          stock: p.stock,
+          buyPrice: p.buyPrice,
+          buyQty: p.buyQty,
+          citizenBuyPrice: p.citizenBuyPrice,
+          sellPrice: p.sellPrice,
+          sellQty: p.sellQty,
+          bulkMin: p.bulkMin,
+          bulkPrice: p.bulkPrice,
+          bulkQty: p.bulkQty,
+        }))}
+        draft={decodeDraft((await searchParams)[DRAFT_PARAM])}
+      />
     </>
   );
 }
