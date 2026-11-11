@@ -140,6 +140,8 @@ try {
     const [{ waiting }] = await tx`select count(*)::int as waiting from transactions where notes = ${PENDING_NOTE}`;
     if (waiting === 0) {
       // Each entry at its own instant; the lines of one entry share theirs.
+      // Mirrors recordTransaction and moveStock (app/(comptoir)/achat-vente/actions.ts,
+      // lib/products.ts): follow them if they change.
       for (const [i, [kind, counterparty, lines]] of PENDING.entries()) {
         const ago = `${PENDING.length - i} minutes`;
         for (const [name, quantity, amount] of lines) {
