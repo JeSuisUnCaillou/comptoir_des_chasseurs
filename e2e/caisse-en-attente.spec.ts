@@ -103,6 +103,8 @@ test("un gérant dit que les septims d'un achat d'employé sont pris dans la cai
   await expect(page).toHaveURL(/type=attente/);
   const row = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
   await expect(row).toContainText("−12 septims");
+  // A purchase of one line is a block of its own, with the same bar as longer ones.
+  await expect(row).toHaveClass(/\bentry-first\b.*\bentry-last\b/);
   await expect(page.getByTestId("en-attente")).toContainText("12 septims à prendre");
 
   let question = "";

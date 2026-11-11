@@ -1414,8 +1414,8 @@ tr.fresh td {
   color: var(--gold-strong);
 }
 
-/* The lines of one entry (written together) form a block in the register
-   and on a member's activity page: a gold bar on the left, no rule between
+/* Every entry (the lines written together, or a single line) forms a block
+   in the register and on a member's activity page: a gold bar on the left, no rule between
    its lines, room around it, what they share written on the first one only. */
 tr.entry td:first-child {
   box-shadow: inset 3px 0 0 var(--border-gold);
