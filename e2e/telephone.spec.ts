@@ -320,6 +320,8 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
     for (const path of pages) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      // Other computers' fonts can be a little wider than this one's: the layout must not count on a few pixels.
+      await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
       await expectNoSideScroll(page);
       // A table wider than its box would hide its last columns behind a sideways scroll.
       const cut = await page.evaluate(() =>

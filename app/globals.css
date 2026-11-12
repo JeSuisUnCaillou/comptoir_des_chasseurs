@@ -1485,7 +1485,7 @@ tr.fresh td {
    the transparent borders that make the room stay empty. When the table has
    less room than its columns need, the rows themselves become cards: see
    `.entry-cards` below. */
-@container table (min-width: 1100px) {
+@container table (min-width: 1200px) {
   tr.entry td {
     --top: 0px;
     --bottom: 0px;
@@ -1685,7 +1685,7 @@ tr.fresh td {
    their columns (a phone, a tablet, a small window): one card per entry,
    each line with its article, quantity and septims side by side, and its
    buttons under it, instead of a table cut at the edge. */
-@container table (max-width: 1099px) {
+@container table (max-width: 1199px) {
   .entry-cards thead {
     display: none;
   }
@@ -1852,7 +1852,7 @@ tr.fresh td {
    one card per row, its name on top (with its pencil, button or badge
    beside it), then one "label  value" line per column, instead of columns
    cut at the edge. */
-@container table (max-width: 999px) {
+@container table (max-width: 1099px) {
   .stack-cards thead {
     display: none;
   }
