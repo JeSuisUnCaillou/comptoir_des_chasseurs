@@ -2,12 +2,12 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, ne, type AnyColumn } from "drizzle-orm";
 import { PATH_HEADER } from "@/lib/auth/return-path";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
-import { RESERVED_SLUGS, slugOf, slugify } from "@/lib/paths";
+import { FIRST_SHOP_SLUG, RESERVED_SLUGS, slugOf, slugify } from "@/lib/paths";
 
 export async function shopBySlug(slug: string): Promise<Shop | undefined> {
   const [shop] = await getDb().select().from(schema.shops).where(eq(schema.shops.slug, slug)).limit(1);
@@ -58,22 +58,30 @@ export async function accountShops(account: Pick<Member, "id" | "superAdmin">): 
     .orderBy(byName(s.name), asc(s.id));
 }
 
-/**
- * Opens a shop named `name` at the address made from it, inside `tx`. Refuses
- * a name with no letter or digit, an address the app uses, or one another
- * shop already has.
- */
-export async function insertShop(tx: Tx, name: string): Promise<Shop> {
-  const slug = slugify(name);
+/** Refuses an address with no letter or digit, or one the app uses for its own pages. */
+function checkSlug(slug: string) {
   if (!slug) throw new UserError("Le nom de la boutique doit contenir au moins une lettre ou un chiffre.");
   if (RESERVED_SLUGS.includes(slug)) throw new UserError(`L'adresse /${slug} est réservée : choisis un autre nom.`);
+}
+
+/** Runs a write that sets a shop's address, refusing one another shop already has. */
+async function claimingSlug<T>(slug: string, write: () => Promise<T>): Promise<T> {
   try {
-    const [shop] = await tx.insert(schema.shops).values({ name, slug }).returning();
-    return shop;
+    return await write();
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError(`Une boutique a déjà l'adresse /${slug} : choisis un autre nom.`);
     throw error;
   }
+}
+
+/** Opens a shop named `name` at the address made from it, inside `tx`. */
+export async function insertShop(tx: Tx, name: string): Promise<Shop> {
+  const slug = slugify(name);
+  checkSlug(slug);
+  return claimingSlug(slug, async () => {
+    const [shop] = await tx.insert(schema.shops).values({ name, slug }).returning();
+    return shop;
+  });
 }
 
 /** Opens a shop named `name`, whose first gérant is the account that opens it. */
@@ -82,5 +90,45 @@ export async function createShop(account: Pick<Member, "id">, name: string): Pro
     const shop = await insertShop(tx, name);
     await tx.insert(schema.shopMembers).values({ shopId: shop.id, memberId: account.id, role: "gerant" });
     return shop;
+  });
+}
+
+/**
+ * Renames a shop and moves it to the address made from `address`. The
+ * comptoir keeps its address, which its old links lead to.
+ */
+export async function updateShop(shop: Shop, name: string, address: string): Promise<Shop> {
+  const slug = shop.slug === FIRST_SHOP_SLUG ? shop.slug : slugify(address);
+  checkSlug(slug);
+  return claimingSlug(slug, async () => {
+    const [updated] = await getDb()
+      .update(schema.shops)
+      .set({ name, slug })
+      .where(eq(schema.shops.id, shop.id))
+      .returning();
+    return updated;
+  });
+}
+
+/**
+ * Deletes a shop with everything in it: merchandises, register, stock
+ * history, board, suppliers, settings, invitations and memberships. The
+ * accounts stay; one left with no shop can still sign in to open another.
+ * The comptoir can't be deleted.
+ */
+export async function deleteShop(shop: Shop) {
+  if (shop.slug === FIRST_SHOP_SLUG) throw new UserError("Le comptoir ne peut pas être supprimé.");
+  await getDb().transaction(async (tx) => {
+    const of = <T extends { shopId: AnyColumn }>(table: T) => eq(table.shopId, shop.id);
+    // Supplier offers go with their supplier; every other table names the shop.
+    await tx.delete(schema.suppliers).where(of(schema.suppliers));
+    await tx.delete(schema.stockMovements).where(of(schema.stockMovements));
+    await tx.delete(schema.transactions).where(of(schema.transactions));
+    await tx.delete(schema.products).where(of(schema.products));
+    await tx.delete(schema.announcements).where(of(schema.announcements));
+    await tx.delete(schema.settings).where(of(schema.settings));
+    await tx.delete(schema.shopInvitations).where(of(schema.shopInvitations));
+    await tx.delete(schema.shopMembers).where(of(schema.shopMembers));
+    await tx.delete(schema.shops).where(eq(schema.shops.id, shop.id));
   });
 }

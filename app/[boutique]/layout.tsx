@@ -6,7 +6,9 @@ import {
   LayoutGrid,
   LogOut,
   Megaphone,
+  Settings,
   Shield,
+  Store,
   Tag,
   Truck,
   Users,
@@ -61,6 +63,14 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
               <Users size={18} /> Membres
             </NavLink>
           )}
+          {gerant && (
+            <NavLink href={at("/reglages")}>
+              <Settings size={18} /> Réglages
+            </NavLink>
+          )}
+          <Link className="nav-shops" href="/boutiques">
+            <Store size={18} /> Changer de boutique
+          </Link>
         </nav>
         <div className="sidebar-foot">
           <Shield size={14} style={{ verticalAlign: "-2px" }} />{" "}
@@ -69,10 +79,8 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
       </aside>
       <div className="main">
         <header className="topbar">
-          <span className="eyebrow">
-            <span data-testid="shop-name">{member.shop.name}</span>
-            {" · "}
-            <Link href="/boutiques">Mes boutiques</Link>
+          <span className="eyebrow" data-testid="shop-name">
+            {member.shop.name}
           </span>
           <div className="topbar-user">
             <Link className="topbar-name" href={at(`/membres/${member.id}`)} title="Voir mon activité" data-testid="member-name">

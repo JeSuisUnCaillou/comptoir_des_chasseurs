@@ -3,7 +3,7 @@ import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { authConfigured, currentAccount } from "@/lib/auth/session";
-import { accountCount, hasActiveShop } from "@/lib/members";
+import { accountCount, canSignIn } from "@/lib/members";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export default async function Connexion({
   // Signed in and able to enter a shop: nothing to do here. An account
   // deactivated everywhere sees the form, which refuses it.
   const account = await currentAccount();
-  if (account && (account.superAdmin || (await hasActiveShop(account.id)))) redirect(returnPath);
+  if (account && (account.superAdmin || (await canSignIn(account.id)))) redirect(returnPath);
   const total = await accountCount();
 
   return (

@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
-import { hasActiveShop } from "@/lib/members";
+import { canSignIn } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
 import { currentShop } from "@/lib/shops";
@@ -80,7 +80,7 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
  */
 export async function requireAccount(path: string): Promise<Member> {
   const account = await currentAccount();
-  if (!account || !(account.superAdmin || (await hasActiveShop(account.id)))) redirect(loginUrl(path));
+  if (!account || !(account.superAdmin || (await canSignIn(account.id)))) redirect(loginUrl(path));
   return account;
 }
 

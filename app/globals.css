@@ -211,6 +211,13 @@ h3 {
   }
 }
 
+.nav a.nav-shops {
+  margin-top: 14px;
+  border-top-color: var(--border);
+  border-radius: 0 0 4px 4px;
+  padding-top: 14px;
+}
+
 .sidebar-foot {
   margin-top: auto;
   font-size: 12px;
@@ -600,7 +607,8 @@ textarea:focus {
     gap: 4px;
   }
 
-  .nav a {
+  .nav a,
+  .nav a.nav-shops {
     margin: 0;
     padding: 8px 10px;
   }
@@ -1522,4 +1530,8 @@ tr.entry.fresh td {
 .invitation-link {
   width: 100%;
   font-size: 12px;
+}
+
+.gate-logout {
+  margin-top: 24px;
 }

@@ -112,7 +112,8 @@ Chaque boutique a ses pages sous son adresse : `/<slug>` pour son Grand livre,
 `/achat-vente/vente`…) y mènent toujours (`next.config.ts`). Une adresse qui
 ne nomme aucune boutique n'existe pas. La racine `/` ouvre la boutique du
 membre s'il n'en a qu'une, et sinon « Mes boutiques ». Le nom de la boutique
-est en haut de chaque page, à côté du lien « Mes boutiques ».
+est en haut de chaque page, et « Changer de boutique », en bas du menu, mène
+à Mes boutiques.
 
 - **Mes boutiques** (`/boutiques`) : les boutiques du compte, avec son rôle
   dans chacune. Tout compte y **ouvre une boutique** en lui donnant un nom :
@@ -122,6 +123,11 @@ est en haut de chaque page, à côté du lien « Mes boutiques ».
   admin y **ouvre aussi une boutique pour quelqu'un** : il reçoit un lien
   d'invitation (`/invitation/<jeton>`) à lui donner, et voit les liens pas
   encore utilisés.
+- **Réglages** (`/<slug>/reglages`, gérants) : renommer la boutique, changer
+  son adresse (le comptoir garde la sienne, où mènent ses anciens liens), ou la
+  **supprimer** avec tout ce qu'elle contient, après avoir retapé son nom. Le
+  comptoir ne se supprime pas. Les comptes de ses membres restent ; un compte
+  resté sans boutique peut encore se connecter, pour en ouvrir une.
 - **Invitation** (`/invitation/<jeton>`) : qui ouvre le lien devient gérant
   de la boutique, avec son compte (connecté, ou après « J'ai déjà un compte »)
   ou un compte qu'il crée là. Le lien ne sert qu'une fois.
@@ -256,8 +262,8 @@ est en haut de chaque page, à côté du lien « Mes boutiques ».
 
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un **rôle dans chacune** (`shop_members`) :
-  gérant, employé ou désactivé. Un compte désactivé partout ne peut plus se
-  connecter.
+  gérant, employé ou désactivé. Un compte désactivé dans toutes ses
+  boutiques ne peut plus se connecter.
 - Au premier lancement, la page de connexion crée le compte du **gérant**,
   qui est aussi le **super admin** : il est gérant dans toutes les
   boutiques, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;

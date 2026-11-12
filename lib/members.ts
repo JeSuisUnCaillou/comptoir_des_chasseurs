@@ -23,15 +23,15 @@ export async function accountByUsername(username: string): Promise<Member | unde
   return member;
 }
 
-/** True when the member may enter at least one shop: deactivated everywhere, they can't sign in. */
-export async function hasActiveShop(memberId: number) {
+/**
+ * False when the account is deactivated in every shop it belongs to: it can't
+ * sign in any more. An account left with no shop at all (its shop was
+ * deleted) still can, to open a new one.
+ */
+export async function canSignIn(memberId: number) {
   const m = schema.shopMembers;
-  const [row] = await getDb()
-    .select({ shopId: m.shopId })
-    .from(m)
-    .where(and(eq(m.memberId, memberId), ne(m.role, "desactive")))
-    .limit(1);
-  return row !== undefined;
+  const roles = await getDb().select({ role: m.role }).from(m).where(eq(m.memberId, memberId));
+  return roles.length === 0 || roles.some(({ role }) => role !== "desactive");
 }
 
 /**

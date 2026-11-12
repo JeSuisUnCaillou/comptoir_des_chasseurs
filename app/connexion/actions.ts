@@ -10,7 +10,7 @@ import {
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { endSession, startSession } from "@/lib/auth/session";
 import { text } from "@/lib/forms";
-import { accountByUsername, createFirstGerant as createFirst, hasActiveShop } from "@/lib/members";
+import { accountByUsername, createFirstGerant as createFirst, canSignIn } from "@/lib/members";
 import { firstShop } from "@/lib/shops";
 
 export type AuthState = { error: string } | null;
@@ -24,7 +24,7 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   const password = String(formData.get("password") ?? "");
   const member = await accountByUsername(username);
   const valid = await verifyPassword(password, member?.passwordHash ?? DUMMY_HASH);
-  if (!member || !valid || !(member.superAdmin || (await hasActiveShop(member.id)))) {
+  if (!member || !valid || !(member.superAdmin || (await canSignIn(member.id)))) {
     return { error: "Identifiant ou mot de passe incorrect." };
   }
   await startSession(member);

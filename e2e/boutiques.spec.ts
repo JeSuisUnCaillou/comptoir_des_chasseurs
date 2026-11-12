@@ -168,7 +168,7 @@ test("un membre de deux boutiques choisit la sienne, et en change", async ({ pag
   // Gérant there: the Membres page is theirs.
   await expect(page.getByRole("link", { name: "Membres" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Mes boutiques" }).click();
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
   await shops.getByRole("link", { name: /Le Comptoir Des Chasseurs/ }).click();
   await expect(page).toHaveURL(new RegExp(`${COMPTOIR}$`));
   await expect(page.getByTestId("shop-name")).toHaveText("Le Comptoir Des Chasseurs");

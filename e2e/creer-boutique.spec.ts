@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
+import postgres from "postgres";
 import { ALERT, COMPTOIR, createMember, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 /** The address a shop named `name` gets: what the page says, lower case, accents dropped, dashes. */
@@ -14,7 +15,7 @@ function slugOf(name: string) {
 /** The super admin opens a shop for someone, from Mes boutiques, and returns its invitation link. */
 async function invite(page: Page, shop: string) {
   await loginAsGerant(page);
-  await page.getByRole("link", { name: "Mes boutiques" }).click();
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
   await expect(page).toHaveURL(/\/boutiques$/);
   const section = page.getByRole("region", { name: "Ouvrir une boutique pour quelqu'un" });
   await section.getByLabel("Nom de sa boutique").fill(shop);
@@ -30,7 +31,7 @@ test("un employé ouvre sa propre boutique, dont il est le gérant", async ({ br
   const shop = uniqueName("Échoppe d'Ysolda");
   await expect(page.getByRole("link", { name: "Membres" })).toHaveCount(0);
 
-  await page.getByRole("link", { name: "Mes boutiques" }).click();
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
   const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
   await section.getByLabel("Nom de la boutique").fill(shop);
   await section.getByRole("button", { name: "Ouvrir la boutique" }).click();
@@ -149,4 +150,97 @@ test("un lien d'invitation inconnu n'ouvre rien", async ({ page }) => {
   await page.goto(`/invitation/${uniqueName("faux-lien")}`);
   await expect(page.locator(ALERT)).toContainText("Cette invitation n'est plus valable");
   await expect(page.getByLabel("Identifiant")).toHaveCount(0);
+});
+
+/** An employee of the comptoir who opened a shop of their own, on its Grand livre. */
+async function ownShop(browser: Browser, prefix: string) {
+  const { page, username } = await newEmployeePage(browser, prefix);
+  const shop = uniqueName(`Boutique de ${prefix}`);
+  await page.goto("/boutiques");
+  const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
+  await section.getByLabel("Nom de la boutique").fill(shop);
+  await section.getByRole("button", { name: "Ouvrir la boutique" }).click();
+  await expect(page.getByTestId("shop-name")).toHaveText(shop);
+  return { page, username, shop, slug: slugOf(shop) };
+}
+
+test("un gérant renomme sa boutique et change son adresse", async ({ browser }) => {
+  const { page, slug } = await ownShop(browser, "idgrod");
+  const renamed = uniqueName("Maison des Chants");
+  await page.getByRole("link", { name: "Réglages" }).click();
+  await page.getByLabel("Nom de la boutique").fill(renamed);
+  await page.getByLabel("Adresse").fill(renamed);
+  await page.getByRole("button", { name: "Enregistrer la boutique" }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/${slugOf(renamed)}/reglages$`));
+  await expect(page.getByTestId("shop-name")).toHaveText(renamed);
+  await page.goto(`/${slug}`);
+  await expect(page.getByText("This page could not be found.")).toBeVisible();
+
+  // Another shop's address is refused.
+  await page.goto(`/${slugOf(renamed)}/reglages`);
+  await page.getByLabel("Adresse").fill("le-comptoir-des-chasseurs");
+  await page.getByRole("button", { name: "Enregistrer la boutique" }).click();
+  await expect(page.locator(ALERT)).toHaveText(
+    "Une boutique a déjà l'adresse /le-comptoir-des-chasseurs : choisis un autre nom.",
+  );
+});
+
+test("un gérant supprime sa boutique, avec tout ce qu'elle contient", async ({ browser }) => {
+  const { page, shop, slug } = await ownShop(browser, "gerdur");
+  // Something in it: a merchandise put in stock.
+  await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Inventaire" }).click();
+  await page.getByLabel("Rechercher une marchandise").fill(uniqueName("Hydromel"));
+  await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
+  const form = page.getByRole("form", { name: "Nouvelle marchandise" });
+  await form.getByLabel("Catégorie").selectOption("viande");
+  await form.getByLabel("Quantité entrée").fill("3");
+  await form.getByLabel("Motif").fill("brassé sur place");
+  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await expect(page.getByTestId("stock-value")).toHaveText("3");
+
+  await page.getByRole("link", { name: "Réglages" }).click();
+  const danger = page.getByRole("region", { name: "Supprimer la boutique" });
+  await danger.getByLabel(`Pour confirmer, écris « ${shop} »`).fill("pas le bon nom");
+  await danger.getByRole("button", { name: "Supprimer la boutique" }).click();
+  await expect(danger.locator(ALERT)).toHaveText("Écris exactement le nom de la boutique pour confirmer.");
+  await danger.getByLabel(`Pour confirmer, écris « ${shop} »`).fill(shop);
+  await danger.getByRole("button", { name: "Supprimer la boutique" }).click();
+
+  await expect(page).toHaveURL(/\/boutiques$/);
+  await expect(page.getByRole("navigation", { name: "Mes boutiques" }).getByRole("link")).toHaveText([
+    /Le Comptoir Des Chasseurs · Employé/,
+  ]);
+  await page.goto(`/${slug}`);
+  await expect(page.getByText("This page could not be found.")).toBeVisible();
+});
+
+test("le comptoir garde son adresse et ne se supprime pas ; un employé n'a pas les réglages", async ({ page, browser }) => {
+  await loginAsGerant(page);
+  await page.getByRole("link", { name: "Réglages" }).click();
+  await expect(page.getByLabel("Adresse")).toBeDisabled();
+  await expect(page.getByRole("region", { name: "Supprimer la boutique" })).toHaveCount(0);
+
+  const { page: employee } = await newEmployeePage(browser, "lars");
+  await expect(employee.getByRole("link", { name: "Réglages" })).toHaveCount(0);
+  await employee.goto(`${COMPTOIR}/reglages`);
+  await expect(employee).toHaveURL(new RegExp(`${COMPTOIR}$`));
+});
+
+test("un compte resté sans boutique se connecte et peut en ouvrir une", async ({ page }) => {
+  const username = uniqueName("sans-boutique").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe");
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`delete from shop_members where member_id = (select id from members where username = ${username})`;
+  } finally {
+    await sql.end();
+  }
+  await page.goto("/connexion");
+  await page.getByLabel("Identifiant").fill(username);
+  await page.getByLabel("Mot de passe").fill("mot-de-passe");
+  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await expect(page).toHaveURL(/\/boutiques$/);
+  await expect(page.getByText("Tu n'as pas encore de boutique : ouvre la tienne.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ouvrir une boutique", exact: true })).toBeVisible();
 });

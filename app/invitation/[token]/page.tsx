@@ -41,7 +41,7 @@ export default async function Invitation({ params }: { params: Promise<{ token: 
               {account.name}, tu es invité à gérer la boutique <strong>« {shop.name} »</strong>.
             </p>
             <JoinShopForm token={token} shopName={shop.name} />
-            <form action={logout}>
+            <form className="gate-logout" action={logout}>
               <input type="hidden" name={RETURN_PARAM} value={here} />
               <span className="small muted">Ce n&apos;est pas ton compte ? </span>
               <button className="btn btn-small btn-ghost" type="submit">
