@@ -7,7 +7,7 @@ import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 import { lineMessage } from "@/lib/transaction-kinds";
 
-export const DUPLICATE_PRODUCT_NAME = "Une marchandise porte déjà ce nom.";
+export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 
 export async function activeProducts(shopId: number) {
   return getDb()
@@ -198,7 +198,7 @@ export async function createStocked(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new UserError("Ce nom est déjà pris (peut-être par une marchandise archivée, regarde dans « Gérer les tarifs »).");
+      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les tarifs ».`);
     }
     throw error;
   }

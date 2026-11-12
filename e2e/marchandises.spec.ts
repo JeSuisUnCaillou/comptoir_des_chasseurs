@@ -49,7 +49,7 @@ test("deux marchandises ne peuvent pas porter le même nom", async ({ page }) =>
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill("Biche");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(form.locator(ALERT)).toHaveText("Une marchandise porte déjà ce nom.");
+  await expect(form.locator(ALERT)).toHaveText("Il y a déjà une marchandise à ce nom.");
 });
 
 test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {

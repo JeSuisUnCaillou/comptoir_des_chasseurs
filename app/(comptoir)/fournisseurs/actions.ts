@@ -42,7 +42,7 @@ export async function saveOffer(_prev: SupplierFormState, formData: FormData): P
     return { ok: false, message: "Le prix doit être un nombre entier (0 ou plus)." };
   }
   if (!Number.isInteger(qty) || qty < 1 || qty > 1_000_000) {
-    return { ok: false, message: "La quantité doit être d'au moins 1." };
+    return { ok: false, message: "La quantité doit être un nombre entier d'au moins 1." };
   }
   const result = await attempt(() => offer(member.shopId, { supplierId, productId, price, qty }));
   if (!result.ok) return result;

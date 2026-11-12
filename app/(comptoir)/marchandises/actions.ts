@@ -44,7 +44,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: "Les prix et quantités doivent être des nombres entiers positifs." };
   }
   if ([values.buyQty, values.sellQty, values.bulkQty].some((n) => n < 1)) {
-    return { error: "La quantité doit être d'au moins 1." };
+    return { error: "La quantité doit être un nombre entier d'au moins 1." };
   }
   if ((values.hidesPerBatch == null) !== (values.leatherPerBatch == null)) {
     return { error: "Remplis les peaux et les cuirs, ou laisse les deux vides." };

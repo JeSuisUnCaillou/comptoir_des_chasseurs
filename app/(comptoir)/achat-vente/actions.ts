@@ -85,7 +85,7 @@ export async function recordCashMovement(
     return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
   }
   if (!Number.isInteger(amount) || amount <= 0) {
-    return { ok: false, message: "Le montant doit être d'au moins 1 septim." };
+    return { ok: false, message: "Le montant doit être un nombre entier d'au moins 1 septim." };
   }
   if (!label) return { ok: false, message: "Précise la raison." };
 

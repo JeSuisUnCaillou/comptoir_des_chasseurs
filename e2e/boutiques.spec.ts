@@ -154,7 +154,7 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   await row.getByRole("button", { name: /Annuler/ }).click();
   await expect(row.locator(ALERT)).toHaveText("Cette ligne est introuvable ou déjà annulée.");
   await row.getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ }).click();
-  await expect(page.locator(ALERT).filter({ hasText: "Cette ligne est déjà en caisse." })).toBeVisible();
+  await expect(page.locator(ALERT).filter({ hasText: "Cette ligne a déjà été réglée ou annulée." })).toBeVisible();
 
   // A merchandise of the comptoir saved under the other shop's merchandise's number.
   const mine = uniqueName("Peau du comptoir");

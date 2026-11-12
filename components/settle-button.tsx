@@ -9,7 +9,7 @@ export type PendingEntry = { entryLines: number; entryTotal: number; entryItems:
 
 /** What the confirmation asks: one line, or every line of the entry with their total. */
 export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
-  const amount = `${entry.entryTotal >= 2 ? "les" : "le"} ${septims(entry.entryTotal)}`;
+  const amount = `${entry.entryTotal >= 2 ? "les " : ""}${septims(entry.entryTotal)}`;
   const done = `${sale ? "mis" : "pris"} ${amount}`;
   if (entry.entryLines <= 1) {
     return `Tu as bien ${done} ${sale ? `de la vente n°${id}` : `de l'achat n°${id}`} dans la caisse ?`;
@@ -28,7 +28,7 @@ export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
 export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; entry: PendingEntry }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(settleTransaction, null);
   const total = entry.entryTotal;
-  const amount = `${total >= 2 ? "les" : "le"} ${septims(total)}`;
+  const amount = `${total >= 2 ? "les " : ""}${septims(total)}`;
   const what =
     entry.entryLines > 1
       ? `${sale ? "cette vente" : "cet achat"} de ${entry.entryLines} lignes`

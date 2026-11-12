@@ -115,7 +115,7 @@ export async function settleLine(member: Actor, id: number) {
     .from(t)
     .where(and(eq(t.id, id), eq(t.shopId, member.shopId), eq(t.tillPending, true), isNull(t.cancelledAt)))
     .limit(1);
-  if (!line) throw new UserError("Cette ligne est déjà en caisse.");
+  if (!line) throw new UserError("Cette ligne a déjà été réglée ou annulée.");
   if (!canActOn(member, line)) {
     throw new UserError("Seul un gérant peut valider la ligne de quelqu'un d'autre.");
   }

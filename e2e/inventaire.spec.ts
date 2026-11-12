@@ -205,7 +205,7 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await form.getByLabel("Quantité ajoutée").fill("1");
   await form.getByLabel("Motif").fill("doublon");
   await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
-  await expect(form.locator(ALERT)).toContainText("Ce nom est déjà pris");
+  await expect(form.locator(ALERT)).toContainText("Il y a déjà une marchandise à ce nom");
   await expect(form.getByLabel("Motif")).toHaveValue("doublon");
   await form.getByRole("button", { name: "Annuler" }).click();
   await p.getByLabel("Rechercher une marchandise").fill(name);
