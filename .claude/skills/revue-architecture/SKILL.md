@@ -32,7 +32,7 @@ autre travail (`CLAUDE.md` § Suivre le travail dans les issues).
 
 4. **Tranche chaque trouvaille toi-même** au code qu'elle cite : confirmée,
    rejetée avec une ligne de pourquoi, ou un choix du propriétaire (un
-   comportement que le README ne tranche pas, une règle métier). Fini quand
+   comportement que `docs/comportement.md` ne tranche pas, une règle métier). Fini quand
    chaque trouvaille a l'un des trois.
 
 5. **Ouvre une issue par trouvaille confirmée**, étiquetée `architecture` :
@@ -68,10 +68,10 @@ un fichier de lib/ ou de app/ que plus rien n'utilise.
 **relecteur-bugs**, qui fait ici la doc et les tests :
 
 ```
-Cherche plutôt où les documents et le code divergent : README.md (ce que fait
-l'app, lancer, tester, déployer, rôles), CLAUDE.md, .env.example face aux
-variables que le code lit, lib/db/schema.ts face aux migrations de drizzle/.
-Puis ce que README.md décrit qu'aucun test de e2e/ ne pilote, et les tests qui
+Cherche plutôt où les documents et le code divergent : docs/comportement.md
+(ce que fait l'app, rôles), README.md (lancer, tester, déployer), CLAUDE.md,
+.env.example face aux variables que le code lit, lib/db/schema.ts face aux migrations de drizzle/.
+Puis ce que docs/comportement.md décrit qu'aucun test de e2e/ ne pilote, et les tests qui
 enfreignent CLAUDE.md § Tests de bout en bout (état interne lu,
 waitForTimeout, données sans nom unique). Un fait écrit à deux endroits est
 une trouvaille (CLAUDE.md § Un fait, une place).
