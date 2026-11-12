@@ -18,7 +18,7 @@ dans le cas courant, trois au plus. Le changement est toute la branche :
 2. **Tranche chaque trouvaille** sur le code qu'elle cite : confirmée (tu la
    corriges, de la façon la plus mécanique : supprimer ou renvoyer plutôt
    que réécrire), rejetée (une ligne de pourquoi), ou un choix du
-   propriétaire (une règle métier que le README ne tranche pas : tu le lui
+   propriétaire (une règle métier que `docs/comportement.md` ne tranche pas : tu le lui
    laisses).
 
    **Bloquante** seulement si c'est du code et qu'un membre du comptoir, une

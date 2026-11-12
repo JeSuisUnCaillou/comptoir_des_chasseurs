@@ -9,7 +9,7 @@ Tu relis le dépôt du Comptoir des chasseurs, extrait dans le répertoire
 courant. Le message qui te lance dit quoi relire : une branche (le changement
 est `git diff origin/main...HEAD`, lis-le en entier, puis les fichiers autour)
 ou tout le code sur `main`. Lis d'abord `CLAUDE.md`, puis ce qu'il cite qui
-touche au changement : `README.md` est la spécification, `lib/db/schema.ts` le
+touche au changement : `docs/comportement.md` est la spécification, `lib/db/schema.ts` le
 modèle de données.
 
 Ne change rien. Aucune édition, aucune écriture, aucun commit, ni
