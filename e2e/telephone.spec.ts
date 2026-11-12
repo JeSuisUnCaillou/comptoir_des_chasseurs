@@ -227,3 +227,23 @@ test("au téléphone, la pagination tient dans l'écran", async ({ browser }) =>
   }
   await expectNoSideScroll(page);
 });
+
+test("au téléphone, les champs des filtres sont alignés et un bouton de page ne colle pas au cadre suivant", async ({
+  page,
+}) => {
+  await loginAsGerant(page);
+
+  // The date filters: « Du » and « Au » on their own lines, the two fields one under the other.
+  await page.getByTestId("member-name").click();
+  const filters = page.getByRole("form", { name: "Choisir la période" });
+  const from = await filters.getByLabel("Du", { exact: true }).boundingBox();
+  const to = await filters.getByLabel("Au", { exact: true }).boundingBox();
+  expect(Math.round(to!.x)).toBe(Math.round(from!.x));
+  expect(to!.y).toBeGreaterThan(from!.y + from!.height);
+
+  // « Gérer les tarifs » under the title, with room before the first panel.
+  await page.goto("/tarifs");
+  const button = await page.getByRole("link", { name: "Gérer les tarifs" }).boundingBox();
+  const panel = await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox();
+  expect(panel!.y - (button!.y + button!.height)).toBeGreaterThanOrEqual(20);
+});

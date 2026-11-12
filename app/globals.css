@@ -992,6 +992,27 @@ tr.cancelled td:last-child {
   margin-bottom: 16px;
 }
 
+/* On a phone, one filter per line, its label on the left, the fields aligned
+   in one column, the buttons under them. */
+@media (max-width: 600px) {
+  .filters:has(> label) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  .filters:has(> label) input,
+  .filters:has(> label) select {
+    width: 100%;
+  }
+
+  .filters:has(> label) > .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
 /* At least half of its container, the whole width on a phone. */
 .inline-form.live-search input {
   width: max(50%, min(100%, 320px));
@@ -1589,6 +1610,16 @@ tr.fresh td {
 
   .footer {
     grid-area: footer;
+  }
+
+  /* A page title with its button (Tarifs, Membres…): the button goes under
+     the title, with the same room before the first panel as a title alone. */
+  .content > .panel-head {
+    margin-bottom: 28px;
+  }
+
+  .content > .panel-head .page-head {
+    margin-bottom: 0;
   }
 
   /* The Grand livre's buttons: two per row instead of one row past the edge. */

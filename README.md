@@ -112,7 +112,8 @@ un écran étroit, le menu tient en une ligne qui défile de côté, sous le nom
 du comptoir et du membre ; le registre, l'activité d'un membre et
 l'historique du stock passent d'un tableau à une carte par écriture (article,
 quantité et septims sur une ligne, boutons dessous) ; les tarifs, la gestion
-des marchandises et les comptes passent à une fiche par ligne.
+des marchandises et les comptes passent à une fiche par ligne ; les filtres
+(opération, employé, dates) passent à un par ligne, les champs alignés.
 
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
