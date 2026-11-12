@@ -75,13 +75,10 @@ export default async function Membres({
                 <tr key={m.id} data-testid={`member-${m.username}`}>
                   <td className="stack-title">{m.username}</td>
                   <td className="stack-aside">
-                    <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
-                    {m.superAdmin && (
-                      <>
-                        {" "}
-                        <span className="badge badge-gold">Super admin</span>
-                      </>
-                    )}
+                    <span className="badges">
+                      <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
+                      {m.superAdmin && <span className="badge badge-gold">Super admin</span>}
+                    </span>
                   </td>
                   <td>
                     {m.superAdmin && m.id !== me.id ? (

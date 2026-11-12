@@ -330,6 +330,7 @@ h3 {
 
 .citizen-price .badge {
   font-size: 12px;
+  white-space: normal;
 }
 
 .row-actions {
@@ -366,6 +367,8 @@ h3 {
 
 /* Tables */
 .table-wrap {
+  /* Its tables turn into cards when it is too narrow for their columns. */
+  container: table / inline-size;
   overflow-x: auto;
   /* Holds the absolutely placed .sr-only cells, which would otherwise widen the page. */
   position: relative;
@@ -489,8 +492,21 @@ textarea:focus {
   padding: 6px 10px;
 }
 
+/* A form inside a table cell (the accounts' name and password) wraps rather than widen its table. */
+td .inline-form {
+  flex-wrap: wrap;
+}
+
+/* Several badges side by side, with room between them when they wrap. */
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .badge {
   display: inline-block;
+  white-space: nowrap;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 3px;
@@ -718,8 +734,13 @@ td.row-action .icon-btn {
   margin-bottom: 16px;
 }
 
-/* A page's title with its button: the title already leaves its room below. */
+/* A page's title with its button (Tarifs): the room below is the title's own,
+   whether the button sits beside the title or wraps under it. */
 .content > .panel-head {
+  margin-bottom: 28px;
+}
+
+.content > .panel-head .page-head {
   margin-bottom: 0;
 }
 
@@ -1461,9 +1482,10 @@ tr.fresh td {
    the register and on a member's activity page: framed by thin rules, a gold
    bar on its left, no rule between its lines, room between two cards, what
    its lines share written on the first one only. Rules are inset shadows, so
-   the transparent borders that make the room stay empty. On a phone the
-   rows themselves become cards: see `.entry-cards` below. */
-@media (min-width: 601px) {
+   the transparent borders that make the room stay empty. When the table has
+   less room than its columns need, the rows themselves become cards: see
+   `.entry-cards` below. */
+@container table (min-width: 1100px) {
   tr.entry td {
     --top: 0px;
     --bottom: 0px;
@@ -1615,16 +1637,6 @@ tr.fresh td {
     grid-area: footer;
   }
 
-  /* A page title with its button (Tarifs, Membres…): the button goes under
-     the title, with the same room before the first panel as a title alone. */
-  .content > .panel-head {
-    margin-bottom: 28px;
-  }
-
-  .content > .panel-head .page-head {
-    margin-bottom: 0;
-  }
-
   /* The Grand livre's buttons: two per row instead of one row past the edge. */
   .move-actions {
     display: grid;
@@ -1643,6 +1655,14 @@ tr.fresh td {
   margin-top: 12px;
 }
 
+/* On a phone, the plain tables (a supplier's prices) keep their columns in a narrow screen. */
+@media (max-width: 600px) {
+  th,
+  td {
+    padding: 10px 6px;
+  }
+}
+
 /* Between a phone and a wide screen, the Grand livre's four buttons no longer
    fit on one line beside the menu: two by two, under the greeting. */
 @media (max-width: 1200px) {
@@ -1653,14 +1673,11 @@ tr.fresh td {
   }
 }
 
-@media (max-width: 600px) {
-  /* Register, activity and stock history: one card per entry, each line
-     with its article, quantity and septims side by side, and its buttons
-     under it, instead of a table wider than the screen. */
-  .table-wrap:has(> .entry-cards) {
-    overflow: visible;
-  }
-
+/* Register, activity and stock history, when their box is narrower than
+   their columns (a phone, a tablet, a small window): one card per entry,
+   each line with its article, quantity and septims side by side, and its
+   buttons under it, instead of a table cut at the edge. */
+@container table (max-width: 1099px) {
   .entry-cards thead {
     display: none;
   }
@@ -1765,6 +1782,7 @@ tr.fresh td {
 
   .entry-cards .cell-qty::before {
     content: "× ";
+    content: "× " / "";
     color: var(--muted);
   }
 
@@ -1797,6 +1815,7 @@ tr.fresh td {
 
   .entry-cards td[data-label]:not(.cell-repeat)::before {
     content: attr(data-label) " : ";
+    content: attr(data-label) " : " / "";
     color: var(--muted);
   }
 
@@ -1812,16 +1831,20 @@ tr.fresh td {
   .entry-cards .cell-actions:not(:empty) {
     padding-top: 6px;
   }
+
+  /* A long date, amount or button wraps instead of widening the card. */
+  .entry-cards .cell-date,
+  .entry-cards .cell-amount,
+  .entry-cards .cell-actions button {
+    white-space: normal;
+  }
 }
 
-@media (max-width: 600px) {
-  /* Price and member lists: one card per row, its name on top (with its
-     pencil, button or badge beside it), then one "label  value" line per
-     column, instead of columns cut by the screen's edge. */
-  .table-wrap:has(> .stack-cards) {
-    overflow: visible;
-  }
-
+/* Price and member lists, when their box is narrower than their columns:
+   one card per row, its name on top (with its pencil, button or badge
+   beside it), then one "label  value" line per column, instead of columns
+   cut at the edge. */
+@container table (max-width: 999px) {
   .stack-cards thead {
     display: none;
   }
@@ -1831,11 +1854,16 @@ tr.fresh td {
     display: block;
   }
 
+  /* Labels and values stay close enough to read across. */
+  .stack-cards tbody {
+    max-width: 640px;
+  }
+
   .stack-cards tr {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 12px;
+    gap: 8px 12px;
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
   }
@@ -1873,6 +1901,7 @@ tr.fresh td {
 
   .stack-cards td[data-label]::before {
     content: attr(data-label);
+    content: attr(data-label) / "";
     color: var(--muted);
     font-size: 13px;
     text-align: left;
@@ -1896,3 +1925,4 @@ tr.fresh td {
     margin-top: 2px;
   }
 }
+

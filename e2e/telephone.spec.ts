@@ -281,3 +281,34 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
     expect(await gapUnderTitle()).toBe(usual);
   });
 });
+
+test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne coupe un tableau", async ({ page }) => {
+  test.slow();
+  // A pending sale of millions: the longest amount and button a register card holds.
+  const product = uniqueName("Couronne de Nordique");
+  await createProduct(product, { stock: 1, sellPrice: 7_000_000 });
+  await loginAsGerant(page);
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form, product);
+  await form.getByLabel("Pas encore mis en caisse").check();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
+
+  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres"];
+  for (let width = 320; width <= 1600; width += 160) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of pages) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expectNoSideScroll(page);
+      // A table wider than its box would hide its last columns behind a sideways scroll.
+      const cut = await page.evaluate(() =>
+        [...document.querySelectorAll(".table-wrap")]
+          .filter((wrap) => wrap.scrollWidth > wrap.clientWidth + 1)
+          .map((wrap) => wrap.querySelector("th")?.textContent ?? "?"),
+      );
+      expect(cut, `${path} à ${width} px`).toEqual([]);
+    }
+  }
+});
