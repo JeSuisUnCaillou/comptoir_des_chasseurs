@@ -36,7 +36,7 @@ function MoveForm({
       <input type="hidden" name="productId" value={item.id} />
       <input type="hidden" name="direction" value={direction} />
       <label htmlFor={`${id}-q`} className="small muted">
-        {direction === "in" ? "Quantité entrée" : "Quantité sortie"}
+        {direction === "in" ? "Quantité ajoutée" : "Quantité retirée"}
       </label>
       <input id={`${id}-q`} name="quantity" type="number" min={1} max={direction === "out" ? item.stock : undefined} required autoFocus />
       <label htmlFor={`${id}-r`} className="small muted">
@@ -159,7 +159,7 @@ export function StockBoard({ items }: { items: StockItem[] }) {
       {visible.length === 0 ? (
         <p className="muted">
           Aucune marchandise ne correspond.
-          {creating == null && query.trim() && " Le bouton « Nouvelle marchandise » la crée avec ce nom."}
+          {creating == null && query.trim() && " Tu peux la créer avec « Nouvelle marchandise »."}
         </p>
       ) : (
         <div className="stock-grid">

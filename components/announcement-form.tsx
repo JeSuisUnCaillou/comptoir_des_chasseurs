@@ -20,7 +20,7 @@ export function AnnouncementForm() {
         <textarea id="an-body" name="body" required maxLength={BODY_MAX} rows={6} className="parchment-input" />
       </div>
       <fieldset className="pin-choice">
-        <legend>Comment fixer le parchemin ?</legend>
+        <legend>Avec quoi l&apos;accrocher ?</legend>
         <div className="pin-options">
           {PINS.map((p, i) => (
             <label key={p.value} className="pin-option">

@@ -38,7 +38,7 @@ export default async function Membres({
   return (
     <>
       <PageHead title="Membres">
-        Qui peut entrer au comptoir, et sous quel nom.
+        Les membres du comptoir.
       </PageHead>
 
       <section className="panel" aria-labelledby="nouveau-membre">
@@ -46,7 +46,7 @@ export default async function Membres({
         <h2 id="nouveau-membre">Créer un compte</h2>
         <p className="muted">
           Choisis un identifiant et un mot de passe provisoire, puis transmets-les à la personne.
-          Elle pourra changer son mot de passe avec la clé, en haut à droite.
+          Elle pourra le changer ensuite avec l&apos;icône de clé, en haut à droite.
         </p>
         <NewMemberForm />
       </section>

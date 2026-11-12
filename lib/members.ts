@@ -118,7 +118,7 @@ export async function resetAccountPassword(me: Pick<ShopMember, "id" | "shopId">
     .set({ passwordHash })
     .where(editableBy(me, id))
     .returning({ id: schema.members.id });
-  if (changed.length === 0) throw new UserError("Ce compte est protégé.");
+  if (changed.length === 0) throw new UserError("Tu ne peux pas modifier ce compte.");
 }
 
 /** A member changes their own password. */

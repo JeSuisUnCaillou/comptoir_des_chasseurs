@@ -23,14 +23,14 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
 
   const result = await moveByHand(member, productId, direction === "in" ? quantity : -quantity, reason);
   if (!result.ok) return { ok: false, message: result.error };
 
   revalidatePath("/inventaire");
   revalidatePath("/tarifs");
-  return { ok: true, message: `Stock mis à jour : ${result.stock}.` };
+  return { ok: true, message: `C'est fait, il en reste ${result.stock}.` };
 }
 
 export type CreateState = { ok: true; name: string } | { ok: false; message: string } | null;
@@ -49,7 +49,7 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
 
   const result = await attempt(() => createStocked(member, identity, quantity, reason));
   if (!result.ok) return result;
@@ -88,7 +88,7 @@ export async function recordStockMovement(_prev: MoveState, formData: FormData):
     }
     lines.push({ productId, quantity });
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
 
   const result = await attempt(() => recordMovements(member, direction, lines, reason));
   if (!result.ok) return result;

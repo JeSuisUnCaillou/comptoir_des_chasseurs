@@ -168,7 +168,7 @@ export function TransactionForm({
             >
               <div className="tx-line-row">
                 <div className="field tx-product">
-                  <label htmlFor={`${id}-product`}>Article ou marchandise</label>
+                  <label htmlFor={`${id}-product`}>Marchandise</label>
                   <ProductCombobox
                     id={`${id}-product`}
                     name="productId"
@@ -363,12 +363,11 @@ export function TransactionForm({
               onChange={(ev) => setTillPending(ev.target.checked)}
             />{" "}
             {sale
-              ? "Je n'ai pas encore déposé les septims dans la caisse"
-              : "Je n'ai pas encore pris les septims dans la caisse"}
+              ? "Pas encore mis en caisse"
+              : "Pas encore sorti de la caisse"}
           </label>
           <span className="small muted">
-            {sale ? "La vente" : "L'achat"} reste « En attente de la caisse » et ne compte pas dans la caisse
-            tant que tu n&apos;as pas cliqué sur son bouton « … septims {sale ? "déposés" : "pris"} » dans le registre.
+            Tu pourras {sale ? "la" : "le"} valider plus tard depuis le registre.
           </span>
         </div>
       </div>
@@ -396,7 +395,7 @@ export function TransactionForm({
           <ArrowLeft size={14} /> Retour au registre
         </Link>
         <button type="button" className="btn btn-small btn-ghost" onClick={switchKind}>
-          <ArrowLeftRight size={14} /> {sale ? "Passer en achat" : "Passer en vente"}
+          <ArrowLeftRight size={14} /> {sale ? "C'est un achat" : "C'est une vente"}
         </button>
       </p>
       <section className="panel" style={{ maxWidth: 760 }} aria-label={sale ? "Inscrire une vente" : "Inscrire un achat"}>

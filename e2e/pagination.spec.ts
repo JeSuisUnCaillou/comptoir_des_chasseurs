@@ -49,7 +49,7 @@ test("l'historique du stock est paginé", async ({ page }) => {
   const card = page.getByTestId(`stock-${product}`);
   for (let i = 0; i < 26; i++) {
     await card.getByRole("button", { name: "Entrée" }).click();
-    await card.getByLabel("Quantité entrée").fill("1");
+    await card.getByLabel("Quantité ajoutée").fill("1");
     await card.getByLabel("Motif").fill(`pagination ${i}`);
     await card.getByRole("button", { name: "Valider" }).click();
     await expect(card.getByRole("button", { name: "Entrée" })).toBeVisible();

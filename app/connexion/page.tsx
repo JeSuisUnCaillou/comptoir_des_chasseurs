@@ -22,7 +22,7 @@ export default async function Connexion({
         <BrandMark />
         <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
-          Comptoir <span>de Chasse</span>
+          Comptoir <span>des chasseurs</span>
         </h1>
         <p className="muted">Le registre des marchands et des chasseurs</p>
         <div className="gate-divider" aria-hidden="true">

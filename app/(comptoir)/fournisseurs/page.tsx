@@ -20,7 +20,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Fournisseurs">Qui vend quelle ressource, où le trouver et à quel prix.</PageHead>
+      <PageHead title="Fournisseurs">Qui vend quoi, où, et à quel prix.</PageHead>
 
       <section className="panel">
         <div className="panel-head">

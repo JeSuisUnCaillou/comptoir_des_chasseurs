@@ -49,7 +49,7 @@ test("deux marchandises ne peuvent pas porter le même nom", async ({ page }) =>
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill("Biche");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(form.locator(ALERT)).toHaveText("Une marchandise porte déjà ce nom.");
+  await expect(form.locator(ALERT)).toHaveText("Il y a déjà une marchandise à ce nom.");
 });
 
 test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
@@ -61,7 +61,7 @@ test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
   await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("4");
   await form.getByLabel("Peaux par lot").fill("2");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(form.locator(ALERT)).toContainText("Indique les peaux ET les cuirs");
+  await expect(form.locator(ALERT)).toContainText("Remplis les peaux et les cuirs");
   await expect(form.getByLabel("Nom")).toHaveValue("Peau à moitié remplie");
   await expect(form.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("4");
 });
@@ -104,13 +104,13 @@ test("une marchandise archivée quitte les tarifs et les ventes, puis y revient"
   };
   const setArchived = async (archived: boolean) => {
     await (await search()).getByRole("link", { name: `Modifier ${name}` }).click();
-    await page.getByLabel(/Archivée/).setChecked(archived);
+    await page.getByLabel(/Ne plus utiliser/).setChecked(archived);
     await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
     await expect(page).toHaveURL(/\/marchandises$/);
   };
   const offeredForSale = async () => {
     await page.goto("/achat-vente/vente");
-    const box = page.getByRole("combobox", { name: "Article ou marchandise" });
+    const box = page.getByRole("combobox", { name: "Marchandise" });
     await box.fill(name);
     return page.getByRole("option", { name, exact: true });
   };

@@ -44,10 +44,10 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: "Les prix et quantités doivent être des nombres entiers positifs." };
   }
   if ([values.buyQty, values.sellQty, values.bulkQty].some((n) => n < 1)) {
-    return { error: "Un prix se donne pour au moins 1 unité." };
+    return { error: "La quantité doit être un nombre entier d'au moins 1." };
   }
   if ((values.hidesPerBatch == null) !== (values.leatherPerBatch == null)) {
-    return { error: "Indique les peaux ET les cuirs de la transformation, ou aucun des deux." };
+    return { error: "Remplis les peaux et les cuirs, ou laisse les deux vides." };
   }
 
   const result = await attempt(() => save(member.shopId, id, values));

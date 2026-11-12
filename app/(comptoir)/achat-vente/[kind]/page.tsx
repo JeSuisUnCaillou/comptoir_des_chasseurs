@@ -27,8 +27,8 @@ export default async function NouvelleEcriture({
     <>
       <PageHead title={sale ? "Nouvelle vente" : "Nouvel achat"}>
         {sale
-          ? "Un client paie : l'argent entre dans la caisse, la marchandise sort du stock."
-          : "On paie un vendeur : l'argent sort de la caisse, la marchandise entre en stock."}
+          ? "Un client nous achète de la marchandise."
+          : "On rachète de la marchandise à quelqu'un."}
       </PageHead>
       <TransactionForm
         kind={kind}

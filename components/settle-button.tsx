@@ -9,18 +9,16 @@ export type PendingEntry = { entryLines: number; entryTotal: number; entryItems:
 
 /** What the confirmation asks: one line, or every line of the entry with their total. */
 export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
-  const verb = sale ? "déposés dans" : "pris dans";
+  const amount = `${entry.entryTotal >= 2 ? "les " : ""}${septims(entry.entryTotal)}`;
+  const done = `${sale ? "mis" : "pris"} ${amount}`;
   if (entry.entryLines <= 1) {
-    return `Les septims de ${sale ? `la vente n°${id}` : `l'achat n°${id}`} sont-ils ${verb} la caisse ?`;
+    return `Tu as bien ${done} ${sale ? `de la vente n°${id}` : `de l'achat n°${id}`} dans la caisse ?`;
   }
   const items = entry.entryItems
     .split("\n")
     .map((item) => `• ${item}`)
     .join("\n");
-  return (
-    `Les septims de ${sale ? "cette vente" : "cet achat"} sont-ils ${verb} la caisse ?\n\n` +
-    `Cela vaut pour ses ${entry.entryLines} lignes, ${septims(entry.entryTotal)} en tout :\n${items}`
-  );
+  return `Tu as bien ${done} ${sale ? "de cette vente" : "de cet achat"} (${entry.entryLines} lignes) dans la caisse ?\n\n${items}`;
 }
 
 /**
@@ -30,7 +28,7 @@ export function settleQuestion(id: number, sale: boolean, entry: PendingEntry) {
 export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; entry: PendingEntry }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(settleTransaction, null);
   const total = entry.entryTotal;
-  const done = `${sale ? "déposé" : "pris"}${sale && total >= 2 ? "s" : ""}`;
+  const amount = `${total >= 2 ? "les " : ""}${septims(total)}`;
   const what =
     entry.entryLines > 1
       ? `${sale ? "cette vente" : "cet achat"} de ${entry.entryLines} lignes`
@@ -44,12 +42,12 @@ export function SettleButton({ id, sale, entry }: { id: number; sale: boolean; e
         className="btn btn-small"
         type="submit"
         disabled={pending}
-        aria-label={`${septims(total)} de ${what} ${done} dans la caisse`}
+        aria-label={`${sale ? "Mettre en caisse" : "Sortir de la caisse"} ${amount} de ${what}`}
         onClick={(e) => {
           if (!window.confirm(settleQuestion(id, sale, entry))) e.preventDefault();
         }}
       >
-        {septims(total)} {done}
+        {sale ? `Mettre ${septims(total)} en caisse` : `Sortir ${septims(total)} de la caisse`}
       </button>
       {state && !state.ok && (
         <span className="small minus" role="alert">

@@ -63,7 +63,7 @@ export async function recordLines(
         if (!product) throw new UserError(at(i, "Marchandise inconnue."));
         label = product.name;
       }
-      if (!label) throw new UserError(at(i, "Indique l'article ou la marchandise."));
+      if (!label) throw new UserError(at(i, "Choisis une marchandise."));
       const [line] = await tx
         .insert(schema.transactions)
         .values({
@@ -115,9 +115,9 @@ export async function settleLine(member: Actor, id: number) {
     .from(t)
     .where(and(eq(t.id, id), eq(t.shopId, member.shopId), eq(t.tillPending, true), isNull(t.cancelledAt)))
     .limit(1);
-  if (!line) throw new UserError("Cette ligne n'attend plus la caisse.");
+  if (!line) throw new UserError("Cette ligne a déjà été réglée ou annulée.");
   if (!canActOn(member, line)) {
-    throw new UserError("Seul un gérant peut le faire pour la ligne d'un autre membre.");
+    throw new UserError("Seul un gérant peut valider la ligne de quelqu'un d'autre.");
   }
   await settleEntry(member.shopId, id);
 }

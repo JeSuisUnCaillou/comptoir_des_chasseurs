@@ -81,7 +81,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
               <Archive size={18} style={{ verticalAlign: "-2px" }} /> Inventaire des marchandises
             </h2>
             <p className="muted" style={{ margin: "4px 0 0" }}>
-              Entrées, sorties et quantités disponibles dans les réserves.
+              Ce qu&apos;on a en réserve, et ce qui entre et sort.
             </p>
           </div>
           <div className="move-actions">
@@ -108,7 +108,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             </div>
           </div>
           <div className="stat">
-            <div className="stat-label">Autres références</div>
+            <div className="stat-label">Autres marchandises</div>
             <div className="stat-value">{formatNumber(others)}</div>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
       <section className="panel">
         <div className="panel-head">
           <h2>Stock disponible</h2>
-          <span className="small muted">{products.length} référence(s)</span>
+          <span className="small muted">{products.length} marchandise{products.length > 1 ? "s" : ""}</span>
         </div>
         <StockBoard
           items={[...products]
