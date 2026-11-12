@@ -80,13 +80,10 @@ export async function reviseAnnouncement(member: Actor, id: number, values: Anno
 
 /** Takes a parchment off the board: its author or a gérant may. False when it may not, or is gone. */
 export async function takeDown(member: Actor, id: number) {
+  if (!(await editableAnnouncement(member, id))) return false;
   const a = schema.announcements;
-  const db = getDb();
-  const [announcement] = await db
-    .select({ memberId: a.memberId })
-    .from(a)
+  await getDb()
+    .delete(a)
     .where(and(eq(a.id, id), eq(a.shopId, member.shopId)));
-  if (!announcement || !canActOn(member, announcement)) return false;
-  await db.delete(a).where(eq(a.id, id));
   return true;
 }
