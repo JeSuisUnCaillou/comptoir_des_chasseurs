@@ -89,7 +89,7 @@ export function ActivityTable({
                   {cancelled ? (
                     <span className="small muted">Annulée{l.cancelledBy ? ` par ${l.cancelledBy}` : ""}</span>
                   ) : (
-                    waiting && canSettle && place.settles && <SettleButton id={l.id} sale={kind === "vente"} entry={l} />
+                    waiting && canSettle && place.settles && kind !== "stock" && <SettleButton id={l.id} kind={kind} entry={l} />
                   )}
                 </td>
               </tr>
