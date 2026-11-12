@@ -248,6 +248,7 @@ registre.
 
 ### Historique des mouvements
 
+- Chaque entrée ou sortie porte son motif.
 - Recherche par marchandise, qui filtre pendant qu'on tape.
 - Filtres : employé, sens (entrées ou sorties), dates.
 
@@ -297,17 +298,19 @@ Ne comptent pas :
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique ; ne peut ni rétrograder, ni désactiver, ni changer le mot de passe du super admin |
-| **Employé** | tout ce que les pages ci-dessus ne réservent pas aux gérants |
-| **Désactivé** | rien dans cette boutique |
+| **Gérant** | ouvrir la page Membres et Gérer les tarifs ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Employé** | les pages du comptoir, sauf Membres et Gérer les tarifs, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
-- La page Membres ne montre que les membres de la boutique.
+- La page Membres, réservée aux gérants, ne montre que les membres de la
+  boutique.
 - Chacun change son mot de passe avec la clé, en haut à droite.
 
 ### Le super admin
 
 - Au premier lancement, la page de connexion crée le compte du gérant, qui
   est aussi le super admin : il est gérant dans toutes les boutiques.
+- Aucun autre gérant ne peut le rétrograder, le désactiver ni changer son mot
+  de passe.
 - Dans une base qui existait avant ce rôle, la migration le donne au compte
   `jesuisuncaillou` (le propriétaire), s'il existe.
 
