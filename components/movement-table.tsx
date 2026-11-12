@@ -51,8 +51,8 @@ export function MovementTable({
               >
                 <td className={`num cell-date${rep}`}>{shared(dateTime.format(m.createdAt))}</td>
                 <td className="cell-label">{m.product}</td>
-                <td className={`num cell-qty ${m.delta > 0 ? "plus" : "minus"}`}>
-                  {m.delta > 0 ? "+" : "−"}
+                <td className={`num cell-qty ${m.delta > 0 ? "plus" : m.delta < 0 ? "minus" : ""}`}>
+                  {m.delta > 0 ? "+" : m.delta < 0 ? "−" : ""}
                   {formatNumber(Math.abs(m.delta))}
                 </td>
                 <td className="num cell-after" data-label="Stock après">

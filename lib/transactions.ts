@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
@@ -80,11 +80,22 @@ export async function recordLines(
         })
         .returning({ id: schema.transactions.id });
       if (productId != null) {
-        const delta = kind === "vente" ? -quantity : quantity;
+        let delta = quantity;
+        if (kind === "vente") {
+          // A sale goes through even without enough stock: only what is there
+          // leaves it, so the stock stops at zero. The movement is written even
+          // when nothing leaves, so that cancelling the line knows it.
+          const [locked] = await tx
+            .select({ stock: schema.products.stock })
+            .from(schema.products)
+            .where(eq(schema.products.id, productId))
+            .for("update");
+          delta = -Math.min(quantity, locked.stock);
+        }
         const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
         // Throwing rolls back every line with its movement.
         const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id);
-        if (!moved.ok) throw new UserError(at(i, "Stock insuffisant pour cette vente."));
+        if (!moved.ok) throw new UserError(at(i, moved.error));
       }
       written.push(line.id);
     }
@@ -137,7 +148,18 @@ export async function cancelLine(member: Actor, id: number) {
       throw new UserError("Seul un gérant peut annuler la ligne d'un autre membre.");
     }
     if (line.productId != null) {
-      const delta = line.kind === "vente" ? line.quantity : -line.quantity;
+      // What the line really moved: a sale may have taken less than it sold.
+      // A line with no movement tied to it (imported from the old app) moved its quantity.
+      const [{ moved: linked, count }] = await tx
+        .select({
+          moved: sql<number>`coalesce(sum(${schema.stockMovements.delta}), 0)::int`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(schema.stockMovements)
+        .where(
+          and(eq(schema.stockMovements.transactionId, line.id), eq(schema.stockMovements.productId, line.productId)),
+        );
+      const delta = count > 0 ? -linked : line.kind === "vente" ? line.quantity : -line.quantity;
       const reason = `Annulation ${line.kind} n°${line.id}`;
       const moved = await moveStock(tx, member.shopId, line.productId, delta, member.id, reason, line.id);
       // A cancelled buyback whose goods are already gone cannot be undone.

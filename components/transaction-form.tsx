@@ -118,7 +118,8 @@ export function TransactionForm({
   // A sale has no box: it keeps the choice for a switch back to the purchase.
   if (!sale && citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
 
-  // A product sold on several lines must have enough stock for all of them.
+  // A product sold on several lines is checked against its stock for all of them.
+  // Selling more than the stock is allowed: the member is warned, the stock stops at zero.
   const wanted = new Map<TransactionProduct, number>();
   if (sale) for (const e of evaluated) if (e.product) wanted.set(e.product, (wanted.get(e.product) ?? 0) + e.qty);
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
@@ -372,9 +373,9 @@ export function TransactionForm({
         </div>
       </div>
       {short.map((p) => (
-        <p key={p.id} className="notice error" role="alert">
+        <p key={p.id} className="notice" role="status">
           Stock insuffisant{lines.length > 1 ? ` de ${p.name}` : ""} : il ne reste que {p.stock}{" "}
-          {plural(p.unit, p.stock)}.
+          {plural(p.unit, p.stock)}. La vente passera quand même, et le stock descendra à 0.
         </p>
       ))}
       {state && (
@@ -382,7 +383,7 @@ export function TransactionForm({
           {state.message}
         </p>
       )}
-      <button className="btn btn-primary" type="submit" disabled={pending || short.length > 0}>
+      <button className="btn btn-primary" type="submit" disabled={pending}>
         <Plus size={16} /> {submitLabel}
       </button>
     </form>
