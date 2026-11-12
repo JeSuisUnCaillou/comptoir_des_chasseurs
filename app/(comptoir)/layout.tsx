@@ -62,12 +62,12 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
         </nav>
         <div className="sidebar-foot">
           <Shield size={14} style={{ verticalAlign: "-2px" }} />{" "}
-          {gerant ? "Gérance du comptoir" : "Personnel du comptoir"}
+          {gerant ? "Connecté en gérant" : "Connecté en employé"}
         </div>
       </aside>
       <div className="main">
         <header className="topbar">
-          <span className="eyebrow">Le comptoir de chasse</span>
+          <span className="eyebrow">Comptoir des chasseurs</span>
           <div className="topbar-user">
             <Link className="topbar-name" href={`/membres/${member.id}`} title="Voir mon activité" data-testid="member-name">
               {member.name}

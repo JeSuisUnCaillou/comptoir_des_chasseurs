@@ -73,14 +73,14 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           <ShoppingBasket size={28} />
           <span>
             <strong>Nouvel achat</strong>
-            <span className="small muted">On paie un vendeur, la marchandise entre en stock.</span>
+            <span className="small muted">On rachète de la marchandise à quelqu&apos;un.</span>
           </span>
         </Link>
         <Link className="big-action" href={`${PATH}/vente`}>
           <Coins size={28} />
           <span>
             <strong>Nouvelle vente</strong>
-            <span className="small muted">Un client paie, la marchandise sort du stock.</span>
+            <span className="small muted">Un client nous achète de la marchandise.</span>
           </span>
         </Link>
         <Link className="big-action" href={`${PATH}/caisse`}>
@@ -105,7 +105,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
               {written.map((e) => `${e.quantity} × ${e.label}`).join(", ")},{" "}
               {septims(written.reduce((sum, e) => sum + e.amount, 0))}
               {written.length > 1 ? " au total" : ""}
-              {first.tillPending ? ", en attente de la caisse" : ""}.
+              {first.tillPending ? ", pas encore en caisse" : ""}.
             </>
           )}
         </p>
@@ -122,14 +122,14 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             <option value="vente">Ventes</option>
             <option value="rachat">Achats</option>
             <option value="caisse">Mouvements de caisse</option>
-            <option value="attente">En attente de la caisse</option>
+            <option value="attente">Pas encore en caisse</option>
           </select>
         </MemberDateFilters>
         <div className="stats">
-          <TillStat title={filtered ? "Caisse sur la sélection" : "Caisse depuis l'ouverture"} till={totals} testId="totaux-registre" />
+          <TillStat title={filtered ? "Caisse (selon le filtre)" : "Caisse depuis l'ouverture"} till={totals} testId="totaux-registre" />
           {anyWaiting && (
             <div className="stat" data-testid="en-attente">
-              <div className="stat-label">En attente de la caisse</div>
+              <div className="stat-label">Pas encore en caisse</div>
               <div className="stat-value muted">{septims(waiting.balance, { signed: true })}</div>
               <div className="small muted">
                 {septims(waiting.sales)} à déposer · {septims(waiting.buybacks)} à prendre, pas encore dans la caisse
@@ -138,7 +138,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           )}
         </div>
         <p className="small muted">
-          Les lignes annulées sont barrées et ne comptent pas dans la caisse, pas plus que celles en attente de la caisse.
+          Les lignes barrées sont annulées. Elles ne comptent pas dans la caisse, pas plus que celles qui n&apos;y sont pas encore.
         </p>
         <RegisterTable entries={entries} member={member} highlight={written.map((e) => e.id)} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />

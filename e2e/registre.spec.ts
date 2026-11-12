@@ -114,7 +114,7 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
   ] as const) {
     await page.goto(`/achat-vente/${kind}`);
     const form = page.getByRole("region", { name: region });
-    const box = form.getByRole("combobox", { name: "Article ou marchandise" });
+    const box = form.getByRole("combobox", { name: "Marchandise" });
     // Nothing chosen yet: the form is refused.
     await form.getByRole("button", { name: submit }).click();
     await expect(page).toHaveURL(new RegExp(`/achat-vente/${kind}$`));
@@ -429,7 +429,7 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await expect(table.getByRole("row").filter({ hasText: reason })).toBeVisible();
   await expect(table.getByRole("row").filter({ hasText: deposit })).toBeVisible();
   await expect(table.getByRole("row").filter({ hasText: /Vente|Achat/ })).toHaveCount(0);
-  await expect(page.getByTestId("totaux-registre")).toContainText("en mouvements de caisse");
+  await expect(page.getByTestId("totaux-registre")).toContainText("d'entrées et sorties d'argent hors achats et ventes");
   expect(await movementsTill()).toBe(tillBefore + 50 - 37);
 
   // Its author cancels it: it no longer counts.
@@ -455,7 +455,6 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   };
   await loginAsGerant(page);
   await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
-  await expect(page.getByTestId("caisse-totale")).toContainText("Solde calculé depuis les écritures");
   await expect(page.getByTestId("total-ventes")).toContainText("Total des ventes");
   await expect(page.getByTestId("total-rachats")).toContainText("Total des rachats");
   await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
@@ -626,7 +625,7 @@ test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", a
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Stock insuffisant pour cette vente.");
   // What was typed stays, and the first line was not written either.
-  await expect(line(form, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(first);
+  await expect(line(form, 1).getByRole("combobox", { name: "Marchandise" })).toHaveValue(first);
   await expect(await stockOf(page, first)).toHaveText("5");
 });
 
@@ -652,7 +651,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await page.goto("/achat-vente/achat");
   // The button sits right of "Retour au registre".
   const back = (await page.getByRole("link", { name: "Retour au registre" }).boundingBox())!;
-  const toSale = page.getByRole("button", { name: "Passer en vente" });
+  const toSale = page.getByRole("button", { name: "C'est une vente" });
   const switchBox = (await toSale.boundingBox())!;
   expect(Math.abs(switchBox.y - back.y)).toBeLessThan(4);
   expect(switchBox.x).toBeGreaterThan(back.x + back.width);
@@ -669,16 +668,16 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
   await purchase.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
-  await purchase.getByLabel("Je n'ai pas encore pris les septims dans la caisse").check();
+  await purchase.getByLabel("Pas encore sorti de la caisse").check();
   await toSale.click();
 
   // Same goods, client and notes; the tariff amount follows the sale price, the typed one stays.
   await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
   const sale = page.getByRole("region", { name: "Inscrire une vente" });
-  await expect(line(sale, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(product);
+  await expect(line(sale, 1).getByRole("combobox", { name: "Marchandise" })).toHaveValue(product);
   await expect(line(sale, 1).getByLabel("Quantité")).toHaveValue("4");
   await expect(line(sale, 1).getByLabel("Montant (septims)")).toHaveValue("12");
-  await expect(line(sale, 2).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(
+  await expect(line(sale, 2).getByRole("combobox", { name: "Marchandise" })).toHaveValue(
     "Autre article (hors stock)…",
   );
   await expect(line(sale, 2).getByLabel("Nom de l'article")).toHaveValue("Corne");
@@ -686,19 +685,19 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await expect(sale.getByTestId("total")).toHaveText("Total de la vente : 17 septims");
   await expect(sale.getByLabel("Nom du client / vendeur RP (facultatif)")).toHaveValue("Brenuin");
   await expect(sale.getByLabel("Notes (facultatif)")).toHaveValue("Il a hésité");
-  await expect(sale.getByLabel("Je n'ai pas encore déposé les septims dans la caisse")).toBeChecked();
+  await expect(sale.getByLabel("Pas encore mis en caisse")).toBeChecked();
 
   // An amount changed with the pencil comes back as it was typed.
   await line(sale, 1).getByRole("button", { name: "Modifier le montant" }).click();
   await line(sale, 1).getByLabel("Montant (septims)").fill("10");
-  await page.getByRole("button", { name: "Passer en achat" }).click();
+  await page.getByRole("button", { name: "C'est un achat" }).click();
   await expect(page.getByRole("heading", { name: "Nouvel achat", level: 1 })).toBeVisible();
   const again = page.getByRole("region", { name: "Inscrire un achat" });
   await expect(line(again, 1).getByLabel("Montant (septims)")).toHaveValue("10");
   await expect(line(again, 1).getByRole("button", { name: "Revenir au tarif" })).toBeVisible();
   // The citizen box comes back as it was, though a sale has none.
   await expect(again.getByLabel("Le vendeur est citoyen d'Estemarche")).toBeChecked();
-  await again.getByLabel("Je n'ai pas encore pris les septims dans la caisse").uncheck();
+  await again.getByLabel("Pas encore sorti de la caisse").uncheck();
   await again.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
     `Achat inscrit : 4 × ${product}, 1 × Corne, 15 septims au total.`,

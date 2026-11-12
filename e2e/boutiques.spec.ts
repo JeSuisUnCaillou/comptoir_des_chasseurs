@@ -113,9 +113,9 @@ test("deux boutiques peuvent avoir une marchandise du même nom", async ({ page 
   await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = page.getByRole("form", { name: "Nouvelle marchandise" });
   await form.getByLabel("Catégorie").selectOption("viande");
-  await form.getByLabel("Quantité entrée").fill("2");
+  await form.getByLabel("Quantité ajoutée").fill("2");
   await form.getByLabel("Motif").fill("brassé au comptoir");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
   await expect(page.getByTestId(`stock-${product}`).getByTestId("stock-value")).toHaveText("2");
 });
 
@@ -153,8 +153,8 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   await retarget(page, row.locator('input[name="id"]'), other.lineId);
   await row.getByRole("button", { name: /Annuler/ }).click();
   await expect(row.locator(ALERT)).toHaveText("Cette ligne est introuvable ou déjà annulée.");
-  await row.getByRole("button", { name: /dans la caisse/ }).click();
-  await expect(page.locator(ALERT).filter({ hasText: "Cette ligne n'attend plus la caisse." })).toBeVisible();
+  await row.getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ }).click();
+  await expect(page.locator(ALERT).filter({ hasText: "Cette ligne est déjà en caisse." })).toBeVisible();
 
   // A merchandise of the comptoir saved under the other shop's merchandise's number.
   const mine = uniqueName("Peau du comptoir");

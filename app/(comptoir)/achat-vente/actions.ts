@@ -36,7 +36,7 @@ export async function recordTransaction(
 
   if (kind !== "vente" && kind !== "rachat") return { ok: false, message: "Opération inconnue." };
   const count = productIds.length;
-  if (count === 0) return { ok: false, message: "Indique l'article ou la marchandise." };
+  if (count === 0) return { ok: false, message: "Choisis une marchandise." };
   if (count > MAX_LINES) return { ok: false, message: `Pas plus de ${MAX_LINES} marchandises à la fois.` };
   if (labels.length !== count || quantities.length !== count || amounts.length !== count) {
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
@@ -85,9 +85,9 @@ export async function recordCashMovement(
     return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
   }
   if (!Number.isInteger(amount) || amount <= 0) {
-    return { ok: false, message: "Le montant doit être un nombre entier de septims, au moins 1." };
+    return { ok: false, message: "Le montant doit être d'au moins 1 septim." };
   }
-  if (!label) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!label) return { ok: false, message: "Précise la raison." };
 
   const id = await recordCashLine(member, { kind, label, amount, counterparty, notes });
   revalidate();
@@ -109,7 +109,7 @@ export async function settleTransaction(
   const result = await attempt(() => settleLine(member, id));
   if (!result.ok) return result;
   revalidate();
-  return { ok: true, message: "Les septims comptent dans la caisse." };
+  return { ok: true, message: "C'est noté, la caisse est à jour." };
 }
 
 /** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */

@@ -99,9 +99,9 @@ export function RegisterTable({
                           label={label}
                           effect={
                             cash
-                              ? "L'argent ne compte plus dans la caisse."
+                              ? "L'argent est retiré de la caisse."
                               : e.productId == null
-                                ? "Le stock n'est pas touché."
+                                ? "Le stock ne change pas."
                                 : sale
                                   ? `${e.quantity} ${e.label} reviendront en stock.`
                                   : `${e.quantity} ${e.label} sortiront du stock.`

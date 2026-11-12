@@ -114,7 +114,7 @@ export async function saveSupplier(
       .returning({ id: schema.suppliers.id });
     return created.id;
   } catch (error) {
-    if (isUniqueViolation(error)) throw new UserError("Un fournisseur porte déjà ce nom.");
+    if (isUniqueViolation(error)) throw new UserError("Il y a déjà un fournisseur à ce nom.");
     throw error;
   }
 }

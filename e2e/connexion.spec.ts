@@ -5,7 +5,7 @@ test("un visiteur non connecté arrive sur la page de connexion", async ({ page 
   await page.goto("/inventaire");
 
   await expect(page).toHaveURL(/\/connexion\?suite=%2Finventaire$/);
-  await expect(page.getByRole("heading", { name: /Comptoir\s*de Chasse/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Comptoir\s*des chasseurs/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
 });
 

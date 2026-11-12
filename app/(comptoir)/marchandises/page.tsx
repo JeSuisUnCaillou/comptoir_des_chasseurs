@@ -37,7 +37,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
           <div className="eyebrow">Réglage</div>
           <h2>Rachat du cuir par le forgeron</h2>
           <p className="muted">
-            Sert au calcul du bénéfice par lot de peaux. Actuellement : {septims(blacksmith)}.
+            Sert à calculer le bénéfice sur les peaux. Prix actuel : {septims(blacksmith)}.
           </p>
           <form action={saveBlacksmithPrice} className="inline-form">
             <input

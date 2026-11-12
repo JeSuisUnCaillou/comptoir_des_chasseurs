@@ -10,8 +10,8 @@ export function TillOverview({ till }: { till: Till }) {
         <div className="stat-label">Trésorerie actuelle</div>
         <div className={`stat-value ${till.balance < 0 ? "minus" : ""}`}>{septims(till.balance)}</div>
         <div className="small muted">
-          Solde calculé depuis les écritures
-          {movements !== 0 && `, dont ${septims(movements, { signed: true })} en mouvements de caisse`}
+          {movements !== 0 &&
+            `Dont ${septims(movements, { signed: true })} d'entrées et sorties d'argent hors achats et ventes`}
         </div>
       </div>
       <div className="stat stat-accent-green" data-testid="total-ventes">

@@ -94,7 +94,7 @@ export function PriceCalculator({ products, initialId }: { products: CalcProduct
       )}
       {incomplete && (
         <p className="small muted" style={{ marginTop: 12 }}>
-          Lot incomplet : le prix est fixé par lots entiers, le total est arrondi.
+          Le prix se compte par lot entier, donc le total est arrondi.
         </p>
       )}
     </div>

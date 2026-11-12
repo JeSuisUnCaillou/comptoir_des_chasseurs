@@ -198,7 +198,7 @@ export async function createStocked(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : voir Gérer les tarifs.`);
+      throw new UserError("Ce nom est déjà pris (peut-être par une marchandise archivée, regarde dans « Gérer les tarifs »).");
     }
     throw error;
   }

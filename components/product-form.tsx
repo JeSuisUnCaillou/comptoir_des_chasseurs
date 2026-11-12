@@ -68,29 +68,29 @@ export function ProductForm({ product, fromTarifs = false }: { product?: Product
         </div>
       </div>
 
-      <h3>Rachat (le comptoir paie)</h3>
+      <h3>Achat (on paie)</h3>
       <div className="form-grid">
-        <NumberField name="buyPrice" label="Prix en septims" defaultValue={product?.buyPrice} placeholder="vide = pas de rachat" />
-        <NumberField name="buyQty" label="Pour combien d'unités" defaultValue={product?.buyQty ?? 1} />
+        <NumberField name="buyPrice" label="Prix en septims" defaultValue={product?.buyPrice} placeholder="Laisser vide si on n'en achète pas" />
+        <NumberField name="buyQty" label="Pour (unités)" defaultValue={product?.buyQty ?? 1} />
         <NumberField
           name="citizenBuyPrice"
           label="Prix pour les citoyens d'Estemarche"
           defaultValue={product?.citizenBuyPrice}
-          placeholder="vide = même prix"
+          placeholder="Laisser vide si c'est le même prix"
         />
       </div>
 
-      <h3>Vente (le comptoir encaisse)</h3>
+      <h3>Vente (on encaisse)</h3>
       <div className="form-grid">
-        <NumberField name="sellPrice" label="Prix en septims" defaultValue={product?.sellPrice} placeholder="vide = pas de vente" />
-        <NumberField name="sellQty" label="Pour combien d'unités" defaultValue={product?.sellQty ?? 1} />
+        <NumberField name="sellPrice" label="Prix en septims" defaultValue={product?.sellPrice} placeholder="Laisser vide si on n'en vend pas" />
+        <NumberField name="sellQty" label="Pour (unités)" defaultValue={product?.sellQty ?? 1} />
       </div>
 
       <h3>Vente en gros (facultatif)</h3>
       <div className="form-grid">
         <NumberField name="bulkMin" label="À partir de (unités)" defaultValue={product?.bulkMin} />
         <NumberField name="bulkPrice" label="Prix en septims" defaultValue={product?.bulkPrice} />
-        <NumberField name="bulkQty" label="Pour combien d'unités" defaultValue={product?.bulkQty ?? 1} />
+        <NumberField name="bulkQty" label="Pour (unités)" defaultValue={product?.bulkQty ?? 1} />
       </div>
 
       {category === "peau" && (
@@ -105,7 +105,7 @@ export function ProductForm({ product, fromTarifs = false }: { product?: Product
 
       {product && (
         <label className="check">
-          <input type="checkbox" name="archived" defaultChecked={product.archived} /> Archivée (masquée
+          <input type="checkbox" name="archived" defaultChecked={product.archived} /> Ne plus utiliser (cachée
           des tarifs et de l&apos;inventaire)
         </label>
       )}

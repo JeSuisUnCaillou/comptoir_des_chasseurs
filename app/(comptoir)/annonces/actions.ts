@@ -19,10 +19,10 @@ export async function postAnnouncement(_prev: AnnouncementState, formData: FormD
   const pin = PINS.find((p) => p.value === formData.get("pin"))?.value;
 
   if (!title) return { ok: false, message: "Donne un titre à l'annonce." };
-  if (!body) return { ok: false, message: "Écris le texte à afficher." };
+  if (!body) return { ok: false, message: "L'annonce est vide." };
   if (title.length > TITLE_MAX) return { ok: false, message: `Le titre dépasse ${TITLE_MAX} caractères.` };
   if (body.length > BODY_MAX) return { ok: false, message: `Le texte dépasse ${BODY_MAX} caractères.` };
-  if (!pin) return { ok: false, message: "Choisis comment fixer le parchemin." };
+  if (!pin) return { ok: false, message: "Choisis avec quoi l'accrocher." };
 
   const id = await post(member, { title, body, pin });
   revalidate();

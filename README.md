@@ -131,8 +131,8 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   marchandise qui a un prix pour les citoyens d'Estemarche, la case « Le
   vendeur est citoyen d'Estemarche » calcule le montant à ce prix ; il n'y a
   qu'une case par achat, pour le vendeur, qui vaut pour toutes ses
-  marchandises qui ont ce prix. À droite de « Retour au registre », « Passer
-  en vente » (ou « Passer en achat ») ouvre l'autre formulaire avec tout ce
+  marchandises qui ont ce prix. À droite de « Retour au registre », « C'est
+  une vente » (ou « C'est un achat ») ouvre l'autre formulaire avec tout ce
   qui est déjà rempli : marchandises, quantités, client, notes, cases ; un
   montant calculé avec le tarif est recalculé avec celui de l'autre côté, un
   montant tapé à la main est gardé. Le stock bouge :
@@ -141,13 +141,13 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   dates (heure de Paris). L'auteur d'une ligne ou
   un gérant peut l'annuler : elle reste barrée, ne compte plus dans la caisse,
   et le stock revient à l'état d'avant. Qui n'a pas encore déposé (vente) ou
-  pris (achat) les septims dans la caisse coche « Je n'ai pas encore déposé /
-  pris les septims dans la caisse » : toute l'écriture porte alors le statut
-  *En attente de la caisse*, le stock bouge mais ses septims ne comptent pas
+  pris (achat) les septims dans la caisse coche « Pas encore mis en caisse » (vente)
+  ou « Pas encore sorti de la caisse » (achat) : toute l'écriture porte alors le statut
+  *Pas encore en caisse*, le stock bouge mais ses septims ne comptent pas
   dans la caisse (une tuile du registre en donne le total, et le filtre
-  Opération « En attente de la caisse » les retrouve). Son auteur ou un gérant
-  clique ensuite sur le bouton de l'écriture, « 58 septims pris » ou « 60
-  septims déposés » (son total), dans le registre ou sur la page d'activité
+  Opération « Pas encore en caisse » les retrouve). Son auteur ou un gérant
+  clique ensuite sur le bouton de l'écriture, « Sortir 58 septims de la caisse » ou
+  « Mettre 60 septims en caisse » (son total), dans le registre ou sur la page d'activité
   du membre : toutes les lignes de l'écriture comptent alors dans la caisse,
   et la confirmation, pour une écriture de plusieurs lignes, les liste avec
   leur total. Dans ces deux listes, chaque écriture forme un bloc, même d'une

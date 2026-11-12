@@ -31,7 +31,7 @@ export function NewStockProductForm({
     <form onSubmit={keepValues(action)} className="new-product" aria-label="Nouvelle marchandise">
       <h3>Nouvelle marchandise</h3>
       <p className="small muted">
-        Elle est créée sans prix, avec son entrée en stock ; un gérant règle ses prix dans Gérer les tarifs.
+        Elle n&apos;aura pas de prix au début : un gérant pourra les fixer dans « Gérer les tarifs ».
       </p>
       <div className="form-grid">
         <div className="field span-2">
@@ -53,7 +53,7 @@ export function NewStockProductForm({
           <input id={`${id}-u`} name="unit" maxLength={30} defaultValue="pièce" />
         </div>
         <div className="field">
-          <label htmlFor={`${id}-q`}>Quantité entrée</label>
+          <label htmlFor={`${id}-q`}>Quantité ajoutée</label>
           <input id={`${id}-q`} name="quantity" type="number" min={1} required />
         </div>
         <div className="field span-2">
@@ -68,7 +68,7 @@ export function NewStockProductForm({
       )}
       <div className="move-actions" style={{ marginTop: 12 }}>
         <button className="btn btn-primary" type="submit" disabled={pending}>
-          Créer et entrer en stock
+          Créer et ajouter au stock
         </button>
         <button className="btn btn-ghost" type="button" onClick={onCancel}>
           Annuler

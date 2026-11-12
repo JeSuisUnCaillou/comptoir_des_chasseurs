@@ -27,7 +27,7 @@ test("entrées et sorties de stock, avec historique", async ({ page }) => {
   await expect(card.getByRole("button", { name: "Sortie" })).toBeDisabled();
 
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill("10");
+  await card.getByLabel("Quantité ajoutée").fill("10");
   await card.getByLabel("Motif").fill("chasse du matin");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("10");
@@ -36,7 +36,7 @@ test("entrées et sorties de stock, avec historique", async ({ page }) => {
   await expect(card).not.toContainText("En stock");
 
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").fill("4");
+  await card.getByLabel("Quantité retirée").fill("4");
   await card.getByLabel("Motif").fill("transformation en cuir");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("6");
@@ -58,15 +58,15 @@ test("une sortie ne peut pas dépasser le stock", async ({ page }) => {
   const card = page.getByTestId(`stock-${name}`);
 
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill("2");
+  await card.getByLabel("Quantité ajoutée").fill("2");
   await card.getByLabel("Motif").fill("arrivage");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("2");
 
   // Skip the browser's max check to hit the server-side guard.
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").evaluate((el) => el.removeAttribute("max"));
-  await card.getByLabel("Quantité sortie").fill("5");
+  await card.getByLabel("Quantité retirée").evaluate((el) => el.removeAttribute("max"));
+  await card.getByLabel("Quantité retirée").fill("5");
   await card.getByLabel("Motif").fill("trop");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.locator(ALERT)).toHaveText("Stock insuffisant pour cette sortie.");
@@ -101,10 +101,10 @@ async function moveIn(page: Page, name: string, quantity: string, reason: string
   await page.getByLabel("Rechercher une marchandise").fill(name);
   const card = page.getByTestId(`stock-${name}`);
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill(quantity);
+  await card.getByLabel("Quantité ajoutée").fill(quantity);
   await card.getByLabel("Motif").fill(reason);
   await card.getByRole("button", { name: "Valider" }).click();
-  await expect(card.getByLabel("Quantité entrée")).toBeHidden();
+  await expect(card.getByLabel("Quantité ajoutée")).toBeHidden();
 }
 
 test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", async ({ page, browser }) => {
@@ -118,7 +118,7 @@ test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", asyn
   await moveIn(page, name, "3", "chasse du gérant");
   const card = page.getByTestId(`stock-${name}`);
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").fill("1");
+  await card.getByLabel("Quantité retirée").fill("1");
   await card.getByLabel("Motif").fill("sortie du gérant");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("7");
@@ -179,9 +179,9 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await expect(form.getByLabel("Nom")).toHaveValue(name);
   await form.getByLabel("Catégorie").selectOption("peau");
   await form.getByLabel("Unité (au singulier)").fill("peau");
-  await form.getByLabel("Quantité entrée").fill("3");
+  await form.getByLabel("Quantité ajoutée").fill("3");
   await form.getByLabel("Motif").fill("chasse en montagne");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
 
   const card = p.getByTestId(`stock-${name}`);
   await expect(card.getByTestId("stock-value")).toHaveText("3");
@@ -202,10 +202,10 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await p.getByLabel("Rechercher une marchandise").fill("");
   await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Quantité entrée").fill("1");
+  await form.getByLabel("Quantité ajoutée").fill("1");
   await form.getByLabel("Motif").fill("doublon");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
-  await expect(form.locator(ALERT)).toContainText("Une marchandise porte déjà ce nom");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+  await expect(form.locator(ALERT)).toContainText("Ce nom est déjà pris");
   await expect(form.getByLabel("Motif")).toHaveValue("doublon");
   await form.getByRole("button", { name: "Annuler" }).click();
   await p.getByLabel("Rechercher une marchandise").fill(name);
