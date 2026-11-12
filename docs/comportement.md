@@ -107,9 +107,9 @@ page ; l'écriture enregistrée ramène au registre.
   recalculé avec le tarif de l'autre côté ; un montant tapé à la main est
   gardé.
 - **Stock insuffisant** : vendre plus que le stock (toutes les lignes d'une
-  même marchandise comptées ensemble) n'est pas bloqué. Le formulaire
-  avertit (« il ne reste que 3 peaux. La vente passera quand même, et le
-  stock descendra à 0 ») et laisse confirmer.
+  même marchandise comptées ensemble) n'est pas bloqué. Sur la ligne, le
+  stock s'affiche en orange avec un panneau d'avertissement (« la vente
+  passera quand même, et le stock descendra à 0 »), et l'on peut confirmer.
 - **Enregistrement** : chaque marchandise devient sa propre ligne du
   registre ; toutes sont inscrites ensemble, ou aucune.
 

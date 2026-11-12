@@ -14,6 +14,7 @@
   --green-bg: #1f3a29;
   --red: #e0907f;
   --red-bg: #43231f;
+  --orange: #f5843c;
   --blue: #9cc0e3;
   --blue-bg: #1f2e3c;
   --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
@@ -1943,3 +1944,13 @@ tr.fresh td {
   }
 }
 
+
+/* Sale form: the stock of a merchandise sold beyond it. */
+.stock-short {
+  color: var(--orange);
+}
+
+.stock-short svg {
+  vertical-align: -2px;
+  margin-left: 4px;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
@@ -183,8 +183,17 @@ export function TransactionForm({
                   {e.product && (
                     <span className="small muted" data-testid="stock-dispo">
                       En stock :{" "}
-                      <strong className="tx-figure">
+                      <strong className={`tx-figure${short.includes(e.product) ? " stock-short" : ""}`}>
                         {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                        {short.includes(e.product) && (
+                          <TriangleAlert
+                            size={14}
+                            role="img"
+                            aria-label="Stock insuffisant : la vente passera quand même, et le stock descendra à 0"
+                          >
+                            <title>Stock insuffisant : la vente passera quand même, et le stock descendra à 0</title>
+                          </TriangleAlert>
+                        )}
                       </strong>
                     </span>
                   )}
@@ -372,12 +381,6 @@ export function TransactionForm({
           </span>
         </div>
       </div>
-      {short.map((p) => (
-        <p key={p.id} className="notice" role="status">
-          Stock insuffisant{lines.length > 1 ? ` de ${p.name}` : ""} : il ne reste que {p.stock}{" "}
-          {plural(p.unit, p.stock)}. La vente passera quand même, et le stock descendra à 0.
-        </p>
-      ))}
       {state && (
         <p className="notice error" role="alert">
           {state.message}

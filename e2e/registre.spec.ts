@@ -75,10 +75,12 @@ test("une vente peut dépasser le stock : un avertissement, et le stock s'arrêt
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, product);
   await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 2 peaux");
+  const warning = form.getByTestId("stock-dispo").getByRole("img", { name: /^Stock insuffisant/ });
+  await expect(warning).toHaveCount(0);
   await form.getByLabel("Quantité").fill("5");
-  await expect(form.getByRole("status")).toHaveText(
-    "Stock insuffisant : il ne reste que 2 peaux. La vente passera quand même, et le stock descendra à 0.",
-  );
+  // The stock turns orange with a warning sign; nothing blocks the sale.
+  await expect(warning).toBeVisible();
+  await expect(form.getByTestId("stock-dispo").locator("strong")).toHaveCSS("color", "rgb(245, 132, 60)");
   await expect(form.locator(ALERT)).toHaveCount(0);
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: `5 × ${product}` })).toContainText("15 septims");
@@ -624,11 +626,11 @@ test("une marchandise vendue sur deux lignes est comparée au stock pour les deu
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(line(form, 2), product);
   await line(form, 2).getByLabel("Quantité").fill("2");
-  await expect(form.getByRole("status")).toHaveText(
-    `Stock insuffisant de ${product} : il ne reste que 3 peaux. La vente passera quand même, et le stock descendra à 0.`,
-  );
+  const warnings = form.getByRole("img", { name: /^Stock insuffisant/ });
+  // Both lines of the merchandise show it.
+  await expect(warnings).toHaveCount(2);
   await line(form, 2).getByLabel("Quantité").fill("1");
-  await expect(form.getByRole("status")).toHaveCount(0);
+  await expect(warnings).toHaveCount(0);
 });
 
 test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", async ({ browser }) => {
