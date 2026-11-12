@@ -265,6 +265,23 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
     expect(tile!.y - (last!.y + last!.height)).toBeGreaterThanOrEqual(12);
   });
 
+  test("avec une police plus large, les boutons du Grand livre tiennent à toutes les largeurs", async ({ page }) => {
+    await loginAsGerant(page);
+    // Another computer's fonts can be wider than this one's: the buttons must not count on a few pixels.
+    await page.addStyleTag({ content: ".move-actions .btn { letter-spacing: 0.08em !important; }" });
+    const main = page.getByRole("main");
+    for (let width = 1100; width <= 1700; width += 40) {
+      await page.setViewportSize({ width, height: 800 });
+      await expectNoSideScroll(page);
+      // Every button stays inside the Grand livre's panel.
+      const panel = (await main.locator(".panel").first().boundingBox())!;
+      for (const name of ["Nouvel achat", "Nouvelle vente", "Mouvement de caisse", "Mouvement de stock"]) {
+        const button = (await main.getByRole("link", { name, exact: true }).boundingBox())!;
+        expect(button.x + button.width, `${name} à ${width} px`).toBeLessThanOrEqual(panel.x + panel.width);
+      }
+    }
+  });
+
   test("une page avec un bouton sous son titre garde le même espace avant son premier cadre", async ({ page }) => {
     await loginAsGerant(page);
     // From the bottom of the page's title block to the top of its first panel.

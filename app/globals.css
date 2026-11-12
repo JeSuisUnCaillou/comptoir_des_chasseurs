@@ -1663,12 +1663,20 @@ tr.fresh td {
   }
 }
 
-/* Between a phone and a wide screen, the Grand livre's four buttons no longer
-   fit on one line beside the menu: two by two, under the greeting. */
-@media (max-width: 1200px) {
+/* The Grand livre's four buttons need about 800 px on one line, beside the
+   greeting: in a narrower box (a tablet, a small window, wider fonts) they go
+   two by two, under it, filled column by column so that the last two (achat
+   and vente) stay on the right. */
+.panel-head:has(> .move-actions > :nth-child(3)) {
+  container: move-head / inline-size;
+}
+
+@container move-head (max-width: 1099px) {
   .move-actions:has(> :nth-child(3)) {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
     flex: 1 1 100%;
   }
 }
