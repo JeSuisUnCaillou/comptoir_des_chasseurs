@@ -8,7 +8,7 @@ model: sonnet
 Tu relis le dépôt du Comptoir des chasseurs, extrait dans le répertoire
 courant. Le message qui te lance dit quoi relire : une branche (le changement
 est `git diff origin/main...HEAD`, lis-le en entier, puis les fichiers autour)
-ou tout le code sur `main`. Lis d'abord `CLAUDE.md`, puis `README.md`.
+ou tout le code sur `main`. Lis d'abord `CLAUDE.md`, puis `docs/comportement.md`.
 
 Ne change rien. Aucune édition, aucune écriture, aucun commit, ni
 `git stash`, ni `git checkout`, ni `git reset` : quelqu'un corrige dans cette
