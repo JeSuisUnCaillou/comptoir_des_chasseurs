@@ -80,21 +80,15 @@ export async function recordLines(
         })
         .returning({ id: schema.transactions.id });
       if (productId != null) {
-        let delta = quantity;
-        if (kind === "vente") {
-          // A sale goes through even without enough stock: only what is there
-          // leaves it, so the stock stops at zero. The movement is written even
-          // when nothing leaves, so that cancelling the line knows it.
-          const [locked] = await tx
-            .select({ stock: schema.products.stock })
-            .from(schema.products)
-            .where(eq(schema.products.id, productId))
-            .for("update");
-          delta = -Math.min(quantity, locked.stock);
-        }
+        // A sale goes through even without enough stock: only what is left
+        // leaves it, so the stock stops at zero. The movement is written even
+        // when nothing leaves, so that cancelling the line knows it.
+        const delta = kind === "vente" ? -quantity : quantity;
         const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
         // Throwing rolls back every line with its movement.
-        const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id);
+        const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id, {
+          clamp: true,
+        });
         if (!moved.ok) throw new UserError(at(i, moved.error));
       }
       written.push(line.id);
