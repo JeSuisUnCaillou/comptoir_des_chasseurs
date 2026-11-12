@@ -202,14 +202,15 @@ try {
     }
 
     // Again on each build once both have been settled or cancelled. Mirrors recordCashLine (lib/transactions.ts).
+    // The shop is named: the preview database, shared with other branches, may have lost shop_id's default.
     const [{ cashWaiting }] = await tx`
       select count(*)::int as "cashWaiting" from transactions
       where notes = ${CASH_NOTE} and till_pending and cancelled_at is null`;
     if (cashWaiting === 0) {
       for (const [kind, label, amount, counterparty] of CASH_SAMPLES) {
         await tx`
-          insert into transactions (kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id)
-          values (${kind}, null, ${label}, 1, ${amount}, ${counterparty}, ${CASH_NOTE}, true, ${memberId})`;
+          insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id)
+          values (1, ${kind}, null, ${label}, 1, ${amount}, ${counterparty}, ${CASH_NOTE}, true, ${memberId})`;
       }
       console.log("Mouvements de caisse pas encore en caisse ajoutés.");
     }
