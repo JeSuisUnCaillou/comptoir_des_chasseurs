@@ -2,14 +2,23 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 /** A menu link, marked current on its page and on the `also` pages that belong to it. */
 export function NavLink({ href, also = [], children }: { href: string; also?: string[]; children: ReactNode }) {
   const pathname = usePathname();
   const active = href === "/" ? pathname === "/" : [href, ...also].some((p) => pathname.startsWith(p));
+  const ref = useRef<HTMLAnchorElement>(null);
+  // On a phone the menu is one line that scrolls sideways: bring the current page into view.
+  // Only the menu scrolls, never the page; a menu that does not scroll is left alone.
+  useEffect(() => {
+    const link = ref.current;
+    const menu = link?.parentElement;
+    if (!active || !link || !menu || menu.scrollWidth <= menu.clientWidth) return;
+    menu.scrollLeft = link.offsetLeft - menu.offsetLeft - (menu.clientWidth - link.offsetWidth) / 2;
+  }, [active]);
   return (
-    <Link href={href} aria-current={active ? "page" : undefined}>
+    <Link ref={ref} href={href} aria-current={active ? "page" : undefined}>
       {children}
       <PendingSpinner />
     </Link>

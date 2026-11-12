@@ -60,7 +60,7 @@ export default async function Membres({
           son propre compte.
         </p>
         <div className="table-wrap">
-          <table>
+          <table className="stack-cards">
             <thead>
               <tr>
                 <th>Identifiant</th>
@@ -73,15 +73,12 @@ export default async function Membres({
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} data-testid={`member-${m.username}`}>
-                  <td>{m.username}</td>
-                  <td>
-                    <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
-                    {m.superAdmin && (
-                      <>
-                        {" "}
-                        <span className="badge badge-gold">Super admin</span>
-                      </>
-                    )}
+                  <td className="stack-title">{m.username}</td>
+                  <td className="stack-aside">
+                    <span className="badges">
+                      <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
+                      {m.superAdmin && <span className="badge badge-gold">Super admin</span>}
+                    </span>
                   </td>
                   <td>
                     {m.superAdmin && m.id !== me.id ? (

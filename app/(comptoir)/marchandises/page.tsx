@@ -60,7 +60,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <LiveSearch />
         {products.length === 0 && <p className="muted">Aucune marchandise ne correspond.</p>}
         <div className="table-wrap">
-          <table>
+          <table className="stack-cards">
             <thead>
               <tr>
                 <th>Nom</th>
@@ -73,13 +73,13 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className={p.archived ? "muted" : undefined}>
-                  <td>
+                  <td className="stack-title">
                     <strong>{p.name}</strong> {p.archived && <span className="badge">Archivée</span>}
                   </td>
-                  <td>{CATEGORY_LABELS[p.category]}</td>
-                  <td className="num">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
-                  <td className="num">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
-                  <td>
+                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td className="num" data-label="Rachat">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
+                  <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
+                  <td className="stack-aside">
                     <Link className="btn btn-small" href={`/marchandises/${p.id}`} aria-label={`Modifier ${p.name}`}>
                       Modifier
                     </Link>

@@ -43,7 +43,7 @@ export default async function EditSupplier({ params }: { params: Promise<{ id: s
               <thead>
                 <tr>
                   <th>Marchandise</th>
-                  <th className="num">Prix</th>
+                  <th>Prix</th>
                   <th></th>
                 </tr>
               </thead>
@@ -51,7 +51,7 @@ export default async function EditSupplier({ params }: { params: Promise<{ id: s
                 {offered.map((o) => (
                   <tr key={o.id}>
                     <td>{o.productName}</td>
-                    <td className="num">
+                    <td>
                       {septims(o.price)} pour {formatNumber(o.qty)} {plural(o.unit, o.qty)}
                     </td>
                     <td>

@@ -107,6 +107,17 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 ## Pages
 
+L'app se sert aussi au téléphone, en jeu, et dans une fenêtre de n'importe
+quelle taille : rien ne déborde sur le côté ni ne se colle. Sur un écran
+étroit, le menu tient en une ligne qui défile de côté, sous le nom du comptoir
+et du membre ; les filtres (opération, employé, dates) passent à un par
+ligne, les champs alignés ; les boutons du Grand livre passent deux par deux (achat et vente à droite), puis un par ligne sur les plus petits téléphones.
+Dès que leur cadre est trop étroit pour leurs colonnes, quelle que soit la
+fenêtre, le registre, l'activité d'un membre et l'historique du stock passent
+d'un tableau à une carte par écriture (article, quantité et septims sur une
+ligne, boutons dessous), et les tarifs, la gestion des marchandises et les
+comptes à une fiche par ligne.
+
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
   moins les mouvements de caisse, dont elle donne le total), le total des

@@ -36,7 +36,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
             </Link>
           )}
         </div>
-        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur" style={{ marginTop: 14 }}>
+        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur">
           <input
             name="q"
             type="search"

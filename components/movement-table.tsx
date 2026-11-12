@@ -26,7 +26,7 @@ export function MovementTable({
   const positions = entryPositions(movements, () => false);
   return (
     <div className="table-wrap">
-      <table data-testid="historique">
+      <table className="entry-cards" data-testid="historique">
         <thead>
           <tr>
             <th>Date</th>
@@ -42,22 +42,26 @@ export function MovementTable({
             const place = positions[i];
             // What the movements of one entry share is written on its first line.
             const shared = (text: ReactNode) => (place.first ? text : <span className="sr-only">{text}</span>);
+            // On a phone each line is a card (see `.entry-cards` in globals.css).
+            const rep = place.first ? "" : " cell-repeat";
             return (
               <tr
                 key={m.id}
                 className={[...entryClasses(place), ...(highlight.includes(m.id) ? ["fresh"] : [])].join(" ")}
               >
-                <td className="num">{shared(dateTime.format(m.createdAt))}</td>
-                <td>{m.product}</td>
-                <td className={`num ${m.delta > 0 ? "plus" : "minus"}`}>
+                <td className={`num cell-date${rep}`}>{shared(dateTime.format(m.createdAt))}</td>
+                <td className="cell-label">{m.product}</td>
+                <td className={`num cell-qty ${m.delta > 0 ? "plus" : "minus"}`}>
                   {m.delta > 0 ? "+" : "−"}
                   {formatNumber(Math.abs(m.delta))}
                 </td>
-                <td className="num">
+                <td className="num cell-after" data-label="Stock après">
                   {formatNumber(m.stockAfter)} {plural(m.unit, m.stockAfter)}
                 </td>
-                <td>{shared(m.member)}</td>
-                <td>{shared(m.reason)}</td>
+                <td className={`cell-member${rep}`} data-label="Employé">
+                  {shared(m.member)}
+                </td>
+                <td className={`cell-notes${rep}`}>{shared(m.reason)}</td>
               </tr>
             );
           })}
