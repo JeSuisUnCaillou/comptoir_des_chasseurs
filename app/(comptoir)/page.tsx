@@ -27,17 +27,17 @@ export default async function GrandLivre() {
             <h2>Bonjour, {member.name}</h2>
           </div>
           <div className="move-actions">
-            <Link className="btn btn-primary" href="/achat-vente/achat">
-              <ShoppingBasket size={16} /> Nouvel achat
-            </Link>
-            <Link className="btn btn-primary" href="/achat-vente/vente">
-              <Coins size={16} /> Nouvelle vente
-            </Link>
             <Link className="btn" href="/achat-vente/caisse">
               <Wallet size={16} /> Mouvement de caisse
             </Link>
             <Link className="btn" href="/inventaire/mouvement">
               <ArrowLeftRight size={16} /> Mouvement de stock
+            </Link>
+            <Link className="btn btn-primary" href="/achat-vente/achat">
+              <ShoppingBasket size={16} /> Nouvel achat
+            </Link>
+            <Link className="btn btn-primary" href="/achat-vente/vente">
+              <Coins size={16} /> Nouvelle vente
             </Link>
           </div>
         </div>

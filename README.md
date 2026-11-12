@@ -122,8 +122,8 @@ comptes à une fiche par ligne.
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
   moins les mouvements de caisse, dont elle donne le total), le total des
   ventes, le total des rachats et le solde ventes − rachats. En dessous, la caisse du jour et des 7 derniers
-  jours, les boutons Nouvel achat, Nouvelle vente, Mouvement de caisse et
-  Mouvement de stock, et les dernières écritures.
+  jours, les boutons Mouvement de caisse, Mouvement de stock, puis, mis en
+  avant à droite, Nouvel achat et Nouvelle vente, et les dernières écritures.
 - **Achat / Vente** : trois gros boutons, Nouvel achat, Nouvelle vente et
   Mouvement de caisse, au-dessus du registre. Chacun ouvre le formulaire sur sa propre page, et
   l'écriture enregistrée ramène au registre. Une vente ou un achat peut
