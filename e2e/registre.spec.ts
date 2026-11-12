@@ -215,12 +215,22 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
   );
 });
 
-test("le grand livre met l'achat et la vente en avant, pas le mouvement de caisse", async ({ browser }) => {
+test("le grand livre met l'achat et la vente en avant, à droite, pas le mouvement de caisse", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "brand-shei");
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Nouvel achat" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Nouvelle vente" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Mouvement de caisse" })).not.toHaveClass(/btn-primary/);
+  // Achat and vente sit at the right end of the row, after the two movements.
+  await expect(page.locator(".move-actions").getByRole("link")).toHaveText([
+    "Mouvement de caisse",
+    "Mouvement de stock",
+    "Nouvel achat",
+    "Nouvelle vente",
+  ]);
+  const stock = await page.getByRole("link", { name: "Mouvement de stock" }).boundingBox();
+  const achat = await page.getByRole("link", { name: "Nouvel achat" }).boundingBox();
+  expect(achat!.x).toBeGreaterThan(stock!.x);
 });
 
 test("le registre est paginé", async ({ browser }) => {
