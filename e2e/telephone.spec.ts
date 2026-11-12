@@ -295,7 +295,9 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
 
-  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres"];
+  // The gérant's own activity page, where that sale is listed too.
+  const activity = (await page.getByTestId("member-name").getAttribute("href"))!;
+  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity];
   for (let width = 320; width <= 1600; width += 160) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of pages) {
