@@ -31,7 +31,7 @@ export function ActivityTable({
   const positions = entryPositions(lines, (l) => l.cancelledAt == null && l.tillPending);
   return (
     <div className="table-wrap">
-      <table data-testid="activite">
+      <table className="entry-cards" data-testid="activite">
         <thead>
           <tr>
             <th>Date</th>
@@ -60,16 +60,18 @@ export function ActivityTable({
                   : formatNumber(l.quantity);
             const cancelled = l.cancelledAt != null;
             const waiting = !cancelled && l.tillPending;
+            // On a phone each line is a card (see `.entry-cards` in globals.css).
+            const rep = place.first ? "" : " cell-repeat";
             return (
               <tr
                 key={`${l.source}-${l.id}`}
                 className={[...entryClasses(place), ...(cancelled ? ["cancelled"] : [])].join(" ") || undefined}
               >
-                <td className="num">{shared(dateTime.format(l.createdAt))}</td>
-                <td>{shared(<OperationBadge kind={kind} />)}</td>
-                <td>{l.label}</td>
-                <td className={`num ${kind === "stock" ? (l.quantity > 0 ? "plus" : "minus") : ""}`}>{quantity}</td>
-                <td className={`num ${money == null || cancelled ? "" : waiting ? "muted" : money >= 0 ? "plus" : "minus"}`}>
+                <td className={`num cell-date${rep}`}>{shared(dateTime.format(l.createdAt))}</td>
+                <td className={`cell-kind${rep}`}>{shared(<OperationBadge kind={kind} />)}</td>
+                <td className="cell-label">{l.label}</td>
+                <td className={`num cell-qty${kind !== "stock" && isCashKind(kind) ? " cell-none" : ""} ${kind === "stock" ? (l.quantity > 0 ? "plus" : "minus") : ""}`}>{quantity}</td>
+                <td className={`num cell-amount${money == null ? " cell-none" : ""} ${money == null || cancelled ? "" : waiting ? "muted" : money >= 0 ? "plus" : "minus"}`}>
                   {money == null ? "—" : septims(money, { signed: true })}
                   {waiting && (
                     <>
@@ -78,9 +80,9 @@ export function ActivityTable({
                     </>
                   )}
                 </td>
-                <td>{shared(l.detail ?? "—")}</td>
-                <td className="small">{shared(l.notes ?? "")}</td>
-                <td>
+                <td className={`cell-party${rep}${l.detail ? "" : " cell-none"}`}>{shared(l.detail ?? "—")}</td>
+                <td className={`small cell-notes${rep}`}>{shared(l.notes ?? "")}</td>
+                <td className="cell-actions">
                   {cancelled ? (
                     <span className="small muted">Annulée{l.cancelledBy ? ` par ${l.cancelledBy}` : ""}</span>
                   ) : (

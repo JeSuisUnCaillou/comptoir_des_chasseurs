@@ -60,7 +60,7 @@ function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boole
   if (products.length === 0) return NO_MATCH;
   return (
     <div className="table-wrap">
-      <table>
+      <table className="stack-cards">
         <thead>
           <tr>
             <th>Marchandise</th>
@@ -78,23 +78,23 @@ function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boole
             const gross = margin(p, ref);
             return (
               <tr key={p.id}>
-                <td>
+                <td className="stack-title">
                   <strong>{p.name}</strong>
                 </td>
-                <td className="num minus">
+                <td className="num minus" data-label="Rachat">
                   {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
                   <CitizenPrice product={p} />
                 </td>
-                <td className="num">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
-                <td className="num">
+                <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
+                <td className="num" data-label="Gros">
                   {p.bulkMin != null && p.bulkPrice != null
                     ? `Dès ${formatNumber(p.bulkMin)} : ${rate(p.bulkPrice, p.bulkQty)}`
                     : "—"}
                 </td>
-                <td className="num">
+                <td className="num" data-label="Stock">
                   {formatNumber(p.stock)} {plural(p.unit, p.stock)}
                 </td>
-                <td className="num plus">
+                <td className="num plus" data-label="Bénéfice brut indicatif">
                   {gross == null
                     ? "—"
                     : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
@@ -173,7 +173,7 @@ function Unpriced({
           <p className="muted">Aucune marchandise sans tarif.</p>
         ) : (
           <div className="table-wrap">
-            <table aria-label="Marchandises sans tarif">
+            <table className="stack-cards" aria-label="Marchandises sans tarif">
               <thead>
                 <tr>
                   <th>Marchandise sans tarif</th>
@@ -185,11 +185,11 @@ function Unpriced({
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id}>
-                    <td>
+                    <td className="stack-title">
                       <strong>{p.name}</strong>
                     </td>
-                    {table === "chasse" && <td>{CATEGORY_LABELS[p.category]}</td>}
-                    <td className="num">
+                    {table === "chasse" && <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>}
+                    <td className="num" data-label="Stock">
                       {formatNumber(p.stock)} {plural(p.unit, p.stock)}
                     </td>
                     <EditCell product={p} canEdit={canEdit} />
@@ -281,7 +281,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <LiveSearch name="peaux" />
         {hides.length === 0 ? NO_MATCH : (
           <div className="table-wrap">
-            <table>
+            <table className="stack-cards">
               <thead>
                 <tr>
                   <th>Animal</th>
@@ -297,20 +297,20 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
                   const gain = batchMargin(p, blacksmith);
                   return (
                     <tr key={p.id}>
-                      <td>
+                      <td className="stack-title">
                         <strong>{p.name}</strong>
                       </td>
-                      <td>
+                      <td data-label="Transformation">
                         {p.hidesPerBatch && p.leatherPerBatch
                           ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
                           : "—"}
                       </td>
-                      <td className="num minus">
+                      <td className="num minus" data-label="Rachat / peau">
                         {p.buyPrice == null ? "—" : septims(p.buyPrice)}
                         <CitizenPrice product={p} perUnit />
                       </td>
-                      <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
-                      <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                      <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
+                      <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
                       <EditCell product={p} canEdit={canEdit} />
                     </tr>
                   );

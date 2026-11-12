@@ -60,7 +60,7 @@ export default async function Membres({
           son propre compte.
         </p>
         <div className="table-wrap">
-          <table>
+          <table className="stack-cards">
             <thead>
               <tr>
                 <th>Identifiant</th>
@@ -73,8 +73,8 @@ export default async function Membres({
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} data-testid={`member-${m.username}`}>
-                  <td>{m.username}</td>
-                  <td>
+                  <td className="stack-title">{m.username}</td>
+                  <td className="stack-aside">
                     <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
                     {m.superAdmin && (
                       <>

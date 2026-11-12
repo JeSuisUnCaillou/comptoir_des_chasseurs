@@ -107,6 +107,13 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
 
 ## Pages
 
+L'app se sert aussi au téléphone, en jeu : rien ne déborde sur le côté. Sur
+un écran étroit, le menu tient en une ligne qui défile de côté, sous le nom
+du comptoir et du membre ; le registre, l'activité d'un membre et
+l'historique du stock passent d'un tableau à une carte par écriture (article,
+quantité et septims sur une ligne, boutons dessous) ; les tarifs, la gestion
+des marchandises et les comptes passent à une fiche par ligne.
+
 - **Grand livre** : quatre tuiles sur tout le registre, comme dans l'ancienne
   app : la trésorerie actuelle (ventes encaissées moins achats payés, plus ou
   moins les mouvements de caisse, dont elle donne le total), le total des

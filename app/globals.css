@@ -295,7 +295,7 @@ h3 {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   gap: 12px;
 }
 
@@ -367,6 +367,8 @@ h3 {
 /* Tables */
 .table-wrap {
   overflow-x: auto;
+  /* Holds the absolutely placed .sr-only cells, which would otherwise widen the page. */
+  position: relative;
 }
 
 table {
@@ -716,13 +718,20 @@ td.row-action .icon-btn {
 
 .cols {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
   gap: 22px;
   align-items: start;
 }
 
 .cols > .panel {
   margin-bottom: 0;
+}
+
+/* A grid cell may shrink below its widest content (a select's longest option),
+   rather than push the page sideways. */
+.cols > *,
+.form-grid > * {
+  min-width: 0;
 }
 
 /* Side by side panels that end at the same height. */
@@ -756,7 +765,7 @@ th.num {
 
 .stock-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr));
   gap: 12px;
 }
 
@@ -853,7 +862,7 @@ th.num {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
   gap: 0 12px;
 }
 
@@ -1004,7 +1013,7 @@ tr.cancelled td:last-child {
 
 .big-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1111,7 +1120,7 @@ tr.fresh td {
   margin: 0;
   padding: 34px 0 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   gap: 40px 26px;
   align-items: start;
 }
@@ -1288,7 +1297,7 @@ tr.fresh td {
 /* Two big toggles: money into or out of the till. */
 .direction {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 12px;
   border: 0;
   padding: 0;
@@ -1337,7 +1346,7 @@ tr.fresh td {
 /* Suppliers */
 .supplier-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -1418,58 +1427,61 @@ tr.fresh td {
    the register and on a member's activity page: framed by thin rules, a gold
    bar on its left, no rule between its lines, room between two cards, what
    its lines share written on the first one only. Rules are inset shadows, so
-   the transparent borders that make the room stay empty. */
-tr.entry td {
-  --top: 0px;
-  --bottom: 0px;
-  --left: 0 0 transparent;
-  --right: 0 0 transparent;
-  border-bottom-color: transparent;
-  background-clip: padding-box;
-  background-color: rgb(255 255 255 / 0.025);
-  box-shadow:
-    inset 0 var(--top) 0 var(--border),
-    inset 0 calc(-1 * var(--bottom)) 0 var(--border),
-    inset var(--left),
-    inset var(--right);
-}
+   the transparent borders that make the room stay empty. On a phone the
+   rows themselves become cards: see `.entry-cards` below. */
+@media (min-width: 601px) {
+  tr.entry td {
+    --top: 0px;
+    --bottom: 0px;
+    --left: 0 0 transparent;
+    --right: 0 0 transparent;
+    border-bottom-color: transparent;
+    background-clip: padding-box;
+    background-color: rgb(255 255 255 / 0.025);
+    box-shadow:
+      inset 0 var(--top) 0 var(--border),
+      inset 0 calc(-1 * var(--bottom)) 0 var(--border),
+      inset var(--left),
+      inset var(--right);
+  }
 
-tr.entry td:first-child {
-  --left: 3px 0 0 var(--border-gold);
-}
+  tr.entry td:first-child {
+    --left: 3px 0 0 var(--border-gold);
+  }
 
-tr.entry td:last-child {
-  --right: -1px 0 0 var(--border);
-}
+  tr.entry td:last-child {
+    --right: -1px 0 0 var(--border);
+  }
 
-tr.entry-first td {
-  --top: 1px;
-}
+  tr.entry-first td {
+    --top: 1px;
+  }
 
-tr.entry-last td {
-  --bottom: 1px;
-}
+  tr.entry-last td {
+    --bottom: 1px;
+  }
 
-tr.entry:not(.entry-last) td {
-  border-bottom: 0;
-  padding-bottom: 4px;
-}
+  tr.entry:not(.entry-last) td {
+    border-bottom: 0;
+    padding-bottom: 4px;
+  }
 
-tr.entry-next td {
-  padding-top: 4px;
-}
+  tr.entry-next td {
+    padding-top: 4px;
+  }
 
-/* Room between cards; none above the first, to keep the header's rule. */
-tr.entry-first:not(:first-child) td {
-  border-top: 12px solid transparent;
-}
+  /* Room between cards; none above the first, to keep the header's rule. */
+  tr.entry-first:not(:first-child) td {
+    border-top: 12px solid transparent;
+  }
 
-tr.entry-last td {
-  border-bottom: 12px solid transparent;
-}
+  tr.entry-last td {
+    border-bottom: 12px solid transparent;
+  }
 
-tr.entry.fresh td {
-  background-color: rgba(201, 169, 106, 0.1);
+  tr.entry.fresh td {
+    background-color: rgba(201, 169, 106, 0.1);
+  }
 }
 
 .sr-only {
@@ -1482,4 +1494,347 @@ tr.entry.fresh td {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Phones. Built for 360 to 430 px wide: nothing may push the page sideways. */
+@media (max-width: 860px) {
+  /* The menu bar: the brand and the member on one row, the menu below it, in
+     one line that scrolls sideways. The sidebar and the main column dissolve
+     into the shell's grid to allow it. */
+  .shell {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand user"
+      "nav nav"
+      "content content"
+      "footer footer";
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .sidebar,
+  .main {
+    display: contents;
+  }
+
+  .brand {
+    grid-area: brand;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 16px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: rgb(20 27 24 / 0.85);
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .topbar {
+    grid-area: user;
+    padding: 10px 16px 10px 0;
+    background: rgb(20 27 24 / 0.85);
+  }
+
+  .topbar > .eyebrow {
+    display: none;
+  }
+
+  .topbar-user {
+    gap: 12px;
+  }
+
+  .nav {
+    grid-area: nav;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 16px;
+    background: rgb(20 27 24 / 0.85);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav a {
+    flex: none;
+    white-space: nowrap;
+    gap: 8px;
+  }
+
+  .content {
+    grid-area: content;
+    min-width: 0;
+  }
+
+  .footer {
+    grid-area: footer;
+  }
+
+  /* The Grand livre's buttons: two per row instead of one row past the edge. */
+  .move-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+    flex: 1 1 100%;
+    margin-bottom: 14px;
+  }
+
+  .move-actions .btn {
+    white-space: normal;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Register, activity and stock history: one card per entry, each line
+     with its article, quantity and septims side by side, and its buttons
+     under it, instead of a table wider than the screen. */
+  .table-wrap:has(> .entry-cards) {
+    overflow: visible;
+  }
+
+  .entry-cards thead {
+    display: none;
+  }
+
+  .entry-cards,
+  .entry-cards tbody {
+    display: block;
+  }
+
+  .entry-cards tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "date date kind"
+      "label qty amount"
+      "party party party"
+      "member member member"
+      "notes notes notes"
+      "actions actions actions";
+    column-gap: 12px;
+    padding: 0 12px 0 15px;
+    background: rgb(255 255 255 / 0.025);
+    box-shadow:
+      inset 3px 0 0 var(--border-gold),
+      inset -1px 0 0 var(--border);
+  }
+
+  .entry-cards td,
+  tr.entry td {
+    display: block;
+    padding: 3px 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+
+  tr.entry-first {
+    margin-top: 12px;
+    padding-top: 8px;
+    box-shadow:
+      inset 3px 0 0 var(--border-gold),
+      inset -1px 0 0 var(--border),
+      inset 0 1px 0 var(--border);
+  }
+
+  tr.entry-first:first-child {
+    margin-top: 0;
+  }
+
+  tr.entry-last {
+    padding-bottom: 8px;
+    box-shadow:
+      inset 3px 0 0 var(--border-gold),
+      inset -1px 0 0 var(--border),
+      inset 0 -1px 0 var(--border);
+  }
+
+  tr.entry-first.entry-last {
+    box-shadow:
+      inset 3px 0 0 var(--border-gold),
+      inset -1px 0 0 var(--border),
+      inset 0 1px 0 var(--border),
+      inset 0 -1px 0 var(--border);
+  }
+
+  tr.entry.fresh {
+    background: rgba(201, 169, 106, 0.1);
+  }
+
+  /* A cell the line shares with the first line of its entry: kept for screen readers, takes no room. */
+  .entry-cards td.cell-repeat,
+  .entry-cards td.cell-none,
+  .entry-cards td:empty {
+    padding: 0;
+  }
+
+  .entry-cards td.cell-none {
+    display: none;
+  }
+
+  .entry-cards .cell-date {
+    grid-area: date;
+    font-size: 12px;
+    color: var(--muted);
+    align-self: center;
+  }
+
+  .entry-cards .cell-kind {
+    grid-area: kind;
+    justify-self: end;
+  }
+
+  .entry-cards .cell-label {
+    grid-area: label;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .entry-cards .cell-qty {
+    grid-area: qty;
+  }
+
+  .entry-cards .cell-qty::before {
+    content: "× ";
+    color: var(--muted);
+  }
+
+  .entry-cards .cell-qty.plus::before,
+  .entry-cards .cell-qty.minus::before {
+    content: none;
+  }
+
+  .entry-cards .cell-amount {
+    grid-area: amount;
+    text-align: right;
+  }
+
+  /* The stock history has no client or seller: its stock after the movement takes that line. */
+  .entry-cards .cell-party,
+  .entry-cards .cell-after {
+    grid-area: party;
+    text-align: left;
+  }
+
+  .entry-cards .cell-member {
+    grid-area: member;
+  }
+
+  .entry-cards .cell-party,
+  .entry-cards .cell-after,
+  .entry-cards .cell-member {
+    font-size: 13px;
+  }
+
+  .entry-cards td[data-label]:not(.cell-repeat)::before {
+    content: attr(data-label) " : ";
+    color: var(--muted);
+  }
+
+  .entry-cards .cell-notes {
+    grid-area: notes;
+    font-style: italic;
+  }
+
+  .entry-cards .cell-actions {
+    grid-area: actions;
+  }
+
+  .entry-cards .cell-actions:not(:empty) {
+    padding-top: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Price and member lists: one card per row, its name on top (with its
+     pencil, button or badge beside it), then one "label  value" line per
+     column, instead of columns cut by the screen's edge. */
+  .table-wrap:has(> .stack-cards) {
+    overflow: visible;
+  }
+
+  .stack-cards thead {
+    display: none;
+  }
+
+  .stack-cards,
+  .stack-cards tbody {
+    display: block;
+  }
+
+  .stack-cards tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stack-cards td {
+    display: block;
+    flex-basis: 100%;
+    padding: 0;
+    border: 0;
+    width: auto;
+  }
+
+  .stack-cards td.stack-title {
+    order: -2;
+    flex: 1 1 0;
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .stack-cards td.stack-aside,
+  .stack-cards td.row-action {
+    order: -1;
+    flex: none;
+  }
+
+  .stack-cards td[data-label] {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .stack-cards td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .stack-cards td[data-label] {
+    flex-wrap: wrap;
+  }
+
+  .stack-cards .inline-form {
+    flex-wrap: wrap;
+  }
+
+  .stack-cards .inline-form input,
+  .stack-cards .inline-form select {
+    flex: 1 1 120px;
+  }
+
+  .stack-cards td[data-label] > .citizen-price {
+    flex-basis: 100%;
+    margin-top: 2px;
+  }
 }
