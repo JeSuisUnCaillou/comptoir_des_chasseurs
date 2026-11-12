@@ -267,7 +267,6 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
   const unpriced = hunted.filter((p) => !priced(p));
   const autoUnpriced = Boolean(query) && hunted.length < AUTO_UNPRICED_BELOW;
-  const noGrid = hides.length + meats.length + goods.length === 0;
   const calculable = products.filter(priced);
 
   return (
@@ -343,12 +342,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
             <GoodsTable products={goods} canEdit={canEdit} />
           </Grid>
         )}
-        {noGrid &&
-          (hunted.length === 0 ? (
-            NO_MATCH
-          ) : autoUnpriced ? null : (
-            <p className="muted">Aucune marchandise avec un tarif ne correspond.</p>
-          ))}
+        {hunted.length === 0 && NO_MATCH}
         <Unpriced search={search} products={unpriced} canEdit={canEdit} auto={autoUnpriced} />
       </section>
     </>

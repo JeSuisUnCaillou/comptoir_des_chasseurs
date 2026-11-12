@@ -7,10 +7,11 @@ const DELAY_MS = 250;
 
 /**
  * Product name search that filters as you type: it writes its query parameter
- * (`name`, `q` by default) to the URL, back to page 1, after a short pause,
- * and the server page filters on it. Two searches on one page take two names.
+ * `q` to the URL, back to page 1, after a short pause, and the server page
+ * filters on it.
  */
-export function LiveSearch({ name = "q" }: { name?: string }) {
+export function LiveSearch() {
+  const name = "q";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
