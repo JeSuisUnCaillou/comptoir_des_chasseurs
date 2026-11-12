@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  createAnnouncements,
   createMember,
   createProduct,
   createTransactions,
+  GERANT,
   loginAs,
   loginAsGerant,
   memberRow,
@@ -316,7 +318,13 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
 
   // The gérant's own activity page, where that sale is listed too.
   const activity = (await page.getByTestId("member-name").getAttribute("href"))!;
-  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity];
+  // The page editing a parchment with a long title.
+  const parchment = uniqueName("Grande battue des chasseurs de Vendeaume et de Rorikbourg");
+  await createAnnouncements(GERANT.username, 1, parchment);
+  // The Grand livre shows the whole board; the Annonces page could have it past its first page.
+  await page.goto("/");
+  const edit = (await page.getByRole("link", { name: `Modifier « ${parchment} 1 »` }).getAttribute("href"))!;
+  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity, edit];
   for (let width = 320; width <= 1600; width += 160) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of pages) {

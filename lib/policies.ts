@@ -12,7 +12,7 @@ export function isGerant(member: Actor) {
 
 /**
  * A register line, a parchment…: a gérant may act on any, a member on their
- * own (cancel it, settle it with the till, take it down).
+ * own (cancel it, settle it with the till, edit or take it down).
  */
 export function canActOn(member: Actor, owned: { memberId: number }) {
   return isGerant(member) || owned.memberId === member.id;

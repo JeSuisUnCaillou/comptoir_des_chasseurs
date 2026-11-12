@@ -62,7 +62,7 @@ export default async function GrandLivre() {
             <Megaphone size={14} /> Afficher un parchemin
           </Link>
         </div>
-        <AnnouncementBoard announcements={announcements} member={member} />
+        <AnnouncementBoard announcements={announcements} member={member} back="/" />
       </section>
       <section className="panel">
         <div className="panel-head">

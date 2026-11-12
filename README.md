@@ -170,7 +170,9 @@ comptes à une fiche par ligne.
 - **Annonces** : le tableau du comptoir, des parchemins épinglés sur du bois
   (titre, texte, auteur, date). Chacun en accroche avec « Afficher un
   parchemin » et choisit ce qui le fixe : couteau, hache nordique ou morceau
-  de viande. L'auteur d'une annonce ou un gérant peut la décrocher. Le Grand
+  de viande. L'auteur d'une annonce ou un gérant peut la modifier (crayon :
+  titre, texte, attache ; elle garde sa place et sa date, puis on revient au
+  tableau d'où on est parti) ou la décrocher. Le Grand
   livre montre tout le tableau d'un coup, sans pagination (choix du
   propriétaire) ; la page Annonces le montre 12 parchemins par page.
 - **Fournisseurs** : une carte par fournisseur, avec son lieu, une note
