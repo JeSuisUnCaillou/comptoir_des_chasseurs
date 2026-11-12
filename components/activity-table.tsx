@@ -6,6 +6,15 @@ import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
 import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
 
+/** What the "Client / vendeur, ou motif" column holds, by operation: its label on a phone card. */
+const PARTY_LABEL: Record<ActivityLine["kind"], string> = {
+  vente: "Client",
+  rachat: "Vendeur",
+  entree: "Pour / de la part de",
+  sortie: "Pour / de la part de",
+  stock: "Motif",
+};
+
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
   timeStyle: "short",
@@ -80,7 +89,10 @@ export function ActivityTable({
                     </>
                   )}
                 </td>
-                <td className={`cell-party${rep}${l.detail ? "" : " cell-none"}`}>{shared(l.detail ?? "—")}</td>
+                <td
+                  className={`cell-party${rep}${l.detail ? "" : " cell-none"}`}
+                  data-label={PARTY_LABEL[kind]}
+                >{shared(l.detail ?? "—")}</td>
                 <td className={`small cell-notes${rep}`}>{shared(l.notes ?? "")}</td>
                 <td className="cell-actions">
                   {cancelled ? (

@@ -87,7 +87,7 @@ export function RegisterTable({
                     </>
                   )}
                 </td>
-                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={sale ? "Client" : "Vendeur"}>
+                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={cash ? "Pour / de la part de" : sale ? "Client" : "Vendeur"}>
                   {shared(e.counterparty ?? "—")}
                 </td>
                 <td className={`cell-member${rep}`} data-label="Employé">
