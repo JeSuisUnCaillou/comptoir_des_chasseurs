@@ -137,9 +137,6 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             </div>
           )}
         </div>
-        <p className="small muted">
-          Les lignes barrées sont annulées. Elles ne comptent pas dans la caisse, pas plus que celles qui n&apos;y sont pas encore.
-        </p>
         <RegisterTable entries={entries} member={member} highlight={written.map((e) => e.id)} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />
       </section>
