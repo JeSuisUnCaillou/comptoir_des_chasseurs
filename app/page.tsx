@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { currentAccount } from "@/lib/auth/session";
-import { canSignIn } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 import { accountShops } from "@/lib/shops";
 
@@ -12,6 +11,6 @@ export default async function Accueil() {
   if (!account) redirect("/connexion");
   const shops = await accountShops(account);
   // Deactivated everywhere: signed out, as the login page refuses it.
-  if (!(await canSignIn(account))) redirect("/connexion");
+  if (shops.length === 0) redirect("/connexion");
   redirect(shops.length === 1 ? shopPath(shops[0].slug) : "/boutiques");
 }

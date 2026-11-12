@@ -1,6 +1,5 @@
 import { LogOut, Store } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand";
 import { InvitationLink, InviteGerantForm, OpenShopForm } from "@/components/shop-forms";
 import { logout } from "@/app/connexion/actions";
@@ -20,7 +19,6 @@ const ROLE_LABELS = { gerant: "Gérant", employe: "Employé", desactive: "Désac
 export default async function Boutiques() {
   const account = await requireAccount("/boutiques");
   const shops = await accountShops(account);
-  if (shops.length === 0) redirect("/connexion");
   const invitations = account.superAdmin ? await pendingInvitations() : [];
 
   return (
