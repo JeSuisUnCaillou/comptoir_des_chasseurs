@@ -1009,6 +1009,16 @@ tr.cancelled td:last-child {
   justify-content: space-between;
   gap: 12px;
   margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* On a phone, "Page 1 sur 3" on its own line, the two buttons under it. */
+@media (max-width: 600px) {
+  .pagination > span:not(:empty) {
+    order: -1;
+    flex-basis: 100%;
+    text-align: center;
+  }
 }
 
 .big-actions {

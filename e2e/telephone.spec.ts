@@ -15,9 +15,21 @@ test.use(PHONE);
 
 /** The page does not scroll sideways: everything fits the screen's width. */
 async function expectNoSideScroll(page: Page) {
+  // On failure, names the deepest element that passes the screen's right edge.
   await expect
-    .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
-    .toBeLessThanOrEqual(0);
+    .poll(() =>
+      page.evaluate(() => {
+        const width = document.documentElement.clientWidth;
+        if (document.documentElement.scrollWidth <= width) return "";
+        const past = [...document.querySelectorAll("body *")].filter(
+          (el) =>
+            el.getBoundingClientRect().right > width + 1 && el.children.length === 0 && !el.closest("nav, .table-wrap"),
+        );
+        const el = past[0];
+        return el ? `${el.tagName.toLowerCase()}.${[...el.classList].join(".")} « ${el.textContent?.trim()} »` : "?";
+      }),
+    )
+    .toBe("");
 }
 
 test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) => {
