@@ -1200,19 +1200,21 @@ tr.fresh td {
   filter: drop-shadow(1px 3px 2px rgb(0 0 0 / 0.5));
 }
 
-.parchment-remove {
+.parchment-actions {
   position: absolute;
   top: 4px;
   right: 4px;
+  display: flex;
+  gap: 2px;
 }
 
-.parchment-remove .icon-btn {
+.parchment-actions .icon-btn {
   color: #7a5a35;
   opacity: 0.55;
 }
 
-.parchment-remove .icon-btn:hover,
-.parchment-remove .icon-btn:focus-visible {
+.parchment-actions .icon-btn:hover,
+.parchment-actions .icon-btn:focus-visible {
   opacity: 1;
   color: #8e2f2a;
 }

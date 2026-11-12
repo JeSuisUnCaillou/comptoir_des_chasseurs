@@ -160,7 +160,9 @@ Pour qui n'a pas encore déposé (vente) ou pris (achat) les septims :
   texte, auteur, date).
 - Chacun en accroche avec « Afficher un parchemin » et choisit ce qui le
   fixe : couteau, hache nordique ou morceau de viande.
-- L'auteur d'une annonce ou un gérant peut la décrocher.
+- L'auteur d'une annonce ou un gérant peut la décrocher, ou la modifier
+  (crayon : titre, texte, attache). Elle garde sa place et sa date, et on
+  revient au tableau d'où on est parti.
 - 12 parchemins par page ici ; le Grand livre montre tout le tableau.
 
 ## Fournisseurs

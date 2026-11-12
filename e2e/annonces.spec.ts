@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  ALERT,
   createAnnouncements,
   createMember,
   GERANT,
@@ -22,6 +23,12 @@ async function pinParchment(page: Page, title: string, body: string, pin = "Cout
   await page.getByRole("radio", { name: pin }).check();
   await page.getByRole("button", { name: "Accrocher le parchemin" }).click();
   await expect(page.getByRole("status")).toHaveText("Le parchemin est accroché au tableau.");
+}
+
+/** Opens the page editing the parchment, from the board on screen. */
+async function openEdit(page: Page, title: string) {
+  await page.getByRole("link", { name: `Modifier « ${title} »` }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modifier un parchemin");
 }
 
 test("un employé accroche un parchemin, que tout le comptoir lit sur l'accueil", async ({ page, browser }) => {
@@ -62,6 +69,95 @@ test("seuls l'auteur et un gérant peuvent décrocher un parchemin", async ({ pa
   await expect(parchment(page, second)).toHaveCount(0);
   await other.reload();
   await expect(parchment(other, second)).toHaveCount(0);
+});
+
+test("l'auteur modifie son parchemin, qui garde sa place et sa date", async ({ browser }) => {
+  const { page: author, username } = await newEmployeePage(browser, "ingrid");
+  const title = uniqueName("Cherche peaux");
+  await pinParchment(author, title, "10 peaux de loup", "Couteau");
+  const date = await parchment(author, title).locator("time").textContent();
+
+  // From the Annonces page: the form holds what the parchment says.
+  await openEdit(author, title);
+  await expect(author.getByLabel("Titre de l'annonce")).toHaveValue(title);
+  await expect(author.getByLabel("Texte à afficher")).toHaveValue("10 peaux de loup");
+  await expect(author.getByRole("radio", { name: "Couteau" })).toBeChecked();
+
+  const renamed = uniqueName("Cherche fourrures");
+  await author.getByLabel("Titre de l'annonce").fill(renamed);
+  await author.getByLabel("Texte à afficher").fill("20 peaux de loup\n5 peaux d'ours");
+  await author.getByRole("radio", { name: "Morceau de viande" }).check();
+  await author.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+
+  // Back on the Annonces page, the same parchment, rewritten.
+  await expect(author).toHaveURL(/\/annonces$/);
+  await expect(parchment(author, title)).toHaveCount(0);
+  const note = parchment(author, renamed);
+  await expect(note).toContainText("20 peaux de loup\n5 peaux d'ours");
+  await expect(note).toContainText(`Par ${username}`);
+  await expect(note.getByTitle("Morceau de viande")).toBeVisible();
+  await expect(note.locator("time")).toHaveText(date!);
+
+  // From the Grand livre, saving comes back to the Grand livre.
+  await author.goto("/");
+  await openEdit(author, renamed);
+  await author.getByLabel("Texte à afficher").fill("Plus besoin d'ours");
+  await author.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(author.getByRole("heading", { level: 1 })).toHaveText("Grand livre");
+  await expect(parchment(author, renamed)).toContainText("Plus besoin d'ours");
+});
+
+test("seuls l'auteur et un gérant peuvent modifier un parchemin", async ({ page, browser }) => {
+  const { page: author } = await newEmployeePage(browser, "sigrid");
+  const { page: other } = await newEmployeePage(browser, "voisin");
+  const title = uniqueName("Battue");
+  await pinParchment(author, title, "Rendez-vous à l'aube");
+  const edit = (await author.getByRole("link", { name: `Modifier « ${title} »` }).getAttribute("href"))!;
+
+  await other.goto("/annonces");
+  await expect(parchment(other, title)).toBeVisible();
+  await expect(other.getByRole("link", { name: `Modifier « ${title} »` })).toHaveCount(0);
+  await other.goto(edit);
+  await expect(other.getByText("This page could not be found.")).toBeVisible();
+  await expect(other.getByLabel("Titre de l'annonce")).toHaveCount(0);
+
+  await loginAsGerant(page);
+  await page.goto("/annonces");
+  await openEdit(page, title);
+  await page.getByLabel("Texte à afficher").fill("Rendez-vous à midi");
+  await page.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(parchment(page, title)).toContainText("Rendez-vous à midi");
+  await other.goto("/annonces");
+  await expect(parchment(other, title)).toContainText("Rendez-vous à midi");
+});
+
+test("le serveur refuse la modification à qui n'est plus gérant, et un parchemin vidé", async ({ browser }) => {
+  const { page: author } = await newEmployeePage(browser, "hroki");
+  const title = uniqueName("Vend miel");
+  await pinParchment(author, title, "Miel de Vendeaume");
+
+  // An empty text is refused, and what was typed stays.
+  await openEdit(author, title);
+  await author.getByLabel("Texte à afficher").fill("  ");
+  await author.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(author.locator(ALERT)).toHaveText("L'annonce est vide.");
+  await expect(author.getByLabel("Titre de l'annonce")).toHaveValue(title);
+
+  const username = uniqueName("ulfgar").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
+  const page = await (await browser.newContext()).newPage();
+  await loginAs(page, username, "mot-de-passe");
+  await page.goto("/annonces");
+  await openEdit(page, title);
+  await page.getByLabel("Texte à afficher").fill("Plus de miel");
+
+  await setRole(username, "employe");
+  await page.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(page.locator(ALERT)).toHaveText(
+    "Ce parchemin n'est plus au tableau, ou tu ne peux pas le modifier.",
+  );
+  await author.goto("/annonces");
+  await expect(parchment(author, title)).toContainText("Miel de Vendeaume");
 });
 
 test("l'accueil montre tout le tableau, la page Annonces le pagine", async ({ page }) => {

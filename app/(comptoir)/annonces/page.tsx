@@ -31,7 +31,7 @@ export default async function Annonces({
         <AnnouncementForm />
       </section>
       <section className="section-gap">
-        <AnnouncementBoard announcements={announcements} member={member} />
+        <AnnouncementBoard announcements={announcements} member={member} back={page > 1 ? `/annonces?page=${page}` : "/annonces"} />
         <Pagination page={page} total={total} path="/annonces" size={BOARD_SIZE} label="Pages des annonces" noun="annonce" />
       </section>
     </>
