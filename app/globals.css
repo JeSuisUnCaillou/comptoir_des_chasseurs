@@ -718,6 +718,11 @@ td.row-action .icon-btn {
   margin-bottom: 16px;
 }
 
+/* A page's title with its button: the title already leaves its room below. */
+.content > .panel-head {
+  margin-bottom: 0;
+}
+
 .cols {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
@@ -1098,10 +1103,6 @@ tr.fresh td {
 }
 
 /* Announcement board: parchments pinned on wooden planks */
-.section-gap > .panel-head {
-  margin-bottom: 16px;
-}
-
 .section-gap > .panel-head h2 {
   font-size: 22px;
   margin: 8px 0 0;

@@ -264,4 +264,20 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
     const tile = await page.getByText("Trésorerie actuelle").boundingBox();
     expect(tile!.y - (last!.y + last!.height)).toBeGreaterThanOrEqual(12);
   });
+
+  test("une page avec un bouton sous son titre garde le même espace avant son premier cadre", async ({ page }) => {
+    await loginAsGerant(page);
+    // From the bottom of the page's title block to the top of its first panel.
+    const gapUnderTitle = () =>
+      page.getByRole("heading", { level: 1 }).evaluate((h1) => {
+        const head = h1.closest(".page-head")!.getBoundingClientRect();
+        const panel = document.querySelector(".content .panel")!.getBoundingClientRect();
+        return Math.round(panel.top - head.bottom);
+      });
+    await page.goto("/annonces");
+    const usual = await gapUnderTitle();
+    await page.goto("/tarifs");
+    await expect(page.getByRole("link", { name: "Gérer les tarifs" })).toBeVisible();
+    expect(await gapUnderTitle()).toBe(usual);
+  });
 });
