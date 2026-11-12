@@ -5,7 +5,7 @@ import { SettleButton } from "@/components/settle-button";
 import type { Member } from "@/lib/db/schema";
 import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
-import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
+import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
 import { canActOn } from "@/lib/policies";
 
@@ -87,7 +87,7 @@ export function RegisterTable({
                     </>
                   )}
                 </td>
-                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={cash ? "Pour / de la part de" : sale ? "Client" : "Vendeur"}>
+                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={counterpartyLabel(e.kind)}>
                   {shared(e.counterparty ?? "—")}
                 </td>
                 <td className={`cell-member${rep}`} data-label="Employé">

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   createMember,
   createProduct,
+  createTransactions,
   loginAs,
   loginAsGerant,
   memberRow,
@@ -201,5 +202,28 @@ test("au téléphone, un gérant gère un compte et une marchandise sans faire g
   await expect(goods).toHaveCount(1);
   await goods.scrollIntoViewIfNeeded();
   await expect(goods.getByRole("link", { name: `Modifier ${product}` })).toBeInViewport({ ratio: 1 });
+  await expectNoSideScroll(page);
+});
+
+test("au téléphone, la pagination tient dans l'écran", async ({ browser }) => {
+  const username = uniqueName("erandur").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe");
+  await createTransactions(username, 60);
+  // The narrowest phones still in use: « Précédent », the page and « Suivant » cannot share a line.
+  const page = await (await browser.newContext({ ...PHONE, viewport: { width: 320, height: 640 } })).newPage();
+  await loginAs(page, username, "mot-de-passe");
+
+  await page.getByTestId("member-name").click();
+  const pages = page.getByRole("navigation", { name: "Pages de l'activité" });
+  await pages.getByRole("link", { name: "Suivant" }).click();
+  await expect(pages).toContainText("Page 2 sur 3");
+  await pages.scrollIntoViewIfNeeded();
+  for (const part of [
+    pages.getByText("Page 2 sur 3"),
+    pages.getByRole("link", { name: "Précédent" }),
+    pages.getByRole("link", { name: "Suivant" }),
+  ]) {
+    await expect(part).toBeInViewport({ ratio: 1 });
+  }
   await expectNoSideScroll(page);
 });
