@@ -16,7 +16,7 @@ export default async function Connexion({
   // Signed in and able to enter a shop: nothing to do here. An account
   // deactivated everywhere sees the form, which refuses it.
   const account = await currentAccount();
-  if (account && (account.superAdmin || (await canSignIn(account.id)))) redirect(returnPath);
+  if (account && (await canSignIn(account))) redirect(returnPath);
   const total = await accountCount();
 
   return (

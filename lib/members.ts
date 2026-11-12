@@ -24,14 +24,18 @@ export async function accountByUsername(username: string): Promise<Member | unde
 }
 
 /**
- * False when the account is deactivated in every shop it belongs to: it can't
- * sign in any more. An account left with no shop at all (its shop was
- * deleted) still can, to open a new one.
+ * True when the account may sign in: the super admin always, anyone else
+ * while they have a role other than deactivated in at least one shop.
  */
-export async function canSignIn(memberId: number) {
+export async function canSignIn(account: Pick<Member, "id" | "superAdmin">) {
+  if (account.superAdmin) return true;
   const m = schema.shopMembers;
-  const roles = await getDb().select({ role: m.role }).from(m).where(eq(m.memberId, memberId));
-  return roles.length === 0 || roles.some(({ role }) => role !== "desactive");
+  const [row] = await getDb()
+    .select({ shopId: m.shopId })
+    .from(m)
+    .where(and(eq(m.memberId, account.id), ne(m.role, "desactive")))
+    .limit(1);
+  return row !== undefined;
 }
 
 /**

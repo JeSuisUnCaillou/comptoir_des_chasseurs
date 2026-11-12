@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { ALERT, COMPTOIR, createMember, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { ALERT, COMPTOIR, createMember, loginAsGerant, newEmployeePage, setRole, uniqueName } from "./helpers";
 
 /** The address a shop named `name` gets: what the page says, lower case, accents dropped, dashes. */
 function slugOf(name: string) {
@@ -198,6 +198,26 @@ test("un gérant supprime sa boutique, avec tout ce qu'elle contient", async ({ 
   await form.getByLabel("Motif").fill("brassé sur place");
   await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
   await expect(page.getByTestId("stock-value")).toHaveText("3");
+  // And a sale of it, a supplier offering it, a parchment and an invitation.
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    const [{ shopId, productId, memberId }] = await sql`
+      select s.id as "shopId", p.id as "productId", sm.member_id as "memberId"
+      from shops s join products p on p.shop_id = s.id join shop_members sm on sm.shop_id = s.id
+      where s.slug = ${slug}`;
+    const [sale] = await sql`
+      insert into transactions (shop_id, kind, product_id, label, quantity, amount, member_id)
+      values (${shopId}, 'vente', ${productId}, 'Hydromel', 1, 5, ${memberId}) returning id`;
+    await sql`
+      insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason, transaction_id)
+      values (${shopId}, ${productId}, -1, 2, ${memberId}, 'Vente', ${sale.id})`;
+    const [supplier] = await sql`insert into suppliers (shop_id, name) values (${shopId}, 'Brasseur') returning id`;
+    await sql`insert into supplier_offers (supplier_id, product_id, price) values (${supplier.id}, ${productId}, 2)`;
+    await sql`insert into announcements (shop_id, title, body, member_id) values (${shopId}, 'Fermeture', 'Bientôt', ${memberId})`;
+    await sql`insert into shop_invitations (token, shop_id, created_by) values (${uniqueName("jeton")}, ${shopId}, ${memberId})`;
+  } finally {
+    await sql.end();
+  }
 
   await page.getByRole("link", { name: "Réglages" }).click();
   const danger = page.getByRole("region", { name: "Supprimer la boutique" });
@@ -227,20 +247,17 @@ test("le comptoir garde son adresse et ne se supprime pas ; un employé n'a pas 
   await expect(employee).toHaveURL(new RegExp(`${COMPTOIR}$`));
 });
 
-test("un compte resté sans boutique se connecte et peut en ouvrir une", async ({ page }) => {
-  const username = uniqueName("sans-boutique").toLowerCase();
-  await createMember(username, "mot-de-passe", "employe");
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
-  try {
-    await sql`delete from shop_members where member_id = (select id from members where username = ${username})`;
-  } finally {
-    await sql.end();
-  }
-  await page.goto("/connexion");
-  await page.getByLabel("Identifiant").fill(username);
-  await page.getByLabel("Mot de passe").fill("mot-de-passe");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
-  await expect(page).toHaveURL(/\/boutiques$/);
-  await expect(page.getByText("Tu n'as pas encore de boutique : ouvre la tienne.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Ouvrir une boutique", exact: true })).toBeVisible();
+test("un gérant ne supprime pas sa seule boutique", async ({ browser }) => {
+  const { page, username, shop } = await ownShop(browser, "olfina");
+  // Their shop is now the only one they are active in.
+  await setRole(username, "desactive");
+  await page.goto(`/${slugOf(shop)}/reglages`);
+  const danger = page.getByRole("region", { name: "Supprimer la boutique" });
+  await danger.getByLabel(`Pour confirmer, écris « ${shop} »`).fill(shop);
+  await danger.getByRole("button", { name: "Supprimer la boutique" }).click();
+  await expect(danger.locator(ALERT)).toHaveText(
+    "C'est ta seule boutique : ouvre-en une autre avant de supprimer celle-ci.",
+  );
+  await page.reload();
+  await expect(page.getByTestId("shop-name")).toHaveText(shop);
 });

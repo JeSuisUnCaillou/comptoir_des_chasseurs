@@ -1,12 +1,12 @@
 import { PageHead } from "@/components/page-head";
 import { DeleteShopForm, ShopForm } from "@/components/shop-settings-forms";
 import { requireMember } from "@/lib/auth/session";
-import { FIRST_SHOP_SLUG } from "@/lib/paths";
+import { isComptoir } from "@/lib/paths";
 
 /** /<slug>/reglages: a gérant renames the shop, moves it, or deletes it. */
 export default async function Reglages() {
   const me = await requireMember(["gerant"]);
-  const comptoir = me.shop.slug === FIRST_SHOP_SLUG;
+  const comptoir = isComptoir(me.shop);
 
   return (
     <>

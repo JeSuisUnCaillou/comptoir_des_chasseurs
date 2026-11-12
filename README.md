@@ -126,8 +126,9 @@ est en haut de chaque page, et « Changer de boutique », en bas du menu, mène
 - **Réglages** (`/<slug>/reglages`, gérants) : renommer la boutique, changer
   son adresse (le comptoir garde la sienne, où mènent ses anciens liens), ou la
   **supprimer** avec tout ce qu'elle contient, après avoir retapé son nom. Le
-  comptoir ne se supprime pas. Les comptes de ses membres restent ; un compte
-  resté sans boutique peut encore se connecter, pour en ouvrir une.
+  comptoir ne se supprime pas, ni la seule boutique d'un gérant. Les comptes
+  de ses membres restent ; un compte resté sans aucune boutique ne peut plus
+  se connecter, comme un compte désactivé.
 - **Invitation** (`/invitation/<jeton>`) : qui ouvre le lien devient gérant
   de la boutique, avec son compte (connecté, ou après « J'ai déjà un compte »)
   ou un compte qu'il crée là. Le lien ne sert qu'une fois.
@@ -262,8 +263,8 @@ est en haut de chaque page, et « Changer de boutique », en bas du menu, mène
 
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un **rôle dans chacune** (`shop_members`) :
-  gérant, employé ou désactivé. Un compte désactivé dans toutes ses
-  boutiques ne peut plus se connecter.
+  gérant, employé ou désactivé. Un compte sans boutique où il est actif ne
+  peut plus se connecter.
 - Au premier lancement, la page de connexion crée le compte du **gérant**,
   qui est aussi le **super admin** : il est gérant dans toutes les
   boutiques, et lui seul peut modifier son compte (nom, rôle, mot de passe) ;

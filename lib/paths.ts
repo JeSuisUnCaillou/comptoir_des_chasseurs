@@ -6,6 +6,11 @@
 /** The comptoir, the first shop: the pages it had before shops keep leading to it. */
 export const FIRST_SHOP_SLUG = "le-comptoir-des-chasseurs";
 
+/** The comptoir keeps its address, which its old links lead to, and can't be deleted. */
+export function isComptoir(shop: { slug: string }) {
+  return shop.slug === FIRST_SHOP_SLUG;
+}
+
 /** The pages of a shop, which also had these addresses before shops (see next.config.ts). */
 export const SHOP_PAGES = [
   "achat-vente",

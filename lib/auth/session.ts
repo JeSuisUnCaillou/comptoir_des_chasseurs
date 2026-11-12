@@ -80,7 +80,7 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
  */
 export async function requireAccount(path: string): Promise<Member> {
   const account = await currentAccount();
-  if (!account || !(account.superAdmin || (await canSignIn(account.id)))) redirect(loginUrl(path));
+  if (!account || !(await canSignIn(account))) redirect(loginUrl(path));
   return account;
 }
 

@@ -26,10 +26,7 @@ export async function saveShop(_prev: ShopSettingsState, formData: FormData): Pr
 /** A gérant deletes the shop and all it holds, once its name is typed again. */
 export async function removeShop(_prev: ShopSettingsState, formData: FormData): Promise<ShopSettingsState> {
   const me = await requireMember(["gerant"]);
-  if (text(formData, "confirm", 60) !== me.shop.name) {
-    return { ok: false, message: "Écris exactement le nom de la boutique pour confirmer." };
-  }
-  const result = await attempt(() => deleteShop(me.shop));
+  const result = await attempt(() => deleteShop(me, me.shop, text(formData, "confirm", 60)));
   if (!result.ok) return result;
   redirect("/boutiques");
 }
