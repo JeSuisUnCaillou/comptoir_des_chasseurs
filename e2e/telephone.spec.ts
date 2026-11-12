@@ -270,7 +270,9 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
     // Another computer's fonts can be wider than this one's: the buttons must not count on a few pixels.
     await page.addStyleTag({ content: ".move-actions .btn { letter-spacing: 0.08em !important; }" });
     const main = page.getByRole("main");
-    for (let width = 1100; width <= 1700; width += 40) {
+    const widths = [320, 360, 390, 430, 600, 800, 1000];
+    for (let width = 1100; width <= 1700; width += 40) widths.push(width);
+    for (const width of widths) {
       await page.setViewportSize({ width, height: 800 });
       await expectNoSideScroll(page);
       // Every button stays inside the Grand livre's panel.

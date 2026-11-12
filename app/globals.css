@@ -1681,6 +1681,15 @@ tr.fresh td {
   }
 }
 
+/* On the smallest phones, two columns are too narrow for « Mouvement »: one per line. */
+@container move-head (max-width: 279px) {
+  .move-actions:has(> :nth-child(3)) {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+}
+
 /* Register, activity and stock history, when their box is narrower than
    their columns (a phone, a tablet, a small window): one card per entry,
    each line with its article, quantity and septims side by side, and its
