@@ -5,6 +5,7 @@ import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
+import { lineMessage } from "@/lib/transaction-kinds";
 
 export const DUPLICATE_PRODUCT_NAME = "Une marchandise porte déjà ce nom.";
 
@@ -58,6 +59,17 @@ export async function movementCount(shopId: number, filter: MovementFilter = {})
   return row.total;
 }
 
+/**
+ * The same text for the hand movements one member wrote together: one
+ * Mouvement de stock, written in one database transaction, so at the same
+ * instant. They show as one entry. Null for the movement of a register line
+ * (a sale, a buyback, a cancellation), which stays a row of its own.
+ */
+export function movementEntryKey() {
+  const m = schema.stockMovements;
+  return sql<string | null>`case when ${m.transactionId} is null then (${m.memberId}, ${m.createdAt})::text end`;
+}
+
 export async function recentMovements(
   shopId: number,
   filter: MovementFilter,
@@ -73,6 +85,7 @@ export async function recentMovements(
       stockAfter: schema.stockMovements.stockAfter,
       member: schema.members.name,
       reason: schema.stockMovements.reason,
+      entryKey: movementEntryKey(),
     })
     .from(schema.stockMovements)
     .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
@@ -85,7 +98,7 @@ export async function recentMovements(
 
 export type Movement = Awaited<ReturnType<typeof recentMovements>>[number];
 
-export type MoveResult = { ok: true; stock: number } | { ok: false; error: string };
+export type MoveResult = { ok: true; stock: number; id: number } | { ok: false; error: string };
 
 /**
  * Adds `delta` units to a product of the shop and records the movement, tied
@@ -114,16 +127,11 @@ export async function moveStock(
     )
     .returning({ stock: schema.products.stock });
   if (!updated) return { ok: false, error: "Stock insuffisant pour cette sortie." };
-  await tx.insert(schema.stockMovements).values({
-    shopId,
-    productId,
-    delta,
-    stockAfter: updated.stock,
-    memberId,
-    reason,
-    transactionId,
-  });
-  return { ok: true, stock: updated.stock };
+  const [movement] = await tx
+    .insert(schema.stockMovements)
+    .values({ shopId, productId, delta, stockAfter: updated.stock, memberId, reason, transactionId })
+    .returning({ id: schema.stockMovements.id });
+  return { ok: true, stock: updated.stock, id: movement.id };
 }
 
 type Actor = Pick<ShopMember, "id" | "shopId">;
@@ -131,6 +139,42 @@ type Actor = Pick<ShopMember, "id" | "shopId">;
 /** A stock movement entered by hand on the Inventaire (a hunt, a loss…). */
 export async function recordMovement(member: Actor, productId: number, delta: number, reason: string) {
   return getDb().transaction((tx) => moveStock(tx, member.shopId, productId, delta, member.id, reason));
+}
+
+/**
+ * Several merchandises in or out of stock at once, with one reason and no
+ * money: written all together or not at all, in one database transaction, so
+ * they share their instant and show as one entry. Returns the movements' ids.
+ */
+export async function recordMovements(
+  member: Actor,
+  direction: "in" | "out",
+  lines: { productId: number; quantity: number }[],
+  reason: string,
+) {
+  return getDb().transaction(async (tx) => {
+    const written: number[] = [];
+    for (const [i, { productId, quantity }] of lines.entries()) {
+      const [product] = await tx
+        .select({ id: schema.products.id })
+        .from(schema.products)
+        .where(
+          and(
+            eq(schema.products.id, productId),
+            eq(schema.products.shopId, member.shopId),
+            eq(schema.products.archived, false),
+          ),
+        )
+        .limit(1);
+      if (!product) throw new UserError(lineMessage(lines.length, i, "Marchandise inconnue."));
+      const delta = direction === "in" ? quantity : -quantity;
+      // Throwing rolls back every movement already written.
+      const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason);
+      if (!moved.ok) throw new UserError(lineMessage(lines.length, i, moved.error));
+      written.push(moved.id);
+    }
+    return written;
+  });
 }
 
 /**

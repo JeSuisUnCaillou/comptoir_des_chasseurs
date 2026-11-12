@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
+import { movementEntryKey } from "@/lib/products";
 import { entryKeyColumn, pendingEntryColumns } from "@/lib/register";
 
 export type HandStock = {
@@ -79,7 +80,7 @@ export type ActivityLine = {
   notes: string | null;
   /** A sale or buyback whose septims are not in the till yet. */
   tillPending: boolean;
-  /** The same for every line of one entry, null for a stock movement: see `entryKeyColumn`. */
+  /** The same for every line of one entry: see `entryKeyColumn` and `movementEntryKey`. */
   entryKey: string | null;
   /** What settling it settles with it: see `pendingEntryColumns`. */
   entryLines: number;
@@ -110,7 +111,7 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
     where ${t.shopId} = ${shopId} and ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', null
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.shopId} = ${shopId} and ${m.memberId} = ${memberId} and ${m.transactionId} is null

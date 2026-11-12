@@ -1,4 +1,5 @@
-import { Archive } from "lucide-react";
+import { Archive, ArrowLeftRight } from "lucide-react";
+import Link from "next/link";
 import { LiveSearch } from "@/components/live-search";
 import { MemberDateFilters } from "@/components/member-date-filters";
 import { PageHead } from "@/components/page-head";
@@ -13,7 +14,7 @@ import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagina
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
-type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page", string | string[] | undefined>;
+type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 
 
 /** What the "Mouvement" filter offers, and the direction each keeps. */
@@ -60,15 +61,37 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
   const others = products.filter((p) => p.category !== "peau" && p.category !== "cuir").length;
 
+  // Coming back from the Mouvement de stock form: confirm the movements just written, in the order they were typed.
+  const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
+  const written = writtenIds.flatMap((id) => movements.filter((m) => m.id === id));
+
   return (
     <>
       <PageHead title="Inventaire" />
+      {written.length > 0 && (
+        <p className="notice" role="status">
+          Mouvement de stock inscrit :{" "}
+          {written.map((m) => `${m.delta > 0 ? "+" : "−"}${formatNumber(Math.abs(m.delta))} ${m.product}`).join(", ")}
+          .
+        </p>
+      )}
       <section className="panel">
-        <div className="eyebrow">Réserves du comptoir</div>
-        <h2>
-          <Archive size={18} style={{ verticalAlign: "-2px" }} /> Inventaire des marchandises
-        </h2>
-        <p className="muted">Entrées, sorties et quantités disponibles dans les réserves.</p>
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">Réserves du comptoir</div>
+            <h2>
+              <Archive size={18} style={{ verticalAlign: "-2px" }} /> Inventaire des marchandises
+            </h2>
+            <p className="muted" style={{ margin: "4px 0 0" }}>
+              Entrées, sorties et quantités disponibles dans les réserves.
+            </p>
+          </div>
+          <div className="move-actions">
+            <Link className="btn btn-primary" href={at("/inventaire/mouvement")}>
+              <ArrowLeftRight size={16} /> Mouvement de stock
+            </Link>
+          </div>
+        </div>
         <div className="stats">
           <div className="stat stat-accent-gold" data-testid="caisse-inventaire">
             <div className="stat-label">Septims en caisse</div>
@@ -127,6 +150,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         </MemberDateFilters>
         <MovementTable
           movements={movements}
+          highlight={written.map((m) => m.id)}
           empty={filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}
         />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages de l'historique" />
