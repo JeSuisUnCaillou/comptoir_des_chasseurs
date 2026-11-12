@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
 import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
@@ -57,7 +58,6 @@ function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?
 }
 
 function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boolean }) {
-  if (products.length === 0) return NO_MATCH;
   return (
     <div className="table-wrap">
       <table className="stack-cards">
@@ -109,48 +109,33 @@ function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boole
   );
 }
 
-type Table = "peaux" | "chasse";
-type Search = Partial<Record<Table | `${Table}-sans-tarif`, string | string[]>>;
+type Search = { q?: string | string[]; "sans-tarif"?: string | string[] };
 
-/** Whether the table shows its products without a price, asked by its button. */
-function showsUnpriced(search: Search, table: Table) {
-  return param(search[`${table}-sans-tarif`]) === "1";
-}
-
-/** Below this many results for a table's search, priced or not, its products without a price show by themselves. */
+/** Below this many results for the search, priced or not, the products without a price show by themselves. */
 const AUTO_UNPRICED_BELOW = 10;
 
-/** Whether a table's search found so few products that those without a price show without asking. */
-function autoUnpriced(search: Search, table: Table, results: number) {
-  return Boolean(param(search[table])?.trim()) && results < AUTO_UNPRICED_BELOW;
-}
-
 /**
- * Under a table, the button that shows or hides its products without a price,
- * keeping the rest of the address, and those products in a table of their own.
+ * Under the grids, the button that shows or hides the products without a price,
+ * keeping the search, and those products in a table of their own.
  * `auto`: a narrow search shows them without the button.
  */
 function Unpriced({
   search,
-  table,
   products,
   canEdit,
   auto,
 }: {
   search: Search;
-  table: Table;
   products: Product[];
   canEdit: boolean;
   auto: boolean;
 }) {
   if (auto && products.length === 0) return null;
-  const shown = auto || showsUnpriced(search, table);
+  const shown = auto || param(search["sans-tarif"]) === "1";
   const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(search)) {
-    const v = param(value);
-    if (v && key !== `${table}-sans-tarif`) query.set(key, v);
-  }
-  if (!shown) query.set(`${table}-sans-tarif`, "1");
+  const q = param(search.q);
+  if (q) query.set("q", q);
+  if (!shown) query.set("sans-tarif", "1");
   const qs = query.toString();
   return (
     <div className="unpriced">
@@ -177,7 +162,7 @@ function Unpriced({
               <thead>
                 <tr>
                   <th>Marchandise sans tarif</th>
-                  {table === "chasse" && <th>Catégorie</th>}
+                  <th>Catégorie</th>
                   <th className="num">Stock</th>
                   {canEdit && <th aria-label="Modifier" />}
                 </tr>
@@ -188,7 +173,7 @@ function Unpriced({
                     <td className="stack-title">
                       <strong>{p.name}</strong>
                     </td>
-                    {table === "chasse" && <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>}
+                    <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
                     <td className="num" data-label="Stock">
                       {formatNumber(p.stock)} {plural(p.unit, p.stock)}
                     </td>
@@ -203,6 +188,65 @@ function Unpriced({
   );
 }
 
+function HidesTable({ products, canEdit, blacksmith }: { products: Product[]; canEdit: boolean; blacksmith: number }) {
+  return (
+    <>
+      <div className="table-wrap">
+        <table className="stack-cards">
+          <thead>
+            <tr>
+              <th>Animal</th>
+              <th>Transformation</th>
+              <th className="num">Rachat / peau</th>
+              <th className="num">Vente / peau</th>
+              <th className="num">Bénéfice / lot</th>
+              {canEdit && <th aria-label="Modifier" />}
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((p) => {
+              const gain = batchMargin(p, blacksmith);
+              return (
+                <tr key={p.id}>
+                  <td className="stack-title">
+                    <strong>{p.name}</strong>
+                  </td>
+                  <td data-label="Transformation">
+                    {p.hidesPerBatch && p.leatherPerBatch
+                      ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
+                      : "—"}
+                  </td>
+                  <td className="num minus" data-label="Rachat / peau">
+                    {p.buyPrice == null ? "—" : septims(p.buyPrice)}
+                    <CitizenPrice product={p} perUnit />
+                  </td>
+                  <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
+                  <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                  <EditCell product={p} canEdit={canEdit} />
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="small muted" style={{ marginTop: 14 }}>
+        Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
+        {septims(blacksmith)}. Ils sont bruts, hors frais.
+      </p>
+    </>
+  );
+}
+
+/** A category's grid in the hunting products, with its own heading so it reads as a region. */
+function Grid({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id}>
+      <h3 id={id}>{title}</h3>
+      {children}
+    </section>
+  );
+}
+
 /** Products whose name holds the search, ignoring case. */
 function matching(products: Product[], search: string | string[] | undefined) {
   const q = searchParam(search).toLocaleLowerCase("fr");
@@ -214,12 +258,16 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
   const canEdit = isGerant(member);
-  const allHides = matching(products, search.peaux).filter((p) => p.category === "peau");
-  const hides = allHides.filter(priced);
-  const hunted = matching(products, search.chasse).filter((p) => p.category !== "peau" && p.category !== "cuir");
+  const query = searchParam(search.q);
+  // Leather has its own tiles above; every other category has a grid.
+  const hunted = matching(products, search.q).filter((p) => p.category !== "cuir");
   const leather = products.find((p) => p.category === "cuir");
+  const hides = hunted.filter((p) => p.category === "peau" && priced(p));
   const meats = hunted.filter((p) => p.category === "viande" && priced(p));
-  const goods = hunted.filter((p) => p.category !== "viande" && priced(p));
+  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
+  const unpriced = hunted.filter((p) => !priced(p));
+  const autoUnpriced = Boolean(query) && hunted.length < AUTO_UNPRICED_BELOW;
+  const noGrid = hides.length + meats.length + goods.length === 0;
   const calculable = products.filter(priced);
 
   return (
@@ -272,82 +320,36 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         </section>
       </div>
 
-      <section className="panel" aria-labelledby="peaux">
-        <div className="eyebrow">Grille du comptoir</div>
-        <h2 id="peaux">
-          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Tarifs des peaux
-        </h2>
-        <p className="muted">Prix définis par la gérance et rentabilité des transformations.</p>
-        <LiveSearch name="peaux" />
-        {hides.length === 0 ? NO_MATCH : (
-          <div className="table-wrap">
-            <table className="stack-cards">
-              <thead>
-                <tr>
-                  <th>Animal</th>
-                  <th>Transformation</th>
-                  <th className="num">Rachat / peau</th>
-                  <th className="num">Vente / peau</th>
-                  <th className="num">Bénéfice / lot</th>
-                  {canEdit && <th aria-label="Modifier" />}
-                </tr>
-              </thead>
-              <tbody>
-                {hides.map((p) => {
-                  const gain = batchMargin(p, blacksmith);
-                  return (
-                    <tr key={p.id}>
-                      <td className="stack-title">
-                        <strong>{p.name}</strong>
-                      </td>
-                      <td data-label="Transformation">
-                        {p.hidesPerBatch && p.leatherPerBatch
-                          ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
-                          : "—"}
-                      </td>
-                      <td className="num minus" data-label="Rachat / peau">
-                        {p.buyPrice == null ? "—" : septims(p.buyPrice)}
-                        <CitizenPrice product={p} perUnit />
-                      </td>
-                      <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
-                      <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
-                      <EditCell product={p} canEdit={canEdit} />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="small muted" style={{ marginTop: 14 }}>
-          Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
-          {septims(blacksmith)}. Ils sont bruts, hors frais.
-        </p>
-        <Unpriced
-          search={search}
-          table="peaux"
-          products={allHides.filter((p) => !priced(p))}
-          canEdit={canEdit}
-          auto={autoUnpriced(search, "peaux", allHides.length)}
-        />
-      </section>
-
       <section className="panel" aria-labelledby="chasse">
         <div className="eyebrow">Produits de chasse</div>
-        <h2 id="chasse">Viandes, venaison et ressources</h2>
-        <p className="muted">Prix de rachat, prix de vente et tarifs de gros.</p>
-        <LiveSearch name="chasse" />
-        <h3>Viandes et venaison</h3>
-        <GoodsTable products={meats} canEdit={canEdit} />
-        <h3>Autres ressources</h3>
-        <GoodsTable products={goods} canEdit={canEdit} />
-        <Unpriced
-          search={search}
-          table="chasse"
-          products={hunted.filter((p) => !priced(p))}
-          canEdit={canEdit}
-          auto={autoUnpriced(search, "chasse", hunted.length)}
-        />
+        <h2 id="chasse">
+          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Grille du comptoir
+        </h2>
+        <p className="muted">Prix de rachat et de vente, tarifs de gros et rentabilité des transformations.</p>
+        <LiveSearch />
+        {/* A search shows only the categories it finds something in. */}
+        {hides.length > 0 && (
+          <Grid id="grille-peaux" title="Peaux">
+            <HidesTable products={hides} canEdit={canEdit} blacksmith={blacksmith} />
+          </Grid>
+        )}
+        {meats.length > 0 && (
+          <Grid id="grille-viandes" title="Viandes et venaison">
+            <GoodsTable products={meats} canEdit={canEdit} />
+          </Grid>
+        )}
+        {goods.length > 0 && (
+          <Grid id="grille-ressources" title="Autres ressources">
+            <GoodsTable products={goods} canEdit={canEdit} />
+          </Grid>
+        )}
+        {noGrid &&
+          (hunted.length === 0 ? (
+            NO_MATCH
+          ) : autoUnpriced ? null : (
+            <p className="muted">Aucune marchandise avec un tarif ne correspond.</p>
+          ))}
+        <Unpriced search={search} products={unpriced} canEdit={canEdit} auto={autoUnpriced} />
       </section>
     </>
   );

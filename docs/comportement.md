@@ -189,16 +189,22 @@ Dans l'ordre de la page :
 1. Les tarifs du cuir.
 2. Le calculateur, réglé sur le cuir à l'ouverture ; la marchandise se
    cherche en tapant, parmi toutes celles qui ont un prix.
-3. Deux tables, peaux puis viandes et ressources, chacune avec sa recherche
-   par nom qui filtre pendant qu'on tape.
+3. La grille du comptoir (produits de chasse) : une seule recherche par nom,
+   qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
+   (transformation et bénéfice par lot), viandes et venaison, autres
+   ressources. Le cuir n'y est pas : il a ses tuiles en haut.
 
-Dans les tables :
+Dans la grille :
 
 - seules les marchandises qui ont un prix sont listées ;
-- un bouton sous chaque table montre ses marchandises sans tarif dans une
-  table à part, sous le bouton, rangée par nom ;
-- quand la recherche d'une table trouve moins de 10 marchandises (avec ou
-  sans tarif), ses sans tarif s'affichent d'office, sans bouton ;
+- une recherche ne montre que les catégories où elle trouve une marchandise
+  avec un prix ; si elle ne trouve rien du tout, un seul « Aucune marchandise
+  ne correspond. », sans catégorie ;
+- un bouton sous les grilles montre les marchandises sans tarif, toutes
+  catégories, dans une table à part avec leur catégorie, sous le bouton,
+  rangée par nom ;
+- quand la recherche trouve moins de 10 marchandises (avec ou sans tarif),
+  les sans tarif s'affichent d'office, sans bouton ;
 - pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
   marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
 

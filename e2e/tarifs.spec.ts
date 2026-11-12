@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
 
 /** Picks a product in the calculator by typing its name and clicking it in the list. */
@@ -8,13 +8,22 @@ async function pick(calc: Locator, name: string) {
   await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue(name);
 }
 
+/** The grids of the hunting products, by category, in page order. */
+function grids(page: Page) {
+  return {
+    peaux: page.getByRole("region", { name: "Peaux", exact: true }),
+    viandes: page.getByRole("region", { name: "Viandes et venaison" }),
+    ressources: page.getByRole("region", { name: "Autres ressources" }),
+  };
+}
+
 test.beforeEach(async ({ page }) => {
   await loginAsGerant(page);
   await page.getByRole("link", { name: "Tarifs" }).click();
 });
 
 test("la grille des peaux affiche transformation et bénéfice par lot", async ({ page }) => {
-  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
+  const { peaux } = grids(page);
   const biche = peaux.getByRole("row", { name: /Biche/ });
   await expect(biche).toContainText("4 peaux → 2 cuirs");
   await expect(biche).toContainText("+4 septims");
@@ -24,11 +33,11 @@ test("la grille des peaux affiche transformation et bénéfice par lot", async (
 });
 
 test("les ressources affichent un bénéfice sur des lots entiers", async ({ page }) => {
-  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
-  await expect(chasse.getByRole("row", { name: /Flèches d'acier/ })).toContainText(
+  const { viandes, ressources } = grids(page);
+  await expect(ressources.getByRole("row", { name: /Flèches d'acier/ })).toContainText(
     "+85 septims pour 880 unités",
   );
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toContainText(
+  await expect(viandes.getByRole("row", { name: /^Venaison/ })).toContainText(
     "Dès 200 : 2 septims / unité",
   );
 });
@@ -48,65 +57,83 @@ test("le calculateur donne rachat, vente et transformation", async ({ page }) =>
   await expect(calc.getByTestId("calc-benefice")).toHaveText("+200 septims");
 });
 
-test("chaque table a sa recherche, qui filtre pendant qu'on tape", async ({ page }) => {
-  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
-  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
+test("une seule recherche pour toutes les grilles, qui ne montre que les catégories trouvées", async ({ page }) => {
+  const block = page.getByRole("region", { name: "Grille du comptoir" });
+  const { peaux, viandes, ressources } = grids(page);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(viandes.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(ressources.getByRole("row", { name: /Flèches d'acier/ })).toBeVisible();
 
-  const searchPeaux = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
-  const searchChasse = chasse.getByRole("searchbox", { name: "Chercher une marchandise" });
+  // One search bar for the whole block, above the grids, peaux first.
+  const search = block.getByRole("searchbox", { name: "Chercher une marchandise" });
+  await expect(page.getByRole("searchbox")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
-  await expect(searchPeaux).toHaveAttribute("placeholder", "Chercher une marchandise");
-  // Each bar takes at least half of its panel's width, the table's.
-  const bar = (await searchPeaux.boundingBox())!;
-  const table = (await peaux.getByRole("table").boundingBox())!;
-  expect(bar.width).toBeGreaterThanOrEqual(table.width / 2);
-  const panel = (await peaux.boundingBox())!;
-  // Leather and the calculator come first, then the tables.
+  await expect(search).toHaveAttribute("placeholder", "Chercher une marchandise");
+  await expect(block).toContainText("Produits de chasse");
+  const bar = (await search.boundingBox())!;
+  const [p, v, r] = [(await peaux.boundingBox())!, (await viandes.boundingBox())!, (await ressources.boundingBox())!];
+  expect(bar.y).toBeLessThan(p.y);
+  expect(p.y).toBeLessThan(v.y);
+  expect(v.y).toBeLessThan(r.y);
+  // The bar takes at least half of the grids' width.
+  expect(bar.width).toBeGreaterThanOrEqual(p.width / 2);
+  // Leather and the calculator come first, then the grids.
   const cuir = (await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox())!;
   const calcul = (await page.getByRole("region", { name: "Calculateur des prix" }).boundingBox())!;
-  expect(cuir.y).toBeLessThan(panel.y);
-  expect(calcul.y).toBeLessThan(panel.y);
+  expect(cuir.y).toBeLessThan(p.y);
+  expect(calcul.y).toBeLessThan(p.y);
 
-  // The hides search filters only the hides.
-  await searchPeaux.pressSequentially("ours");
-  await expect(page).toHaveURL(/\/tarifs\?peaux=ours$/);
+  // A hide: only the Peaux grid stays.
+  await search.pressSequentially("ours");
+  await expect(page).toHaveURL(/\/tarifs\?q=ours$/);
   await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
   await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(viandes).toHaveCount(0);
+  await expect(ressources).toHaveCount(0);
+  await expect(page.getByText("Aucune marchandise ne correspond.")).toHaveCount(0);
   // The calculator still offers every priced product.
   const calc = page.getByTestId("calculateur");
   await calc.getByRole("combobox", { name: "Marchandise" }).click();
   await expect(calc.getByRole("option", { name: "Biche", exact: true })).toHaveCount(1);
   await calc.getByRole("combobox", { name: "Marchandise" }).press("Escape");
 
-  // The other search filters the meats and resources, and both hold together.
-  await searchChasse.pressSequentially("venaison");
-  await expect(page).toHaveURL(/\/tarifs\?peaux=ours&chasse=venaison$/);
-  await expect(chasse.getByRole("row", { name: /^Venaison/ })).toBeVisible();
-  await expect(chasse.getByText("Aucune marchandise ne correspond.")).toHaveCount(1);
-  await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
-  await expect(peaux.getByRole("row", { name: /Biche/ })).toHaveCount(0);
+  // A meat: only its grid.
+  await search.fill("venaison");
+  await expect(page).toHaveURL(/\/tarifs\?q=venaison$/);
+  await expect(viandes.getByRole("row", { name: /^Venaison/ })).toBeVisible();
+  await expect(peaux).toHaveCount(0);
+  await expect(ressources).toHaveCount(0);
 
-  await searchPeaux.fill("introuvable-xyz");
-  await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
-  await searchPeaux.clear();
-  await expect(page).toHaveURL(/\/tarifs\?chasse=venaison$/);
-  await searchChasse.clear();
+  // Nothing found: one message, no category.
+  await search.fill("introuvable-xyz");
+  await expect(block.getByText("Aucune marchandise ne correspond.")).toHaveCount(1);
+  await expect(block.getByRole("heading", { level: 3 })).toHaveCount(0);
+  await search.clear();
   await expect(page).toHaveURL(/\/tarifs$/);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
+  await expect(ressources).toBeVisible();
 
   // Leaving the search by the menu or the back button shows the URL's query in the field.
-  await searchPeaux.pressSequentially("biche");
-  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
+  await search.pressSequentially("biche");
+  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
   await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
   await expect(peaux.getByRole("row", { name: /^Ours 4 peaux/ })).toBeVisible();
-  await expect(searchPeaux).toHaveValue("");
+  await expect(search).toHaveValue("");
   await page.goBack();
-  await expect(page).toHaveURL(/\/tarifs\?peaux=biche$/);
-  await expect(searchPeaux).toHaveValue("biche");
+  await expect(page).toHaveURL(/\/tarifs\?q=biche$/);
+  await expect(search).toHaveValue("biche");
+});
+
+test("une recherche montre chaque catégorie où elle trouve, et seulement celles-là", async ({ page }) => {
+  const base = uniqueName("Troll");
+  await createProduct(`${base} peau`);
+  await createProduct(`${base} gigot`, { category: "viande", unit: "pièce" });
+  await page.goto(`/tarifs?q=${encodeURIComponent(base)}`);
+  const { peaux, viandes, ressources } = grids(page);
+  await expect(peaux.getByRole("row", { name: new RegExp(`${base} peau`) })).toBeVisible();
+  await expect(viandes.getByRole("row", { name: new RegExp(`${base} gigot`) })).toBeVisible();
+  await expect(ressources).toHaveCount(0);
 });
 
 test("le calculateur a le cuir choisi par défaut", async ({ page }) => {
@@ -140,7 +167,7 @@ test("le choix de la marchandise du calculateur se cherche en tapant", async ({ 
   await calc.getByLabel("Quantité").fill("200");
   await expect(calc.getByTestId("calc-vente")).toHaveText("400 septims");
   // The tables are not filtered by it.
-  await expect(page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: /Biche/ })).toBeVisible();
+  await expect(grids(page).peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
 
   await box.fill("introuvable-xyz");
   await expect(calc.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
@@ -149,7 +176,7 @@ test("le choix de la marchandise du calculateur se cherche en tapant", async ({ 
   expect(before).not.toBe("");
 });
 
-test("chaque liste montre ses marchandises sans tarif sur demande, dans une table sous son bouton", async ({ page }) => {
+test("les marchandises sans tarif de toutes les catégories se montrent sur demande, sous les grilles", async ({ page }) => {
   const base = uniqueName("Sans tarif");
   const [peauZ, peauA] = [`${base} zibeline`, `${base} aurochs`];
   const ressource = `${base} résine`;
@@ -158,53 +185,45 @@ test("chaque liste montre ses marchandises sans tarif sur demande, dans une tabl
   await createProduct(ressource, { buyPrice: null, sellPrice: null, category: "ressource", unit: "pièce" });
   // The beforeEach click may still be on its way: open the page itself.
   await page.goto("/tarifs");
-  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
-  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
-  const unpricedPeaux = peaux.getByRole("table", { name: "Marchandises sans tarif" });
-  const unpricedChasse = chasse.getByRole("table", { name: "Marchandises sans tarif" });
+  const block = page.getByRole("region", { name: "Grille du comptoir" });
+  const unpriced = block.getByRole("table", { name: "Marchandises sans tarif" });
+  const { peaux, ressources } = grids(page);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
-  // Hidden by default.
+  // Hidden by default, one button for the whole block.
   await expect(page.getByText(base)).toHaveCount(0);
-  await expect(unpricedPeaux).toHaveCount(0);
+  await expect(unpriced).toHaveCount(0);
+  const show = block.getByRole("link", { name: "Voir les marchandises sans tarif" });
+  await expect(show).toHaveCount(1);
 
-  // The button sits under its list, and spins while the products come.
-  const showPeaux = peaux.getByRole("link", { name: "Voir les marchandises sans tarif" });
-  const table = (await peaux.getByRole("table").boundingBox())!;
-  expect((await showPeaux.boundingBox())!.y).toBeGreaterThan(table.y + table.height);
+  // The button sits under the last grid, and spins while the products come.
+  const last = (await ressources.boundingBox())!;
+  expect((await show.boundingBox())!.y).toBeGreaterThan(last.y + last.height - 1);
   let release!: () => void;
   const held = new Promise<void>((resolve) => (release = resolve));
-  await page.route(/peaux-sans-tarif=1/, async (route) => {
+  await page.route(/sans-tarif=1/, async (route) => {
     await held;
     await route.continue();
   });
-  await showPeaux.click();
-  await expect(showPeaux.getByTestId("sans-tarif-pending")).toBeVisible();
+  await show.click();
+  await expect(show.getByTestId("sans-tarif-pending")).toBeVisible();
   release();
 
-  // They come in a table of their own under the button, by name; the priced table doesn't hold them.
-  await expect(page).toHaveURL(/\/tarifs\?peaux-sans-tarif=1$/);
-  await expect(unpricedPeaux.getByRole("row", { name: new RegExp(base) })).toHaveText([
+  // They come in a table of their own under the button, by name, with their category.
+  await expect(page).toHaveURL(/\/tarifs\?sans-tarif=1$/);
+  await expect(unpriced.getByRole("row", { name: new RegExp(base) })).toHaveText([
     new RegExp(peauA),
+    new RegExp(ressource),
     new RegExp(peauZ),
   ]);
-  const button = (await peaux.getByRole("link", { name: "Masquer les marchandises sans tarif" }).boundingBox())!;
-  expect((await unpricedPeaux.boundingBox())!.y).toBeGreaterThan(button.y);
-  await expect(peaux.getByRole("table").first().getByText(base)).toHaveCount(0);
-  await expect(unpricedChasse).toHaveCount(0);
+  await expect(unpriced.getByRole("row", { name: new RegExp(peauA) })).toContainText("Peaux");
+  await expect(unpriced.getByRole("row", { name: new RegExp(ressource) })).toContainText("Ressources");
+  const button = (await block.getByRole("link", { name: "Masquer les marchandises sans tarif" }).boundingBox())!;
+  expect((await unpriced.boundingBox())!.y).toBeGreaterThan(button.y);
+  await expect(peaux.getByText(base)).toHaveCount(0);
 
-  // The other list has its own, and both choices hold together.
-  await chasse.getByRole("link", { name: "Voir les marchandises sans tarif" }).click();
-  await expect(page).toHaveURL(/peaux-sans-tarif=1&chasse-sans-tarif=1$/);
-  await expect(unpricedChasse.getByRole("row", { name: new RegExp(ressource) })).toContainText("Ressource");
-
-  // Hiding one keeps the other.
-  await peaux.getByRole("link", { name: "Masquer les marchandises sans tarif" }).click();
-  await expect(page).toHaveURL(/\/tarifs\?chasse-sans-tarif=1$/);
-  await expect(unpricedPeaux).toHaveCount(0);
-  await expect(unpricedChasse.getByRole("row", { name: new RegExp(ressource) })).toBeVisible();
-  await chasse.getByRole("link", { name: "Masquer les marchandises sans tarif" }).click();
+  await block.getByRole("link", { name: "Masquer les marchandises sans tarif" }).click();
   await expect(page).toHaveURL(/\/tarifs$/);
-  await expect(unpricedChasse).toHaveCount(0);
+  await expect(unpriced).toHaveCount(0);
 });
 
 test("une recherche à moins de 10 résultats montre d'office les marchandises sans tarif", async ({ page }) => {
@@ -215,7 +234,7 @@ test("une recherche à moins de 10 résultats montre d'office les marchandises s
   await createProduct(`${many} sans tarif`, { buyPrice: null, sellPrice: null });
   for (let i = 1; i <= 9; i++) await createProduct(`${many} avec tarif ${i}`);
   await page.goto("/tarifs");
-  const peaux = page.getByRole("region", { name: /Tarifs des peaux/ });
+  const peaux = page.getByRole("region", { name: "Grille du comptoir" });
   const unpriced = peaux.getByRole("table", { name: "Marchandises sans tarif" });
   const search = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
 
@@ -237,6 +256,12 @@ test("une recherche à moins de 10 résultats montre d'office les marchandises s
   await search.fill("introuvable-xyz");
   await expect(peaux.getByText("Aucune marchandise ne correspond.")).toBeVisible();
   await expect(peaux.getByText("Aucune marchandise sans tarif.")).toHaveCount(0);
+
+  // A search that finds only products without a price shows them, and no « aucun résultat ».
+  await search.fill(`${few} sans`);
+  await expect(unpriced.getByRole("row", { name: new RegExp(`${few} sans tarif`) })).toBeVisible();
+  await expect(peaux.getByRole("heading", { level: 3 })).toHaveCount(0);
+  await expect(peaux.getByText(/Aucune marchandise/)).toHaveCount(0);
 });
 
 test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tarifs", async ({ page, browser }) => {
@@ -244,7 +269,7 @@ test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tari
   await createProduct(name, { buyPrice: 2, sellPrice: 3, category: "viande", unit: "pièce" });
   // The beforeEach click may still be on its way: open the page itself.
   await page.goto("/tarifs");
-  const chasse = page.getByRole("region", { name: /Viandes, venaison et ressources/ });
+  const chasse = grids(page).viandes;
   const row = chasse.getByRole("row", { name: new RegExp(name) });
   await expect(row).toContainText("3 septims");
 
@@ -258,7 +283,7 @@ test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tari
 
   // The hides have their pencil too.
   await expect(
-    page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: /Biche/ }).getByRole("link", { name: "Modifier Biche" }),
+    grids(page).peaux.getByRole("row", { name: /Biche/ }).getByRole("link", { name: "Modifier Biche" }),
   ).toBeVisible();
 
   // Opened from Gérer les tarifs, saving still goes back there.
