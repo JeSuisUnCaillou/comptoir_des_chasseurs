@@ -16,7 +16,7 @@ test.use(PHONE);
 
 /** The page does not scroll sideways: everything fits the screen's width. */
 async function expectNoSideScroll(page: Page) {
-  // On failure, names the deepest element that passes the screen's right edge.
+  // On failure, names the first element that passes the screen's right edge while its parent does not.
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -24,7 +24,9 @@ async function expectNoSideScroll(page: Page) {
         if (document.documentElement.scrollWidth <= width) return "";
         const past = [...document.querySelectorAll("body *")].filter(
           (el) =>
-            el.getBoundingClientRect().right > width + 1 && el.children.length === 0 && !el.closest(".nav, .table-wrap"),
+            el.getBoundingClientRect().right > width + 1 &&
+            el.parentElement!.getBoundingClientRect().right <= width + 1 &&
+            !el.closest(".nav, .table-wrap"),
         );
         const el = past[0];
         return el ? `${el.tagName.toLowerCase()}.${[...el.classList].join(".")} « ${el.textContent?.trim()} »` : "?";
@@ -246,4 +248,20 @@ test("au téléphone, les champs des filtres sont alignés et un bouton de page 
   const button = await page.getByRole("link", { name: "Gérer les tarifs" }).boundingBox();
   const panel = await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox();
   expect(panel!.y - (button!.y + button!.height)).toBeGreaterThanOrEqual(20);
+});
+
+test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
+  test.use({ viewport: { width: 1000, height: 800 }, isMobile: false, hasTouch: false });
+
+  test("les boutons du Grand livre passent deux par deux, sans déborder ni coller aux tuiles", async ({ page }) => {
+    await loginAsGerant(page);
+    await expectNoSideScroll(page);
+    const main = page.getByRole("main");
+    for (const name of ["Nouvel achat", "Nouvelle vente", "Mouvement de caisse", "Mouvement de stock"]) {
+      await expect(main.getByRole("link", { name, exact: true })).toBeInViewport({ ratio: 1 });
+    }
+    const last = await main.getByRole("link", { name: "Mouvement de stock", exact: true }).boundingBox();
+    const tile = await page.getByText("Trésorerie actuelle").boundingBox();
+    expect(tile!.y - (last!.y + last!.height)).toBeGreaterThanOrEqual(12);
+  });
 });

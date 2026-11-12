@@ -714,6 +714,8 @@ td.row-action .icon-btn {
   align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
+  /* Room between a panel's title (and its buttons) and what follows: the till's tiles, a list. */
+  margin-bottom: 16px;
 }
 
 .cols {
@@ -1627,12 +1629,26 @@ tr.fresh td {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
     flex: 1 1 100%;
-    margin-bottom: 14px;
   }
 
   .move-actions .btn {
     white-space: normal;
     padding: 10px 12px;
+  }
+}
+
+/* A note under tiles (the activity's stock left aside) does not touch them. */
+.stats + p {
+  margin-top: 12px;
+}
+
+/* Between a phone and a wide screen, the Grand livre's four buttons no longer
+   fit on one line beside the menu: two by two, under the greeting. */
+@media (max-width: 1200px) {
+  .move-actions:has(> :nth-child(3)) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1 1 100%;
   }
 }
 
