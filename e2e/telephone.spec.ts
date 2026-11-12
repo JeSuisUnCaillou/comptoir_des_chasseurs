@@ -23,7 +23,7 @@ async function expectNoSideScroll(page: Page) {
         if (document.documentElement.scrollWidth <= width) return "";
         const past = [...document.querySelectorAll("body *")].filter(
           (el) =>
-            el.getBoundingClientRect().right > width + 1 && el.children.length === 0 && !el.closest("nav, .table-wrap"),
+            el.getBoundingClientRect().right > width + 1 && el.children.length === 0 && !el.closest(".nav, .table-wrap"),
         );
         const el = past[0];
         return el ? `${el.tagName.toLowerCase()}.${[...el.classList].join(".")} « ${el.textContent?.trim()} »` : "?";
