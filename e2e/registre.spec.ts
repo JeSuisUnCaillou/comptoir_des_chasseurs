@@ -447,6 +447,58 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await table.getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /Annuler/ }).click();
   await expect(table.getByRole("row").filter({ hasText: reason })).toContainText("Annulée");
   await expect.poll(movementsTill).toBe(tillBefore + 50);
+
+  // Septims not yet in the coffer, or not yet taken out: shown, not counted.
+  const wages = uniqueName("Salaires");
+  const bonus = uniqueName("Apport du gérant");
+  for (const [direction, amount, motif, box] of [
+    ["Sortie d'argent", "8", wages, "Pas encore sorti de la caisse"],
+    ["Entrée d'argent", "25", bonus, "Pas encore mis en caisse"],
+  ] as const) {
+    await page.goto("/achat-vente/caisse");
+    await form.getByRole("radio", { name: direction }).check();
+    await form.getByLabel("Montant (septims)").fill(amount);
+    await form.getByLabel("Motif").fill(motif);
+    await form.getByLabel(box).check();
+    await expect(preview).toContainText("inchangée tant que l'argent n'est pas en caisse");
+    await expect(preview).not.toContainText("après");
+    await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+    await expect(page.getByRole("status")).toContainText(`Mouvement inscrit : ${motif}`);
+    await expect(page.getByRole("status")).toContainText("pas encore en caisse.");
+  }
+  await page.goto("/achat-vente?type=caisse");
+  const wagesRow = table.getByRole("row").filter({ hasText: wages });
+  const bonusRow = table.getByRole("row").filter({ hasText: bonus });
+  await expect(wagesRow).toContainText(/−8 septims\s*Pas encore en caisse/);
+  await expect(bonusRow).toContainText(/\+25 septims\s*Pas encore en caisse/);
+  expect(await movementsTill()).toBe(tillBefore + 50);
+  await expect(page.getByTestId("en-attente")).toContainText("+17 septims");
+  await expect(page.getByTestId("en-attente")).toContainText("25 septims à déposer · 8 septims à prendre");
+
+  // Its author says the septims are in, then out: each one counts from then on.
+  let question = "";
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
+  const settleBonus = bonusRow.getByRole("button", { name: /^Mettre en caisse/ });
+  await expect(settleBonus).toHaveText("Mettre 25 septims en caisse");
+  await expect(settleBonus).toHaveAccessibleName(/^Mettre en caisse les 25 septims du mouvement de caisse n°\d+$/);
+  await settleBonus.click();
+  await expect.poll(() => question).toMatch(/^Tu as bien mis les 25 septims du mouvement de caisse n°\d+ dans la caisse \?$/);
+  await expect(bonusRow).not.toContainText("Pas encore en caisse");
+  await expect.poll(movementsTill).toBe(tillBefore + 75);
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
+  const settleWages = wagesRow.getByRole("button", { name: /^Sortir de la caisse/ });
+  await expect(settleWages).toHaveText("Sortir 8 septims de la caisse");
+  await settleWages.click();
+  await expect.poll(() => question).toMatch(/^Tu as bien pris les 8 septims du mouvement de caisse n°\d+ dans la caisse \?$/);
+  await expect(wagesRow).not.toContainText("Pas encore en caisse");
+  await expect.poll(movementsTill).toBe(tillBefore + 67);
+  await expect(page.getByTestId("en-attente")).toHaveCount(0);
 });
 
 test("le grand livre montre la trésorerie, les ventes, les rachats et leur solde", async ({ page, browser }) => {

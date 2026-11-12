@@ -80,6 +80,7 @@ export async function recordCashMovement(
   const label = text(formData, "label", 100);
   const counterparty = optionalText(formData, "counterparty", 100);
   const notes = optionalText(formData, "notes", 500);
+  const tillPending = checked(formData, "tillPending");
 
   if (kind !== "entree" && kind !== "sortie") {
     return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
@@ -89,14 +90,14 @@ export async function recordCashMovement(
   }
   if (!label) return { ok: false, message: "Précise la raison." };
 
-  const id = await recordCashLine(member, { kind, label, amount, counterparty, notes });
+  const id = await recordCashLine(member, { kind, label, amount, counterparty, notes, tillPending });
   revalidate();
   redirect(`/achat-vente?inscrit=${id}`);
 }
 
 /**
- * The septims of a sale or buyback waiting for the till are now in it, or out
- * of it: every line of the same entry counts in the till from now on.
+ * The septims of a sale, buyback or cash movement waiting for the till are now
+ * in it, or out of it: every line of the same entry counts in the till from now on.
  * Gérants, or the member who wrote it.
  */
 export async function settleTransaction(

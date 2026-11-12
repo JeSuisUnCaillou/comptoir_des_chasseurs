@@ -95,7 +95,15 @@ export async function recordLines(
 /** Money in or out of the till alone, with no merchandise. Returns the new line's id. */
 export async function recordCashLine(
   member: Actor,
-  values: { kind: "entree" | "sortie"; label: string; amount: number; counterparty: string | null; notes: string | null },
+  values: {
+    kind: "entree" | "sortie";
+    label: string;
+    amount: number;
+    counterparty: string | null;
+    notes: string | null;
+    /** The member has not yet put the septims in the till, or taken them out. */
+    tillPending: boolean;
+  },
 ) {
   const [line] = await getDb()
     .insert(schema.transactions)

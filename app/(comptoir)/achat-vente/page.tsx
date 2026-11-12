@@ -58,7 +58,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
     tillTotals(member.shopId, filter),
     pendingTotals(member.shopId, filter),
   ]);
-  const anyWaiting = waiting.sales > 0 || waiting.buybacks > 0;
+  const anyWaiting = waiting.sales + waiting.inflows + waiting.buybacks + waiting.outflows > 0;
   const filtered = Boolean(operation || employe || du || au);
   // Coming back from the entry form: confirm the lines just written, in the order they were typed.
   const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
@@ -97,7 +97,8 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           {isCashKind(first.kind) ? (
             <>
               Mouvement inscrit : {first.label},{" "}
-              {septims(signedAmount(first.kind, first.amount), { signed: true })}.
+              {septims(signedAmount(first.kind, first.amount), { signed: true })}
+              {first.tillPending ? ", pas encore en caisse" : ""}.
             </>
           ) : (
             <>
@@ -132,7 +133,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
               <div className="stat-label">Pas encore en caisse</div>
               <div className="stat-value muted">{septims(waiting.balance, { signed: true })}</div>
               <div className="small muted">
-                {septims(waiting.sales)} à déposer · {septims(waiting.buybacks)} à prendre, pas encore dans la caisse
+                {septims(waiting.sales + waiting.inflows)} à déposer · {septims(waiting.buybacks + waiting.outflows)} à prendre, pas encore dans la caisse
               </div>
             </div>
           )}

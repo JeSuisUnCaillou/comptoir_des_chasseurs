@@ -14,8 +14,10 @@ export function CashMovementForm({ balance }: { balance: number }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordCashMovement, null);
   const [kind, setKind] = useState<"entree" | "sortie" | "">("");
   const [amount, setAmount] = useState("");
+  const [tillPending, setTillPending] = useState(false);
   const value = Number(amount);
-  const after = kind && amount !== "" && Number.isInteger(value) && value > 0
+  // Septims not yet in the till, or not yet out of it, leave it as it is.
+  const after = !tillPending && kind && amount !== "" && Number.isInteger(value) && value > 0
     ? balance + signedAmount(kind, value)
     : null;
 
@@ -76,6 +78,18 @@ export function CashMovementForm({ balance }: { balance: number }) {
           <label htmlFor="c-notes">Notes (facultatif)</label>
           <textarea id="c-notes" name="notes" rows={3} maxLength={500} />
         </div>
+        <div className="field full">
+          <label className="check">
+            <input
+              type="checkbox"
+              name="tillPending"
+              checked={tillPending}
+              onChange={(e) => setTillPending(e.target.checked)}
+            />{" "}
+            {kind === "sortie" ? "Pas encore sorti de la caisse" : "Pas encore mis en caisse"}
+          </label>
+          <span className="small muted">Tu pourras le valider plus tard depuis le registre.</span>
+        </div>
       </div>
       <p className="small muted" data-testid="apercu-caisse">
         Caisse actuelle : {septims(balance)}
@@ -85,6 +99,7 @@ export function CashMovementForm({ balance }: { balance: number }) {
             → après : <strong className={after >= 0 ? "plus" : "minus"}>{septims(after)}</strong>
           </>
         )}
+        {tillPending && " (inchangée tant que l'argent n'est pas en caisse)"}
       </p>
       {state && (
         <p className="notice error" role="alert">

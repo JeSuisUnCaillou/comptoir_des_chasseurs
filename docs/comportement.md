@@ -122,11 +122,13 @@ garde le numéro de sa ligne, pour le distinguer de ceux faits à la main.
 
 ### Pas encore en caisse
 
-Pour qui n'a pas encore déposé (vente) ou pris (achat) les septims :
+Pour qui n'a pas encore déposé (vente, entrée d'argent) ou pris (achat,
+sortie d'argent) les septims :
 
-1. Il coche « Pas encore mis en caisse » (vente) ou « Pas encore sorti de la
-   caisse » (achat). Toute l'écriture porte le statut *Pas encore en
-   caisse* : le stock bouge, mais les septims ne comptent pas dans la caisse.
+1. Il coche « Pas encore mis en caisse » (vente, entrée) ou « Pas encore
+   sorti de la caisse » (achat, sortie). Toute l'écriture porte le statut
+   *Pas encore en caisse* : le stock bouge, mais les septims ne comptent pas
+   dans la caisse.
 2. Une tuile du registre donne leur total ; le filtre Opération « Pas encore
    en caisse » les retrouve.
 3. Plus tard, l'auteur ou un gérant clique sur le bouton de l'écriture, dans
@@ -151,6 +153,9 @@ Pour qui n'a pas encore déposé (vente) ou pris (achat) les septims :
 - Fait entrer ou sortir des septims sans marchandise (salaires, apport du
   gérant…).
 - Champs : sens, montant, motif ; l'aperçu de la caisse après le mouvement.
+- Une case « Pas encore mis en caisse » ou « Pas encore sorti de la caisse »,
+  comme pour un achat ou une vente (voir [Pas encore en
+  caisse](#pas-encore-en-caisse)).
 - Tout membre peut en inscrire.
 - Dans le registre : badge *Caisse* et son propre filtre.
 
