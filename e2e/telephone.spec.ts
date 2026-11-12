@@ -1,5 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, loginAsGerant, pickProduct, uniqueName } from "./helpers";
+import {
+  createMember,
+  createProduct,
+  loginAs,
+  loginAsGerant,
+  memberRow,
+  pickProduct,
+  uniqueName,
+} from "./helpers";
 
 // A small phone, as a member who manages the comptoir while playing.
 const PHONE = { viewport: { width: 360, height: 780 }, isMobile: true, hasTouch: true };
@@ -100,5 +108,86 @@ test("au téléphone, les tarifs d'une peau se lisent sans faire glisser le tabl
   await expect(row.getByText("5 septims")).toBeInViewport({ ratio: 1 });
   await expect(row.getByText("9 septims")).toBeInViewport({ ratio: 1 });
   await expect(row.getByRole("link", { name: `Modifier ${hide}` })).toBeInViewport({ ratio: 1 });
+  await expectNoSideScroll(page);
+});
+
+test("au téléphone, l'activité d'un membre et l'historique du stock se lisent en cartes", async ({ browser }) => {
+  const product = uniqueName("Peau de skeever");
+  const reason = uniqueName("Loyer de la cabane");
+  await createProduct(product, { stock: 5, sellPrice: 3 });
+  const username = uniqueName("brynjolf").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe");
+  const page = await (await browser.newContext(PHONE)).newPage();
+  await loginAs(page, username, "mot-de-passe");
+
+  await page.goto("/achat-vente/vente");
+  const sale = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(sale, product);
+  await sale.getByLabel("Quantité").fill("2");
+  await sale.getByLabel("Pas encore mis en caisse").check();
+  await sale.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
+
+  await page.goto("/achat-vente/caisse");
+  const cash = page.getByRole("region", { name: "Inscrire un mouvement de caisse" });
+  await cash.getByRole("radio", { name: "Sortie d'argent" }).check();
+  await cash.getByLabel("Montant (septims)").fill("37");
+  await cash.getByLabel("Motif").fill(reason);
+  await cash.getByRole("button", { name: "Inscrire le mouvement" }).click();
+  await expect(page.getByRole("status")).toContainText(reason);
+
+  // The member's own activity: each line whole on screen, with its button.
+  await page.getByTestId("member-name").click();
+  const activity = page.getByTestId("activite");
+  const sold = activity.getByRole("row").filter({ hasText: product });
+  await sold.scrollIntoViewIfNeeded();
+  for (const part of [
+    sold.getByText(product, { exact: true }),
+    sold.getByText("+6 septims"),
+    sold.getByRole("button", { name: /^Mettre en caisse/ }),
+  ]) {
+    await expect(part).toBeInViewport({ ratio: 1 });
+  }
+  const paid = activity.getByRole("row").filter({ hasText: reason });
+  await paid.scrollIntoViewIfNeeded();
+  await expect(paid.getByText("−37 septims")).toBeInViewport({ ratio: 1 });
+  await expectNoSideScroll(page);
+
+  // The stock history: the movement, the stock after it and who wrote it.
+  await page.goto("/inventaire");
+  const moved = page.getByTestId("historique").getByRole("row").filter({ hasText: product });
+  await moved.scrollIntoViewIfNeeded();
+  for (const part of [moved.getByText("−2"), moved.getByText("3 peaux"), moved.getByText(username)]) {
+    await expect(part).toBeInViewport({ ratio: 1 });
+  }
+  await expectNoSideScroll(page);
+});
+
+test("au téléphone, un gérant gère un compte et une marchandise sans faire glisser", async ({ page }) => {
+  const username = uniqueName("lydia").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe");
+  const product = uniqueName("Corne de mammouth");
+  await createProduct(product, { category: "ressource", unit: "corne" });
+  await loginAsGerant(page);
+
+  const row = await memberRow(page, username);
+  await row.scrollIntoViewIfNeeded();
+  for (const part of [
+    row.getByLabel("Nom affiché"),
+    row.getByLabel("Rôle"),
+    row.getByRole("button", { name: "Enregistrer" }),
+    row.getByLabel("Nouveau mot de passe"),
+    row.getByRole("link", { name: "Activité" }),
+  ]) {
+    await expect(part).toBeInViewport({ ratio: 1 });
+  }
+  await expectNoSideScroll(page);
+
+  await page.goto("/marchandises");
+  await page.getByRole("searchbox").fill(product);
+  const goods = page.getByRole("row").filter({ hasText: product });
+  await expect(goods).toHaveCount(1);
+  await goods.scrollIntoViewIfNeeded();
+  await expect(goods.getByRole("link", { name: `Modifier ${product}` })).toBeInViewport({ ratio: 1 });
   await expectNoSideScroll(page);
 });
