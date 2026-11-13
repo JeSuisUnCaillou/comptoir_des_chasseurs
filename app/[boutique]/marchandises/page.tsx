@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { FeaturedList } from "@/components/featured-list";
+import { ProductField } from "@/components/product-field";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { pageParam, searchParam } from "@/lib/pagination";
@@ -8,9 +10,9 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { MAX_PRIVILEGED_GROUPS, privilegedGroups } from "@/lib/privileged-groups";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
 import { PrivilegedGroupsForm } from "@/components/privileged-groups-form";
-import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
+import { saveBlacksmithPrice, saveFeatured } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
@@ -27,7 +29,8 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
     privilegedGroups(member.shopId),
   ]);
   const groups = privileged.map(({ id, name }) => ({ id, name }));
-  const featured = await featuredProduct(member.shopId, active);
+  const featured = featuredProducts(active);
+  const others = active.filter((p) => p.featuredAt == null);
 
   return (
     <>
@@ -44,24 +47,34 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <div className="panel-stack">
           <section className="panel" aria-labelledby="phare">
             <div className="eyebrow">Réglage</div>
-            <h2 id="phare">Produit phare</h2>
+            <h2 id="phare">Produits phares</h2>
             <p className="muted">
-              Mis en avant en haut des Tarifs, et choisi d&apos;office dans le calculateur. Actuel :{" "}
-              {featured?.name ?? "aucun"}.
+              Mis en avant en haut des Tarifs, dans cet ordre ; le premier est choisi d&apos;office dans le
+              calculateur.
             </p>
-            <form action={saveFeaturedProduct} className="inline-form">
-              <select name="productId" defaultValue={featured?.id} aria-label="Produit phare" required>
-                {!featured && <option value="">Aucun</option>}
-                {active.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-small" type="submit">
-                Enregistrer
-              </button>
-            </form>
+            {featured.length === 0 ? (
+              <p className="muted">Aucun produit phare.</p>
+            ) : (
+              <FeaturedList products={featured.map((p) => ({ id: p.id, name: p.name }))} />
+            )}
+            {others.length > 0 && (
+              // A new form once a product is added, so the field starts empty again.
+              <form action={saveFeatured} className="featured-add" key={featured.map((p) => p.id).join()}>
+                <input type="hidden" name="featured" value="1" />
+                <label htmlFor="phare-ajout">Ajouter un produit phare</label>
+                <div className="inline-form">
+                  <ProductField
+                    id="phare-ajout"
+                    name="productId"
+                    required
+                    products={others.map((p) => ({ id: p.id, name: p.name }))}
+                  />
+                  <button className="btn btn-small" type="submit">
+                    Ajouter
+                  </button>
+                </div>
+              </form>
+            )}
           </section>
           <section className="panel" aria-labelledby="privilegies">
             <div className="eyebrow">Réglage</div>

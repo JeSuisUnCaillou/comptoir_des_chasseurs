@@ -79,14 +79,14 @@ test("le prix privilégié du produit phare a sa propre tuile sur les Tarifs", a
   const leather = page.getByRole("region", { name: "Cuir", exact: true });
   await expect(leather).toContainText("Rachat · autres vendeurs4 septims");
   await expect(leather.getByTestId("rachat-phare-privilegie")).toHaveText(`Rachat · ${CITIZENS}5 septims`);
-  // Buyback prices on the first line, resale prices on the second.
+  // One line: the privileged price first, then the others', the sale, the blacksmith's.
   const box = async (label: string) => (await leather.locator(".stat").filter({ hasText: label }).boundingBox())!;
-  const top = async (label: string) => (await box(label)).y;
-  // The privileged price comes first.
-  expect(await top("autres vendeurs")).toBe(await top(CITIZENS));
-  expect((await box(CITIZENS)).x).toBeLessThan((await box("autres vendeurs")).x);
-  expect(await top("Vente")).toBeGreaterThan(await top(CITIZENS));
-  expect(await top("Vente")).toBe(await top("Rachat par le forgeron"));
+  const order = [CITIZENS, "autres vendeurs", "Vente", "Rachat par le forgeron"];
+  const boxes = await Promise.all(order.map(box));
+  for (let i = 1; i < boxes.length; i++) {
+    expect(boxes[i].y).toBe(boxes[0].y);
+    expect(boxes[i].x).toBeGreaterThan(boxes[i - 1].x);
+  }
 });
 
 test("à l'achat de plusieurs marchandises, un seul choix pour le vendeur", async ({ browser }) => {
@@ -145,8 +145,8 @@ async function newShop(page: Page) {
       returning id`;
     await sql`insert into shop_members (shop_id, member_id, role) values (${shop.id}, ${member.id}, 'gerant')`;
     await sql`
-      insert into products (shop_id, name, category, unit, buy_price, buy_qty, sell_price)
-      values (${shop.id}, ${product}, 'cuir', 'pièce', 3, 1, 6)`;
+      insert into products (shop_id, name, category, unit, buy_price, buy_qty, sell_price, featured_at)
+      values (${shop.id}, ${product}, 'cuir', 'pièce', 3, 1, 6, now())`;
   } finally {
     await sql.end();
   }
@@ -193,7 +193,7 @@ test("le gérant nomme ses clients privilégiés, en a plusieurs, et chacun a so
   await expect(page).toHaveURL(new RegExp(`/${slug}/marchandises$`));
 
   await page.goto(`/${slug}/tarifs`);
-  // The leather is the featured product: a tile per group, before the others' price.
+  // The leather is a featured product: a tile per group, before the others' price.
   const tiles = page.getByTestId("rachat-phare-privilegie");
   await expect(tiles).toHaveText(["Rachat · Citoyens de Vendeaume4 septims", "Rachat · Compagnons5 septims"]);
 

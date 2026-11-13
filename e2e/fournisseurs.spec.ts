@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createProduct, loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
 /** Creates suppliers straight in the database, with no offers. */
 async function createSuppliers(names: string[], place = "") {
@@ -41,20 +41,20 @@ test("le gérant crée un fournisseur, lui donne des marchandises, le modifie pu
   await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible();
   await expect(page.getByText("Aucune marchandise pour l'instant.")).toBeVisible();
 
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${hide} (peau)`);
   await page.getByLabel("Prix en septims").fill("3");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Marchandise enregistrée." })).toBeVisible();
   await expect(page.getByRole("cell", { name: "3 septims pour 1 peau" })).toBeVisible();
 
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${meat} (pièce)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${meat} (pièce)`);
   await page.getByLabel("Prix en septims").fill("1");
   await page.getByLabel("Pour (unités)").fill("6");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("cell", { name: "1 septim pour 6 pièces" })).toBeVisible();
 
   // The same merchandise again changes its price.
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${hide} (peau)`);
   await page.getByLabel("Prix en septims").fill("2");
   await page.getByLabel("Pour (unités)").fill("1");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();

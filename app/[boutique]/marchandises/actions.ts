@@ -10,7 +10,8 @@ import { createPrivilegedGroup, deletePrivilegedGroup, renamePrivilegedGroup } f
 import {
   saveProduct as save,
   setBlacksmithLeatherPrice,
-  setFeaturedProduct,
+  setFeatured,
+  setFeaturedOrder,
 } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
@@ -41,13 +42,22 @@ export async function saveBlacksmithPrice(formData: FormData) {
   revalidateShop();
 }
 
-/** A gérant's choice of the product the Tarifs page puts forward, among the shop's active ones. */
-export async function saveFeaturedProduct(formData: FormData) {
+/** A gérant puts a product forward on top of the Tarifs, after the others already there, or takes it back. */
+export async function saveFeatured(formData: FormData) {
   const member = await requireMember(["gerant"]);
   const id = optionalInt(formData, "productId");
   if (id == null || Number.isNaN(id)) return;
-  const result = await attempt(() => setFeaturedProduct(member.shopId, id));
+  const result = await attempt(() => setFeatured(member.shopId, id, formData.get("featured") === "1"));
   if (result.ok) revalidateShop();
+}
+
+/** A gérant puts the featured products in a new order, the whole list at once (dragged in the page). */
+export async function saveFeaturedOrder(ids: number[]): Promise<boolean> {
+  const member = await requireMember(["gerant"]);
+  if (!Array.isArray(ids) || !ids.every((id) => Number.isInteger(id))) return false;
+  const result = await attempt(() => setFeaturedOrder(member.shopId, ids));
+  if (result.ok) revalidateShop();
+  return result.ok;
 }
 
 export type GroupState = { ok: boolean; message: string } | null;

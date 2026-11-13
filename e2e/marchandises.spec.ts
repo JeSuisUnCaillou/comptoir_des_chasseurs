@@ -72,6 +72,8 @@ test("un employé ne voit pas la gestion des marchandises", async ({ browser }) 
   await employee.getByRole("link", { name: "Tarifs" }).click();
   await expect(employee.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
   await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
+  await expect(employee.getByRole("region", { name: "Cuir", exact: true })).toBeVisible();
+  await expect(employee.getByRole("link", { name: "Gérer les produits phares" })).toHaveCount(0);
   await employee.goto("/marchandises");
   await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 });
@@ -81,7 +83,7 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
   await page.goto("/marchandises");
   await expect(page.getByRole("heading", { level: 2 })).toHaveText([
     "Ajouter une marchandise",
-    "Produit phare",
+    "Produits phares",
     "Clients privilégiés",
     "Rachat du cuir par le forgeron",
     "Toutes les marchandises",
