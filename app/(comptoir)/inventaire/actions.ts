@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { readProductIdentity, text } from "@/lib/forms";
+import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { createStocked, recordMovement as moveByHand, recordMovements } from "@/lib/products";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 
@@ -36,22 +36,26 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
 export type CreateState = { ok: true; name: string } | { ok: false; message: string } | null;
 
 /**
- * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock. Prices are set later in Gérer les marchandises.
+ * Creates a merchandise that does not exist yet and records its first entry in
+ * stock. With « Ajouter des prix » ticked, a gérant sets its prices at once;
+ * otherwise they are set later in Gérer les marchandises.
  */
 export async function createAndStock(_prev: CreateState, formData: FormData): Promise<CreateState> {
   const member = await requireMember();
   const { error, ...identity } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
   const reason = text(formData, "reason", 200);
+  const { prices, error: priceError } = readProductPrices(formData, identity.category);
+  const withPrices = checked(formData, "withPrices");
 
   if (error) return { ok: false, message: error };
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
   if (!reason) return { ok: false, message: "Précise la raison." };
+  if (withPrices && priceError) return { ok: false, message: priceError };
 
-  const result = await attempt(() => createStocked(member, identity, quantity, reason));
+  const result = await attempt(() => createStocked(member, identity, withPrices ? prices : null, quantity, reason));
   if (!result.ok) return result;
 
   revalidatePath("/", "layout");

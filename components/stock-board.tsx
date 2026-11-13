@@ -98,7 +98,7 @@ function StockCard({ item }: { item: StockItem }) {
 
 const CARDS_PER_PAGE = 24;
 
-/** `canManage`: shows the link to Gérer les marchandises, a gérant-only page. */
+/** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
 export function StockBoard({ items, canManage }: { items: StockItem[]; canManage: boolean }) {
   const id = useId();
   const [query, setQuery] = useState("");
@@ -150,7 +150,13 @@ export function StockBoard({ items, canManage }: { items: StockItem[]; canManage
         </div>
       </div>
       {creating != null ? (
-        <NewStockProductForm name={creating} category={category} onCreated={created} onCancel={closeCreate} />
+        <NewStockProductForm
+          name={creating}
+          category={category}
+          canSetPrices={canManage}
+          onCreated={created}
+          onCancel={closeCreate}
+        />
       ) : (
         <div className="stock-tools">
           <button className="btn btn-small" type="button" onClick={() => setCreating(visible.length === 0 ? query.trim() : "")}>

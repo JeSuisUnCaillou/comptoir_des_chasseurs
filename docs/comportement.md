@@ -267,8 +267,13 @@ registre.
 
 - Le bouton « Nouvelle marchandise » fait entrer en stock une marchandise
   qui n'existe pas encore.
-- Tout membre la crée, sans prix : nom, catégorie, unité, quantité, motif.
-  Un gérant règle ses prix ensuite dans Gérer les marchandises.
+- Tout membre la crée : nom, catégorie, unité, quantité, motif. Un employé
+  la crée sans prix ; un gérant règle ses prix ensuite dans Gérer les
+  marchandises.
+- Un gérant a en plus la case « Ajouter des prix » : cochée, elle montre les
+  mêmes champs de prix que Gérer les marchandises (achat, prix citoyen,
+  vente, gros, et transformation en cuir pour une peau), enregistrés avec la
+  marchandise.
 - Quand la recherche du stock ne trouve rien, le formulaire reprend le nom
   cherché.
 - À côté, un gérant a le bouton « Gérer les marchandises », qui mène à la

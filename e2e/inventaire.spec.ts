@@ -177,6 +177,8 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = p.getByRole("form", { name: "Nouvelle marchandise" });
   await expect(form.getByLabel("Nom")).toHaveValue(name);
+  // An employee does not set prices.
+  await expect(form.getByLabel("Ajouter des prix")).toHaveCount(0);
   await form.getByLabel("Catégorie").selectOption("peau");
   await form.getByLabel("Unité (au singulier)").fill("peau");
   await form.getByLabel("Quantité ajoutée").fill("3");
@@ -210,6 +212,48 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await form.getByRole("button", { name: "Annuler" }).click();
   await p.getByLabel("Rechercher une marchandise").fill(name);
   await expect(card.getByTestId("stock-value")).toHaveText("3");
+});
+
+test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async ({ page }) => {
+  const name = uniqueName("Peau de troll");
+  await loginAsGerant(page);
+  await page.goto("/inventaire");
+  await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
+  const form = page.getByRole("form", { name: "Nouvelle marchandise" });
+  await form.getByLabel("Nom").fill(name);
+  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Quantité ajoutée").fill("2");
+  await form.getByLabel("Motif").fill("chasse au troll");
+
+  // The price fields only show once « Ajouter des prix » is ticked.
+  const prices = form.getByRole("spinbutton", { name: "Prix en septims" });
+  await expect(prices).toHaveCount(0);
+  await form.getByLabel("Ajouter des prix").check();
+  await prices.first().fill("12");
+  await form.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" }).fill("15");
+  await prices.nth(1).fill("30");
+
+  // A hide's leather batch needs both numbers, and the form keeps what was typed.
+  await form.getByLabel("Peaux par lot").fill("2");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+  await expect(form.locator(ALERT)).toContainText("Remplis les peaux et les cuirs");
+  await expect(prices.first()).toHaveValue("12");
+  await form.getByLabel("Cuirs obtenus").fill("1");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+
+  await expect(form).toBeHidden();
+  await expect(page.getByTestId(`stock-${name}`).getByTestId("stock-value")).toHaveText("2");
+
+  // Gérer les marchandises shows its prices.
+  await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
+  const row = page.getByRole("row").filter({ hasText: name });
+  await expect(row.getByRole("cell", { name: "—" })).toHaveCount(0);
+  await row.getByRole("link", { name: `Modifier ${name}` }).click();
+  await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("12");
+  await expect(page.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" })).toHaveValue("15");
+  await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).nth(1)).toHaveValue("30");
+  await expect(page.getByLabel("Peaux par lot")).toHaveValue("2");
+  await expect(page.getByLabel("Cuirs obtenus")).toHaveValue("1");
 });
 
 test("l'inventaire montre les septims en caisse, sans ceux qui attendent la caisse", async ({ page, browser }) => {

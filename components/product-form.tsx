@@ -5,33 +5,7 @@ import { saveProduct, type ProductFormState } from "@/app/(comptoir)/marchandise
 import type { Product, ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";
-
-function NumberField({
-  name,
-  label,
-  defaultValue,
-  placeholder,
-}: {
-  name: string;
-  label: string;
-  defaultValue?: number | null;
-  placeholder?: string;
-}) {
-  return (
-    <div className="field">
-      <label htmlFor={`f-${name}`}>{label}</label>
-      <input
-        id={`f-${name}`}
-        name={name}
-        type="number"
-        min={0}
-        step={1}
-        defaultValue={defaultValue ?? undefined}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-}
+import { ProductPriceFields } from "@/components/product-price-fields";
 
 /** `fromTarifs`: the form was opened from the Tarifs page, which saving goes back to. */
 export function ProductForm({ product, fromTarifs = false }: { product?: Product; fromTarifs?: boolean }) {
@@ -68,40 +42,7 @@ export function ProductForm({ product, fromTarifs = false }: { product?: Product
         </div>
       </div>
 
-      <h3>Achat (on paie)</h3>
-      <div className="form-grid">
-        <NumberField name="buyPrice" label="Prix en septims" defaultValue={product?.buyPrice} placeholder="Laisser vide si on n'en achète pas" />
-        <NumberField name="buyQty" label="Pour (unités)" defaultValue={product?.buyQty ?? 1} />
-        <NumberField
-          name="citizenBuyPrice"
-          label="Prix pour les citoyens d'Estemarche"
-          defaultValue={product?.citizenBuyPrice}
-          placeholder="Laisser vide si c'est le même prix"
-        />
-      </div>
-
-      <h3>Vente (on encaisse)</h3>
-      <div className="form-grid">
-        <NumberField name="sellPrice" label="Prix en septims" defaultValue={product?.sellPrice} placeholder="Laisser vide si on n'en vend pas" />
-        <NumberField name="sellQty" label="Pour (unités)" defaultValue={product?.sellQty ?? 1} />
-      </div>
-
-      <h3>Vente en gros (facultatif)</h3>
-      <div className="form-grid">
-        <NumberField name="bulkMin" label="À partir de (unités)" defaultValue={product?.bulkMin} />
-        <NumberField name="bulkPrice" label="Prix en septims" defaultValue={product?.bulkPrice} />
-        <NumberField name="bulkQty" label="Pour (unités)" defaultValue={product?.bulkQty ?? 1} />
-      </div>
-
-      {category === "peau" && (
-        <>
-          <h3>Transformation en cuir</h3>
-          <div className="form-grid">
-            <NumberField name="hidesPerBatch" label="Peaux par lot" defaultValue={product?.hidesPerBatch} />
-            <NumberField name="leatherPerBatch" label="Cuirs obtenus" defaultValue={product?.leatherPerBatch} />
-          </div>
-        </>
-      )}
+      <ProductPriceFields id="f" category={category} product={product} />
 
       {product && (
         <label className="check">
