@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Registre des marchands",
+  // A shop's layout replaces it with the shop's name.
+  title: "Registre de Lomone",
   description: "Stock, achats et ventes des boutiques de Keizaal",
 };
 

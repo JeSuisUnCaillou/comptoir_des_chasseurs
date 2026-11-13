@@ -2351,3 +2351,39 @@ tr.fresh td {
   flex: 1;
   min-width: 0;
 }
+
+/* Discord's own colour, so members recognise the button */
+.btn-discord {
+  width: 100%;
+  background: #5865f2;
+  border-color: #5865f2;
+  color: #fff;
+}
+
+.btn-discord:hover {
+  background: #4752c4;
+}
+
+.gate-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-size: 13px;
+}
+
+.gate-or::before,
+.gate-or::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.gate-card .btn-discord {
+  margin-bottom: 18px;
+}
+
+/* A list right under its form's button keeps the panel's breathing room. */
+.panel form + .invitation-list {
+  margin-top: 18px;
+}

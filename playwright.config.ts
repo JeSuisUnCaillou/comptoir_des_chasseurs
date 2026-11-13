@@ -8,6 +8,9 @@ loadEnvConfig(process.cwd());
 // Otherwise a local production build is started.
 const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 
+// e2e/fake-discord.mjs
+const FAKE_DISCORD = "http://localhost:3999";
+
 export default defineConfig({
   testDir: "./e2e",
   globalSetup: "./e2e/global-setup.ts",
@@ -32,9 +35,23 @@ export default defineConfig({
   ],
   webServer: process.env.BASE_URL
     ? undefined
-    : {
-        command: "npm run start",
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-      },
+    : [
+        // A fake Discord, for signing in with Discord (e2e/discord.spec.ts).
+        {
+          command: "node e2e/fake-discord.mjs",
+          url: `${FAKE_DISCORD}/health`,
+          reuseExistingServer: !process.env.CI,
+        },
+        {
+          command: "npm run start",
+          url: baseURL,
+          reuseExistingServer: !process.env.CI,
+          env: {
+            DISCORD_CLIENT_ID: "comptoir-e2e",
+            DISCORD_CLIENT_SECRET: "comptoir-e2e-secret",
+            DISCORD_AUTHORIZE_URL: `${FAKE_DISCORD}/oauth2/authorize`,
+            DISCORD_API_URL: `${FAKE_DISCORD}/api`,
+          },
+        },
+      ],
 });
