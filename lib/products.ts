@@ -232,10 +232,6 @@ export async function recordMovements(
 }
 
 /**
- * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock.
- */
-/**
  * Creates a merchandise and records its first entry in stock, together.
  * `prices` are set at once when given, which only a gérant may do.
  */
