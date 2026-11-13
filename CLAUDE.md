@@ -102,6 +102,11 @@ Comment les tests sont écrits :
   vérifie ce qui est à l'écran, pas l'état interne.
 - On attend sur des assertions (`await expect(...)`), jamais sur
   `waitForTimeout`.
+- Une mise en page se regarde de 320 à 1600 px, avec une police un peu
+  élargie : celles de la CI sont plus larges que celles d'une session. On y
+  cherche ce qui déborde et ce qui se colle, et le test mesure l'écart
+  (`e2e/telephone.spec.ts`) ; le propriétaire a dû signaler cinq blocs
+  collés ou débordants en quatre jours (2026-11-10 au 13).
 - Un test qui change un réglage de toute la boutique (le produit phare…)
   va dans un `*.apres.spec.ts` : il tourne après tous les autres, en série
   (`test.describe.configure({ mode: "serial" })`), et remet le réglage comme
