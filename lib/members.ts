@@ -60,6 +60,11 @@ export async function unlinkDiscord(memberId: number): Promise<Member> {
   return member;
 }
 
+/** True when the account may sign in: the super admin, or a member active in at least one shop. */
+export async function canSignIn(member: Pick<Member, "id" | "superAdmin">) {
+  return member.superAdmin || (await hasActiveShop(member.id));
+}
+
 /** True when the member may enter at least one shop: deactivated everywhere, they can't sign in. */
 export async function hasActiveShop(memberId: number) {
   const m = schema.shopMembers;

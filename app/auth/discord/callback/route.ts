@@ -4,7 +4,7 @@ import { discordUser, finishDiscordFlow, rememberPendingDiscord } from "@/lib/au
 import { RETURN_PARAM, loginUrl } from "@/lib/auth/return-path";
 import { currentAccount, startSession } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
-import { accountByDiscordId, hasActiveShop, linkDiscord } from "@/lib/members";
+import { accountByDiscordId, canSignIn, linkDiscord } from "@/lib/members";
 
 const ACCOUNT_PAGE = "/mot-de-passe";
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     await rememberPendingDiscord(user);
     redirect(back("discord=inconnu"));
   }
-  if (!(member.superAdmin || (await hasActiveShop(member.id)))) redirect(back("discord=refuse"));
+  if (!(await canSignIn(member))) redirect(back("discord=refuse"));
   await startSession(member);
   redirect(flow.returnPath);
 }

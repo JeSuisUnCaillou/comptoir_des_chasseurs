@@ -8,12 +8,10 @@ import {
   verifyPassword,
 } from "@/lib/auth/password";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
-import { forgetPendingDiscord, pendingDiscord } from "@/lib/auth/discord";
+import { forgetPendingDiscord, linkPendingDiscord } from "@/lib/auth/discord";
 import { endSession, startSession } from "@/lib/auth/session";
-import type { Member } from "@/lib/db/schema";
-import { attempt } from "@/lib/errors";
 import { text } from "@/lib/forms";
-import { accountByUsername, createFirstGerant as createFirst, hasActiveShop, linkDiscord } from "@/lib/members";
+import { accountByUsername, canSignIn, createFirstGerant as createFirst } from "@/lib/members";
 import { currentShop } from "@/lib/shops";
 
 export type AuthState = { error: string } | null;
@@ -27,24 +25,11 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   const password = String(formData.get("password") ?? "");
   const member = await accountByUsername(username);
   const valid = await verifyPassword(password, member?.passwordHash ?? DUMMY_HASH);
-  if (!member || !valid || !(member.superAdmin || (await hasActiveShop(member.id)))) {
+  if (!member || !valid || !(await canSignIn(member))) {
     return { error: "Identifiant ou mot de passe incorrect." };
   }
-  await startSession(await withPendingDiscord(member));
+  await startSession(await linkPendingDiscord(member));
   redirect(safeReturnPath(formData.get(RETURN_PARAM)));
-}
-
-/**
- * Links the Discord account the visitor just tried to sign in with, if any:
- * the next time, Discord is enough. Taken meanwhile by another member, it is
- * left aside and the sign-in goes on.
- */
-async function withPendingDiscord(member: Member): Promise<Member> {
-  const discord = await pendingDiscord();
-  if (!discord) return member;
-  await forgetPendingDiscord();
-  const linked = await attempt(() => linkDiscord(member.id, discord));
-  return linked.ok ? linked.value : member;
 }
 
 /** Forgets the Discord account waiting to be linked: it wasn't theirs. */

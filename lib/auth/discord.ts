@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { authKey } from "@/lib/auth/key";
 import { safeReturnPath } from "@/lib/auth/return-path";
+import type { Member } from "@/lib/db/schema";
+import { attempt } from "@/lib/errors";
+import { linkDiscord } from "@/lib/members";
 
 /**
  * Signing in with Discord (OAuth2, scope "identify"). Discord only tells who
@@ -105,6 +108,7 @@ export async function discordUser(origin: string, code: string): Promise<Discord
         client_secret: process.env.DISCORD_CLIENT_SECRET!,
       }),
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
     if (!token.ok) return null;
     const { access_token } = (await token.json()) as { access_token?: string };
@@ -112,6 +116,7 @@ export async function discordUser(origin: string, code: string): Promise<Discord
     const me = await fetch(`${API_URL}/users/@me`, {
       headers: { Authorization: `Bearer ${access_token}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
     if (!me.ok) return null;
     const user = (await me.json()) as { id?: string; username?: string; global_name?: string | null };
@@ -138,4 +143,17 @@ export async function pendingDiscord(): Promise<DiscordUser | null> {
 
 export async function forgetPendingDiscord() {
   (await cookies()).delete(PENDING_COOKIE);
+}
+
+/**
+ * Once the member signed in with their password, links the Discord account
+ * they just tried, if any: the next time, Discord is enough. Taken meanwhile
+ * by another member, it is left aside and the sign-in goes on.
+ */
+export async function linkPendingDiscord(member: Member): Promise<Member> {
+  const discord = await pendingDiscord();
+  if (!discord) return member;
+  await forgetPendingDiscord();
+  const linked = await attempt(() => linkDiscord(member.id, discord));
+  return linked.ok ? linked.value : member;
 }
