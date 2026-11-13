@@ -10,7 +10,7 @@ export default async function NewSupplier() {
   return (
     <>
       <PageHead title="Nouveau contact">
-        <Link href={at("/fournisseurs")}>← Contacts</Link>
+        <Link href={at("/contacts")}>← Contacts</Link>
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
         <SupplierForm />

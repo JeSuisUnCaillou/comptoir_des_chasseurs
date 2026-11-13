@@ -26,7 +26,7 @@ export default async function EditSupplier({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHead title={supplier.name}>
-        <Link href={at("/fournisseurs")}>← Contacts</Link>
+        <Link href={at("/contacts")}>← Contacts</Link>
       </PageHead>
 
       <section className="panel" style={{ maxWidth: 760 }}>

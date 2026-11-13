@@ -84,7 +84,7 @@ test("le gérant crée un contact, lui donne des marchandises, le modifie puis l
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Supprimer le contact" }).click();
-  await expect(page).toHaveURL(/\/fournisseurs$/);
+  await expect(page).toHaveURL(/\/contacts$/);
   await search(page, renamed);
   await expect(page.getByText("Aucun contact ne correspond.")).toBeVisible();
 });
@@ -93,7 +93,7 @@ test("deux contacts ne portent pas le même nom", async ({ page }) => {
   const name = uniqueName("Do'Dran");
   await createSuppliers([name]);
   await loginAsGerant(page);
-  await page.goto("/fournisseurs/nouveau");
+  await page.goto("/contacts/nouveau");
   await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByRole("button", { name: "Ajouter le contact" }).click();
   await expect(page.getByText("Il y a déjà un contact à ce nom.")).toBeVisible();
@@ -115,7 +115,7 @@ test("la recherche trouve un contact par son nom, son lieu ou ce qu'il vend", as
     await sql.end();
   }
   await loginAsGerant(page);
-  await page.goto("/fournisseurs");
+  await page.goto("/contacts");
 
   for (const q of [name.toUpperCase(), place, product]) {
     await search(page, q);
@@ -132,7 +132,7 @@ test("les contacts sont paginés et rangés par nom", async ({ page }) => {
   const names = Array.from({ length: 13 }, (_, i) => `${prefix} ${String.fromCharCode(97 + i)}`).reverse();
   await createSuppliers(names);
   await loginAsGerant(page);
-  await page.goto("/fournisseurs");
+  await page.goto("/contacts");
   await search(page, prefix);
 
   const pages = page.getByRole("navigation", { name: "Pages des contacts" });
@@ -157,7 +157,7 @@ test("un employé consulte les contacts sans pouvoir les modifier", async ({ bro
   await expect(page.getByRole("link", { name: `Modifier ${name}` })).toHaveCount(0);
 
   // The gérant's pages send them back home.
-  await page.goto("/fournisseurs/nouveau");
+  await page.goto("/contacts/nouveau");
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 });
 
@@ -169,7 +169,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await createProduct(hide);
   await createSuppliers([name], "Vendeaume");
   await loginAsGerant(page);
-  await page.goto("/fournisseurs");
+  await page.goto("/contacts");
   await search(page, name);
   const contact = card(page, name);
   // Nothing listed yet: neither supplier nor customer.

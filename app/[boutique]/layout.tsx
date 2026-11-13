@@ -52,7 +52,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           <NavLink href={at("/inventaire")}>
             <Archive size={18} /> Inventaire
           </NavLink>
-          <NavLink href={at("/fournisseurs")}>
+          <NavLink href={at("/contacts")}>
             <Contact size={18} /> Contacts
           </NavLink>
           <NavLink href={at("/annonces")}>

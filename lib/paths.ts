@@ -15,7 +15,7 @@ export function isComptoir(shop: { slug: string }) {
 export const SHOP_PAGES = [
   "achat-vente",
   "annonces",
-  "fournisseurs",
+  "contacts",
   "inventaire",
   "marchandises",
   "membres",

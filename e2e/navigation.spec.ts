@@ -56,7 +56,7 @@ test("les pages n'affichent plus la mention « Registres » en tête", async ({ 
     ["/inventaire", "Inventaire"],
     ["/marchandises", "Gérer les marchandises"],
     ["/membres", "Membres"],
-    ["/fournisseurs/nouveau", "Nouveau contact"],
+    ["/contacts/nouveau", "Nouveau contact"],
   ]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();

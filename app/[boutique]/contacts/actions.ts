@@ -27,7 +27,7 @@ export async function saveSupplier(_prev: SupplierFormState, formData: FormData)
   if (!result.ok) return result;
   revalidateShop();
   // A new contact goes straight to its page, to add what it sells or buys.
-  if (supplierId == null) redirect(shopPath(member.shop.slug, `/fournisseurs/${result.value}`));
+  if (supplierId == null) redirect(shopPath(member.shop.slug, `/contacts/${result.value}`));
   return { ok: true, message: "Contact enregistré." };
 }
 
@@ -67,5 +67,5 @@ export async function deleteSupplier(formData: FormData) {
   const supplierId = optionalId(formData);
   if (supplierId) await remove(member.shopId, supplierId);
   revalidateShop();
-  redirect(shopPath(member.shop.slug, "/fournisseurs"));
+  redirect(shopPath(member.shop.slug, "/contacts"));
 }

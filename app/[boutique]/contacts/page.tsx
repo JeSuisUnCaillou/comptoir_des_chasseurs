@@ -33,7 +33,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
             </h2>
           </div>
           {gerant && (
-            <Link className="btn btn-small" href={at("/fournisseurs/nouveau")}>
+            <Link className="btn btn-small" href={at("/contacts/nouveau")}>
               <Plus size={14} /> Ajouter un contact
             </Link>
           )}
@@ -51,7 +51,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
             Chercher
           </button>
           {q && (
-            <Link className="btn btn-small btn-ghost" href={at("/fournisseurs")}>
+            <Link className="btn btn-small btn-ghost" href={at("/contacts")}>
               Tout afficher
             </Link>
           )}
@@ -66,13 +66,13 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
       <section className="section-gap">
         <div className="supplier-grid">
           {suppliers.map((s) => (
-            <SupplierCard key={s.id} supplier={s} editHref={gerant ? at(`/fournisseurs/${s.id}`) : undefined} />
+            <SupplierCard key={s.id} supplier={s} editHref={gerant ? at(`/contacts/${s.id}`) : undefined} />
           ))}
         </div>
         <Pagination
           page={page}
           total={total}
-          path={at("/fournisseurs")}
+          path={at("/contacts")}
           params={{ q: q || undefined }}
           size={SUPPLIER_PAGE_SIZE}
           label="Pages des contacts"

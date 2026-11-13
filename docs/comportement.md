@@ -242,7 +242,7 @@ sortie d'argent) les septims :
 ## Contacts
 
 Les fournisseurs et les clients que la boutique veut suivre (pas forcément
-tous). L'adresse reste `/fournisseurs`.
+tous), à l'adresse `/<boutique>/contacts`.
 
 - Une carte par contact : son lieu, une note (qui il représente, ce qu'il
   fait de nos marchandises…), puis les marchandises de la boutique en deux
