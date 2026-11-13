@@ -49,7 +49,7 @@ export default async function Boutiques() {
 
       <main className="content hub-content">
         <div className="page-head">
-          <div className="eyebrow">✦ Registre des marchands ✦</div>
+          <div className="eyebrow">✦ Registre de Lomone ✦</div>
           <h1>Mes boutiques</h1>
           <p className="muted">
             Choisis la boutique où entrer.
@@ -140,7 +140,7 @@ export default async function Boutiques() {
           </section>
         )}
       </main>
-      <footer className="footer">✦ Registre des marchands · Keizaal ✦</footer>
+      <footer className="footer">✦ Registre de Lomone · Keizaal ✦</footer>
     </div>
   );
 }
