@@ -1,8 +1,6 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
-import Link from "next/link";
-import { useShopPath } from "@/components/use-shop-path";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { formatNumber, plural } from "@/lib/pricing";
@@ -115,7 +113,6 @@ export function StockBoard({
   groups: GroupChoice[];
 }) {
   const id = useId();
-  const path = useShopPath();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
