@@ -6,7 +6,7 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { checked, optionalInt, readProductIdentity, readProductPrices } from "@/lib/forms";
-import { saveProduct as save, moveFeatured, setBlacksmithLeatherPrice, setFeatured } from "@/lib/products";
+import { saveProduct as save, setBlacksmithLeatherPrice, setFeatured, setFeaturedOrder } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -45,12 +45,11 @@ export async function saveFeatured(formData: FormData) {
   if (result.ok) revalidateShop();
 }
 
-/** A gérant moves a featured product one place earlier or later on the Tarifs. */
-export async function saveFeaturedOrder(formData: FormData) {
+/** A gérant puts the featured products in a new order, the whole list at once (dragged in the page). */
+export async function saveFeaturedOrder(ids: number[]): Promise<boolean> {
   const member = await requireMember(["gerant"]);
-  const id = optionalInt(formData, "productId");
-  const step = formData.get("step") === "up" ? -1 : 1;
-  if (id == null || Number.isNaN(id)) return;
-  const result = await attempt(() => moveFeatured(member.shopId, id, step));
+  if (!Array.isArray(ids) || !ids.every((id) => Number.isInteger(id))) return false;
+  const result = await attempt(() => setFeaturedOrder(member.shopId, ids));
   if (result.ok) revalidateShop();
+  return result.ok;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUp, X } from "lucide-react";
+import { FeaturedList } from "@/components/featured-list";
 import { ProductField } from "@/components/product-field";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
@@ -10,7 +10,7 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
-import { saveBlacksmithPrice, saveFeatured, saveFeaturedOrder } from "./actions";
+import { saveBlacksmithPrice, saveFeatured } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
@@ -51,47 +51,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
             {featured.length === 0 ? (
               <p className="muted">Aucun produit phare.</p>
             ) : (
-              <ul className="featured-list" aria-label="Produits phares actuels">
-                {featured.map((p, i) => (
-                  <li key={p.id}>
-                    <span>{p.name}</span>
-                    <span className="featured-actions">
-                      <form action={saveFeaturedOrder}>
-                        <input type="hidden" name="productId" value={p.id} />
-                        <input type="hidden" name="step" value="up" />
-                        <button
-                          className="icon-btn"
-                          type="submit"
-                          disabled={i === 0}
-                          title={`Monter ${p.name}`}
-                          aria-label={`Monter ${p.name}`}
-                        >
-                          <ArrowUp size={16} />
-                        </button>
-                      </form>
-                      <form action={saveFeaturedOrder}>
-                        <input type="hidden" name="productId" value={p.id} />
-                        <input type="hidden" name="step" value="down" />
-                        <button
-                          className="icon-btn"
-                          type="submit"
-                          disabled={i === featured.length - 1}
-                          title={`Descendre ${p.name}`}
-                          aria-label={`Descendre ${p.name}`}
-                        >
-                          <ArrowDown size={16} />
-                        </button>
-                      </form>
-                      <form action={saveFeatured}>
-                        <input type="hidden" name="productId" value={p.id} />
-                        <button className="icon-btn" type="submit" title={`Retirer ${p.name}`} aria-label={`Retirer ${p.name}`}>
-                          <X size={16} />
-                        </button>
-                      </form>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <FeaturedList products={featured.map((p) => ({ id: p.id, name: p.name }))} />
             )}
             {others.length > 0 && (
               // A new form once a product is added, so the field starts empty again.

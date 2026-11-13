@@ -299,8 +299,8 @@ Dans la grille :
 - Créer et modifier les marchandises et leurs prix.
 - Choisir les produits phares des Tarifs, parmi les marchandises non
   archivées : en ajouter un (la marchandise se cherche en tapant ; il passe
-  après les autres), le monter ou le descendre d'une place avec les flèches,
-  le retirer. Le cuir l'est tant qu'on ne l'a pas retiré.
+  après les autres), changer l'ordre en le glissant par sa poignée (souris ou
+  doigt ; au clavier, flèches haut et bas sur la poignée), le retirer. Le cuir l'est tant qu'on ne l'a pas retiré.
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.
 - Même recherche par nom que les Tarifs et l'Inventaire.

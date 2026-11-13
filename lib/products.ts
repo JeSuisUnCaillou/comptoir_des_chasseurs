@@ -65,25 +65,23 @@ export async function setFeatured(shopId: number, productId: number, featured: b
   if (!product) throw new UserError("Marchandise inconnue.");
 }
 
-/** Moves a featured product one place earlier (-1) or later (1) on the Tarifs page. */
-export async function moveFeatured(shopId: number, productId: number, step: -1 | 1) {
+/** Puts the shop's featured products in the given order on the Tarifs page: all of them, each once. */
+export async function setFeaturedOrder(shopId: number, ids: number[]) {
   const p = schema.products;
   await getDb().transaction(async (tx) => {
     const rows = await tx
       .select({ id: p.id, featuredAt: p.featuredAt })
       .from(p)
       .where(and(eq(p.shopId, shopId), eq(p.archived, false), isNotNull(p.featuredAt)))
-      .orderBy(asc(p.featuredAt), asc(p.id))
       .for("update");
-    const from = rows.findIndex((r) => r.id === productId);
-    if (from < 0) throw new UserError("Marchandise inconnue.");
-    const to = from + step;
-    if (to < 0 || to >= rows.length) return;
-    [rows[from], rows[to]] = [rows[to], rows[from]];
-    // The order is the featured date: the same first one, then a millisecond apart.
-    const first = rows.reduce((min, r) => Math.min(min, r.featuredAt!.getTime()), Infinity);
-    for (const [i, row] of rows.entries()) {
-      await tx.update(p).set({ featuredAt: new Date(first + i) }).where(eq(p.id, row.id));
+    const featured = new Set(rows.map((r) => r.id));
+    if (ids.length !== featured.size || new Set(ids).size !== ids.length || !ids.every((id) => featured.has(id))) {
+      throw new UserError("La liste des produits phares a changé : recharge la page.");
+    }
+    // The order is the featured date: the earliest one first, then a millisecond apart.
+    const first = Math.min(...rows.map((r) => r.featuredAt!.getTime()));
+    for (const [i, id] of ids.entries()) {
+      await tx.update(p).set({ featuredAt: new Date(first + i) }).where(eq(p.id, id));
     }
   });
 }

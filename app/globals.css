@@ -2272,14 +2272,24 @@ tr.fresh td {
   border-bottom: 1px solid var(--border);
 }
 
-.featured-actions {
-  display: inline-flex;
-  gap: 2px;
+.featured-list .featured-name {
+  flex: 1;
 }
 
-.featured-actions .icon-btn:disabled {
-  opacity: 0.3;
-  cursor: default;
+/* Grabbed with a finger too: the page does not scroll from the handle. */
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+  color: var(--muted);
+}
+
+.featured-list li.dragging {
+  background: var(--panel-2);
+  outline: 1px solid var(--border-gold);
+}
+
+.featured-list li.dragging .drag-handle {
+  cursor: grabbing;
 }
 
 .featured-add label {

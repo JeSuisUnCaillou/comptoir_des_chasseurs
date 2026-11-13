@@ -75,15 +75,28 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
     await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row", { name: /Flèches d'acier/ })).toHaveCount(0);
 
-    // Reordered in Gérer les marchandises: the arrows move a product one place.
+    // Reordered in Gérer les marchandises by dragging a product by its handle, then with the keyboard.
     await page.goto("/marchandises");
     const list = featuredPanel(page).getByRole("list", { name: "Produits phares actuels" });
-    await expect(featuredPanel(page).getByRole("button", { name: "Monter Cuir" })).toBeDisabled();
-    await expect(featuredPanel(page).getByRole("button", { name: "Descendre Flèches d'acier" })).toBeDisabled();
-    await featuredPanel(page).getByRole("button", { name: "Monter Flèches d'acier" }).click();
-    await expect(list.getByRole("listitem")).toHaveText(["Cuir", "Flèches d'acier", "Venaison"]);
-    await featuredPanel(page).getByRole("button", { name: "Descendre Cuir" }).click();
+    const handle = (name: string) => list.getByRole("button", { name: `Déplacer ${name}` });
+    // Saved: a fresh page shows the same order, once the save has reached the server.
+    const saved = (names: string[]) =>
+      expect(async () => {
+        await page.reload();
+        await expect(list.getByRole("listitem")).toHaveText(names, { timeout: 1000 });
+      }).toPass();
+    await handle("Flèches d'acier").dragTo(list.getByRole("listitem").filter({ hasText: "Cuir" }));
     await expect(list.getByRole("listitem")).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
+    await saved(["Flèches d'acier", "Cuir", "Venaison"]);
+    await handle("Venaison").focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(list.getByRole("listitem")).toHaveText(["Flèches d'acier", "Venaison", "Cuir"]);
+    await expect(handle("Venaison")).toBeFocused();
+    await saved(["Flèches d'acier", "Venaison", "Cuir"]);
+    await handle("Venaison").focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(list.getByRole("listitem")).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
+    await saved(["Flèches d'acier", "Cuir", "Venaison"]);
     await page.goto("/tarifs");
     await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
     await expect(calculatorProduct(page)).toHaveValue("Flèches d'acier");
