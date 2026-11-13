@@ -1,12 +1,13 @@
 # Travailler sur le Comptoir des chasseurs
 
-Une app web de gestion du comptoir des chasseurs de Vendeaume (serveur Skyrim
-RP Keizaal) : tarifs, inventaire, ventes et rachats, registre. Une dizaine
-d'utilisateurs : le gérant et ses employés. Next.js (App Router, Server
-Actions) sur Vercel, Postgres chez Supabase via Drizzle ORM. **Tout doit
-rester gratuit** : offre Hobby de Vercel, offre gratuite de Supabase. Une
-dépendance, un service ou une option payante se propose au propriétaire, ne
-s'ajoute pas.
+Une app web de gestion de boutiques du serveur Skyrim RP Keizaal : tarifs,
+inventaire, ventes et rachats, registre. Chaque boutique vit sous
+`/<boutique>/…` ; la première est le comptoir des chasseurs de Vendeaume
+(`/le-comptoir-des-chasseurs`), avec une dizaine de gérants et d'employés.
+Next.js (App Router, Server Actions) sur Vercel, Postgres chez Supabase via
+Drizzle ORM. **Tout doit rester gratuit** : offre Hobby de Vercel, offre
+gratuite de Supabase. Une dépendance, un service ou une option payante se
+propose au propriétaire, ne s'ajoute pas.
 
 ## À lire d'abord
 
@@ -141,8 +142,8 @@ par jour. Le lien est dans la description de la PR, entre
 `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
 réécris la description).
 
-Donne **toujours le lien de la page précise à essayer** (`…vercel.app/fournisseurs`),
-jamais la racine (« donne moi TOUJOURS le lien de la page spécifique à
+Donne **toujours le lien de la page précise à essayer**
+(`…vercel.app/le-comptoir-des-chasseurs/fournisseurs`), jamais la racine (« donne moi TOUJOURS le lien de la page spécifique à
 tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
 écrire dans la base des previews, donc si la fonctionnalité demande des
 données que le seed n'apporte pas, étends `scripts/seed-preview.mjs` dans la
