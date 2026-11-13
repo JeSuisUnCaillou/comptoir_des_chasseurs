@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, eq, exists, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, count, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
@@ -179,4 +179,24 @@ export async function deleteSupplier(shopId: number, id: number) {
   await getDb()
     .delete(schema.suppliers)
     .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, shopId)));
+}
+
+/**
+ * The shop's contacts by name, for the name field of a purchase or a sale:
+ * those who go `side` (suppliers for a purchase, customers for a sale) first.
+ */
+export async function contactNames(shopId: number, side: OfferSide) {
+  const { suppliers, supplierOffers } = schema;
+  const rows = await getDb()
+    .select({
+      id: suppliers.id,
+      name: suppliers.name,
+      first: sql<boolean>`coalesce(bool_or(${supplierOffers.side} = ${side}), false)`,
+    })
+    .from(suppliers)
+    .leftJoin(supplierOffers, eq(supplierOffers.supplierId, suppliers.id))
+    .where(eq(suppliers.shopId, shopId))
+    .groupBy(suppliers.id)
+    .orderBy(byName(suppliers.name), asc(suppliers.id));
+  return [...rows.filter((r) => r.first), ...rows.filter((r) => !r.first)];
 }

@@ -155,7 +155,11 @@ page ; l'écriture enregistrée ramène au registre.
   le stock de la marchandise choisie, la ligne montre le prix par défaut qui
   sert au calcul (rachat ou vente, gros ou privilégié selon le cas).
 - **Total** en septims, mis à jour pendant qu'on remplit.
-- **Client et notes** valent pour toutes les lignes.
+- **Client et notes** valent pour toutes les lignes. Le nom du client ou du
+  vendeur propose les [contacts](#contacts) pendant qu'on tape, ceux qui vont
+  dans ce sens d'abord (les clients pour une vente, les fournisseurs pour un
+  achat) ; un nom inconnu reste tel quel, et Entrée envoie le formulaire tant
+  qu'aucune proposition n'est choisie aux flèches.
 - **Prix privilégié du vendeur** (achat seulement) : un seul choix par achat,
   « Aucun » ou l'un des clients privilégiés qui ont un prix sur au moins une
   des marchandises. Il calcule à leur prix
