@@ -50,7 +50,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/inventaire/mouvement", "Mouvement de stock"],
     ["/tarifs", "Tarifs"],
     ["/marchandises", "Gérer les marchandises"],
-    ["/fournisseurs", "Fournisseurs"],
+    ["/fournisseurs", "Contacts"],
     ["/annonces", "Annonces"],
     ["/membres", "Membres"],
     ["/boutiques", "Mes boutiques"],

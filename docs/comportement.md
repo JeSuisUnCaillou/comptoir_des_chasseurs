@@ -12,7 +12,7 @@ fichier à jour dans le même commit.
 - [Achat, Vente et registre](#achat-vente-et-registre)
 - [Mouvement de caisse](#mouvement-de-caisse)
 - [Annonces](#annonces)
-- [Fournisseurs](#fournisseurs)
+- [Contacts](#contacts)
 - [Tarifs et Gérer les marchandises](#tarifs-et-gérer-les-marchandises)
 - [Inventaire](#inventaire)
 - [Activité d'un membre](#activité-dun-membre)
@@ -51,7 +51,7 @@ fenêtre :
 | --- | --- |
 | Registre, historique du stock, marchandises (avec une recherche par nom), membres, activité d'un membre | 25 |
 | Cartes du stock | 24 |
-| Annonces, fournisseurs | 12 |
+| Annonces, contacts | 12 |
 
 Une écriture d'achat ou de vente porte au plus 25 marchandises, pour tenir
 sur une page du registre.
@@ -60,7 +60,7 @@ sur une page du registre.
 
 | Liste | Ordre |
 | --- | --- |
-| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, fournisseurs | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
+| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
 | Cartes du stock (Inventaire) | cuirs, puis viandes, puis peaux, puis le reste ; chaque groupe par nom comme ci-dessus |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
 
@@ -72,7 +72,7 @@ sont à l'heure de Paris.
 L'app héberge plusieurs boutiques ; « Le Comptoir Des Chasseurs » est la
 première. Ses textes sont génériques : ce qui est propre à une boutique (son
 nom, ses marchandises, ses annonces…) vient de sa base, jamais du code. Chacune a ses marchandises, son registre, son tableau, ses
-fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
+contacts, ses réglages et ses membres, et ne voit rien des autres.
 
 ### Adresses
 
@@ -235,15 +235,23 @@ sortie d'argent) les septims :
   revient au tableau d'où on est parti.
 - 12 parchemins par page ici ; le Grand livre montre tout le tableau.
 
-## Fournisseurs
+## Contacts
 
-- Une carte par fournisseur : son lieu, une note (qui il représente…), et
-  les marchandises de la boutique qu'il vend, chacune à son prix (« 1 septim
-  pour 6 pièces »).
-- Une recherche trouve un nom, un lieu ou une marchandise.
+Les fournisseurs et les clients que la boutique veut suivre (pas forcément
+tous). L'adresse reste `/fournisseurs`.
+
+- Une carte par contact : son lieu, une note (qui il représente, ce qu'il
+  fait de nos marchandises…), puis les marchandises de la boutique en deux
+  listes, chacune à son prix (« 1 septim pour 6 pièces ») : « Il nous vend »
+  et « Il nous achète ».
+- L'étiquette de la carte suit ces listes : Fournisseur, Client, Fournisseur
+  et client, ou Contact tant qu'il n'a aucune marchandise.
+- Une marchandise va dans un seul sens par contact : l'enregistrer dans
+  l'autre sens la déplace, avec son nouveau prix.
+- Une recherche trouve un nom, un lieu, une note ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
-  (nom, lieu, note, marchandises et prix) ou les suppriment, par les boutons
-  de la page.
+  (nom, lieu, note, marchandises, sens et prix) ou les suppriment, par les
+  boutons de la page.
 
 ## Tarifs et Gérer les marchandises
 

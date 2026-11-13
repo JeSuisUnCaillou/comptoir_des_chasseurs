@@ -88,7 +88,7 @@ test("le comptoir ne montre rien d'une autre boutique", async ({ page }) => {
   await expect(page.getByText(other.announcement)).toHaveCount(0);
 
   await page.goto("/fournisseurs");
-  await expect(page.getByRole("heading", { name: "Fournisseurs", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contacts", level: 1 })).toBeVisible();
   await expect(page.getByText(other.supplier)).toHaveCount(0);
 
   await page.goto("/membres");

@@ -34,7 +34,7 @@ créer le compte du gérant.
 
 Le schéma est dans `lib/db/schema.ts`. Une seule base héberge plusieurs
 **boutiques** (table `shops`) : les marchandises, l'historique du stock, le
-registre, les annonces, les fournisseurs et les réglages appartiennent chacun à
+registre, les annonces, les contacts et les réglages appartiennent chacun à
 une boutique (`shop_id`), et chaque page ou action ne lit et n'écrit que ceux de
 la boutique visitée (`currentShop`, `lib/shops.ts`). La migration des boutiques
 a rangé tout l'existant dans la première, « Le Comptoir Des Chasseurs »
@@ -54,7 +54,7 @@ commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
-un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, une seconde boutique, « La Taverne du Port » (`/taverne-du-port`, Aela gérante, quelques marchandises et une annonce) si elle manque, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
+un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, un client, Roy, s'il manque, une seconde boutique, « La Taverne du Port » (`/taverne-du-port`, Aela gérante, quelques marchandises et une annonce) si elle manque, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
 

@@ -1,4 +1,4 @@
-import { Plus, Truck } from "lucide-react";
+import { Contact, Plus } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
@@ -22,23 +22,23 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Fournisseurs">Qui vend quoi, où, et à quel prix.</PageHead>
+      <PageHead title="Contacts">Fournisseurs et clients : qui nous vend ou nous achète quoi, où, et à quel prix.</PageHead>
 
       <section className="panel">
         <div className="panel-head">
           <div>
             <div className="eyebrow">Réseau commercial de la boutique</div>
             <h2>
-              <Truck size={18} style={{ verticalAlign: "-2px" }} /> Fournisseurs
+              <Contact size={18} style={{ verticalAlign: "-2px" }} /> Contacts
             </h2>
           </div>
           {gerant && (
             <Link className="btn btn-small" href={at("/fournisseurs/nouveau")}>
-              <Plus size={14} /> Ajouter un fournisseur
+              <Plus size={14} /> Ajouter un contact
             </Link>
           )}
         </div>
-        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur">
+        <form className="inline-form filters" method="get" aria-label="Chercher un contact">
           <input
             name="q"
             type="search"
@@ -58,7 +58,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
         </form>
         {suppliers.length === 0 && (
           <p className="muted" style={{ margin: 0 }}>
-            {q ? "Aucun fournisseur ne correspond." : "Aucun fournisseur pour l'instant."}
+            {q ? "Aucun contact ne correspond." : "Aucun contact pour l'instant."}
           </p>
         )}
       </section>
@@ -75,8 +75,8 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
           path={at("/fournisseurs")}
           params={{ q: q || undefined }}
           size={SUPPLIER_PAGE_SIZE}
-          label="Pages des fournisseurs"
-          noun="fournisseur"
+          label="Pages des contacts"
+          noun="contact"
         />
       </section>
     </>

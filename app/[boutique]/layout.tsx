@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   Archive,
   ArrowLeftRight,
+  Contact,
   KeyRound,
   LayoutGrid,
   LogOut,
@@ -10,7 +11,6 @@ import {
   Shield,
   Store,
   Tag,
-  Truck,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -53,7 +53,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
             <Archive size={18} /> Inventaire
           </NavLink>
           <NavLink href={at("/fournisseurs")}>
-            <Truck size={18} /> Fournisseurs
+            <Contact size={18} /> Contacts
           </NavLink>
           <NavLink href={at("/annonces")}>
             <Megaphone size={18} /> Annonces
