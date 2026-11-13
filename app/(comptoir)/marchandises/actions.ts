@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { checked, optionalInt, readProductIdentity } from "@/lib/forms";
-import { saveProduct as save, setBlacksmithLeatherPrice } from "@/lib/products";
+import { saveProduct as save, setBlacksmithLeatherPrice, setFeaturedProduct } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -62,4 +62,13 @@ export async function saveBlacksmithPrice(formData: FormData) {
   if (!Number.isInteger(value) || value < 0) return;
   await setBlacksmithLeatherPrice(member.shopId, value);
   revalidatePath("/", "layout");
+}
+
+/** A gérant's choice of the product the Tarifs page puts forward, among the shop's active ones. */
+export async function saveFeaturedProduct(formData: FormData) {
+  const member = await requireMember(["gerant"]);
+  const id = optionalInt(formData, "productId");
+  if (id == null || Number.isNaN(id)) return;
+  const result = await attempt(() => setFeaturedProduct(member.shopId, id));
+  if (result.ok) revalidatePath("/", "layout");
 }

@@ -78,7 +78,7 @@ test("une seule recherche pour toutes les grilles, qui ne montre que les catégo
   // The bar takes at least half of the grids' width.
   expect(bar.width).toBeGreaterThanOrEqual(p.width / 2);
   // Leather and the calculator come first, then the grids.
-  const cuir = (await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox())!;
+  const cuir = (await page.getByRole("region", { name: "Cuir", exact: true }).boundingBox())!;
   const calcul = (await page.getByRole("region", { name: "Calculateur des prix" }).boundingBox())!;
   expect(cuir.y).toBeLessThan(p.y);
   expect(calcul.y).toBeLessThan(p.y);
@@ -143,7 +143,7 @@ test("le calculateur a le cuir choisi par défaut", async ({ page }) => {
 
 test("les tarifs du cuir et le calculateur finissent à la même hauteur", async ({ page }) => {
   await page.setViewportSize({ width: 1300, height: 900 });
-  const cuir = page.getByRole("region", { name: "Tarifs du cuir" });
+  const cuir = page.getByRole("region", { name: "Cuir", exact: true });
   const calcul = page.getByRole("region", { name: "Calculateur des prix" });
   await expect(page.getByTestId("calculateur")).toBeVisible();
   const a = (await cuir.boundingBox())!;

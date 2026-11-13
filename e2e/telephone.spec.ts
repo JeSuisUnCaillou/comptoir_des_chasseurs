@@ -252,7 +252,7 @@ test("au téléphone, les champs des filtres sont alignés et un bouton de page 
   // « Gérer les tarifs » under the title, with room before the first panel.
   await page.goto("/tarifs");
   const button = await page.getByRole("link", { name: "Gérer les tarifs" }).boundingBox();
-  const panel = await page.getByRole("region", { name: "Tarifs du cuir" }).boundingBox();
+  const panel = await page.getByRole("region", { name: "Cuir", exact: true }).boundingBox();
   expect(panel!.y - (button!.y + button!.height)).toBeGreaterThanOrEqual(20);
 });
 

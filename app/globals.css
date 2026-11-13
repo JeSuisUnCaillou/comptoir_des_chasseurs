@@ -752,7 +752,8 @@ td.row-action .icon-btn {
   align-items: start;
 }
 
-.cols > .panel {
+.cols > .panel,
+.panel-stack > .panel:last-child {
   margin-bottom: 0;
 }
 
