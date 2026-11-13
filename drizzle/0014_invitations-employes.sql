@@ -1,1 +1,1 @@
-ALTER TABLE "shop_invitations" ADD COLUMN "role" "member_role" DEFAULT 'gerant' NOT NULL;
+ALTER TABLE "shop_invitations" ADD COLUMN IF NOT EXISTS "role" "member_role" DEFAULT 'gerant' NOT NULL;
