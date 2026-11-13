@@ -101,6 +101,10 @@ test("une boutique ne prend pas une adresse déjà prise ou réservée", async (
   await name.fill("Inventaire");
   await open.click();
   await expect(section.locator(ALERT)).toHaveText("L'adresse /inventaire est réservée : choisis un autre nom.");
+  // Its address would hide the Discord sign-in.
+  await name.fill("Auth");
+  await open.click();
+  await expect(section.locator(ALERT)).toHaveText("L'adresse /auth est réservée : choisis un autre nom.");
   await name.fill("✦ ✦");
   await open.click();
   await expect(section.locator(ALERT)).toHaveText(

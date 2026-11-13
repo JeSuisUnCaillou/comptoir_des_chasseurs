@@ -111,7 +111,7 @@ export async function createProduct(
     sellPrice?: number | null;
     stock?: number;
     unit?: string;
-    /** One of the comptoir's categories (migration 0015), by name. */
+    /** One of the comptoir's categories (migration 0016), by name. */
     category?: "Peaux" | "Viandes et venaison" | "Autres ressources" | "Composants alchimiques";
     /** The leather: the blacksmith buys it, the Inventaire counts it apart. */
     leather?: boolean;

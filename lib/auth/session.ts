@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
+import { authKey } from "@/lib/auth/key";
 import { canSignIn } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
@@ -15,31 +16,26 @@ import { currentShop } from "@/lib/shops";
 const COOKIE = "comptoir_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
 
-export function authConfigured() {
-  return (process.env.AUTH_SECRET?.length ?? 0) >= 32;
+export { authConfigured } from "@/lib/auth/key";
+
+type SessionKeys = Pick<Member, "id" | "passwordHash" | "discordId">;
+
+// Ties a session to the password and the Discord account it was opened with:
+// changing or resetting a password, or linking or unlinking Discord, signs the
+// member out of every other device. Without Discord the stamp is the one
+// sessions had before Discord, so they stay open.
+function accountStamp({ passwordHash, discordId }: SessionKeys) {
+  const keys = discordId ? `${passwordHash}\n${discordId}` : passwordHash;
+  return createHash("sha256").update(keys).digest("base64url").slice(0, 16);
 }
 
-function secret() {
-  const value = process.env.AUTH_SECRET;
-  if (!value || value.length < 32) {
-    throw new Error("AUTH_SECRET manquant ou trop court (32 caractères minimum).");
-  }
-  return new TextEncoder().encode(value);
-}
-
-// Ties a session to the password it was opened with: changing or resetting a
-// password signs the member out of every other device.
-function passwordStamp(passwordHash: string) {
-  return createHash("sha256").update(passwordHash).digest("base64url").slice(0, 16);
-}
-
-export async function startSession(member: Pick<Member, "id" | "passwordHash">) {
-  const token = await new SignJWT({ pw: passwordStamp(member.passwordHash) })
+export async function startSession(member: SessionKeys) {
+  const token = await new SignJWT({ pw: accountStamp(member) })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(member.id))
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
-    .sign(secret());
+    .sign(authKey());
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -58,7 +54,7 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, authKey(), { algorithms: ["HS256"] });
     const id = Number(payload.sub);
     if (!Number.isInteger(id)) return null;
     const [member] = await getDb()
@@ -66,7 +62,7 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
       .from(schema.members)
       .where(eq(schema.members.id, id))
       .limit(1);
-    if (!member || payload.pw !== passwordStamp(member.passwordHash)) return null;
+    if (!member || payload.pw !== accountStamp(member)) return null;
     return member;
   } catch {
     return null;

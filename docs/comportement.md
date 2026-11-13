@@ -22,6 +22,9 @@ fichier à jour dans le même commit.
 
 - En haut du menu, le logo et « REGISTRE de Lomone » (Lomone est le
   personnage du propriétaire dans Keizaal), sur toutes les boutiques.
+- L'onglet du navigateur porte le nom de la boutique sur toutes ses pages ;
+  hors d'une boutique (connexion, Mes boutiques, invitation), « Registre de
+  Lomone ».
 
 ### Téléphone et petites fenêtres
 
@@ -117,9 +120,23 @@ fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
 
 ### Invitation
 
-- `/invitation/<jeton>` : qui ouvre le lien devient gérant de la boutique,
-  avec son compte (connecté, ou après « J'ai déjà un compte ») ou un compte
-  qu'il crée là.
+- Deux sortes de liens `/invitation/<jeton>` : celui du super admin (« Tu es
+  invité à gérer la boutique… ») fait de qui l'ouvre le gérant d'une nouvelle
+  boutique ; celui d'un gérant (« Tu es invité à rejoindre la boutique… comme
+  employé ») en fait un employé de la sienne.
+- Qui ouvre le lien le prend avec son compte (connecté, ou après « J'ai déjà
+  un compte »), avec un compte qu'il crée là (identifiant et mot de passe),
+  ou avec « Entrer avec Discord » quand Discord est configuré : un Discord
+  déjà lié entre avec son compte ; sinon un compte est créé sans mot de
+  passe, avec l'identifiant Discord (suivi de `-2`, `-3`… s'il est pris) et
+  le nom donné au lien, ou à défaut le nom affiché sur Discord.
+- En créant un lien d'employé, le gérant peut lui donner un nom (facultatif) :
+  la page du lien l'annonce (« sous le nom de… »), le formulaire de création
+  de compte le pré-remplit, et la liste des liens en attente l'affiche. Un
+  compte existant qui prend le lien garde son nom.
+- Un lien d'employé ne change pas le rôle de quelqu'un qui est déjà membre de
+  la boutique : il ne rétrograde pas un gérant et ne réactive pas un compte
+  désactivé.
 - Le lien ne sert qu'une fois.
 
 ## Grand livre
@@ -434,13 +451,16 @@ Ne comptent pas :
 - Un compte sans boutique où il est actif ne peut plus se connecter.
 - Seul le super admin ouvre une boutique : pour lui, ou pour quelqu'un
   d'autre par un lien d'invitation (voir [Mes boutiques](#mes-boutiques)).
+- Un compte peut être lié à un compte Discord, par son propriétaire seulement
+  (voir [Connexion](#connexion)). Un compte Discord n'est lié qu'à un seul
+  compte. Discord ne crée un compte que par un lien d'invitation.
 
 ### Qui peut quoi
 
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
 | **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
@@ -465,3 +485,34 @@ Ne comptent pas :
 - Un compte qui ouvre une boutique où il n'a pas de rôle revient à `/` ; un
   employé qui ouvre une page de gérant revient au Grand livre de sa
   boutique.
+
+#### Avec Discord
+
+Le bouton « Se connecter avec Discord » apparaît sous le formulaire quand
+l'app Discord est configurée (voir le README).
+
+- Un compte Discord lié entre directement, puis revient sur la page demandée,
+  comme avec le mot de passe. Un compte sans boutique où il est actif est refusé (« Ce
+  compte n'a plus accès à aucune boutique. »).
+- Un compte Discord lié à personne ne fait entrer personne. La page de
+  connexion le dit (« Ton compte Discord X n'est encore lié à aucun
+  membre… ») et propose d'entrer une fois avec l'identifiant et le mot de
+  passe : ce compte-là est alors lié à ce Discord, pendant dix minutes. Sans
+  compte, il faut un lien d'invitation (voir [Invitation](#invitation)). « Ce
+  n'est pas mon compte Discord » l'oublie sans rien lier.
+- Discord refusé ou en erreur, ou un retour qui ne vient pas de la demande
+  faite par ce navigateur : « La connexion avec Discord n'a pas abouti.
+  Réessaie. »
+
+#### Lier Discord depuis Mon compte
+
+- La page Mon compte (la clé, en haut à droite) a un bloc Discord :
+  « Lier mon compte Discord » passe par Discord et revient lié ; une fois
+  lié, elle montre le nom Discord et « Délier Discord ».
+- Un compte ouvert avec Discord seul n'a pas de mot de passe : Mon compte lui
+  propose « Choisir mon mot de passe » (sans mot de passe actuel), et ne lui
+  laisse pas délier Discord avant, sinon plus rien n'ouvrirait le compte.
+- Un compte Discord déjà lié à un autre membre est refusé (« Ce compte
+  Discord est déjà lié à un autre membre. »).
+- Lier ou délier Discord ferme les sessions ouvertes sur les autres
+  appareils ; celle en cours reste ouverte. Le mot de passe marche toujours.
