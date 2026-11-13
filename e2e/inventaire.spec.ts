@@ -191,7 +191,7 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
     /\+3.*3 peaux.*chasse en montagne/,
   );
 
-  // Created without prices: the gérant finds it in Gérer les tarifs to set them.
+  // Created without prices: the gérant finds it in Gérer les marchandises to set them.
   await loginAsGerant(page);
   await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
   const row = page.getByRole("row").filter({ hasText: name });
@@ -239,4 +239,18 @@ test("l'inventaire montre les septims en caisse, sans ceux qui attendent la cais
     await sql.end();
   }
   near((await read()) - before, 5_000_000);
+});
+
+test("un gérant va de l'inventaire à Gérer les marchandises, pas un employé", async ({ page, browser }) => {
+  await loginAsGerant(page);
+  await page.goto("/inventaire");
+  await expect(page.getByRole("button", { name: "Nouvelle marchandise" })).toBeVisible();
+  await page.getByRole("link", { name: "Gérer les marchandises" }).click();
+  await expect(page).toHaveURL(/\/marchandises$/);
+  await expect(page.getByRole("heading", { name: "Gérer les marchandises", level: 1 })).toBeVisible();
+
+  const { page: employee } = await newEmployeePage(browser, "Ralof");
+  await employee.goto("/inventaire");
+  await expect(employee.getByRole("button", { name: "Nouvelle marchandise" })).toBeVisible();
+  await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
 });

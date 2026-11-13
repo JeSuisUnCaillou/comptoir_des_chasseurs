@@ -37,7 +37,7 @@ export type CreateState = { ok: true; name: string } | { ok: false; message: str
 
 /**
  * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock. Prices are set later in Gérer les tarifs.
+ * its first entry in stock. Prices are set later in Gérer les marchandises.
  */
 export async function createAndStock(_prev: CreateState, formData: FormData): Promise<CreateState> {
   const member = await requireMember();

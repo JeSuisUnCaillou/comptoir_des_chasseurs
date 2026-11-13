@@ -48,7 +48,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/inventaire", "Inventaire"],
     ["/inventaire/mouvement", "Mouvement de stock"],
     ["/tarifs", "Tarifs"],
-    ["/marchandises", "Gérer les tarifs"],
+    ["/marchandises", "Gérer les marchandises"],
     ["/fournisseurs", "Fournisseurs"],
     ["/annonces", "Annonces"],
     ["/membres", "Membres"],
@@ -249,9 +249,9 @@ test("au téléphone, les champs des filtres sont alignés et un bouton de page 
   expect(Math.round(to!.x)).toBe(Math.round(from!.x));
   expect(to!.y).toBeGreaterThan(from!.y + from!.height);
 
-  // « Gérer les tarifs » under the title, with room before the first panel.
+  // « Gérer les marchandises » under the title, with room before the first panel.
   await page.goto("/tarifs");
-  const button = await page.getByRole("link", { name: "Gérer les tarifs" }).boundingBox();
+  const button = await page.getByRole("link", { name: "Gérer les marchandises" }).boundingBox();
   const panel = await page.getByRole("region", { name: "Cuir", exact: true }).boundingBox();
   expect(panel!.y - (button!.y + button!.height)).toBeGreaterThanOrEqual(20);
 });
@@ -292,17 +292,18 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
 
   test("une page avec un bouton sous son titre garde le même espace avant son premier cadre", async ({ page }) => {
     await loginAsGerant(page);
-    // From the bottom of the page's title block to the top of its first panel.
+    // From the bottom of the page's title block (with its button, beside the
+    // title or wrapped under it) to the top of its first panel.
     const gapUnderTitle = () =>
       page.getByRole("heading", { level: 1 }).evaluate((h1) => {
-        const head = h1.closest(".page-head")!.getBoundingClientRect();
+        const head = (h1.closest(".content > .panel-head") ?? h1.closest(".page-head"))!.getBoundingClientRect();
         const panel = document.querySelector(".content .panel")!.getBoundingClientRect();
         return Math.round(panel.top - head.bottom);
       });
     await page.goto("/annonces");
     const usual = await gapUnderTitle();
     await page.goto("/tarifs");
-    await expect(page.getByRole("link", { name: "Gérer les tarifs" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Gérer les marchandises" })).toBeVisible();
     expect(await gapUnderTitle()).toBe(usual);
   });
 });

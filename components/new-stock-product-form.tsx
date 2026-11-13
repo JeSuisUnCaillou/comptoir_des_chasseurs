@@ -31,7 +31,7 @@ export function NewStockProductForm({
     <form onSubmit={keepValues(action)} className="new-product" aria-label="Nouvelle marchandise">
       <h3>Nouvelle marchandise</h3>
       <p className="small muted">
-        Elle n&apos;aura pas de prix au début : un gérant pourra les fixer dans « Gérer les tarifs ».
+        Elle n&apos;aura pas de prix au début : un gérant pourra les fixer dans « Gérer les marchandises ».
       </p>
       <div className="form-grid">
         <div className="field span-2">

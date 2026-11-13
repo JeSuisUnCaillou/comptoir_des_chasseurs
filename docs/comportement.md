@@ -12,7 +12,7 @@ fichier à jour dans le même commit.
 - [Mouvement de caisse](#mouvement-de-caisse)
 - [Annonces](#annonces)
 - [Fournisseurs](#fournisseurs)
-- [Tarifs et Gérer les tarifs](#tarifs-et-gérer-les-tarifs)
+- [Tarifs et Gérer les marchandises](#tarifs-et-gérer-les-marchandises)
 - [Inventaire](#inventaire)
 - [Activité d'un membre](#activité-dun-membre)
 - [Rôles et comptes](#rôles-et-comptes)
@@ -39,7 +39,7 @@ fenêtre :
 | Liste | Devient |
 | --- | --- |
 | Registre, activité d'un membre, historique du stock | une carte par écriture : article, quantité et septims sur une ligne, boutons dessous |
-| Tarifs, Gérer les tarifs, comptes (Membres) | une fiche par ligne ; les en-têtes des Tarifs restent au-dessus, en boutons de tri |
+| Tarifs, Gérer les marchandises, comptes (Membres) | une fiche par ligne ; les en-têtes des Tarifs restent au-dessus, en boutons de tri |
 
 ### Pagination
 
@@ -56,7 +56,7 @@ sur une page du registre.
 
 | Liste | Ordre |
 | --- | --- |
-| Marchandises (Gérer les tarifs, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, fournisseurs | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
+| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, fournisseurs | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
 | Cartes du stock (Inventaire) | cuirs, puis viandes, puis peaux, puis le reste ; chaque groupe par nom comme ci-dessus |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
 
@@ -186,7 +186,7 @@ sortie d'argent) les septims :
   (nom, lieu, note, marchandises et prix) ou les suppriment, par les boutons
   de la page.
 
-## Tarifs et Gérer les tarifs
+## Tarifs et Gérer les marchandises
 
 ### Prix citoyen
 
@@ -199,7 +199,7 @@ pour le produit phare, une étiquette dorée dans les tableaux.
 
 Dans l'ordre de la page :
 
-1. Le produit phare, choisi par un gérant dans Gérer les tarifs (le cuir tant
+1. Le produit phare, choisi par un gérant dans Gérer les marchandises (le cuir tant
    qu'aucun autre n'est choisi, ou si le choisi est archivé) : ses prix de
    rachat et de vente en tuiles ; pour le cuir, le rachat par le forgeron en
    plus.
@@ -223,7 +223,7 @@ Dans la grille :
 - quand la recherche trouve moins de 10 marchandises (avec ou sans tarif),
   les sans tarif s'affichent d'office, sans bouton ;
 - pour un gérant, chaque ligne a un crayon qui ouvre la fiche de la
-  marchandise dans Gérer les tarifs ; l'enregistrer ramène aux Tarifs.
+  marchandise dans Gérer les marchandises ; l'enregistrer ramène aux Tarifs.
 - chaque grille (et la table des sans tarif) se trie en cliquant un en-tête :
   un clic du plus petit au plus grand (de A à Z pour les noms), le suivant
   dans l'autre sens. Les prix se comparent à l'unité (2 septims pour 4
@@ -231,7 +231,7 @@ Dans la grille :
   reste en bas dans les deux sens. En fiches, les en-têtes restent au-dessus,
   en boutons. Le tri ne dure que le temps de la page.
 
-### Gérer les tarifs (gérants)
+### Gérer les marchandises (gérants)
 
 - S'ouvre par le bouton du même nom sur la page Tarifs.
 - Créer et modifier les marchandises et leurs prix.
@@ -274,9 +274,11 @@ registre.
 - Le bouton « Nouvelle marchandise » fait entrer en stock une marchandise
   qui n'existe pas encore.
 - Tout membre la crée, sans prix : nom, catégorie, unité, quantité, motif.
-  Un gérant règle ses prix ensuite dans Gérer les tarifs.
+  Un gérant règle ses prix ensuite dans Gérer les marchandises.
 - Quand la recherche du stock ne trouve rien, le formulaire reprend le nom
   cherché.
+- À côté, un gérant a le bouton « Gérer les marchandises », qui mène à la
+  page du même nom.
 
 ### Historique des mouvements
 
@@ -330,8 +332,8 @@ Ne comptent pas :
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | ouvrir la page Membres et Gérer les tarifs ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
-| **Employé** | les pages du comptoir, sauf Membres et Gérer les tarifs, et sauf les gestes que les sections ci-dessus réservent aux gérants |
+| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Employé** | les pages du comptoir, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.

@@ -5,6 +5,7 @@ import { MemberDateFilters } from "@/components/member-date-filters";
 import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
+import { isGerant } from "@/lib/policies";
 import type { ProductCategory } from "@/lib/db/schema";
 import { MovementTable } from "@/components/movement-table";
 import { formatNumber, septims } from "@/lib/pricing";
@@ -120,6 +121,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
           <span className="small muted">{products.length} marchandise{products.length > 1 ? "s" : ""}</span>
         </div>
         <StockBoard
+          canManage={isGerant(member)}
           items={[...products]
             .sort((a, b) => stockGroup(a.category) - stockGroup(b.category))
             .map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}

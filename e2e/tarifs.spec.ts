@@ -286,10 +286,10 @@ test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tari
     grids(page).peaux.getByRole("row", { name: /Biche/ }).getByRole("link", { name: "Modifier Biche" }),
   ).toBeVisible();
 
-  // Opened from Gérer les tarifs, saving still goes back there.
+  // Opened from Gérer les marchandises, saving still goes back there.
   await page.goto("/marchandises?q=" + encodeURIComponent(name));
   await page.getByRole("link", { name: `Modifier ${name}` }).click();
-  await expect(page.getByRole("link", { name: "← Gérer les tarifs" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "← Gérer les marchandises" })).toBeVisible();
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page).toHaveURL(/\/marchandises$/);
 
