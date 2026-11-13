@@ -120,8 +120,9 @@ ni Supabase Auth) et garde ses propres sessions. Pour l'activer :
    [discord.com/developers/applications](https://discord.com/developers/applications)
    (gratuit).
 2. Dans OAuth2 → Redirects, déclarer
-   `https://comptoirdeschasseurs.vercel.app/auth/discord/callback` et
-   `https://comptoirdeschasseurs-preview.vercel.app/auth/discord/callback`
+   l'adresse de prod, `https://registre-de-lomone.vercel.app/auth/discord/callback`
+   (et l'ancienne, `https://comptoirdeschasseurs.vercel.app/auth/discord/callback`),
+   et celle des previews, `https://comptoirdeschasseurs-preview.vercel.app/auth/discord/callback`
    (et `http://localhost:3000/auth/discord/callback` pour essayer en local).
 3. Mettre son Client ID et son Client Secret dans les variables
    `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET` de Vercel (Production et

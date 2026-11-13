@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import { discordUser, finishDiscordFlow, rememberPendingDiscord } from "@/lib/auth/discord";
-import { RETURN_PARAM, loginUrl } from "@/lib/auth/return-path";
+import { loginUrl } from "@/lib/auth/return-path";
 import { currentAccount, startSession } from "@/lib/auth/session";
-import { UserError } from "@/lib/errors";
+import { attempt } from "@/lib/errors";
 import { accountByDiscordId, canSignIn, linkDiscord } from "@/lib/members";
 
 /** Where Discord sends the visitor back, with a code that says who they are. */
@@ -21,20 +21,13 @@ export async function GET(request: NextRequest) {
     const account = await currentAccount();
     if (!account || account.id !== flow.memberId) redirect(loginUrl(flow.returnPath));
     if (!user) redirect(back("erreur"));
-    let outcome = "lie";
-    try {
-      await startSession(await linkDiscord(account.id, user));
-    } catch (error) {
-      if (!(error instanceof UserError)) throw error;
-      outcome = "pris";
-    }
-    redirect(back(outcome));
+    const linked = await attempt(() => linkDiscord(account.id, user));
+    if (linked.ok) await startSession(linked.value);
+    redirect(back(linked.ok ? "lie" : "pris"));
   }
 
-  const back = (query: string) =>
-    flow.returnPath === "/"
-      ? `/connexion?${query}`
-      : `/connexion?${RETURN_PARAM}=${encodeURIComponent(flow.returnPath)}&${query}`;
+  const login = loginUrl(flow.returnPath);
+  const back = (query: string) => `${login}${login.includes("?") ? "&" : "?"}${query}`;
   if (!user) redirect(back("discord=erreur"));
   const member = await accountByDiscordId(user.id);
   if (!member) {
