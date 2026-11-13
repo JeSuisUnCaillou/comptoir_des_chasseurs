@@ -33,8 +33,7 @@ export async function updateMember(formData: FormData) {
   const name = text(formData, "name", 60);
   const role = readRole(formData);
   if (!Number.isInteger(id) || !name) return;
-  // Deactivating has its own button: the selector only moves between gérant and employé.
-  await updateAccount(me, id, name, role === "desactive" ? null : role);
+  await updateAccount(me, id, name, role);
   revalidateShop();
 }
 

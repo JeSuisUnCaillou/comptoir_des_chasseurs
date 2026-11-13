@@ -164,12 +164,10 @@ function editableBy(me: Pick<ShopMember, "id" | "shopId">, id: number) {
   );
 }
 
-/** The roles the role selector of Membres offers: deactivating has its own button. */
-export type ActiveRole = Exclude<MemberRole, "desactive">;
-
 /**
  * Renames an account of the gérant's shop and sets its role there, unless it
- * is deactivated there: reactivating has its own button. A gérant cannot
+ * is deactivated there or the role is (or null): deactivating and
+ * reactivating have their own button (setAccountActive). A gérant cannot
  * demote themself, so the shop always keeps a gérant, and the super admin
  * stays a gérant.
  */
@@ -177,7 +175,7 @@ export async function updateAccount(
   me: Pick<ShopMember, "id" | "shopId">,
   id: number,
   name: string,
-  role: ActiveRole | null,
+  role: MemberRole | null,
 ) {
   await getDb().transaction(async (tx) => {
     const [member] = await tx
@@ -185,7 +183,7 @@ export async function updateAccount(
       .set({ name })
       .where(editableBy(me, id))
       .returning({ id: schema.members.id, superAdmin: schema.members.superAdmin });
-    if (!member || !role) return;
+    if (!member || !role || role === "desactive") return;
     await tx
       .update(schema.shopMembers)
       .set({ role: id === me.id || member.superAdmin ? "gerant" : role })
