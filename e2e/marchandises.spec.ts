@@ -5,8 +5,8 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   const name = uniqueName("Peau de chèvre des glaces");
   await loginAsGerant(page);
   await page.getByRole("link", { name: "Tarifs" }).click();
-  await page.getByRole("link", { name: "Gérer les tarifs" }).click();
-  await expect(page.getByRole("heading", { name: "Gérer les tarifs", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Gérer les marchandises" }).click();
+  await expect(page.getByRole("heading", { name: "Gérer les marchandises", level: 1 })).toBeVisible();
   // The page belongs to Tarifs in the menu.
   await expect(page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" })).toHaveAttribute(
     "aria-current",
@@ -71,7 +71,7 @@ test("un employé ne voit pas la gestion des marchandises", async ({ browser }) 
   await expect(employee.getByRole("link", { name: "Tarifs" })).toBeVisible();
   await employee.getByRole("link", { name: "Tarifs" }).click();
   await expect(employee.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
-  await expect(employee.getByRole("link", { name: "Gérer les tarifs" })).toHaveCount(0);
+  await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
   await employee.goto("/marchandises");
   await expect(employee).toHaveURL(/\/$/);
 });

@@ -23,7 +23,7 @@ export default async function EditProduct({
   return (
     <>
       <PageHead title={product.name}>
-        {fromTarifs ? <Link href="/tarifs">← Tarifs</Link> : <Link href="/marchandises">← Gérer les tarifs</Link>}
+        {fromTarifs ? <Link href="/tarifs">← Tarifs</Link> : <Link href="/marchandises">← Gérer les marchandises</Link>}
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
         <ProductForm product={product} fromTarifs={fromTarifs} />

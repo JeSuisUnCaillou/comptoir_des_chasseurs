@@ -54,7 +54,7 @@ test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, 
   ]);
 });
 
-test("Gérer les tarifs range les marchandises par nom", async ({ page }) => {
+test("Gérer les marchandises range les marchandises par nom", async ({ page }) => {
   const tag = uniqueName("Tri catalogue");
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`, { category: "viande", unit: "morceau" });

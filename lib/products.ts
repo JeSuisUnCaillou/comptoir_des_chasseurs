@@ -251,13 +251,13 @@ export async function createStocked(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les tarifs ».`);
+      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`);
     }
     throw error;
   }
 }
 
-/** What Gérer les tarifs sets on a merchandise. */
+/** What Gérer les marchandises sets on a merchandise. */
 export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "shopId" | "stock" | "createdAt">;
 
 /** Creates a merchandise of the shop, or updates it when `id` is given. */

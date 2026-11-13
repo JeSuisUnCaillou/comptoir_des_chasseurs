@@ -54,7 +54,7 @@ test("les pages n'affichent plus la mention « Registres » en tête", async ({ 
   for (const [path, title] of [
     ["/", "Grand livre"],
     ["/inventaire", "Inventaire"],
-    ["/marchandises", "Gérer les tarifs"],
+    ["/marchandises", "Gérer les marchandises"],
     ["/membres", "Membres"],
     ["/fournisseurs/nouveau", "Nouveau fournisseur"],
   ]) {
