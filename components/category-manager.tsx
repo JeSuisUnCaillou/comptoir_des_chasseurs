@@ -27,8 +27,8 @@ function CategoryRow({ category, handle }: { category: ManagedCategory; handle: 
   const label = `${category.products} marchandise${category.products > 1 ? "s" : ""}`;
   return (
     <div className="category-row" data-testid={`categorie-${category.name}`}>
+      {handle}
       <form onSubmit={keepValues(action)} className="inline-form">
-        {handle}
         <input type="hidden" name="id" value={category.id} />
         <input
           name="name"
