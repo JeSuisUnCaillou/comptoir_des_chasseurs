@@ -224,3 +224,16 @@ test("le gérant nomme ses clients privilégiés, en a plusieurs, et chacun a so
   await page.goto(`/${slug}/tarifs`);
   await expect(tiles).toHaveText(["Rachat · Citoyens de Vendeaume4 septims"]);
 });
+
+test("une boutique a cinq clients privilégiés au plus", async ({ page }) => {
+  await newShop(page);
+  const panel = page.getByRole("region", { name: "Clients privilégiés" });
+  for (const name of ["Jarls", "Gardes", "Mages", "Bardes", "Voleurs"]) {
+    await panel.getByLabel("Nouveau groupe").fill(name);
+    await panel.getByRole("button", { name: "Ajouter le groupe" }).click();
+    await expect(panel.getByLabel(`Nom du groupe ${name}`)).toBeVisible();
+  }
+  // The fifth one closes the addition.
+  await expect(panel.getByLabel("Nouveau groupe")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Ajouter le groupe" })).toHaveCount(0);
+});
