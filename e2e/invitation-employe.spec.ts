@@ -51,6 +51,14 @@ test("un gérant invite un employé, qui entre avec Discord seul puis choisit un
   await expect(row.getByLabel("Rôle")).toHaveValue("employe");
   await expect(row.getByLabel("Nom affiché")).toHaveValue(discord.name);
 
+  // No password yet: the sign-in form doesn't open the account, whatever is typed.
+  const stranger = await (await browser.newContext()).newPage();
+  await stranger.goto("/connexion");
+  await stranger.getByLabel("Identifiant").fill(username);
+  await stranger.getByLabel("Mot de passe").fill("nimporte-quoi");
+  await stranger.getByRole("button", { name: "Se connecter" }).click();
+  await expect(stranger.locator(ALERT)).toHaveText("Identifiant ou mot de passe incorrect.");
+
   // No password yet: Discord can't be unlinked, and the first password needs no current one.
   await newcomer.goto(`${COMPTOIR}/mot-de-passe`);
   await expect(newcomer.getByText(`Identifiant : ${username}`)).toBeVisible();

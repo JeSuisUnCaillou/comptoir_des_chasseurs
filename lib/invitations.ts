@@ -4,6 +4,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
+import { NO_PASSWORD } from "@/lib/auth/password";
 import { UserError } from "@/lib/errors";
 import { freeUsername, insertAccount } from "@/lib/members";
 import { canOpenShop, isGerant } from "@/lib/policies";
@@ -105,7 +106,7 @@ export async function signUpWithInvitation(
   { username, name, passwordHash }: { username: string; name: string; passwordHash: string },
 ): Promise<{ member: Member; shop: Shop }> {
   return getDb().transaction(async (tx) => {
-    const member = await insertAccount(tx, { username, name, passwordHash }, await linkRole(tx, token));
+    const member = await insertAccount(tx, { username, name, passwordHash });
     return { member, shop: await spend(tx, token, member.id) };
   });
 }
@@ -123,16 +124,8 @@ export async function signUpWithDiscord(
     const username = await freeUsername(tx, discord.username);
     const member = await insertAccount(
       tx,
-      { username, name: discord.name.slice(0, 60), passwordHash: "", discordId: discord.id, discordName: discord.name },
-      await linkRole(tx, token),
+      { username, name: discord.name.slice(0, 60), passwordHash: NO_PASSWORD, discordId: discord.id, discordName: discord.name },
     );
     return { member, shop: await spend(tx, token, member.id) };
   });
-}
-
-// The legacy members.role of a new account: the role the link gives.
-async function linkRole(tx: Tx, token: string): Promise<MemberRole> {
-  const i = schema.shopInvitations;
-  const [row] = await tx.select({ role: i.role }).from(i).where(eq(i.token, token)).limit(1);
-  return row?.role ?? "employe";
 }

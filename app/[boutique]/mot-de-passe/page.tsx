@@ -2,9 +2,9 @@ import { PageHead } from "@/components/page-head";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { unlinkMyDiscord } from "@/app/[boutique]/mot-de-passe/actions";
 import { discordConfigured } from "@/lib/auth/discord";
+import { hasPassword } from "@/lib/auth/password";
 import { RETURN_PARAM } from "@/lib/auth/return-path";
 import { requireMember } from "@/lib/auth/session";
-import { hasPassword } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 
 const DISCORD_NOTICES: Record<string, { ok: boolean; message: string }> = {

@@ -1,9 +1,10 @@
 "use server";
 
-import { MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from "@/lib/auth/password";
+import { MIN_PASSWORD_LENGTH, hasPassword, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { requireMember, startSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
-import { hasPassword, setOwnPassword, unlinkDiscord } from "@/lib/members";
+import { attempt } from "@/lib/errors";
+import { setOwnPassword, unlinkDiscord } from "@/lib/members";
 import { revalidateShop } from "../revalidate";
 import { shopPath } from "@/lib/paths";
 
@@ -34,9 +35,8 @@ export async function changePassword(_prev: PasswordState, formData: FormData): 
 /** The member unlinks Discord from their account: only their password opens it again. */
 export async function unlinkMyDiscord() {
   const member = await requireMember();
-  // Without a password, nothing would open the account any more.
-  if (!hasPassword(member)) redirect(shopPath(member.shop.slug, "/mot-de-passe?discord=sans-mot-de-passe"));
+  const unlinked = await attempt(() => unlinkDiscord(member.id));
   // Sessions opened with Discord on other devices close.
-  await startSession(await unlinkDiscord(member.id));
-  redirect(shopPath(member.shop.slug, "/mot-de-passe?discord=delie"));
+  if (unlinked.ok) await startSession(unlinked.value);
+  redirect(shopPath(member.shop.slug, `/mot-de-passe?discord=${unlinked.ok ? "delie" : "sans-mot-de-passe"}`));
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, count, eq, exists, like, ne, or, sql } from "drizzle-orm";
+import { NO_PASSWORD } from "@/lib/auth/password";
 import type { ShopMember } from "@/lib/auth/session";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
@@ -50,13 +51,17 @@ export async function linkDiscord(memberId: number, discord: { id: string; name:
   }
 }
 
-/** A member unlinks Discord from their own account. Returns the account as it now is. */
+/**
+ * A member unlinks Discord from their own account. Returns the account as it
+ * now is. Refused without a password: nothing would open the account any more.
+ */
 export async function unlinkDiscord(memberId: number): Promise<Member> {
   const [member] = await getDb()
     .update(schema.members)
     .set({ discordId: null, discordName: null })
-    .where(eq(schema.members.id, memberId))
+    .where(and(eq(schema.members.id, memberId), ne(schema.members.passwordHash, NO_PASSWORD)))
     .returning();
+  if (!member) throw new UserError("Choisis d'abord un mot de passe : sans lui, plus rien n'ouvrirait ton compte.");
   return member;
 }
 
@@ -121,11 +126,6 @@ export async function freeUsername(tx: Tx, wanted: string) {
   );
   if (!taken.has(base)) return base;
   for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
-}
-
-/** True when the account has a password: one opened with Discord alone has none until its owner chooses one. */
-export function hasPassword(member: Pick<Member, "passwordHash">) {
-  return member.passwordHash !== "";
 }
 
 /** Creates an account, with no shop yet, inside `tx`. Refuses a username already taken. */

@@ -27,6 +27,14 @@ export async function verifyPassword(password: string, stored: string) {
 
 export const MIN_PASSWORD_LENGTH = 8;
 
+/** The password hash of an account opened with Discord alone: no password opens it. */
+export const NO_PASSWORD = "";
+
+/** True when the account has a password: one opened with Discord alone has none until its owner chooses one. */
+export function hasPassword(member: { passwordHash: string }) {
+  return member.passwordHash !== NO_PASSWORD;
+}
+
 export function normalizeUsername(raw: unknown) {
   return String(raw ?? "").trim().toLowerCase().slice(0, 40);
 }
