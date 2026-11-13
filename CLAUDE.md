@@ -148,8 +148,8 @@ par jour. Le lien est dans la description de la PR, entre
 réécris la description).
 
 Donne **toujours le lien de la page précise à essayer**
-(`…vercel.app/le-comptoir-des-chasseurs/fournisseurs`), jamais la racine (« donne moi TOUJOURS le lien de la page spécifique à
-tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
+(`…vercel.app/le-comptoir-des-chasseurs/fournisseurs`), jamais la racine
+(« donne moi TOUJOURS le lien de la page spécifique à tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
 écrire dans la base des previews, donc si la fonctionnalité demande des
 données que le seed n'apporte pas, étends `scripts/seed-preview.mjs` dans la
 même PR, sans rien écraser, avec une condition qui remet l'exemple une fois
