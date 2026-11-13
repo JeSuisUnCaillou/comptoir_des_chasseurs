@@ -4,7 +4,7 @@ import { PageHead } from "@/components/page-head";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
-import { productOf } from "@/lib/products";
+import { privilegedGroups, productOf } from "@/lib/products";
 
 export default async function EditProduct({
   params,
@@ -19,7 +19,7 @@ export default async function EditProduct({
   const fromTarifs = (await searchParams).depuis === "tarifs";
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
-  const product = await productOf(member.shopId, id);
+  const [product, groups] = await Promise.all([productOf(member.shopId, id), privilegedGroups(member.shopId)]);
   if (!product) notFound();
 
   return (
@@ -28,7 +28,7 @@ export default async function EditProduct({
         {fromTarifs ? <Link href={at("/tarifs")}>← Tarifs</Link> : <Link href={at("/marchandises")}>← Gérer les marchandises</Link>}
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
-        <ProductForm product={product} fromTarifs={fromTarifs} />
+        <ProductForm product={product} groups={groups.map(({ id, name }) => ({ id, name }))} fromTarifs={fromTarifs} />
       </section>
     </>
   );

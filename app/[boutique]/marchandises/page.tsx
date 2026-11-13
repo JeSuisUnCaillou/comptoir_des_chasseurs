@@ -7,7 +7,8 @@ import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
+import { MAX_PRIVILEGED_GROUPS, activeProducts, blacksmithLeatherPrice, featuredProduct, privilegedGroups, productPage } from "@/lib/products";
+import { PrivilegedGroupsForm } from "@/components/privileged-groups-form";
 import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
@@ -18,11 +19,13 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
   const search = await searchParams;
   const q = searchParam(search.q);
   const page = pageParam(search.page);
-  const [{ products, total }, blacksmith, active] = await Promise.all([
+  const [{ products, total }, blacksmith, active, privileged] = await Promise.all([
     productPage(member.shopId, q, page),
     blacksmithLeatherPrice(member.shopId),
     activeProducts(member.shopId),
+    privilegedGroups(member.shopId),
   ]);
+  const groups = privileged.map(({ id, name }) => ({ id, name }));
   const featured = await featuredProduct(member.shopId, active);
 
   return (
@@ -35,7 +38,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <section className="panel" aria-labelledby="ajout">
           <div className="eyebrow">Nouvelle référence</div>
           <h2 id="ajout">Ajouter une marchandise</h2>
-          <ProductForm />
+          <ProductForm groups={groups} />
         </section>
         <div className="panel-stack">
           <section className="panel" aria-labelledby="phare">
@@ -58,6 +61,15 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
                 Enregistrer
               </button>
             </form>
+          </section>
+          <section className="panel" aria-labelledby="privilegies">
+            <div className="eyebrow">Réglage</div>
+            <h2 id="privilegies">Clients privilégiés</h2>
+            <p className="muted">
+              Des vendeurs à qui la boutique rachète à leur propre prix, comme les citoyens d&apos;une ville. Chaque
+              marchandise peut avoir un prix pour chacun ; vide, ils ont le prix habituel.
+            </p>
+            <PrivilegedGroupsForm groups={groups} max={MAX_PRIVILEGED_GROUPS} />
           </section>
           <section className="panel" aria-labelledby="forgeron">
             <div className="eyebrow">Réglage</div>

@@ -9,7 +9,6 @@ import { SortableTable, type SortColumn } from "@/components/sortable-table";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { param, searchParam } from "@/lib/pagination";
-import type { Product } from "@/lib/db/schema";
 import {
   CATEGORY_LABELS,
   batchMargin,
@@ -23,7 +22,7 @@ import {
   unitMargin,
   unitPrice,
 } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct, type ShopProduct as Product } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
@@ -49,17 +48,15 @@ function EditCell({ product, edit }: { product: Product; edit: string | null }) 
   );
 }
 
-/** The citizens of Estemarche's buyback price, under the usual one, when the product has one. */
-function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?: boolean }) {
-  if (product.citizenBuyPrice == null) return null;
-  return (
-    <div className="citizen-price">
+/** The privileged groups' buyback prices, under the usual one, for those the product has one for. */
+function PrivilegedPrices({ product, perUnit = false }: { product: Product; perUnit?: boolean }) {
+  return product.privileged.map((g) => (
+    <div key={g.groupId} className="privileged-price">
       <span className="badge badge-gold">
-        Citoyens d&apos;Estemarche :{" "}
-        <strong>{perUnit ? septims(product.citizenBuyPrice) : rate(product.citizenBuyPrice, product.buyQty)}</strong>
+        {g.name} : <strong>{perUnit ? septims(g.price) : rate(g.price, product.buyQty)}</strong>
       </span>
     </div>
-  );
+  ));
 }
 
 /** The pencil's column, last, for a gérant. */
@@ -100,7 +97,7 @@ function GoodsTable({ products, edit }: { products: Product[]; edit: string | nu
           </td>
           <td className="num minus" data-label="Rachat">
             {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
-            <CitizenPrice product={p} />
+            <PrivilegedPrices product={p} />
           </td>
           <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
           <td className="num" data-label="Gros">
@@ -233,7 +230,7 @@ function HidesTable({ products, edit, blacksmith }: { products: Product[]; edit:
                 </td>
                 <td className="num minus" data-label="Rachat / peau">
                   {p.buyPrice == null ? "—" : septims(p.buyPrice)}
-                  <CitizenPrice product={p} perUnit />
+                  <PrivilegedPrices product={p} perUnit />
                 </td>
                 <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
                 <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
@@ -268,21 +265,21 @@ function tilePrice(price: number | null, qty: number) {
 }
 
 /**
- * The featured product's buyback and sale prices, the citizens' one first when
- * it has one; for leather, what the blacksmith pays for it beside the sale.
+ * The featured product's buyback and sale prices, its privileged groups' ones
+ * first; for leather, what the blacksmith pays for it beside the sale.
  */
 function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: number }) {
   return (
     <>
       <div className="stats" style={{ marginTop: 14 }}>
-        {product.citizenBuyPrice != null && (
-          <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
-            <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
-            <div className="stat-value">{tilePrice(product.citizenBuyPrice, product.buyQty)}</div>
+        {product.privileged.map((g) => (
+          <div key={g.groupId} className="stat stat-privileged" data-testid="rachat-phare-privilegie">
+            <div className="stat-label">Rachat · {g.name}</div>
+            <div className="stat-value">{tilePrice(g.price, product.buyQty)}</div>
           </div>
-        )}
+        ))}
         <div className="stat">
-          <div className="stat-label">{product.citizenBuyPrice == null ? "Rachat" : "Rachat · autres vendeurs"}</div>
+          <div className="stat-label">{product.privileged.length === 0 ? "Rachat" : "Rachat · autres vendeurs"}</div>
           <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
         </div>
       </div>

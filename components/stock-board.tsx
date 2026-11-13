@@ -9,6 +9,7 @@ import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";
 import { NewStockProductForm } from "@/components/new-stock-product-form";
+import type { GroupChoice } from "@/components/product-price-fields";
 
 export type StockItem = {
   id: number;
@@ -100,7 +101,16 @@ function StockCard({ item }: { item: StockItem }) {
 const CARDS_PER_PAGE = 24;
 
 /** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
-export function StockBoard({ items, canManage }: { items: StockItem[]; canManage: boolean }) {
+export function StockBoard({
+  items,
+  canManage,
+  groups,
+}: {
+  items: StockItem[];
+  canManage: boolean;
+  /** The shop's privileged groups, priced with a new merchandise. */
+  groups: GroupChoice[];
+}) {
   const id = useId();
   const path = useShopPath();
   const [query, setQuery] = useState("");
@@ -156,6 +166,7 @@ export function StockBoard({ items, canManage }: { items: StockItem[]; canManage
           name={creating}
           category={category}
           canSetPrices={canManage}
+          groups={groups}
           onCreated={created}
           onCancel={closeCreate}
         />

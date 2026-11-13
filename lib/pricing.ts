@@ -41,36 +41,38 @@ export function isBulk(p: Prices, quantity: number) {
   return p.bulkMin != null && p.bulkPrice != null && quantity >= p.bulkMin;
 }
 
-export type Rate = { price: number; qty: number; bulk: boolean; citizen: boolean };
+/** `privileged`: the seller's privileged group's name, when its own price applied. */
+export type Rate = { price: number; qty: number; bulk: boolean; privileged: string | null };
+
+/** A privileged group's buyback price, for the product's buyQty units. */
+export type PrivilegedRate = { name: string; price: number };
 
 /**
  * The rate a sale or a buyback of `quantity` units is priced at, or null
- * without a tariff: wholesale from its threshold on a sale, the citizens of
- * Estemarche's own price on a buyback when it is set.
+ * without a tariff: wholesale from its threshold on a sale, the seller's
+ * privileged group's own price on a buyback when it has one.
  */
 export function appliedRate(
-  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
+  p: Prices,
   kind: "vente" | "rachat",
   quantity: number,
-  { citizen = false } = {},
+  { privileged = null }: { privileged?: PrivilegedRate | null } = {},
 ): Rate | null {
   if (kind === "vente") {
-    if (isBulk(p, quantity)) return { price: p.bulkPrice!, qty: p.bulkQty, bulk: true, citizen: false };
-    return p.sellPrice == null ? null : { price: p.sellPrice, qty: p.sellQty, bulk: false, citizen: false };
+    if (isBulk(p, quantity)) return { price: p.bulkPrice!, qty: p.bulkQty, bulk: true, privileged: null };
+    return p.sellPrice == null ? null : { price: p.sellPrice, qty: p.sellQty, bulk: false, privileged: null };
   }
-  if (citizen && p.citizenBuyPrice != null) {
-    return { price: p.citizenBuyPrice, qty: p.buyQty, bulk: false, citizen: true };
-  }
-  return p.buyPrice == null ? null : { price: p.buyPrice, qty: p.buyQty, bulk: false, citizen: false };
+  if (privileged) return { price: privileged.price, qty: p.buyQty, bulk: false, privileged: privileged.name };
+  return p.buyPrice == null ? null : { price: p.buyPrice, qty: p.buyQty, bulk: false, privileged: null };
 }
 
-/** What the comptoir pays a seller. */
+/** What the shop pays a seller. */
 export function buyTotal(
-  p: Prices & Partial<Pick<Product, "citizenBuyPrice">>,
+  p: Prices,
   quantity: number,
-  { citizen = false } = {},
+  { privileged = null }: { privileged?: PrivilegedRate | null } = {},
 ): Total | null {
-  const r = appliedRate(p, "rachat", quantity, { citizen });
+  const r = appliedRate(p, "rachat", quantity, { privileged });
   return r && total(r.price, r.qty, quantity);
 }
 
