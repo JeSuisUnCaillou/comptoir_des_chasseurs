@@ -7,7 +7,7 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { GROUP_NAME_MAX, checked, optionalId, optionalInt, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { createPrivilegedGroup, deletePrivilegedGroup, renamePrivilegedGroup } from "@/lib/privileged-groups";
-import { addCategory, deleteCategory, renameCategory } from "@/lib/categories";
+import { addCategory, deleteCategory, renameCategory, setCategoryOrder } from "@/lib/categories";
 import {
   saveProduct as save,
   setBlacksmithLeatherPrice,
@@ -117,4 +117,13 @@ export async function saveCategory(_prev: CategoryFormState, formData: FormData)
   if (!result.ok) return { error: result.message };
   revalidateShop();
   return { ok: id == null ? `Catégorie « ${name} » ajoutée.` : deleting ? "Catégorie supprimée." : "Catégorie renommée." };
+}
+
+/** A gérant puts the shop's categories in a new order; false when the list changed meanwhile. */
+export async function saveCategoryOrder(ids: number[]): Promise<boolean> {
+  const member = await requireMember(["gerant"]);
+  if (!Array.isArray(ids) || !ids.every((id) => Number.isInteger(id))) return false;
+  const result = await attempt(() => setCategoryOrder(member.shopId, ids));
+  if (result.ok) revalidateShop();
+  return result.ok;
 }

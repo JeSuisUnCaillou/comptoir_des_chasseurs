@@ -30,7 +30,7 @@ function asDirection(value: string | undefined) {
 // by name and Array.prototype.sort is stable, so names stay in order inside
 // each group.
 const stockOrder = (a: CategorizedProduct, b: CategorizedProduct) =>
-  Number(b.leather) - Number(a.leather) || a.categoryId - b.categoryId;
+  Number(b.leather) - Number(a.leather) || a.categoryPosition - b.categoryPosition || a.categoryId - b.categoryId;
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();

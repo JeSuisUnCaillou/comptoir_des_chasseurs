@@ -1,8 +1,9 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
-import { saveCategory, type CategoryFormState } from "@/app/[boutique]/marchandises/actions";
+import { useActionState, useEffect, useState, type ReactNode } from "react";
+import { saveCategory, saveCategoryOrder, type CategoryFormState } from "@/app/[boutique]/marchandises/actions";
+import { SortableList } from "@/components/sortable-list";
 import { keepValues } from "@/components/keep-values";
 
 export type ManagedCategory = { id: number; name: string; hides: boolean; products: number };
@@ -20,13 +21,14 @@ function Feedback({ state }: { state: CategoryFormState }) {
   );
 }
 
-/** One category: its name to change, how many merchandises it holds, and its deletion once empty. */
-function CategoryRow({ category }: { category: ManagedCategory }) {
+/** One category: its handle to move it, its name to change, how many merchandises it holds, and its deletion once empty. */
+function CategoryRow({ category, handle }: { category: ManagedCategory; handle: ReactNode }) {
   const [state, action, pending] = useActionState<CategoryFormState, FormData>(saveCategory, null);
   const label = `${category.products} marchandise${category.products > 1 ? "s" : ""}`;
   return (
-    <li className="category-row" data-testid={`categorie-${category.name}`}>
+    <div className="category-row" data-testid={`categorie-${category.name}`}>
       <form onSubmit={keepValues(action)} className="inline-form">
+        {handle}
         <input type="hidden" name="id" value={category.id} />
         <input
           name="name"
@@ -56,7 +58,7 @@ function CategoryRow({ category }: { category: ManagedCategory }) {
         {category.hides && " · se transforment en cuir par lots"}
       </p>
       <Feedback state={state} />
-    </li>
+    </div>
   );
 }
 
@@ -80,15 +82,13 @@ function AddCategory() {
   );
 }
 
-/** The shop's categories on Gérer les marchandises: rename, add, delete. */
+/** The shop's categories on Gérer les marchandises: reorder, rename, add, delete. */
 export function CategoryManager({ categories }: { categories: ManagedCategory[] }) {
   return (
     <>
-      <ul className="category-list">
-        {categories.map((c) => (
-          <CategoryRow key={c.id} category={c} />
-        ))}
-      </ul>
+      <SortableList items={categories} label="Catégories de la boutique" className="category-list" save={saveCategoryOrder}>
+        {(c, handle) => <CategoryRow category={c} handle={handle} />}
+      </SortableList>
       <AddCategory />
     </>
   );

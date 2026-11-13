@@ -134,8 +134,8 @@ export const productCategory = pgEnum("product_category", [
 ]);
 
 /**
- * A shop's own category of merchandise, which its gérants rename, add and
- * delete. `hides` marks the category of hides: their merchandises turn into
+ * A shop's own category of merchandise, which its gérants rename, add,
+ * reorder and delete. `hides` marks the category of hides: their merchandises turn into
  * leather by batches and have the hides grid on the Tarifs page.
  */
 export const productCategories = pgTable(
@@ -145,6 +145,9 @@ export const productCategories = pgTable(
     shopId: shopColumn(),
     name: text("name").notNull(),
     hides: boolean("hides").notNull().default(false),
+    // Its place among the shop's categories, set by a gérant; ties (the
+    // categories of before) go by creation.
+    position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("product_categories_shop_name_idx").on(t.shopId, t.name)],

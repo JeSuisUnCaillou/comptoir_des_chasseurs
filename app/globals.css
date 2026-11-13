@@ -2265,6 +2265,11 @@ tr.fresh td {
 .category-add .btn {
   white-space: nowrap;
 }
+
+.category-list li.dragging {
+  background: var(--panel-2);
+  outline: 1px solid var(--border-gold);
+}
 /* Tarifs: the featured products, one line each, their prices side by side. */
 .featured-rows {
   display: grid;

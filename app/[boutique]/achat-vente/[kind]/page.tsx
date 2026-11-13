@@ -37,6 +37,7 @@ export default async function NouvelleEcriture({
           name: p.name,
           categoryId: p.categoryId,
           categoryName: p.categoryName,
+          categoryPosition: p.categoryPosition,
           unit: p.unit,
           stock: p.stock,
           buyPrice: p.buyPrice,
