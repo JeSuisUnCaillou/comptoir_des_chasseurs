@@ -36,7 +36,7 @@ export default async function Connexion({
         <BrandMark />
         <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
-          Registre <span>de Lomone</span>
+          Codex <span>Enchanté par Lomone</span>
         </h1>
         <p className="muted">Stock, achats et ventes de vos boutiques</p>
         <div className="gate-divider" aria-hidden="true">

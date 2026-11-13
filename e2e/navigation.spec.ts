@@ -64,9 +64,9 @@ test("les pages n'affichent plus la mention « Registres » en tête", async ({ 
   }
 });
 
-test("l'onglet porte le nom de la boutique, ou Registre de Lomone hors boutique", async ({ page }) => {
+test("l'onglet porte le nom de la boutique, ou Codex enchanté hors boutique", async ({ page }) => {
   await page.goto("/connexion");
-  await expect(page).toHaveTitle("Registre de Lomone");
+  await expect(page).toHaveTitle("Codex enchanté");
 
   await loginAsGerant(page);
   const shop = (await page.getByTestId("shop-name").textContent())!;
@@ -80,6 +80,6 @@ test("l'onglet porte le nom de la boutique, ou Registre de Lomone hors boutique"
   await expect(page).toHaveTitle(shop);
 
   await page.goto("/boutiques");
-  await expect(page).toHaveTitle("Registre de Lomone");
+  await expect(page).toHaveTitle("Codex enchanté");
   await expect(page.getByText(/Registre des marchands/)).toHaveCount(0);
 });

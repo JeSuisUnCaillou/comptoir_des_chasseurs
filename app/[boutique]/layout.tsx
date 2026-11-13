@@ -42,8 +42,8 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <Link href={at("/")} className="brand">
           <BrandMark />
           <span>
-            <div className="brand-name">REGISTRE</div>
-            <div className="brand-sub">de Lomone</div>
+            <div className="brand-name">CODEX</div>
+            <div className="brand-sub">Enchanté par Lomone</div>
           </span>
         </Link>
         <div className="eyebrow nav-title">✦ Le registre ✦</div>
@@ -105,7 +105,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           </div>
         </header>
         <main className="content">{children}</main>
-        <footer className="footer">✦ Registre de Lomone · Keizaal ✦</footer>
+        <footer className="footer">✦ Codex enchanté · Keizaal ✦</footer>
       </div>
     </div>
   );

@@ -31,8 +31,8 @@ export default async function Boutiques() {
         <div className="hub-brand">
           <BrandMark />
           <span>
-            <div className="brand-name">REGISTRE</div>
-            <div className="brand-sub">de Lomone</div>
+            <div className="brand-name">CODEX</div>
+            <div className="brand-sub">Enchanté par Lomone</div>
           </span>
         </div>
         <div className="hub-account">
@@ -49,7 +49,7 @@ export default async function Boutiques() {
 
       <main className="content hub-content">
         <div className="page-head">
-          <div className="eyebrow">✦ Registre de Lomone ✦</div>
+          <div className="eyebrow">✦ Codex enchanté ✦</div>
           <h1>Mes boutiques</h1>
           <p className="muted">
             Choisis la boutique où entrer.
@@ -140,7 +140,7 @@ export default async function Boutiques() {
           </section>
         )}
       </main>
-      <footer className="footer">✦ Registre de Lomone · Keizaal ✦</footer>
+      <footer className="footer">✦ Codex enchanté · Keizaal ✦</footer>
     </div>
   );
 }
