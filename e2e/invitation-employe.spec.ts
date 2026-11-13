@@ -5,20 +5,28 @@ import { ALERT, COMPTOIR, createMember, loginAs, loginAsGerant, memberRow, uniqu
 test.skip(!!process.env.BASE_URL, "Le faux Discord ne tourne qu'avec le serveur local.");
 
 /** In Membres, creates an employé invitation link and returns it. */
-async function createEmployeeLink(page: Page) {
+async function createEmployeeLink(page: Page, name?: string) {
   await page.goto(`${COMPTOIR}/membres`);
   const section = page.getByRole("region", { name: "Inviter un employé" });
+  if (name) await section.getByLabel("Nom de l'employé (facultatif)").fill(name);
   await section.getByRole("button", { name: "Créer un lien d'invitation" }).click();
+  await expect(section.getByRole("status")).toContainText(name ? `Lien créé pour ${name}.` : "Lien créé.");
   const link = section.getByLabel("Nouveau lien d'invitation");
   await expect(link).toHaveValue(/\/invitation\/[\w-]{20,}$/);
-  // Also listed with the links not used yet.
-  await expect(section.getByLabel("Lien d'invitation d'employé").first()).toBeVisible();
+  // Also listed with the links not used yet, with room under the button.
+  const listed = section.getByRole("list", { name: "Liens pas encore utilisés" });
+  await expect(listed.getByLabel("Lien d'invitation d'employé").first()).toBeVisible();
+  const button = await section.getByRole("button", { name: "Créer un lien d'invitation" }).boundingBox();
+  const list = await listed.boundingBox();
+  expect(list!.y - (button!.y + button!.height)).toBeGreaterThanOrEqual(12);
   return link.inputValue();
 }
 
-async function enterWithDiscord(page: Page, link: string, account: { id: string; name: string }) {
+async function enterWithDiscord(page: Page, link: string, account: { id: string; name: string }, named?: string) {
   await page.goto(link);
-  await expect(page.getByText("Tu es invité à rejoindre la boutique")).toContainText("comme employé");
+  const invited = page.getByText("Tu es invité à rejoindre la boutique");
+  await expect(invited).toContainText("comme employé");
+  if (named) await expect(invited).toContainText(`sous le nom de ${named}`);
   await page.getByRole("link", { name: "Entrer avec Discord" }).click();
   await page.getByLabel("Identifiant Discord").fill(account.id);
   await page.getByLabel("Nom Discord").fill(account.name);
@@ -36,20 +44,22 @@ test("un gérant invite un employé, qui entre avec Discord seul puis choisit un
   const gerant = uniqueName("gerant-invite").toLowerCase();
   await createMember(gerant, "mot-de-passe", "gerant");
   await loginAs(page, gerant, "mot-de-passe");
-  const link = await createEmployeeLink(page);
+  const named = uniqueName("Hilde");
+  const link = await createEmployeeLink(page, named);
+  await expect(page.getByRole("list", { name: "Liens pas encore utilisés" }).getByText(named)).toBeVisible();
 
   const discord = discordAccount("Brynjolf");
   const username = discord.name.toLowerCase();
   const newcomer = await (await browser.newContext()).newPage();
-  await enterWithDiscord(newcomer, link, discord);
+  await enterWithDiscord(newcomer, link, discord, named);
   await expect(newcomer).toHaveURL(new RegExp(`${COMPTOIR}$`));
   await expect(newcomer.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 
-  // An employé of the shop, named after Discord.
+  // An employé of the shop, with the name the gérant gave and the Discord username.
   await page.reload();
   const row = await memberRow(page, username);
   await expect(row.getByLabel("Rôle")).toHaveValue("employe");
-  await expect(row.getByLabel("Nom affiché")).toHaveValue(discord.name);
+  await expect(row.getByLabel("Nom affiché")).toHaveValue(named);
 
   // No password yet: the sign-in form doesn't open the account, whatever is typed.
   const stranger = await (await browser.newContext()).newPage();
@@ -103,6 +113,8 @@ test("un identifiant déjà pris reçoit un numéro", async ({ page, browser }) 
   await enterWithDiscord(newcomer, link, discord);
   await newcomer.goto(`${COMPTOIR}/mot-de-passe`);
   await expect(newcomer.getByText(`Identifiant : ${taken}-2`)).toBeVisible();
+  // Not named by the gérant: the account takes the Discord name.
+  await expect(newcomer.getByTestId("member-name")).toHaveText(discord.name);
 });
 
 test("un compte lié à Discord et désactivé ne revient pas par un lien d'employé", async ({
@@ -131,4 +143,13 @@ test("un compte lié à Discord et désactivé ne revient pas par un lien d'empl
   await page.reload();
   const row = await memberRow(page, username);
   await expect(row.getByLabel("Rôle")).toHaveValue("desactive");
+});
+
+test("le nom donné au lien remplit le formulaire de création de compte", async ({ page, browser }) => {
+  await loginAsGerant(page);
+  const named = uniqueName("Torvar");
+  const link = await createEmployeeLink(page, named);
+  const newcomer = await (await browser.newContext()).newPage();
+  await newcomer.goto(link);
+  await expect(newcomer.getByLabel("Nom affiché dans les registres")).toHaveValue(named);
 });

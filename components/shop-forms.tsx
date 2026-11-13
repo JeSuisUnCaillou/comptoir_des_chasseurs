@@ -13,6 +13,7 @@ function Field({
   type = "text",
   autoComplete,
   maxLength,
+  defaultValue,
 }: {
   id: string;
   name: string;
@@ -20,11 +21,20 @@ function Field({
   type?: string;
   autoComplete?: string;
   maxLength?: number;
+  defaultValue?: string;
 }) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <input id={id} name={name} type={type} required autoComplete={autoComplete} maxLength={maxLength} />
+      <input
+        id={id}
+        name={name}
+        type={type}
+        required
+        autoComplete={autoComplete}
+        maxLength={maxLength}
+        defaultValue={defaultValue}
+      />
     </div>
   );
 }
@@ -113,13 +123,13 @@ export function JoinShopForm({ token, label }: { token: string; label: string })
 }
 
 /** Someone with no account yet takes an invitation. */
-export function InvitationSignupForm({ token }: { token: string }) {
+export function InvitationSignupForm({ token, name }: { token: string; name: string }) {
   const [state, action, pending] = useActionState<InvitationState, FormData>(signUp, null);
   return (
     <form onSubmit={keepValues(action)} style={{ textAlign: "left" }}>
       <input type="hidden" name="token" value={token} />
       <Field id="inv-username" name="username" label="Identifiant" autoComplete="username" maxLength={40} />
-      <Field id="inv-name" name="name" label="Nom affiché dans les registres" maxLength={60} />
+      <Field id="inv-name" name="name" label="Nom affiché dans les registres" maxLength={60} defaultValue={name} />
       <Field id="inv-password" name="password" label="Mot de passe" type="password" autoComplete="new-password" />
       <Field id="inv-confirm" name="confirm" label="Confirmer le mot de passe" type="password" autoComplete="new-password" />
       <ErrorNotice message={state?.error} />

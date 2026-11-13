@@ -6,7 +6,7 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { createEmployeeInvitation } from "@/lib/invitations";
 import { invitationPath } from "@/lib/paths";
-import { readRole, text } from "@/lib/forms";
+import { optionalText, readRole, text } from "@/lib/forms";
 import { createAccount, resetAccountPassword, updateAccount } from "@/lib/members";
 
 export type MemberFormState = { ok: boolean; message: string } | null;
@@ -51,10 +51,11 @@ export async function resetPassword(_prev: MemberFormState, formData: FormData):
   return { ok: true, message: "Mot de passe changé." };
 }
 
-/** A gérant creates a link that makes whoever opens it an employé of the shop. */
-export async function inviteEmployee(): Promise<{ link: string }> {
+/** A gérant creates a link that makes whoever opens it an employé of the shop, named beforehand or not. */
+export async function inviteEmployee(_prev: unknown, formData: FormData): Promise<{ link: string; name: string | null }> {
   const me = await requireMember(["gerant"]);
-  const token = await createEmployeeInvitation(me);
+  const name = optionalText(formData, "name", 60);
+  const token = await createEmployeeInvitation(me, name);
   revalidateShop();
-  return { link: invitationPath(token) };
+  return { link: invitationPath(token), name };
 }

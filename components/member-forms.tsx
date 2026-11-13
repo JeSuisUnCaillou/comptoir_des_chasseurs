@@ -79,10 +79,17 @@ export function ResetPasswordForm({ id }: { id: number }) {
 export function InviteEmployeeForm() {
   const [state, action, pending] = useActionState(inviteEmployee, null);
   return (
-    <form action={action}>
+    <form action={action} key={state?.link ?? "form"}>
+      <div className="field" style={{ maxWidth: 360 }}>
+        <label htmlFor="invite-name">Nom de l&apos;employé (facultatif)</label>
+        <input id="invite-name" name="name" maxLength={60} autoComplete="off" placeholder="Son nom RP" />
+      </div>
       {state && (
         <div className="notice" role="status">
-          <p style={{ marginTop: 0 }}>Lien créé. Envoie-le à la personne : il ne sert qu&apos;une fois.</p>
+          <p style={{ marginTop: 0 }}>
+            Lien créé{state.name ? ` pour ${state.name}` : ""}. Envoie-le à la personne : il ne sert
+            qu&apos;une fois.
+          </p>
           <InvitationLink path={state.link} label="Nouveau lien d'invitation" />
         </div>
       )}

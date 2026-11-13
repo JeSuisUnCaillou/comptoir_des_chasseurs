@@ -64,16 +64,18 @@ export default async function Membres({
         <p className="muted">
           Crée un lien et envoie-le, sur Discord par exemple : la personne qui l&apos;ouvre entre
           dans la boutique comme employé, avec son compte, un compte qu&apos;elle crée, ou Discord
-          seul. Un lien ne sert qu&apos;une fois.
+          seul. Le nom que tu donnes devient celui de son nouveau compte. Un lien ne sert
+          qu&apos;une fois.
         </p>
         <InviteEmployeeForm />
         {invitations.length > 0 && (
           <ul className="invitation-list" aria-label="Liens pas encore utilisés">
             {invitations.map((invitation) => (
               <li key={invitation.id}>
-                <span className="small muted">
-                  Créé le {longDate.format(invitation.createdAt)}
-                </span>
+                <div>
+                  {invitation.name && <strong>{invitation.name}</strong>}
+                  <div className="small muted">Créé le {longDate.format(invitation.createdAt)}</div>
+                </div>
                 <InvitationLink path={invitationPath(invitation.token)} label="Lien d'invitation d'employé" />
               </li>
             ))}

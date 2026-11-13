@@ -1,5 +1,5 @@
 {
-  "id": "545ec7e4-ac59-4322-940c-d9073925322a",
+  "id": "78ea77c7-f287-41ab-b941-df518bdb6cb4",
   "prevId": "abc0063c-8802-4bc7-b3fa-c02a0ade87e1",
   "version": "7",
   "dialect": "postgresql",
@@ -499,6 +499,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'gerant'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {

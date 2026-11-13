@@ -15,7 +15,7 @@ export function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
           <input id="pw-current" name="current" type="password" required autoComplete="current-password" />
         </div>
       ) : (
-        <p className="muted">
+        <p className="muted" style={{ marginTop: 0 }}>
           Ton compte s&apos;ouvre avec Discord. Choisis un mot de passe pour pouvoir aussi entrer avec
           ton identifiant.
         </p>

@@ -2223,3 +2223,8 @@ tr.fresh td {
 .gate-card .btn-discord {
   margin-bottom: 18px;
 }
+
+/* A list right under its form's button keeps the panel's breathing room. */
+.panel form + .invitation-list {
+  margin-top: 18px;
+}

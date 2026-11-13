@@ -124,8 +124,12 @@ fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
   un compte »), avec un compte qu'il crée là (identifiant et mot de passe),
   ou avec « Entrer avec Discord » quand Discord est configuré : un Discord
   déjà lié entre avec son compte ; sinon un compte est créé sans mot de
-  passe, au nom affiché sur Discord, avec l'identifiant Discord (suivi de
-  `-2`, `-3`… s'il est pris).
+  passe, avec l'identifiant Discord (suivi de `-2`, `-3`… s'il est pris) et
+  le nom donné au lien, ou à défaut le nom affiché sur Discord.
+- En créant un lien d'employé, le gérant peut lui donner un nom (facultatif) :
+  la page du lien l'annonce (« sous le nom de… »), le formulaire de création
+  de compte le pré-remplit, et la liste des liens en attente l'affiche. Un
+  compte existant qui prend le lien garde son nom.
 - Un lien d'employé ne change pas le rôle de quelqu'un qui est déjà membre de
   la boutique : il ne rétrograde pas un gérant et ne réactive pas un compte
   désactivé.
@@ -410,7 +414,7 @@ Ne comptent pas :
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé ») ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
 | **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la

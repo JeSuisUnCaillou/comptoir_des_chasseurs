@@ -54,6 +54,9 @@ export const shopInvitations = pgTable(
     // What the link makes of whoever takes it: gérant of a new shop (from the
     // super admin), or employé (from a gérant of the shop).
     role: memberRole("role").notNull().default("gerant"),
+    // The name the gérant gave the person invited: the name of the account
+    // the link creates (when it creates one).
+    name: text("name"),
   },
   (t) => [uniqueIndex("shop_invitations_token_idx").on(t.token)],
 );

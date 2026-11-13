@@ -33,7 +33,8 @@ export default async function Invitation({
   const invited = shop && (
     <>
       Tu es invité à {asGerant ? "gérer" : "rejoindre"} la boutique <strong>« {shop.name} »</strong>
-      {asGerant ? "" : " comme employé"}.
+      {asGerant ? "" : " comme employé"}
+      {invitation.name ? <>, sous le nom de <strong>{invitation.name}</strong></> : ""}.
     </>
   );
 
@@ -86,7 +87,7 @@ export default async function Invitation({
               </>
             )}
             {!discordConfigured() && <p>Crée ton compte pour y entrer.</p>}
-            <InvitationSignupForm token={token} />
+            <InvitationSignupForm token={token} name={invitation.name ?? ""} />
             <p className="small">
               <Link href={loginUrl(here)}>J&apos;ai déjà un compte : me connecter</Link>
             </p>
