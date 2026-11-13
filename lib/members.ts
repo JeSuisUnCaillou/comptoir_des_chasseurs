@@ -104,7 +104,7 @@ export async function createFirstGerant(
 type NewAccount = {
   username: string;
   name: string;
-  // "" for an account opened with Discord alone, which has no password yet.
+  // NO_PASSWORD for an account opened with Discord alone, which has no password yet.
   passwordHash: string;
   discordId?: string;
   discordName?: string;

@@ -6,7 +6,7 @@ import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
 import { NO_PASSWORD } from "@/lib/auth/password";
 import { UserError } from "@/lib/errors";
-import { freeUsername, insertAccount } from "@/lib/members";
+import { accountByDiscordId, freeUsername, insertAccount } from "@/lib/members";
 import { canOpenShop, isGerant } from "@/lib/policies";
 import { insertShop } from "@/lib/shops";
 
@@ -146,4 +146,17 @@ export async function signUpWithDiscord(
     });
     return { member, shop: await join(tx, claimed, member.id) };
   });
+}
+
+/**
+ * Someone takes the link with Discord: the account linked to this Discord
+ * takes it as is, or else one is created (signUpWithDiscord).
+ */
+export async function takeInvitationWithDiscord(
+  token: string,
+  discord: { id: string; name: string; username: string },
+): Promise<{ member: Member; shop: Shop }> {
+  const known = await accountByDiscordId(discord.id);
+  if (known) return { member: known, shop: await acceptInvitation(token, known) };
+  return signUpWithDiscord(token, discord);
 }
