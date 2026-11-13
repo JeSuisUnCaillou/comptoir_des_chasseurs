@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./helpers";
+import { createProduct, loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
 /** Creates suppliers straight in the database, with no offers. */
 async function createSuppliers(names: string[], place = "") {
@@ -41,20 +41,20 @@ test("le gérant crée un contact, lui donne des marchandises, le modifie puis l
   await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible();
   await expect(page.getByText("Aucune marchandise pour l'instant.")).toBeVisible();
 
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${hide} (peau)`);
   await page.getByLabel("Prix en septims").fill("3");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Marchandise enregistrée." })).toBeVisible();
   await expect(page.getByRole("cell", { name: "3 septims pour 1 peau" })).toBeVisible();
 
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${meat} (pièce)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${meat} (pièce)`);
   await page.getByLabel("Prix en septims").fill("1");
   await page.getByLabel("Pour (unités)").fill("6");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("cell", { name: "1 septim pour 6 pièces" })).toBeVisible();
 
   // The same merchandise again changes its price.
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${hide} (peau)`);
   await page.getByLabel("Prix en septims").fill("2");
   await page.getByLabel("Pour (unités)").fill("1");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
@@ -176,7 +176,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await expect(contact.getByText("Contact", { exact: true })).toBeVisible();
 
   await contact.getByRole("link", { name: `Modifier ${name}` }).click();
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${claw} (pièce)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${claw} (pièce)`);
   await page.getByLabel("Sens").selectOption({ label: "Il nous l'achète" });
   await page.getByLabel("Prix en septims").fill("1");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
@@ -192,7 +192,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
 
   // He also sells us something: both.
   await contact.getByRole("link", { name: `Modifier ${name}` }).click();
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${hide} (peau)`);
   await page.getByLabel("Prix en septims").fill("3");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("table", { name: "Il nous vend" }).getByRole("row", { name: new RegExp(`^${hide} 3 septims pour 1 peau`) })).toBeVisible();
@@ -204,7 +204,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
 
   // Saving the claw the other way moves it: one side per merchandise.
   await contact.getByRole("link", { name: `Modifier ${name}` }).click();
-  await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${claw} (pièce)` });
+  await pickProduct(page.getByRole("form", { name: "Ajouter une marchandise" }), `${claw} (pièce)`);
   await page.getByLabel("Sens").selectOption({ label: "Il nous la vend" });
   await page.getByLabel("Prix en septims").fill("2");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();

@@ -145,6 +145,9 @@ export const products = pgTable(
     hidesPerBatch: integer("hides_per_batch"),
     leatherPerBatch: integer("leather_per_batch"),
     archived: boolean("archived").notNull().default(false),
+    // When a gérant put it forward on top of the Tarifs, among the featured
+    // products shown in that order. Null: not featured.
+    featuredAt: timestamp("featured_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
