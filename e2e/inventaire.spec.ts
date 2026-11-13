@@ -293,7 +293,20 @@ test("un gérant va de l'inventaire à Gérer les marchandises, pas un employé"
   await loginAsGerant(page);
   await page.goto("/inventaire");
   await expect(page.getByRole("button", { name: "Nouvelle marchandise" })).toBeVisible();
-  await page.getByRole("link", { name: "Gérer les marchandises" }).click();
+  // The same button as on Tarifs, at the same place: beside the page title.
+  const manage = page.getByRole("link", { name: "Gérer les marchandises" });
+  const onInventaire = (await manage.boundingBox())!;
+  const titleOnInventaire = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  const classes = await manage.getAttribute("class");
+  await page.goto("/tarifs");
+  const onTarifs = (await manage.boundingBox())!;
+  const titleOnTarifs = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  expect(await manage.getAttribute("class")).toBe(classes);
+  expect(Math.round(onInventaire.x)).toBe(Math.round(onTarifs.x));
+  expect(Math.round(onInventaire.y - titleOnInventaire.y)).toBe(Math.round(onTarifs.y - titleOnTarifs.y));
+  expect(Math.round(onInventaire.width)).toBe(Math.round(onTarifs.width));
+  await page.goto("/inventaire");
+  await manage.click();
   await expect(page).toHaveURL(/\/marchandises$/);
   await expect(page.getByRole("heading", { name: "Gérer les marchandises", level: 1 })).toBeVisible();
 

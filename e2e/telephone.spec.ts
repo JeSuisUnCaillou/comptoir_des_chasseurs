@@ -304,9 +304,11 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
       });
     await page.goto("/annonces");
     const usual = await gapUnderTitle();
-    await page.goto("/tarifs");
-    await expect(page.getByRole("link", { name: "Gérer les marchandises" })).toBeVisible();
-    expect(await gapUnderTitle()).toBe(usual);
+    for (const path of ["/tarifs", "/inventaire"]) {
+      await page.goto(path);
+      await expect(page.getByRole("link", { name: "Gérer les marchandises" })).toBeVisible();
+      expect(await gapUnderTitle(), path).toBe(usual);
+    }
   });
 });
 

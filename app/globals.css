@@ -743,7 +743,7 @@ td.row-action .icon-btn {
   margin-bottom: 16px;
 }
 
-/* A page's title with its button (Tarifs): the room below is the title's own,
+/* A page's title with its button (Tarifs, Inventaire): the room below is the title's own,
    whether the button sits beside the title or wraps under it. */
 .content > .panel-head {
   margin-bottom: 28px;

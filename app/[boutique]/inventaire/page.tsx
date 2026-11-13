@@ -1,6 +1,7 @@
 import { Archive, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { LiveSearch } from "@/components/live-search";
+import { ManageProductsLink } from "@/components/manage-products-link";
 import { MemberDateFilters } from "@/components/member-date-filters";
 import { PageHead } from "@/components/page-head";
 import { StockBoard } from "@/components/stock-board";
@@ -75,7 +76,10 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHead title="Inventaire" />
+      <div className="panel-head">
+        <PageHead title="Inventaire" />
+        {isGerant(member) && <ManageProductsLink shop={member.shop.slug} />}
+      </div>
       {written.length > 0 && (
         <p className="notice" role="status">
           Mouvement de stock inscrit :{" "}
