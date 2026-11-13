@@ -23,6 +23,43 @@ export async function accountByUsername(username: string): Promise<Member | unde
   return member;
 }
 
+export async function accountByDiscordId(discordId: string): Promise<Member | undefined> {
+  const [member] = await getDb()
+    .select()
+    .from(schema.members)
+    .where(eq(schema.members.discordId, discordId))
+    .limit(1);
+  return member;
+}
+
+/**
+ * A member links their own account to a Discord account, replacing the one
+ * linked before. Returns the account as it now is, to restart its session.
+ */
+export async function linkDiscord(memberId: number, discord: { id: string; name: string }): Promise<Member> {
+  try {
+    const [member] = await getDb()
+      .update(schema.members)
+      .set({ discordId: discord.id, discordName: discord.name })
+      .where(eq(schema.members.id, memberId))
+      .returning();
+    return member;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError("Ce compte Discord est déjà lié à un autre membre.");
+    throw error;
+  }
+}
+
+/** A member unlinks Discord from their own account. Returns the account as it now is. */
+export async function unlinkDiscord(memberId: number): Promise<Member> {
+  const [member] = await getDb()
+    .update(schema.members)
+    .set({ discordId: null, discordName: null })
+    .where(eq(schema.members.id, memberId))
+    .returning();
+  return member;
+}
+
 /** True when the member may enter at least one shop: deactivated everywhere, they can't sign in. */
 export async function hasActiveShop(memberId: number) {
   const m = schema.shopMembers;

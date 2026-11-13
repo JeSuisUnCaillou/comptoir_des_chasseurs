@@ -331,6 +331,10 @@ Ne comptent pas :
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un rôle dans chacune (`shop_members`).
 - Un compte désactivé partout ne peut plus se connecter.
+- Un compte peut être lié à un compte Discord, par son propriétaire seulement
+  (voir [Connexion](#connexion)). Un compte Discord n'est lié qu'à un seul
+  compte. Discord ne crée pas de compte : les comptes restent créés par les
+  gérants.
 
 ### Qui peut quoi
 
@@ -360,3 +364,30 @@ Ne comptent pas :
   `suite` de `/connexion`).
 - Seul un chemin du comptoir lui-même est suivi ; tout autre lien ramène au
   Grand livre.
+
+#### Avec Discord
+
+Le bouton « Se connecter avec Discord » apparaît sous le formulaire quand
+l'app Discord est configurée (voir le README).
+
+- Un compte Discord lié entre directement, puis revient sur la page demandée,
+  comme avec le mot de passe. Un compte désactivé partout est refusé (« Ce
+  compte n'a plus accès à aucune boutique. »).
+- Un compte Discord lié à personne ne fait entrer personne. La page de
+  connexion le dit (« Ton compte Discord X n'est encore lié à aucun
+  membre… ») et propose d'entrer une fois avec l'identifiant et le mot de
+  passe : ce compte-là est alors lié à ce Discord, pendant dix minutes. « Ce
+  n'est pas mon compte Discord » l'oublie sans rien lier.
+- Discord refusé ou en erreur, ou un retour qui ne vient pas de la demande
+  faite par ce navigateur : « La connexion avec Discord n'a pas abouti.
+  Réessaie. »
+
+#### Lier Discord depuis Mon compte
+
+- La page Mon compte (la clé, en haut à droite) a un bloc Discord :
+  « Lier mon compte Discord » passe par Discord et revient lié ; une fois
+  lié, elle montre le nom Discord et « Délier Discord ».
+- Un compte Discord déjà lié à un autre membre est refusé (« Ce compte
+  Discord est déjà lié à un autre membre. »).
+- Lier ou délier Discord ferme les sessions ouvertes sur les autres
+  appareils ; celle en cours reste ouverte. Le mot de passe marche toujours.

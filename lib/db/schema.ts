@@ -60,10 +60,16 @@ export const members = pgTable(
     // The comptoir's owner: always a gérant, and nobody else can change their
     // account (name, role, password).
     superAdmin: boolean("super_admin").notNull().default(false),
+    // The Discord account the member linked themself, to sign in with it.
+    discordId: text("discord_id"),
+    // Its Discord name when it was linked, shown on their account page.
+    discordName: text("discord_name"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("members_username_idx").on(t.username),
+    // A Discord account opens one member's account only.
+    uniqueIndex("members_discord_id_idx").on(t.discordId),
     // The super admin has every right, always: they stay a gérant.
     check("members_super_admin_gerant", sql`not ${t.superAdmin} or ${t.role} = 'gerant'`),
   ],

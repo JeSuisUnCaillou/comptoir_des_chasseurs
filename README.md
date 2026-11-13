@@ -9,7 +9,8 @@ de Vendeaume, pour le serveur Skyrim RP Keizaal.
 - Hébergement : [Vercel](https://vercel.com) (offre Hobby, gratuite)
 - Base de données : Postgres chez [Supabase](https://supabase.com) (offre gratuite),
   via [Drizzle ORM](https://orm.drizzle.team)
-- Connexion : identifiant + mot de passe (scrypt), session signée dans un cookie
+- Connexion : identifiant + mot de passe (scrypt), ou Discord (OAuth2, voir
+  [Connexion avec Discord](#connexion-avec-discord)), session signée dans un cookie
 - Tests e2e : [Playwright](https://playwright.dev)
 
 Où vit le code (pages, Server Actions, services de `lib/`, domaine pur) :
@@ -72,7 +73,8 @@ npm run test:e2e                  # vide la base de test, lance l'app et la test
 ```
 
 Les tests vident la base : ils refusent de tourner si le nom de la base
-(dans `DATABASE_URL`) ne contient pas `test`.
+(dans `DATABASE_URL`) ne contient pas `test`. Playwright lance aussi un faux
+Discord (`e2e/fake-discord.mjs`, port 3999) et le donne à l'app.
 
 ## Intégration et déploiement continus
 
@@ -102,8 +104,32 @@ Les tests vident la base : ils refusent de tourner si le nom de la base
   l'une après l'autre : un serveur loin de la base paie un aller-retour
   transatlantique à chacune. Si la base change de région, la région de
   `vercel.json` la suit.
+- **Adresse fixe des previews** : le workflow « Preview » fait aussi pointer
+  `https://comptoirdeschasseurs-preview.vercel.app` sur la preview qu'il vient
+  de construire (la dernière construite, toutes PR confondues). Discord
+  n'accepte que des adresses de retour déclarées d'avance : c'est celle-là
+  qu'on déclare pour les previews.
 - Pour qu'on ne puisse merger que si les tests passent, activer une règle de
   protection sur `main` exigeant le check « Build et tests e2e ».
+
+## Connexion avec Discord
+
+L'app parle directement à Discord (OAuth2, scope `identify`, sans dépendance
+ni Supabase Auth) et garde ses propres sessions. Pour l'activer :
+
+1. Créer une application sur
+   [discord.com/developers/applications](https://discord.com/developers/applications)
+   (gratuit).
+2. Dans OAuth2 → Redirects, déclarer
+   `https://comptoirdeschasseurs.vercel.app/auth/discord/callback` et
+   `https://comptoirdeschasseurs-preview.vercel.app/auth/discord/callback`
+   (et `http://localhost:3000/auth/discord/callback` pour essayer en local).
+3. Mettre son Client ID et son Client Secret dans les variables
+   `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET` de Vercel (Production et
+   Preview) ou de `.env.local`.
+
+Sans ces deux variables, le bouton « Se connecter avec Discord » n'apparaît
+pas. Ce que fait la connexion Discord : [docs/comportement.md](docs/comportement.md#connexion).
 
 ## Ce que fait l'app
 
