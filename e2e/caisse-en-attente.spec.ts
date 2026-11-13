@@ -34,16 +34,16 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   const second = form.getByRole("group", { name: "Marchandise 2", exact: true });
   await pickProduct(second, meat);
-  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: hide })).toHaveText(
-    `Vente inscrite : 2 × ${hide}, 1 × ${meat}, 11 septims au total, en attente de la caisse.`,
+    `Vente inscrite : 2 × ${hide}, 1 × ${meat}, 11 septims au total, pas encore en caisse.`,
   );
 
   // Both lines wait for the till: their money is shown, not counted. The stock moved.
   await onlyLinesOf(page, username);
   const rows = page.getByTestId("registre").getByRole("row");
-  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(2);
+  await expect(rows.filter({ hasText: "Pas encore en caisse" })).toHaveCount(2);
   await expect(page.getByTestId("totaux-registre").locator(".stat-value")).toHaveText("0 septim");
   await expect(page.getByTestId("en-attente")).toContainText("+11 septims");
   await expect(page.getByTestId("en-attente")).toContainText("11 septims à déposer");
@@ -54,9 +54,9 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   // A colleague cannot say the septims are in; the author can, for the whole sale at once.
   await onlyLinesOf(colleague, username);
   await expect(colleague.getByTestId("registre").getByRole("row").filter({ hasText: hide })).toContainText(
-    "En attente de la caisse",
+    "Pas encore en caisse",
   );
-  await expect(colleague.getByRole("button", { name: /déposés dans la caisse/ })).toHaveCount(0);
+  await expect(colleague.getByRole("button", { name: /^Mettre en caisse/ })).toHaveCount(0);
 
   // The two lines form one block, written once, with one button for the sale's total.
   await onlyLinesOf(page, username);
@@ -67,10 +67,10 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   // The second line keeps its date, operation and member for screen readers only.
   await expect(sale.first().locator(".sr-only")).toHaveCount(0);
   await expect(sale.last().locator(".sr-only").filter({ hasText: username })).toHaveCount(1);
-  const settle = page.getByTestId("registre").getByRole("button", { name: /déposés dans la caisse/ });
+  const settle = page.getByTestId("registre").getByRole("button", { name: /^Mettre en caisse/ });
   await expect(settle).toHaveCount(1);
-  await expect(settle).toHaveText("11 septims déposés");
-  await expect(settle).toHaveAccessibleName("11 septims de cette vente de 2 lignes déposés dans la caisse");
+  await expect(settle).toHaveText("Mettre 11 septims en caisse");
+  await expect(settle).toHaveAccessibleName("Mettre en caisse les 11 septims de cette vente de 2 lignes");
 
   // The confirmation says the click settles both lines, and their total.
   let question = "";
@@ -80,10 +80,9 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   });
   await settle.click();
   await expect.poll(() => question).toBe(
-    `Les septims de cette vente sont-ils déposés dans la caisse ?\n\n` +
-      `Cela vaut pour ses 2 lignes, 11 septims en tout :\n• 2 × ${hide}\n• 1 × ${meat}`,
+    `Tu as bien mis les 11 septims de cette vente (2 lignes) dans la caisse ?\n\n• 2 × ${hide}\n• 1 × ${meat}`,
   );
-  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(0);
+  await expect(rows.filter({ hasText: "Pas encore en caisse" })).toHaveCount(0);
   await expect(page.getByTestId("totaux-registre").locator(".stat-value")).toHaveText("+11 septims");
   await expect(page.getByTestId("en-attente")).toHaveCount(0);
   await expect(rows.filter({ hasText: meat })).toContainText("+5 septims");
@@ -98,16 +97,16 @@ test("un gérant dit que les septims d'un achat d'employé sont pris dans la cai
   const form = employee.getByRole("region", { name: "Inscrire un achat" });
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill("3");
-  await form.getByLabel("Je n'ai pas encore pris les septims dans la caisse").check();
+  await form.getByLabel("Pas encore sorti de la caisse").check();
   await form.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(employee.getByRole("status").filter({ hasText: product })).toHaveText(
-    `Achat inscrit : 3 × ${product}, 12 septims, en attente de la caisse.`,
+    `Achat inscrit : 3 × ${product}, 12 septims, pas encore en caisse.`,
   );
 
-  // The gérant finds it with the "En attente de la caisse" filter.
+  // The gérant finds it with the "Pas encore en caisse" filter.
   await loginAsGerant(page);
   await page.goto("/achat-vente");
-  await page.getByLabel("Opération").selectOption("En attente de la caisse");
+  await page.getByLabel("Opération").selectOption("Pas encore en caisse");
   await page.getByLabel("Employé").selectOption({ label: username });
   await page.getByRole("button", { name: "Filtrer" }).click();
   await expect(page).toHaveURL(/type=attente/);
@@ -122,12 +121,12 @@ test("un gérant dit que les septims d'un achat d'employé sont pris dans la cai
     question = dialog.message();
     return dialog.accept();
   });
-  await row.getByRole("button", { name: /pris dans la caisse/ }).click();
-  await expect.poll(() => question).toMatch(/^Les septims de l'achat n°\d+ sont-ils pris dans la caisse \?$/);
+  await row.getByRole("button", { name: /^Sortir de la caisse/ }).click();
+  await expect.poll(() => question).toMatch(/^Tu as bien pris les 12 septims de l'achat n°\d+ dans la caisse \?$/);
   await expect(row).toHaveCount(0);
   await page.getByLabel("Opération").selectOption("Toutes");
   await page.getByRole("button", { name: "Filtrer" }).click();
-  await expect(row).not.toContainText("En attente de la caisse");
+  await expect(row).not.toContainText("Pas encore en caisse");
   await expect(page.getByTestId("totaux-registre").locator(".stat-value")).toHaveText("−12 septims");
 });
 
@@ -139,16 +138,16 @@ test("l'activité d'un membre montre sa vente en attente de la caisse, hors de s
   const form = employee.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill("2");
-  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(employee.getByRole("status").filter({ hasText: product })).toContainText("en attente de la caisse");
+  await expect(employee.getByRole("status").filter({ hasText: product })).toContainText("pas encore en caisse");
 
   await loginAsGerant(page);
   await onlyLinesOf(page, username);
   const memberId = new URL(page.url()).searchParams.get("employe");
   await page.goto(`/membres/${memberId}`);
   await expect(page.getByTestId("activite").getByRole("row").filter({ hasText: product })).toContainText(
-    /\+6 septims\s*En attente de la caisse/,
+    /\+6 septims\s*Pas encore en caisse/,
   );
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
 });
@@ -158,8 +157,8 @@ test("depuis sa page d'activité, l'auteur dit que les septims sont déposés ou
   await createProduct(product, { stock: 4, buyPrice: 2, sellPrice: 5 });
   const { page: employee } = await newEmployeePage(browser, "jordis");
   for (const [kind, form, box] of [
-    ["vente", "Inscrire une vente", "Je n'ai pas encore déposé les septims dans la caisse"],
-    ["achat", "Inscrire un achat", "Je n'ai pas encore pris les septims dans la caisse"],
+    ["vente", "Inscrire une vente", "Pas encore mis en caisse"],
+    ["achat", "Inscrire un achat", "Pas encore sorti de la caisse"],
   ] as const) {
     await employee.goto(`/achat-vente/${kind}`);
     const region = employee.getByRole("region", { name: form });
@@ -167,7 +166,7 @@ test("depuis sa page d'activité, l'auteur dit que les septims sont déposés ou
     await region.getByLabel("Quantité").fill("2");
     await region.getByLabel(box).check();
     await region.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
-    await expect(employee.getByRole("status").filter({ hasText: product })).toContainText("en attente de la caisse");
+    await expect(employee.getByRole("status").filter({ hasText: product })).toContainText("pas encore en caisse");
   }
 
   // Mon activité, reached by the member's name at the top right.
@@ -175,12 +174,12 @@ test("depuis sa page d'activité, l'auteur dit que les septims sont déposés ou
   await expect(employee).toHaveURL(/\/membres\/\d+$/);
   const memberPath = new URL(employee.url()).pathname;
   const rows = employee.getByTestId("activite").getByRole("row").filter({ hasText: product });
-  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(2);
+  await expect(rows.filter({ hasText: "Pas encore en caisse" })).toHaveCount(2);
   await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
 
   employee.once("dialog", (dialog) => dialog.accept());
-  await rows.getByRole("button", { name: /déposés dans la caisse/ }).click();
-  await expect(rows.filter({ hasText: "En attente de la caisse" })).toHaveCount(1);
+  await rows.getByRole("button", { name: /^Mettre en caisse/ }).click();
+  await expect(rows.filter({ hasText: "Pas encore en caisse" })).toHaveCount(1);
   await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+10 septims");
 
   // A gérant settles the purchase from the same page.
@@ -188,10 +187,10 @@ test("depuis sa page d'activité, l'auteur dit que les septims sont déposés ou
   await page.goto(memberPath);
   const gerantRows = page.getByTestId("activite").getByRole("row").filter({ hasText: product });
   page.once("dialog", (dialog) => dialog.accept());
-  await gerantRows.getByRole("button", { name: /pris dans la caisse/ }).click();
-  await expect(gerantRows.filter({ hasText: "En attente de la caisse" })).toHaveCount(0);
+  await gerantRows.getByRole("button", { name: /^Sortir de la caisse/ }).click();
+  await expect(gerantRows.filter({ hasText: "Pas encore en caisse" })).toHaveCount(0);
   await expect(page.getByTestId("total-achats").locator(".stat-value")).toHaveText("−4 septims");
-  await expect(gerantRows.getByRole("button", { name: /dans la caisse/ })).toHaveCount(0);
+  await expect(gerantRows.getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ })).toHaveCount(0);
 });
 
 test("le grand livre et la page Mouvement de caisse ne comptent une vente en attente qu'une fois les septims déposés", async ({ browser }) => {
@@ -213,9 +212,9 @@ test("le grand livre et la page Mouvement de caisse ne comptent une vente en att
   await pickProduct(form, "Autre article (hors stock)…");
   await form.getByLabel("Nom de l'article").fill(label);
   await form.getByLabel("Montant (septims)").fill("1000000");
-  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(employee.getByRole("status").filter({ hasText: label })).toContainText("en attente de la caisse");
+  await expect(employee.getByRole("status").filter({ hasText: label })).toContainText("pas encore en caisse");
   const waiting = await till();
   expect(Math.abs(waiting.all - before.all)).toBeLessThan(500_000);
   expect(Math.abs(waiting.page - before.page)).toBeLessThan(500_000);
@@ -223,8 +222,8 @@ test("le grand livre et la page Mouvement de caisse ne comptent une vente en att
   await employee.goto("/achat-vente");
   const row = employee.getByTestId("registre").getByRole("row").filter({ hasText: label });
   employee.once("dialog", (dialog) => dialog.accept());
-  await row.getByRole("button", { name: /déposés dans la caisse/ }).click();
-  await expect(row).not.toContainText("En attente de la caisse");
+  await row.getByRole("button", { name: /^Mettre en caisse/ }).click();
+  await expect(row).not.toContainText("Pas encore en caisse");
   const settled = await till();
   expect(settled.all - waiting.all).toBeGreaterThan(900_000);
   expect(settled.page - waiting.page).toBeGreaterThan(900_000);
@@ -246,9 +245,9 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
     await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
     await pickProduct(form.getByRole("group", { name: `Marchandise ${n}`, exact: true }), product);
   }
-  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(page.getByRole("status").filter({ hasText: fur })).toContainText("en attente de la caisse");
+  await expect(page.getByRole("status").filter({ hasText: fur })).toContainText("pas encore en caisse");
 
   await page.getByTestId("member-name").click();
   await expect(page).toHaveURL(/\/membres\/\d+$/);
@@ -258,10 +257,10 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
   await expect(sale.first()).toHaveClass(/entry-first/);
   await expect(sale.nth(1)).toHaveClass(/entry-next/);
   await expect(sale.last()).toHaveClass(/entry-last/);
-  const settle = page.getByTestId("activite").getByRole("button", { name: /déposés? dans la caisse/ });
+  const settle = page.getByTestId("activite").getByRole("button", { name: /^Mettre en caisse/ });
   await expect(settle).toHaveCount(1);
-  await expect(settle).toHaveText("12 septims déposés");
-  await expect(sale.first().getByRole("button", { name: /dans la caisse/ })).toHaveCount(1);
+  await expect(settle).toHaveText("Mettre 12 septims en caisse");
+  await expect(sale.first().getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ })).toHaveCount(1);
 
   // The line on top is cancelled: the button moves to the next line, with what is left.
   await page.goto("/achat-vente");
@@ -273,8 +272,8 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
 
   await page.goto(memberPath);
   await expect(settle).toHaveCount(1);
-  await expect(settle).toHaveText("11 septims déposés");
-  await expect(sale.nth(1).getByRole("button", { name: /dans la caisse/ })).toHaveCount(1);
+  await expect(settle).toHaveText("Mettre 11 septims en caisse");
+  await expect(sale.nth(1).getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ })).toHaveCount(1);
 });
 
 // The hidden button is not the only guard: a gérant demoted while the
@@ -287,9 +286,9 @@ test("le serveur refuse de régler la caisse d'un autre à qui n'est plus géran
   const form = author.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill("1");
-  await form.getByLabel("Je n'ai pas encore déposé les septims dans la caisse").check();
+  await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(author.getByRole("status").filter({ hasText: product })).toContainText("en attente de la caisse");
+  await expect(author.getByRole("status").filter({ hasText: product })).toContainText("pas encore en caisse");
 
   const username = uniqueName("idgrod").toLowerCase();
   await createMember(username, "mot-de-passe", "gerant");
@@ -297,13 +296,13 @@ test("le serveur refuse de régler la caisse d'un autre à qui n'est plus géran
   await loginAs(page, username, "mot-de-passe");
   await onlyLinesOf(page, authorName);
   const row = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
-  const settle = row.getByRole("button", { name: /déposés dans la caisse/ });
+  const settle = row.getByRole("button", { name: /^Mettre en caisse/ });
   await expect(settle).toBeVisible();
 
   await setRole(username, "employe");
   page.once("dialog", (dialog) => dialog.accept());
   await settle.click();
-  await expect(row.locator(ALERT)).toHaveText("Seul un gérant peut le faire pour la ligne d'un autre membre.");
+  await expect(row.locator(ALERT)).toHaveText("Seul un gérant peut valider la ligne de quelqu'un d'autre.");
   await page.reload();
-  await expect(row).toContainText("En attente de la caisse");
+  await expect(row).toContainText("Pas encore en caisse");
 });

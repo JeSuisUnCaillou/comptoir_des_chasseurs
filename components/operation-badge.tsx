@@ -10,5 +10,5 @@ export function OperationBadge({ kind }: { kind: TransactionKind | "stock" }) {
 
 /** A sale or buyback whose septims have not yet been put in or taken from the till. */
 export function TillPendingBadge() {
-  return <span className="badge badge-red">En attente de la caisse</span>;
+  return <span className="badge badge-red">Pas encore en caisse</span>;
 }

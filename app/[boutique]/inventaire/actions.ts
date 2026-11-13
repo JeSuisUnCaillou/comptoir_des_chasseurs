@@ -5,7 +5,7 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
-import { readProductIdentity, text } from "@/lib/forms";
+import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { createStocked, recordMovement as moveByHand, recordMovements } from "@/lib/products";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 
@@ -24,34 +24,38 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
 
   const result = await moveByHand(member, productId, direction === "in" ? quantity : -quantity, reason);
   if (!result.ok) return { ok: false, message: result.error };
 
   revalidateShop();
-  return { ok: true, message: `Stock mis à jour : ${result.stock}.` };
+  return { ok: true, message: `C'est fait, il en reste ${result.stock}.` };
 }
 
 export type CreateState = { ok: true; name: string } | { ok: false; message: string } | null;
 
 /**
- * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock. Prices are set later in Gérer les tarifs.
+ * Creates a merchandise that does not exist yet and records its first entry in
+ * stock. With « Ajouter des prix » ticked, a gérant sets its prices at once;
+ * otherwise they are set later in Gérer les marchandises.
  */
 export async function createAndStock(_prev: CreateState, formData: FormData): Promise<CreateState> {
   const member = await requireMember();
   const { error, ...identity } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
   const reason = text(formData, "reason", 200);
+  const { prices, error: priceError } = readProductPrices(formData, identity.category);
+  const withPrices = checked(formData, "withPrices");
 
   if (error) return { ok: false, message: error };
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return { ok: false, message: "La quantité doit être un nombre entier positif." };
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
+  if (withPrices && priceError) return { ok: false, message: priceError };
 
-  const result = await attempt(() => createStocked(member, identity, quantity, reason));
+  const result = await attempt(() => createStocked(member, identity, withPrices ? prices : null, quantity, reason));
   if (!result.ok) return result;
 
   revalidateShop();
@@ -88,7 +92,7 @@ export async function recordStockMovement(_prev: MoveState, formData: FormData):
     }
     lines.push({ productId, quantity });
   }
-  if (!reason) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
 
   const result = await attempt(() => recordMovements(member, direction, lines, reason));
   if (!result.ok) return result;

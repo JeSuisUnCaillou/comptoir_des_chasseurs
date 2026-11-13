@@ -70,6 +70,6 @@ ligne par ligne, la réponse dans le fil reste courte.
 
 - Aucune trouvaille sans preuve rassemblée dans cette passe.
 - Tu écris sous `.claude/`, dans `CLAUDE.md` et en mémoire ; pas dans l'app
-  ni le README.
+  ni le README ni `docs/comportement.md`.
 - La mémoire ne se vide qu'après le merge, quand son contenu est sur `main`.
 - Lis les fils par pages ; ne garde dans ton contexte que les preuves.

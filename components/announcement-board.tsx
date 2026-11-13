@@ -1,10 +1,12 @@
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
+import Link from "next/link";
 import { takeDownAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { PINS } from "@/lib/announcement-rules";
 import { canActOn } from "@/lib/policies";
 import type { AnnouncementEntry } from "@/lib/announcements";
-import type { Member } from "@/lib/db/schema";
+import type { ShopMember } from "@/lib/auth/session";
+import { shopPath } from "@/lib/paths";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "medium",
@@ -15,8 +17,16 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
 // A slight, stable tilt per parchment, so the board looks hand-pinned.
 const TILTS = [-1.6, 1.1, -0.6, 1.5, -1.2, 0.7];
 
-/** The wooden board with its parchments. */
-export function AnnouncementBoard({ announcements, member }: { announcements: AnnouncementEntry[]; member: Member }) {
+/** The wooden board with its parchments; `back` is the page showing it, where editing one comes back to. */
+export function AnnouncementBoard({
+  announcements,
+  member,
+  back,
+}: {
+  announcements: AnnouncementEntry[];
+  member: ShopMember;
+  back: string;
+}) {
   return (
     <div className="board">
       <div className="board-banner">✦ Les paroles demeurent ✦</div>
@@ -35,12 +45,22 @@ export function AnnouncementBoard({ announcements, member }: { announcements: An
                   <PinIcon pin={a.pin} size={52} />
                 </span>
                 {canActOn(member, a) && (
-                  <form action={takeDownAnnouncement} className="parchment-remove">
-                    <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" className="icon-btn" aria-label={`Décrocher « ${a.title} »`} title="Décrocher">
-                      <X size={16} />
-                    </button>
-                  </form>
+                  <div className="parchment-actions">
+                    <Link
+                      href={shopPath(member.shop.slug, `/annonces/${a.id}/modifier?retour=${encodeURIComponent(back)}`)}
+                      className="icon-btn"
+                      aria-label={`Modifier « ${a.title} »`}
+                      title="Modifier"
+                    >
+                      <Pencil size={16} />
+                    </Link>
+                    <form action={takeDownAnnouncement}>
+                      <input type="hidden" name="id" value={a.id} />
+                      <button type="submit" className="icon-btn" aria-label={`Décrocher « ${a.title} »`} title="Décrocher">
+                        <X size={16} />
+                      </button>
+                    </form>
+                  </div>
                 )}
                 <div className="parchment-flourish" aria-hidden="true">
                   ❦

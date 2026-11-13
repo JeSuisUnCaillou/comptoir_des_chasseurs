@@ -11,7 +11,7 @@ export function TillStat({ title, till, testId }: { title: string; till: Till; t
       <div className="small muted">
         {septims(till.sales)} encaissés · {septims(till.buybacks)} payés
         {(till.inflows !== 0 || till.outflows !== 0) &&
-          ` · ${septims(till.inflows - till.outflows, { signed: true })} en mouvements de caisse`}
+          ` · ${septims(till.inflows - till.outflows, { signed: true })} d'entrées et sorties d'argent hors achats et ventes`}
       </div>
     </div>
   );

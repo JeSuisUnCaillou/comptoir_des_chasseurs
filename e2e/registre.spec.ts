@@ -67,7 +67,7 @@ test("un achat puis une vente mettent à jour le stock et le registre", async ({
   await expect(rows.filter({ hasText: "Belethor" })).toHaveCount(0);
 });
 
-test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
+test("une vente peut dépasser le stock : un avertissement, et le stock s'arrête à zéro", async ({ browser }) => {
   const product = uniqueName("Peau de loup-garou");
   await createProduct(product, { stock: 2 });
   const { page } = await newEmployeePage(browser, "onmund");
@@ -76,9 +76,31 @@ test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, product);
   await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 2 peaux");
+  const warning = form.getByTestId("stock-dispo").getByRole("img", { name: /^Stock insuffisant/ });
+  await expect(warning).toHaveCount(0);
   await form.getByLabel("Quantité").fill("5");
-  await expect(form.locator(ALERT)).toContainText("il ne reste que 2 peaux");
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeDisabled();
+  // The stock turns orange with a warning sign; nothing blocks the sale.
+  await expect(warning).toBeVisible();
+  await expect(form.getByTestId("stock-dispo").locator("strong")).toHaveCSS("color", "rgb(245, 132, 60)");
+  await expect(form.locator(ALERT)).toHaveCount(0);
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: `5 × ${product}` })).toContainText("15 septims");
+  await expect(await stockOf(page, product)).toHaveText("0");
+
+  // With nothing left, a sale still goes through and the stock stays at zero.
+  await record(page, "vente", { product, quantity: 1 });
+  await expect(await stockOf(page, product)).toHaveText("0");
+
+  // Cancelling puts back what really left the stock: 2 peaux, not 5, and nothing for the last sale.
+  await page.goto("/achat-vente");
+  const rows = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
+  page.on("dialog", (dialog) => dialog.accept());
+  for (const quantity of ["1", "5"]) {
+    const row = rows.filter({ has: page.locator("td.cell-qty", { hasText: new RegExp(`^${quantity}$`) }) });
+    await row.getByRole("button", { name: /Annuler/ }).click();
+    await expect(row).toContainText("Annulée par");
+  }
+  await expect(await stockOf(page, product)).toHaveText("2");
 });
 
 test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
@@ -115,7 +137,7 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
   ] as const) {
     await page.goto(`/achat-vente/${kind}`);
     const form = page.getByRole("region", { name: region });
-    const box = form.getByRole("combobox", { name: "Article ou marchandise" });
+    const box = form.getByRole("combobox", { name: "Marchandise" });
     // Nothing chosen yet: the form is refused.
     await form.getByRole("button", { name: submit }).click();
     await expect(page).toHaveURL(new RegExp(`/achat-vente/${kind}$`));
@@ -216,12 +238,22 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
   );
 });
 
-test("le grand livre met l'achat et la vente en avant, pas le mouvement de caisse", async ({ browser }) => {
+test("le grand livre met l'achat et la vente en avant, à droite, pas le mouvement de caisse", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "brand-shei");
   await page.goto(COMPTOIR);
   await expect(page.getByRole("link", { name: "Nouvel achat" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Nouvelle vente" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Mouvement de caisse" })).not.toHaveClass(/btn-primary/);
+  // Achat and vente sit at the right end of the row, after the two movements.
+  await expect(page.locator(".move-actions").getByRole("link")).toHaveText([
+    "Mouvement de caisse",
+    "Mouvement de stock",
+    "Nouvel achat",
+    "Nouvelle vente",
+  ]);
+  const stock = await page.getByRole("link", { name: "Mouvement de stock" }).boundingBox();
+  const achat = await page.getByRole("link", { name: "Nouvel achat" }).boundingBox();
+  expect(achat!.x).toBeGreaterThan(stock!.x);
 });
 
 test("le registre est paginé", async ({ browser }) => {
@@ -430,7 +462,7 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await expect(table.getByRole("row").filter({ hasText: reason })).toBeVisible();
   await expect(table.getByRole("row").filter({ hasText: deposit })).toBeVisible();
   await expect(table.getByRole("row").filter({ hasText: /Vente|Achat/ })).toHaveCount(0);
-  await expect(page.getByTestId("totaux-registre")).toContainText("en mouvements de caisse");
+  await expect(page.getByTestId("totaux-registre")).toContainText("d'entrées et sorties d'argent hors achats et ventes");
   expect(await movementsTill()).toBe(tillBefore + 50 - 37);
 
   // Its author cancels it: it no longer counts.
@@ -438,6 +470,58 @@ test("un mouvement de caisse fait entrer ou sortir des septims sans marchandise"
   await table.getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /Annuler/ }).click();
   await expect(table.getByRole("row").filter({ hasText: reason })).toContainText("Annulée");
   await expect.poll(movementsTill).toBe(tillBefore + 50);
+
+  // Septims not yet in the coffer, or not yet taken out: shown, not counted.
+  const wages = uniqueName("Salaires");
+  const bonus = uniqueName("Apport du gérant");
+  for (const [direction, amount, motif, box] of [
+    ["Sortie d'argent", "8", wages, "Pas encore sorti de la caisse"],
+    ["Entrée d'argent", "25", bonus, "Pas encore mis en caisse"],
+  ] as const) {
+    await page.goto("/achat-vente/caisse");
+    await form.getByRole("radio", { name: direction }).check();
+    await form.getByLabel("Montant (septims)").fill(amount);
+    await form.getByLabel("Motif").fill(motif);
+    await form.getByLabel(box).check();
+    await expect(preview).toContainText("inchangée tant que l'argent n'est pas en caisse");
+    await expect(preview).not.toContainText("après");
+    await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+    await expect(page.getByRole("status")).toContainText(`Mouvement inscrit : ${motif}`);
+    await expect(page.getByRole("status")).toContainText("pas encore en caisse.");
+  }
+  await page.goto("/achat-vente?type=caisse");
+  const wagesRow = table.getByRole("row").filter({ hasText: wages });
+  const bonusRow = table.getByRole("row").filter({ hasText: bonus });
+  await expect(wagesRow).toContainText(/−8 septims\s*Pas encore en caisse/);
+  await expect(bonusRow).toContainText(/\+25 septims\s*Pas encore en caisse/);
+  expect(await movementsTill()).toBe(tillBefore + 50);
+  await expect(page.getByTestId("en-attente")).toContainText("+17 septims");
+  await expect(page.getByTestId("en-attente")).toContainText("25 septims à déposer · 8 septims à prendre");
+
+  // Its author says the septims are in, then out: each one counts from then on.
+  let question = "";
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
+  const settleBonus = bonusRow.getByRole("button", { name: /^Mettre en caisse/ });
+  await expect(settleBonus).toHaveText("Mettre 25 septims en caisse");
+  await expect(settleBonus).toHaveAccessibleName(/^Mettre en caisse les 25 septims du mouvement de caisse n°\d+$/);
+  await settleBonus.click();
+  await expect.poll(() => question).toMatch(/^Tu as bien mis les 25 septims du mouvement de caisse n°\d+ dans la caisse \?$/);
+  await expect(bonusRow).not.toContainText("Pas encore en caisse");
+  await expect.poll(movementsTill).toBe(tillBefore + 75);
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
+  const settleWages = wagesRow.getByRole("button", { name: /^Sortir de la caisse/ });
+  await expect(settleWages).toHaveText("Sortir 8 septims de la caisse");
+  await settleWages.click();
+  await expect.poll(() => question).toMatch(/^Tu as bien pris les 8 septims du mouvement de caisse n°\d+ dans la caisse \?$/);
+  await expect(wagesRow).not.toContainText("Pas encore en caisse");
+  await expect.poll(movementsTill).toBe(tillBefore + 67);
+  await expect(page.getByTestId("en-attente")).toHaveCount(0);
 });
 
 test("le grand livre montre la trésorerie, les ventes, les rachats et leur solde", async ({ page, browser }) => {
@@ -456,7 +540,6 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   };
   await loginAsGerant(page);
   await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
-  await expect(page.getByTestId("caisse-totale")).toContainText("Solde calculé depuis les écritures");
   await expect(page.getByTestId("total-ventes")).toContainText("Total des ventes");
   await expect(page.getByTestId("total-rachats")).toContainText("Total des rachats");
   await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
@@ -585,7 +668,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(await stockOf(page, meat)).toHaveText("7");
 });
 
-test("une marchandise vendue sur deux lignes doit avoir le stock des deux", async ({ browser }) => {
+test("une marchandise vendue sur deux lignes est comparée au stock pour les deux", async ({ browser }) => {
   const product = uniqueName("Peau de sabrecat");
   await createProduct(product, { stock: 3 });
   const { page } = await newEmployeePage(browser, "mjoll");
@@ -596,11 +679,11 @@ test("une marchandise vendue sur deux lignes doit avoir le stock des deux", asyn
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(line(form, 2), product);
   await line(form, 2).getByLabel("Quantité").fill("2");
-  await expect(form.locator(ALERT)).toHaveText(`Stock insuffisant de ${product} : il ne reste que 3 peaux.`);
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeDisabled();
+  const warnings = form.getByRole("img", { name: /^Stock insuffisant/ });
+  // Both lines of the merchandise show it.
+  await expect(warnings).toHaveCount(2);
   await line(form, 2).getByLabel("Quantité").fill("1");
-  await expect(form.locator(ALERT)).toHaveCount(0);
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeEnabled();
+  await expect(warnings).toHaveCount(0);
 });
 
 test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", async ({ browser }) => {
@@ -617,17 +700,17 @@ test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", a
   await pickProduct(line(form, 2), second);
   await line(form, 2).getByLabel("Quantité").fill("4");
 
-  // Someone else sells the lynx hides meanwhile.
+  // A gérant archives the lynx hides meanwhile.
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    await sql`update products set stock = 1 where name = ${second}`;
+    await sql`update products set archived = true where name = ${second}`;
   } finally {
     await sql.end();
   }
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Stock insuffisant pour cette vente.");
+  await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Marchandise inconnue.");
   // What was typed stays, and the first line was not written either.
-  await expect(line(form, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(first);
+  await expect(line(form, 1).getByRole("combobox", { name: "Marchandise" })).toHaveValue(first);
   await expect(await stockOf(page, first)).toHaveText("5");
 });
 
@@ -653,7 +736,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await page.goto("/achat-vente/achat");
   // The button sits right of "Retour au registre".
   const back = (await page.getByRole("link", { name: "Retour au registre" }).boundingBox())!;
-  const toSale = page.getByRole("button", { name: "Passer en vente" });
+  const toSale = page.getByRole("button", { name: "C'est une vente" });
   const switchBox = (await toSale.boundingBox())!;
   expect(Math.abs(switchBox.y - back.y)).toBeLessThan(4);
   expect(switchBox.x).toBeGreaterThan(back.x + back.width);
@@ -670,16 +753,16 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
   await purchase.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
-  await purchase.getByLabel("Je n'ai pas encore pris les septims dans la caisse").check();
+  await purchase.getByLabel("Pas encore sorti de la caisse").check();
   await toSale.click();
 
   // Same goods, client and notes; the tariff amount follows the sale price, the typed one stays.
   await expect(page.getByRole("heading", { name: "Nouvelle vente", level: 1 })).toBeVisible();
   const sale = page.getByRole("region", { name: "Inscrire une vente" });
-  await expect(line(sale, 1).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(product);
+  await expect(line(sale, 1).getByRole("combobox", { name: "Marchandise" })).toHaveValue(product);
   await expect(line(sale, 1).getByLabel("Quantité")).toHaveValue("4");
   await expect(line(sale, 1).getByLabel("Montant (septims)")).toHaveValue("12");
-  await expect(line(sale, 2).getByRole("combobox", { name: "Article ou marchandise" })).toHaveValue(
+  await expect(line(sale, 2).getByRole("combobox", { name: "Marchandise" })).toHaveValue(
     "Autre article (hors stock)…",
   );
   await expect(line(sale, 2).getByLabel("Nom de l'article")).toHaveValue("Corne");
@@ -687,19 +770,19 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await expect(sale.getByTestId("total")).toHaveText("Total de la vente : 17 septims");
   await expect(sale.getByLabel("Nom du client / vendeur RP (facultatif)")).toHaveValue("Brenuin");
   await expect(sale.getByLabel("Notes (facultatif)")).toHaveValue("Il a hésité");
-  await expect(sale.getByLabel("Je n'ai pas encore déposé les septims dans la caisse")).toBeChecked();
+  await expect(sale.getByLabel("Pas encore mis en caisse")).toBeChecked();
 
   // An amount changed with the pencil comes back as it was typed.
   await line(sale, 1).getByRole("button", { name: "Modifier le montant" }).click();
   await line(sale, 1).getByLabel("Montant (septims)").fill("10");
-  await page.getByRole("button", { name: "Passer en achat" }).click();
+  await page.getByRole("button", { name: "C'est un achat" }).click();
   await expect(page.getByRole("heading", { name: "Nouvel achat", level: 1 })).toBeVisible();
   const again = page.getByRole("region", { name: "Inscrire un achat" });
   await expect(line(again, 1).getByLabel("Montant (septims)")).toHaveValue("10");
   await expect(line(again, 1).getByRole("button", { name: "Revenir au tarif" })).toBeVisible();
   // The citizen box comes back as it was, though a sale has none.
   await expect(again.getByLabel("Le vendeur est citoyen d'Estemarche")).toBeChecked();
-  await again.getByLabel("Je n'ai pas encore pris les septims dans la caisse").uncheck();
+  await again.getByLabel("Pas encore sorti de la caisse").uncheck();
   await again.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
     `Achat inscrit : 4 × ${product}, 1 × Corne, 15 septims au total.`,

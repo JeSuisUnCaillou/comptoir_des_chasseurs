@@ -25,7 +25,7 @@ export default async function EditProduct({
   return (
     <>
       <PageHead title={product.name}>
-        {fromTarifs ? <Link href={at("/tarifs")}>← Tarifs</Link> : <Link href={at("/marchandises")}>← Gérer les tarifs</Link>}
+        {fromTarifs ? <Link href={at("/tarifs")}>← Tarifs</Link> : <Link href={at("/marchandises")}>← Gérer les marchandises</Link>}
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
         <ProductForm product={product} fromTarifs={fromTarifs} />

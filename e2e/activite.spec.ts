@@ -34,7 +34,7 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   await employee.getByLabel("Rechercher une marchandise").fill(product);
   const card = employee.getByTestId(`stock-${product}`);
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill("10");
+  await card.getByLabel("Quantité ajoutée").fill("10");
   await card.getByLabel("Motif").fill("chasse");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("10");
@@ -66,7 +66,7 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+12 septims");
   // Only the hunt: the stock of the purchase and the sales is theirs. 10 hides at 3 septims.
   await expect(page.getByTestId("total-inventaire").locator(".stat-value")).toHaveText("+30 septims");
-  await expect(page.getByTestId("total-inventaire")).toContainText("+10 / −0 unités");
+  await expect(page.getByTestId("total-inventaire")).toContainText("(+10 / −0)");
   await expect(page.getByTestId("total-caisse").locator(".stat-value")).toHaveText("+20 septims");
   // The default period is the last 7 days, shown in the form.
   await expect(page.getByLabel("Du", { exact: true })).not.toHaveValue("");
@@ -90,7 +90,7 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   for (const tile of ["total-achats", "total-ventes", "total-inventaire", "total-caisse"]) {
     await expect(page.getByTestId(tile).locator(".stat-value")).toHaveText("0 septim");
   }
-  await expect(page.getByText("Rien sur la période.")).toBeVisible();
+  await expect(page.getByText("Aucune activité sur cette période.")).toBeVisible();
 
   // Back to the last 7 days.
   await page.getByRole("link", { name: "7 derniers jours" }).click();

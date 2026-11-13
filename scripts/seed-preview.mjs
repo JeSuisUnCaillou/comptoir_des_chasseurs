@@ -70,6 +70,12 @@ const SAMPLES = [
   ["vente", "Taverne de la Jument pie", true, [["Venaison", 30, 45], ["Viande d'horqueur", 10, 15]]],
 ];
 const SAMPLE_NOTE = "Exemple d'écriture groupée (preview)";
+const CASH_NOTE = "Exemple de mouvement de caisse pas encore en caisse (preview)";
+/** Cash movements waiting for the till: [kind, label, amount, counterparty]. */
+const CASH_SAMPLES = [
+  ["sortie", "Salaires", 40, "Faendal"],
+  ["entree", "Apport du gérant", 150, null],
+];
 
 // A second shop, with a few goods of its own and a parchment.
 const TAVERN = {
@@ -230,6 +236,20 @@ try {
         insert into announcements (shop_id, title, body, pin, member_id)
         values (${tavern.id}, ${TAVERN.announcement.title}, ${TAVERN.announcement.body}, 'viande', ${aela})`;
       console.log("Boutique d'exemple « La Taverne du Port » créée.");
+    }
+
+    // Again on each build once both have been settled or cancelled. Mirrors recordCashLine (lib/transactions.ts).
+    // The shop is named: the preview database, shared with other branches, may have lost shop_id's default.
+    const [{ cashWaiting }] = await tx`
+      select count(*)::int as "cashWaiting" from transactions
+      where notes = ${CASH_NOTE} and till_pending and cancelled_at is null`;
+    if (cashWaiting === 0) {
+      for (const [kind, label, amount, counterparty] of CASH_SAMPLES) {
+        await tx`
+          insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, notes, till_pending, member_id)
+          values (1, ${kind}, null, ${label}, 1, ${amount}, ${counterparty}, ${CASH_NOTE}, true, ${memberId})`;
+      }
+      console.log("Mouvements de caisse pas encore en caisse ajoutés.");
     }
   });
 } finally {

@@ -19,7 +19,17 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /\.apres\.spec\.ts$/ },
+    // Tests that change what every page of the shop shows (a shop-wide setting)
+    // run once the others are done, so they never see it half-changed.
+    {
+      name: "apres",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /\.apres\.spec\.ts$/,
+      dependencies: ["chromium"],
+    },
+  ],
   webServer: process.env.BASE_URL
     ? undefined
     : {

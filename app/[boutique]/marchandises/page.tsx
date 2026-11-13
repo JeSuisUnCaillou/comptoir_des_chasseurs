@@ -7,8 +7,8 @@ import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
-import { blacksmithLeatherPrice, productPage } from "@/lib/products";
-import { saveBlacksmithPrice } from "./actions";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
+import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
@@ -18,14 +18,16 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
   const search = await searchParams;
   const q = searchParam(search.q);
   const page = pageParam(search.page);
-  const [{ products, total }, blacksmith] = await Promise.all([
+  const [{ products, total }, blacksmith, active] = await Promise.all([
     productPage(member.shopId, q, page),
     blacksmithLeatherPrice(member.shopId),
+    activeProducts(member.shopId),
   ]);
+  const featured = await featuredProduct(member.shopId, active);
 
   return (
     <>
-      <PageHead title="Gérer les tarifs">
+      <PageHead title="Gérer les marchandises">
         La liste des marchandises du comptoir et leurs prix.
       </PageHead>
 
@@ -35,25 +37,48 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
           <h2 id="ajout">Ajouter une marchandise</h2>
           <ProductForm />
         </section>
-        <section className="panel">
-          <div className="eyebrow">Réglage</div>
-          <h2>Rachat du cuir par le forgeron</h2>
-          <p className="muted">
-            Sert au calcul du bénéfice par lot de peaux. Actuellement : {septims(blacksmith)}.
-          </p>
-          <form action={saveBlacksmithPrice} className="inline-form">
-            <input
-              name="value"
-              type="number"
-              min={0}
-              defaultValue={blacksmith}
-              aria-label="Prix du cuir chez le forgeron"
-            />
-            <button className="btn btn-small" type="submit">
-              Enregistrer
-            </button>
-          </form>
-        </section>
+        <div className="panel-stack">
+          <section className="panel" aria-labelledby="phare">
+            <div className="eyebrow">Réglage</div>
+            <h2 id="phare">Produit phare</h2>
+            <p className="muted">
+              Mis en avant en haut des Tarifs, et choisi d&apos;office dans le calculateur. Actuel :{" "}
+              {featured?.name ?? "aucun"}.
+            </p>
+            <form action={saveFeaturedProduct} className="inline-form">
+              <select name="productId" defaultValue={featured?.id} aria-label="Produit phare" required>
+                {!featured && <option value="">Aucun</option>}
+                {active.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-small" type="submit">
+                Enregistrer
+              </button>
+            </form>
+          </section>
+          <section className="panel" aria-labelledby="forgeron">
+            <div className="eyebrow">Réglage</div>
+            <h2 id="forgeron">Rachat du cuir par le forgeron</h2>
+            <p className="muted">
+              Sert à calculer le bénéfice sur les peaux. Prix actuel : {septims(blacksmith)}.
+            </p>
+            <form action={saveBlacksmithPrice} className="inline-form">
+              <input
+                name="value"
+                type="number"
+                min={0}
+                defaultValue={blacksmith}
+                aria-label="Prix du cuir chez le forgeron"
+              />
+              <button className="btn btn-small" type="submit">
+                Enregistrer
+              </button>
+            </form>
+          </section>
+        </div>
       </div>
 
       <section className="panel">
@@ -62,7 +87,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <LiveSearch />
         {products.length === 0 && <p className="muted">Aucune marchandise ne correspond.</p>}
         <div className="table-wrap">
-          <table>
+          <table className="stack-cards">
             <thead>
               <tr>
                 <th>Nom</th>
@@ -75,13 +100,13 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className={p.archived ? "muted" : undefined}>
-                  <td>
+                  <td className="stack-title">
                     <strong>{p.name}</strong> {p.archived && <span className="badge">Archivée</span>}
                   </td>
-                  <td>{CATEGORY_LABELS[p.category]}</td>
-                  <td className="num">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
-                  <td className="num">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
-                  <td>
+                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td className="num" data-label="Rachat">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
+                  <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
+                  <td className="stack-aside">
                     <Link className="btn btn-small" href={at(`/marchandises/${p.id}`)} aria-label={`Modifier ${p.name}`}>
                       Modifier
                     </Link>

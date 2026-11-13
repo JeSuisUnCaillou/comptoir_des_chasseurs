@@ -83,8 +83,8 @@ export default async function ActiviteMembre({
             Septims encaissés des clients.
           </Total>
           <Total testId="total-inventaire" title="Inventaire" amount={stock.value}>
-            +{formatNumber(stock.unitsIn)} / −{formatNumber(stock.unitsOut)} unités à la main, hors achats et ventes,
-            au prix de vente.
+            Entrées et sorties de stock manuelles (+{formatNumber(stock.unitsIn)} / −{formatNumber(stock.unitsOut)}),
+            comptées au prix de vente.
           </Total>
           <Total testId="total-caisse" title="Mouvements de caisse" amount={totals.inflows - totals.outflows}>
             {septims(totals.inflows)} entrés / {septims(totals.outflows)} sortis, sans marchandise.
@@ -104,10 +104,10 @@ export default async function ActiviteMembre({
         </div>
         <p className="muted">
           Achats, ventes, mouvements de caisse et mouvements de stock faits à la main, du plus récent au plus ancien.
-          Les lignes annulées sont barrées et ne comptent pas, ni celles en attente de la caisse.
+          Les lignes barrées sont annulées. Elles ne comptent pas, pas plus que celles qui ne sont pas encore en caisse.
         </p>
         {/* The author or a gérant settles a line waiting for the till, as in the register. */}
-        <ActivityTable lines={lines} empty="Rien sur la période." canSettle={canActOn(viewer, { memberId: member.id })} />
+        <ActivityTable lines={lines} empty="Aucune activité sur cette période." canSettle={canActOn(viewer, { memberId: member.id })} />
         <Pagination page={page} total={lineTotal} path={path} params={filters} label="Pages de l'activité" noun="opération" />
       </section>
     </>

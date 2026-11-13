@@ -49,14 +49,14 @@ test("le gérant crée un fournisseur, lui donne des marchandises, le modifie pu
 
   await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${meat} (pièce)` });
   await page.getByLabel("Prix en septims").fill("1");
-  await page.getByLabel("Pour combien d'unités").fill("6");
+  await page.getByLabel("Pour (unités)").fill("6");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("cell", { name: "1 septim pour 6 pièces" })).toBeVisible();
 
   // The same merchandise again changes its price.
   await page.getByLabel("Marchandise", { exact: true }).selectOption({ label: `${hide} (peau)` });
   await page.getByLabel("Prix en septims").fill("2");
-  await page.getByLabel("Pour combien d'unités").fill("1");
+  await page.getByLabel("Pour (unités)").fill("1");
   await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
   await expect(page.getByRole("cell", { name: "2 septims pour 1 peau" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "3 septims pour 1 peau" })).toHaveCount(0);
@@ -95,7 +95,7 @@ test("deux fournisseurs ne portent pas le même nom", async ({ page }) => {
   await page.goto("/fournisseurs/nouveau");
   await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByRole("button", { name: "Ajouter le fournisseur" }).click();
-  await expect(page.getByText("Un fournisseur porte déjà ce nom.")).toBeVisible();
+  await expect(page.getByText("Il y a déjà un fournisseur à ce nom.")).toBeVisible();
   await expect(page.getByLabel("Nom", { exact: true })).toHaveValue(name);
 });
 

@@ -6,7 +6,7 @@ test("un visiteur non connecté arrive sur la page de connexion", async ({ page 
 
   // The comptoir's old address leads to its page in the shop.
   await expect(page).toHaveURL(/\/connexion\?suite=%2Fle-comptoir-des-chasseurs%2Finventaire$/);
-  await expect(page.getByRole("heading", { name: /Comptoir\s*de Chasse/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Comptoir\s*des chasseurs/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
 });
 

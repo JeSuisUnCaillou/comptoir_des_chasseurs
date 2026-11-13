@@ -36,7 +36,7 @@ export async function recordTransaction(
 
   if (kind !== "vente" && kind !== "rachat") return { ok: false, message: "Opération inconnue." };
   const count = productIds.length;
-  if (count === 0) return { ok: false, message: "Indique l'article ou la marchandise." };
+  if (count === 0) return { ok: false, message: "Choisis une marchandise." };
   if (count > MAX_LINES) return { ok: false, message: `Pas plus de ${MAX_LINES} marchandises à la fois.` };
   if (labels.length !== count || quantities.length !== count || amounts.length !== count) {
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
@@ -80,23 +80,24 @@ export async function recordCashMovement(
   const label = text(formData, "label", 100);
   const counterparty = optionalText(formData, "counterparty", 100);
   const notes = optionalText(formData, "notes", 500);
+  const tillPending = checked(formData, "tillPending");
 
   if (kind !== "entree" && kind !== "sortie") {
     return { ok: false, message: "Indique si l'argent entre ou sort de la caisse." };
   }
   if (!Number.isInteger(amount) || amount <= 0) {
-    return { ok: false, message: "Le montant doit être un nombre entier de septims, au moins 1." };
+    return { ok: false, message: "Le montant doit être un nombre entier d'au moins 1 septim." };
   }
-  if (!label) return { ok: false, message: "Indique le motif du mouvement." };
+  if (!label) return { ok: false, message: "Précise la raison." };
 
-  const id = await recordCashLine(member, { kind, label, amount, counterparty, notes });
+  const id = await recordCashLine(member, { kind, label, amount, counterparty, notes, tillPending });
   revalidate();
   redirect(shopPath(member.shop.slug, `/achat-vente?inscrit=${id}`));
 }
 
 /**
- * The septims of a sale or buyback waiting for the till are now in it, or out
- * of it: every line of the same entry counts in the till from now on.
+ * The septims of a sale, buyback or cash movement waiting for the till are now
+ * in it, or out of it: every line of the same entry counts in the till from now on.
  * Gérants, or the member who wrote it.
  */
 export async function settleTransaction(
@@ -109,7 +110,7 @@ export async function settleTransaction(
   const result = await attempt(() => settleLine(member, id));
   if (!result.ok) return result;
   revalidate();
-  return { ok: true, message: "Les septims comptent dans la caisse." };
+  return { ok: true, message: "C'est noté, la caisse est à jour." };
 }
 
 /** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */

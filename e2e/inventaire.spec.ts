@@ -27,7 +27,7 @@ test("entrées et sorties de stock, avec historique", async ({ page }) => {
   await expect(card.getByRole("button", { name: "Sortie" })).toBeDisabled();
 
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill("10");
+  await card.getByLabel("Quantité ajoutée").fill("10");
   await card.getByLabel("Motif").fill("chasse du matin");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("10");
@@ -36,7 +36,7 @@ test("entrées et sorties de stock, avec historique", async ({ page }) => {
   await expect(card).not.toContainText("En stock");
 
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").fill("4");
+  await card.getByLabel("Quantité retirée").fill("4");
   await card.getByLabel("Motif").fill("transformation en cuir");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("6");
@@ -58,15 +58,15 @@ test("une sortie ne peut pas dépasser le stock", async ({ page }) => {
   const card = page.getByTestId(`stock-${name}`);
 
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill("2");
+  await card.getByLabel("Quantité ajoutée").fill("2");
   await card.getByLabel("Motif").fill("arrivage");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("2");
 
   // Skip the browser's max check to hit the server-side guard.
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").evaluate((el) => el.removeAttribute("max"));
-  await card.getByLabel("Quantité sortie").fill("5");
+  await card.getByLabel("Quantité retirée").evaluate((el) => el.removeAttribute("max"));
+  await card.getByLabel("Quantité retirée").fill("5");
   await card.getByLabel("Motif").fill("trop");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.locator(ALERT)).toHaveText("Stock insuffisant pour cette sortie.");
@@ -101,10 +101,10 @@ async function moveIn(page: Page, name: string, quantity: string, reason: string
   await page.getByLabel("Rechercher une marchandise").fill(name);
   const card = page.getByTestId(`stock-${name}`);
   await card.getByRole("button", { name: "Entrée" }).click();
-  await card.getByLabel("Quantité entrée").fill(quantity);
+  await card.getByLabel("Quantité ajoutée").fill(quantity);
   await card.getByLabel("Motif").fill(reason);
   await card.getByRole("button", { name: "Valider" }).click();
-  await expect(card.getByLabel("Quantité entrée")).toBeHidden();
+  await expect(card.getByLabel("Quantité ajoutée")).toBeHidden();
 }
 
 test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", async ({ page, browser }) => {
@@ -118,7 +118,7 @@ test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", asyn
   await moveIn(page, name, "3", "chasse du gérant");
   const card = page.getByTestId(`stock-${name}`);
   await card.getByRole("button", { name: "Sortie" }).click();
-  await card.getByLabel("Quantité sortie").fill("1");
+  await card.getByLabel("Quantité retirée").fill("1");
   await card.getByLabel("Motif").fill("sortie du gérant");
   await card.getByRole("button", { name: "Valider" }).click();
   await expect(card.getByTestId("stock-value")).toHaveText("7");
@@ -177,11 +177,13 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = p.getByRole("form", { name: "Nouvelle marchandise" });
   await expect(form.getByLabel("Nom")).toHaveValue(name);
+  // An employee does not set prices.
+  await expect(form.getByLabel("Ajouter des prix")).toHaveCount(0);
   await form.getByLabel("Catégorie").selectOption("peau");
   await form.getByLabel("Unité (au singulier)").fill("peau");
-  await form.getByLabel("Quantité entrée").fill("3");
+  await form.getByLabel("Quantité ajoutée").fill("3");
   await form.getByLabel("Motif").fill("chasse en montagne");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
 
   const card = p.getByTestId(`stock-${name}`);
   await expect(card.getByTestId("stock-value")).toHaveText("3");
@@ -191,7 +193,7 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
     /\+3.*3 peaux.*chasse en montagne/,
   );
 
-  // Created without prices: the gérant finds it in Gérer les tarifs to set them.
+  // Created without prices: the gérant finds it in Gérer les marchandises to set them.
   await loginAsGerant(page);
   await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
   const row = page.getByRole("row").filter({ hasText: name });
@@ -202,14 +204,60 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await p.getByLabel("Rechercher une marchandise").fill("");
   await p.getByRole("button", { name: "Nouvelle marchandise" }).click();
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Quantité entrée").fill("1");
+  await form.getByLabel("Quantité ajoutée").fill("1");
   await form.getByLabel("Motif").fill("doublon");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
-  await expect(form.locator(ALERT)).toContainText("Une marchandise porte déjà ce nom");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+  await expect(form.locator(ALERT)).toContainText("Il y a déjà une marchandise à ce nom");
   await expect(form.getByLabel("Motif")).toHaveValue("doublon");
   await form.getByRole("button", { name: "Annuler" }).click();
   await p.getByLabel("Rechercher une marchandise").fill(name);
   await expect(card.getByTestId("stock-value")).toHaveText("3");
+});
+
+test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async ({ page }) => {
+  const name = uniqueName("Peau de troll");
+  await loginAsGerant(page);
+  await page.goto("/inventaire");
+  await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
+  const form = page.getByRole("form", { name: "Nouvelle marchandise" });
+  await form.getByLabel("Nom").fill(name);
+  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Quantité ajoutée").fill("2");
+  await form.getByLabel("Motif").fill("chasse au troll");
+
+  // The price fields only show once « Ajouter des prix » is ticked.
+  const prices = form.getByRole("spinbutton", { name: "Prix en septims" });
+  await expect(prices).toHaveCount(0);
+  await form.getByLabel("Ajouter des prix").check();
+  // The first price heading keeps its space below the checkbox.
+  const box = (await form.locator("label.check").boundingBox())!;
+  const heading = (await form.getByRole("heading", { name: "Achat (on paie)" }).boundingBox())!;
+  expect(heading.y - (box.y + box.height)).toBeGreaterThanOrEqual(16);
+  await prices.first().fill("12");
+  await form.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" }).fill("15");
+  await prices.nth(1).fill("30");
+
+  // A hide's leather batch needs both numbers, and the form keeps what was typed.
+  await form.getByLabel("Peaux par lot").fill("2");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+  await expect(form.locator(ALERT)).toContainText("Remplis les peaux et les cuirs");
+  await expect(prices.first()).toHaveValue("12");
+  await form.getByLabel("Cuirs obtenus").fill("1");
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
+
+  await expect(form).toBeHidden();
+  await expect(page.getByTestId(`stock-${name}`).getByTestId("stock-value")).toHaveText("2");
+
+  // Gérer les marchandises shows its prices.
+  await page.goto(`/marchandises?q=${encodeURIComponent(name)}`);
+  const row = page.getByRole("row").filter({ hasText: name });
+  await expect(row.getByRole("cell", { name: "—" })).toHaveCount(0);
+  await row.getByRole("link", { name: `Modifier ${name}` }).click();
+  await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("12");
+  await expect(page.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" })).toHaveValue("15");
+  await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).nth(1)).toHaveValue("30");
+  await expect(page.getByLabel("Peaux par lot")).toHaveValue("2");
+  await expect(page.getByLabel("Cuirs obtenus")).toHaveValue("1");
 });
 
 test("l'inventaire montre les septims en caisse, sans ceux qui attendent la caisse", async ({ page, browser }) => {
@@ -239,4 +287,18 @@ test("l'inventaire montre les septims en caisse, sans ceux qui attendent la cais
     await sql.end();
   }
   near((await read()) - before, 5_000_000);
+});
+
+test("un gérant va de l'inventaire à Gérer les marchandises, pas un employé", async ({ page, browser }) => {
+  await loginAsGerant(page);
+  await page.goto("/inventaire");
+  await expect(page.getByRole("button", { name: "Nouvelle marchandise" })).toBeVisible();
+  await page.getByRole("link", { name: "Gérer les marchandises" }).click();
+  await expect(page).toHaveURL(/\/marchandises$/);
+  await expect(page.getByRole("heading", { name: "Gérer les marchandises", level: 1 })).toBeVisible();
+
+  const { page: employee } = await newEmployeePage(browser, "Ralof");
+  await employee.goto("/inventaire");
+  await expect(employee.getByRole("button", { name: "Nouvelle marchandise" })).toBeVisible();
+  await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
 });

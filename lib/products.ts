@@ -5,9 +5,10 @@ import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
+import { isGerant } from "@/lib/policies";
 import { lineMessage } from "@/lib/transaction-kinds";
 
-export const DUPLICATE_PRODUCT_NAME = "Une marchandise porte déjà ce nom.";
+export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 
 export async function activeProducts(shopId: number) {
   return getDb()
@@ -17,17 +18,58 @@ export async function activeProducts(shopId: number) {
     .orderBy(byName(schema.products.name), asc(schema.products.id));
 }
 
-export async function blacksmithLeatherPrice(shopId: number) {
+/** A shop setting's value, undefined while it was never saved. */
+async function readSetting(shopId: number, key: string) {
   const [row] = await getDb()
     .select()
     .from(schema.settings)
-    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, BLACKSMITH_LEATHER_PRICE)))
+    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, key)))
     .limit(1);
-  return row?.value ?? 6;
+  return row?.value;
+}
+
+async function writeSetting(shopId: number, key: string, value: number) {
+  await getDb()
+    .insert(schema.settings)
+    .values({ shopId, key, value })
+    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+}
+
+export async function blacksmithLeatherPrice(shopId: number) {
+  return (await readSetting(shopId, BLACKSMITH_LEATHER_PRICE)) ?? 6;
 }
 
 /** Settings key of the price the blacksmith pays for a leather. */
 export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
+
+/** Settings key of the id of the product the Tarifs page puts forward. */
+export const FEATURED_PRODUCT = "produit_phare";
+
+/**
+ * The product the Tarifs page puts forward, among the shop's active ones: the
+ * one a gérant chose, or else the leather, as before the choice existed.
+ */
+export async function featuredProduct<P extends { id: number; category: ProductCategory }>(shopId: number, active: P[]) {
+  const id = await readSetting(shopId, FEATURED_PRODUCT);
+  return active.find((p) => p.id === id) ?? active.find((p) => p.category === "cuir");
+}
+
+/** Puts one of the shop's active products forward on the Tarifs page. */
+export async function setFeaturedProduct(shopId: number, productId: number) {
+  const [product] = await getDb()
+    .select({ id: schema.products.id })
+    .from(schema.products)
+    .where(
+      and(
+        eq(schema.products.id, productId),
+        eq(schema.products.shopId, shopId),
+        eq(schema.products.archived, false),
+      ),
+    )
+    .limit(1);
+  if (!product) throw new UserError("Marchandise inconnue.");
+  await writeSetting(shopId, FEATURED_PRODUCT, productId);
+}
 
 export type MovementFilter = {
   /** Part of the merchandise's name. */
@@ -103,7 +145,9 @@ export type MoveResult = { ok: true; stock: number; id: number } | { ok: false; 
 /**
  * Adds `delta` units to a product of the shop and records the movement, tied
  * to the register line that caused it when there is one.
- * Refuses to go below zero, and a product of another shop. Runs inside the
+ * Refuses to go below zero, and a product of another shop. With `clamp`, a
+ * removal takes only what is left instead of refusing: the stock stops at zero
+ * and the movement records what really left (possibly 0). Runs inside the
  * given transaction.
  */
 export async function moveStock(
@@ -114,7 +158,17 @@ export async function moveStock(
   memberId: number,
   reason: string,
   transactionId: number | null = null,
+  { clamp = false }: { clamp?: boolean } = {},
 ): Promise<MoveResult> {
+  if (clamp && delta < 0) {
+    const [locked] = await tx
+      .select({ stock: schema.products.stock })
+      .from(schema.products)
+      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, shopId)))
+      .for("update");
+    if (!locked) return { ok: false, error: "Marchandise inconnue." };
+    delta = -Math.min(-delta, locked.stock);
+  }
   const [updated] = await tx
     .update(schema.products)
     .set({ stock: sql`${schema.products.stock} + ${delta}` })
@@ -178,34 +232,39 @@ export async function recordMovements(
 }
 
 /**
- * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock.
+ * Creates a merchandise and records its first entry in stock, together.
+ * `prices` are set at once when given, which only a gérant may do.
  */
 export async function createStocked(
-  member: Actor,
+  member: Pick<ShopMember, "id" | "shopId" | "role">,
   identity: { name: string; category: ProductCategory; unit: string },
+  prices: ProductPrices | null,
   quantity: number,
   reason: string,
 ) {
+  if (prices && !isGerant(member)) throw new UserError("Seul un gérant fixe les prix.");
   try {
     await getDb().transaction(async (tx) => {
       const [product] = await tx
         .insert(schema.products)
-        .values({ ...identity, shopId: member.shopId })
+        .values({ ...identity, ...prices, shopId: member.shopId })
         .returning({ id: schema.products.id });
       const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
       if (!result.ok) throw new UserError(result.error);
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : voir Gérer les tarifs.`);
+      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`);
     }
     throw error;
   }
 }
 
-/** What Gérer les tarifs sets on a merchandise. */
+/** What Gérer les marchandises sets on a merchandise. */
 export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "shopId" | "stock" | "createdAt">;
+
+/** A merchandise's prices, without its name, category, unit or archiving. */
+export type ProductPrices = Omit<ProductValues, "name" | "category" | "unit" | "archived">;
 
 /** Creates a merchandise of the shop, or updates it when `id` is given. */
 export async function saveProduct(shopId: number, id: number | null, values: ProductValues) {
@@ -226,10 +285,7 @@ export async function saveProduct(shopId: number, id: number | null, values: Pro
 }
 
 export async function setBlacksmithLeatherPrice(shopId: number, value: number) {
-  await getDb()
-    .insert(schema.settings)
-    .values({ shopId, key: BLACKSMITH_LEATHER_PRICE, value })
-    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+  await writeSetting(shopId, BLACKSMITH_LEATHER_PRICE, value);
 }
 
 /** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name. */

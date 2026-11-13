@@ -174,7 +174,7 @@ test("le serveur refuse de modifier le super admin, même par un formulaire ouve
 
   await row.getByLabel("Nouveau mot de passe").fill("vole-le-compte");
   await row.getByRole("button", { name: "Changer" }).click();
-  await expect(row.locator(ALERT)).toHaveText("Ce compte est protégé.");
+  await expect(row.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
 
   await row.getByLabel("Rôle").selectOption("desactive");
   await row.getByRole("button", { name: "Enregistrer" }).click();

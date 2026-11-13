@@ -194,9 +194,9 @@ test("un gérant supprime sa boutique, avec tout ce qu'elle contient", async ({ 
   await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = page.getByRole("form", { name: "Nouvelle marchandise" });
   await form.getByLabel("Catégorie").selectOption("viande");
-  await form.getByLabel("Quantité entrée").fill("3");
+  await form.getByLabel("Quantité ajoutée").fill("3");
   await form.getByLabel("Motif").fill("brassé sur place");
-  await form.getByRole("button", { name: "Créer et entrer en stock" }).click();
+  await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
   await expect(page.getByTestId("stock-value")).toHaveText("3");
   // And a sale of it, a supplier offering it, a parchment and an invitation.
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });

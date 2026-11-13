@@ -74,7 +74,7 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
         </nav>
         <div className="sidebar-foot">
           <Shield size={14} style={{ verticalAlign: "-2px" }} />{" "}
-          {gerant ? "Gérance du comptoir" : "Personnel du comptoir"}
+          {gerant ? "Connecté en gérant" : "Connecté en employé"}
         </div>
       </aside>
       <div className="main">

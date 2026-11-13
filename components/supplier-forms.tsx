@@ -76,7 +76,7 @@ export function OfferForm({
           <input id="o-price" name="price" type="number" min={0} step={1} required />
         </div>
         <div className="field">
-          <label htmlFor="o-qty">Pour combien d&apos;unités</label>
+          <label htmlFor="o-qty">Pour (unités)</label>
           <input id="o-qty" name="qty" type="number" min={1} step={1} defaultValue={1} required />
         </div>
       </div>

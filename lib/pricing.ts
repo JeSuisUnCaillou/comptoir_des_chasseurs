@@ -95,6 +95,23 @@ export function margin(p: Prices, quantity: number) {
 
 type Hide = Pick<Product, "buyPrice" | "hidesPerBatch" | "leatherPerBatch">;
 
+/** A price for `qty` units brought to one unit, to compare prices set for different lots. */
+export function unitPrice(price: number | null, qty: number) {
+  return price == null ? null : price / qty;
+}
+
+/** Gross margin per unit over the reference quantity, to compare products sold in different lots. */
+export function unitMargin(p: Prices) {
+  const ref = referenceQuantity(p);
+  const gross = margin(p, ref);
+  return gross == null ? null : gross / ref;
+}
+
+/** Leather made from one hide, to compare transformations. */
+export function leatherPerHide(p: Hide) {
+  return p.hidesPerBatch && p.leatherPerBatch ? p.leatherPerBatch / p.hidesPerBatch : null;
+}
+
 /** Margin of one batch of hides turned into leather and sold to the blacksmith. */
 export function batchMargin(p: Hide, blacksmithPrice: number) {
   if (p.buyPrice == null || !p.hidesPerBatch || !p.leatherPerBatch) return null;

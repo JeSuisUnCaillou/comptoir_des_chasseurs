@@ -1,6 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus, Settings2 } from "lucide-react";
+import Link from "next/link";
+import { useShopPath } from "@/components/use-shop-path";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
@@ -36,7 +38,7 @@ function MoveForm({
       <input type="hidden" name="productId" value={item.id} />
       <input type="hidden" name="direction" value={direction} />
       <label htmlFor={`${id}-q`} className="small muted">
-        {direction === "in" ? "Quantité entrée" : "Quantité sortie"}
+        {direction === "in" ? "Quantité ajoutée" : "Quantité retirée"}
       </label>
       <input id={`${id}-q`} name="quantity" type="number" min={1} max={direction === "out" ? item.stock : undefined} required autoFocus />
       <label htmlFor={`${id}-r`} className="small muted">
@@ -97,8 +99,10 @@ function StockCard({ item }: { item: StockItem }) {
 
 const CARDS_PER_PAGE = 24;
 
-export function StockBoard({ items }: { items: StockItem[] }) {
+/** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
+export function StockBoard({ items, canManage }: { items: StockItem[]; canManage: boolean }) {
   const id = useId();
+  const path = useShopPath();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"" | ProductCategory>("");
   const [page, setPage] = useState(1);
@@ -148,18 +152,29 @@ export function StockBoard({ items }: { items: StockItem[] }) {
         </div>
       </div>
       {creating != null ? (
-        <NewStockProductForm name={creating} category={category} onCreated={created} onCancel={closeCreate} />
+        <NewStockProductForm
+          name={creating}
+          category={category}
+          canSetPrices={canManage}
+          onCreated={created}
+          onCancel={closeCreate}
+        />
       ) : (
         <div className="stock-tools">
           <button className="btn btn-small" type="button" onClick={() => setCreating(visible.length === 0 ? query.trim() : "")}>
             <PackagePlus size={14} /> Nouvelle marchandise
           </button>
+          {canManage && (
+            <Link className="btn btn-small" href={path("/marchandises")}>
+              <Settings2 size={14} /> Gérer les marchandises
+            </Link>
+          )}
         </div>
       )}
       {visible.length === 0 ? (
         <p className="muted">
           Aucune marchandise ne correspond.
-          {creating == null && query.trim() && " Le bouton « Nouvelle marchandise » la crée avec ce nom."}
+          {creating == null && query.trim() && " Tu peux la créer avec « Nouvelle marchandise »."}
         </p>
       ) : (
         <div className="stock-grid">

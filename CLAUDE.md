@@ -10,9 +10,11 @@ s'ajoute pas.
 
 ## À lire d'abord
 
-- [README.md](README.md) : ce que fait l'app, la stack, lancer en local, la
-  base, les tests, le déploiement, les rôles. C'est la spécification : un
-  comportement qu'il décrit est un comportement à garder.
+- [README.md](README.md) : la stack, lancer en local, la base, les tests, le
+  déploiement.
+- [docs/comportement.md](docs/comportement.md) : ce que fait l'app, page par
+  page, et les rôles. C'est la spécification : un comportement qu'il décrit
+  est un comportement à garder.
 - `lib/db/schema.ts` : le modèle de données, source des migrations.
 - [Issue #1](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues/1)
   : le plan et l'ordre des chantiers.
@@ -24,7 +26,8 @@ quelque chose change, on met à jour son propriétaire, et lui seul.
 
 | Sujet | Propriétaire |
 | --- | --- |
-| Ce que fait l'app, stack, lancer, tester, déployer, rôles | `README.md` |
+| Ce que fait l'app : pages, règles métier, rôles | `docs/comportement.md` |
+| Stack, lancer, tester, déployer | `README.md` |
 | Modèle de données | `lib/db/schema.ts`, migrations dans `drizzle/` |
 | Où vit le code, couches et sens des imports | `docs/architecture.md`, vérifié par `npm run lint` |
 | Reprise des données de l'ancienne app (`scripts/legacy/`) | `docs/reprise-ancienne-app.md` |
@@ -98,6 +101,10 @@ Comment les tests sont écrits :
   vérifie ce qui est à l'écran, pas l'état interne.
 - On attend sur des assertions (`await expect(...)`), jamais sur
   `waitForTimeout`.
+- Un test qui change un réglage de toute la boutique (le produit phare…)
+  va dans un `*.apres.spec.ts` : il tourne après tous les autres, en série
+  (`test.describe.configure({ mode: "serial" })`), et remet le réglage comme
+  il l'a trouvé.
 
 Vérifier les types ne suffit jamais : un changement n'est fini que quand il a
 été vu marcher dans l'app, par la suite ou un test piloté de la même façon.

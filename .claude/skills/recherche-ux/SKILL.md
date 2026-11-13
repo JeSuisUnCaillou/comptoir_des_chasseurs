@@ -59,7 +59,7 @@ coffre qui ne tombe pas juste. Invente mieux que cette liste.
 Déroule la semaine visite par visite, en changeant de membre (gérant crée les
 comptes des employés par la page Membres). Après chaque geste : ce que tu
 attendais, ce qui s'est passé, la capture. Fin de semaine : compare coffres
-et app, ligne par ligne. Reste derrière le comptoir : le README est le mode
+et app, ligne par ligne. Reste derrière le comptoir : `docs/comportement.md` est le mode
 d'emploi que tu aurais lu ; pas de lecture de `app/` ni `lib/`, pas de SQL.
 
 ## 4. Des observations aux besoins
@@ -75,7 +75,7 @@ d'emploi que tu aurais lu ; pas de lecture de `app/` ni `lib/`, pas de SQL.
   sortes différentes = haute) et coût de 1 à 4 (4 : les comptes sont faux ou
   la caisse se perd ; 3 : un gérant perd une soirée ; 2 : contourné à chaque
   fois ; 1 : cosmétique), avec une ligne de pourquoi.
-- Un besoin qu'une règle du README empêche est une question pour le
+- Un besoin qu'une règle de `docs/comportement.md` empêche est une question pour le
   propriétaire, qui cite la règle.
 
 ## 5. Rendre
@@ -86,7 +86,7 @@ d'emploi que tu aurais lu ; pas de lecture de `app/` ni `lib/`, pas de SQL.
   observations. Les captures citées sont dans `<dir>`.
 - Une issue par besoin qui vaut une décision, étiquetée `ux`, après avoir
   cherché les issues ouvertes qui le couvrent déjà (celle-là reçoit plutôt un
-  commentaire). Un bug (l'app fait autre chose que le README, ou compte faux)
+  commentaire). Un bug (l'app fait autre chose que `docs/comportement.md`, ou compte faux)
   a sa propre issue `bug`, avec les étapes.
 - Dans le fil : les besoins dans l'ordre, les issues, ce que le propriétaire
   doit trancher, et le rapport joint.

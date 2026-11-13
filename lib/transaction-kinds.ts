@@ -11,6 +11,11 @@ export function isCashKind(kind: TransactionKind) {
   return (CASH_KINDS as readonly TransactionKind[]).includes(kind);
 }
 
+/** Who the other side of a line is, as its label says it (the cash movement form asks "Pour / de la part de"). */
+export function counterpartyLabel(kind: TransactionKind) {
+  return kind === "vente" ? "Client" : kind === "rachat" ? "Vendeur" : "Pour / de la part de";
+}
+
 /** What a line does to the till: + when money comes in, − when it goes out. */
 export function signedAmount(kind: TransactionKind, amount: number) {
   return kind === "vente" || kind === "entree" ? amount : -amount;

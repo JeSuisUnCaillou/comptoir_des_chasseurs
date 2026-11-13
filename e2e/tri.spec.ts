@@ -31,7 +31,7 @@ test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, 
 
   // The sale form keeps its category groups in order, sorted by name inside each.
   await page.goto("/achat-vente/vente");
-  const box = page.getByRole("combobox", { name: "Article ou marchandise" });
+  const box = page.getByRole("combobox", { name: "Marchandise" });
   await box.fill(tag);
   const list = page.getByRole("listbox");
   await expect(list.getByRole("option")).toHaveText([
@@ -54,7 +54,7 @@ test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, 
   ]);
 });
 
-test("Gérer les tarifs range les marchandises par nom", async ({ page }) => {
+test("Gérer les marchandises range les marchandises par nom", async ({ page }) => {
   const tag = uniqueName("Tri catalogue");
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`, { category: "viande", unit: "morceau" });

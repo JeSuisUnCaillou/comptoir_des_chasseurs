@@ -40,7 +40,7 @@ export default async function Membres({
   return (
     <>
       <PageHead title="Membres">
-        Qui peut entrer au comptoir, et sous quel nom.
+        Les membres du comptoir.
       </PageHead>
 
       <section className="panel" aria-labelledby="nouveau-membre">
@@ -48,7 +48,7 @@ export default async function Membres({
         <h2 id="nouveau-membre">Créer un compte</h2>
         <p className="muted">
           Choisis un identifiant et un mot de passe provisoire, puis transmets-les à la personne.
-          Elle pourra changer son mot de passe avec la clé, en haut à droite.
+          Elle pourra le changer ensuite avec l&apos;icône de clé, en haut à droite.
         </p>
         <NewMemberForm />
       </section>
@@ -62,7 +62,7 @@ export default async function Membres({
           son propre compte.
         </p>
         <div className="table-wrap">
-          <table>
+          <table className="stack-cards">
             <thead>
               <tr>
                 <th>Identifiant</th>
@@ -75,15 +75,12 @@ export default async function Membres({
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} data-testid={`member-${m.username}`}>
-                  <td>{m.username}</td>
-                  <td>
-                    <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
-                    {m.superAdmin && (
-                      <>
-                        {" "}
-                        <span className="badge badge-gold">Super admin</span>
-                      </>
-                    )}
+                  <td className="stack-title">{m.username}</td>
+                  <td className="stack-aside">
+                    <span className="badges">
+                      <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
+                      {m.superAdmin && <span className="badge badge-gold">Super admin</span>}
+                    </span>
                   </td>
                   <td>
                     {m.superAdmin && m.id !== me.id ? (

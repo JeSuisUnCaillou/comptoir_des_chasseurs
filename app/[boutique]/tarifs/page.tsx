@@ -1,9 +1,11 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
 import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
 import { PendingSpinner } from "@/components/nav-link";
 import { PriceCalculator } from "@/components/price-calculator";
+import { SortableTable, type SortColumn } from "@/components/sortable-table";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { param, searchParam } from "@/lib/pagination";
@@ -16,9 +18,12 @@ import {
   referenceQuantity,
   septims,
   formatNumber,
+  leatherPerHide,
   plural,
+  unitMargin,
+  unitPrice,
 } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
@@ -27,7 +32,7 @@ function priced(p: Product) {
 
 const NO_MATCH = <p className="muted">Aucune marchandise ne correspond.</p>;
 
-/** A gérant's pencil to the product's form in Gérer les tarifs, at the end of its row. */
+/** A gérant's pencil to the product's form in Gérer les marchandises, at the end of its row. */
 function EditCell({ product, edit }: { product: Product; edit: string | null }) {
   if (!edit) return null;
   return (
@@ -57,103 +62,97 @@ function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?
   );
 }
 
+/** The pencil's column, last, for a gérant. */
+function withEdit(columns: SortColumn[], edit: string | null): SortColumn[] {
+  return edit ? [...columns, { label: "", ariaLabel: "Modifier" }] : columns;
+}
+
 function GoodsTable({ products, edit }: { products: Product[]; edit: string | null }) {
-  if (products.length === 0) return NO_MATCH;
-  return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Marchandise</th>
-            <th className="num">Rachat</th>
-            <th className="num">Vente</th>
-            <th className="num">Gros</th>
-            <th className="num">Stock</th>
-            <th className="num">Bénéfice brut indicatif</th>
-            {edit && <th aria-label="Modifier" />}
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => {
-            const ref = referenceQuantity(p);
-            const gross = margin(p, ref);
-            return (
-              <tr key={p.id}>
-                <td>
-                  <strong>{p.name}</strong>
-                </td>
-                <td className="num minus">
-                  {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
-                  <CitizenPrice product={p} />
-                </td>
-                <td className="num">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
-                <td className="num">
-                  {p.bulkMin != null && p.bulkPrice != null
-                    ? `Dès ${formatNumber(p.bulkMin)} : ${rate(p.bulkPrice, p.bulkQty)}`
-                    : "—"}
-                </td>
-                <td className="num">
-                  {formatNumber(p.stock)} {plural(p.unit, p.stock)}
-                </td>
-                <td className="num plus">
-                  {gross == null
-                    ? "—"
-                    : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
-                </td>
-                <EditCell product={p} edit={edit} />
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+  const columns = withEdit(
+    [
+      { label: "Marchandise" },
+      { label: "Rachat", num: true },
+      { label: "Vente", num: true },
+      { label: "Gros", num: true },
+      { label: "Stock", num: true },
+      { label: "Bénéfice brut indicatif", num: true },
+    ],
+    edit,
   );
+  const rows = products.map((p) => {
+    const ref = referenceQuantity(p);
+    const gross = margin(p, ref);
+    return {
+      key: p.id,
+      // Prices for different lots compare per unit.
+      values: [
+        p.name,
+        unitPrice(p.buyPrice, p.buyQty),
+        unitPrice(p.sellPrice, p.sellQty),
+        p.bulkMin == null ? null : unitPrice(p.bulkPrice, p.bulkQty),
+        p.stock,
+        unitMargin(p),
+      ],
+      cells: (
+        <>
+          <td className="stack-title">
+            <strong>{p.name}</strong>
+          </td>
+          <td className="num minus" data-label="Rachat">
+            {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
+            <CitizenPrice product={p} />
+          </td>
+          <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
+          <td className="num" data-label="Gros">
+            {p.bulkMin != null && p.bulkPrice != null
+              ? `Dès ${formatNumber(p.bulkMin)} : ${rate(p.bulkPrice, p.bulkQty)}`
+              : "—"}
+          </td>
+          <td className="num" data-label="Stock">
+            {formatNumber(p.stock)} {plural(p.unit, p.stock)}
+          </td>
+          <td className="num plus" data-label="Bénéfice brut indicatif">
+            {gross == null
+              ? "—"
+              : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
+          </td>
+          <EditCell product={p} edit={edit} />
+        </>
+      ),
+    };
+  });
+  return <SortableTable columns={columns} rows={rows} />;
 }
 
-type Table = "peaux" | "chasse";
-type Search = Partial<Record<Table | `${Table}-sans-tarif`, string | string[]>>;
+type Search = { q?: string | string[]; "sans-tarif"?: string | string[] };
 
-/** Whether the table shows its products without a price, asked by its button. */
-function showsUnpriced(search: Search, table: Table) {
-  return param(search[`${table}-sans-tarif`]) === "1";
-}
-
-/** Below this many results for a table's search, priced or not, its products without a price show by themselves. */
+/** Below this many results for the search, priced or not, the products without a price show by themselves. */
 const AUTO_UNPRICED_BELOW = 10;
 
-/** Whether a table's search found so few products that those without a price show without asking. */
-function autoUnpriced(search: Search, table: Table, results: number) {
-  return Boolean(param(search[table])?.trim()) && results < AUTO_UNPRICED_BELOW;
-}
-
 /**
- * Under a table, the button that shows or hides its products without a price,
- * keeping the rest of the address, and those products in a table of their own.
+ * Under the grids, the button that shows or hides the products without a price,
+ * keeping the search, and those products in a table of their own.
  * `auto`: a narrow search shows them without the button.
  */
 function Unpriced({
   search,
-  table,
   products,
   edit,
   slug,
   auto,
 }: {
   search: Search;
-  table: Table;
   products: Product[];
   edit: string | null;
   slug: string;
   auto: boolean;
 }) {
   if (auto && products.length === 0) return null;
-  const shown = auto || showsUnpriced(search, table);
+  const shown = auto || param(search["sans-tarif"]) === "1";
   const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(search)) {
-    const v = param(value);
-    if (v && key !== `${table}-sans-tarif`) query.set(key, v);
-  }
-  if (!shown) query.set(`${table}-sans-tarif`, "1");
+  const q = param(search.q);
+  if (q) query.set("q", q);
+  if (!shown) query.set("sans-tarif", "1");
   const qs = query.toString();
   return (
     <div className="unpriced">
@@ -175,34 +174,132 @@ function Unpriced({
         (products.length === 0 ? (
           <p className="muted">Aucune marchandise sans tarif.</p>
         ) : (
-          <div className="table-wrap">
-            <table aria-label="Marchandises sans tarif">
-              <thead>
-                <tr>
-                  <th>Marchandise sans tarif</th>
-                  {table === "chasse" && <th>Catégorie</th>}
-                  <th className="num">Stock</th>
-                  {edit && <th aria-label="Modifier" />}
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <strong>{p.name}</strong>
-                    </td>
-                    {table === "chasse" && <td>{CATEGORY_LABELS[p.category]}</td>}
-                    <td className="num">
-                      {formatNumber(p.stock)} {plural(p.unit, p.stock)}
-                    </td>
-                    <EditCell product={p} edit={edit} />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableTable
+            ariaLabel="Marchandises sans tarif"
+            columns={withEdit(
+              [{ label: "Marchandise sans tarif" }, { label: "Catégorie" }, { label: "Stock", num: true }],
+              edit,
+            )}
+            rows={products.map((p) => ({
+              key: p.id,
+              values: [p.name, CATEGORY_LABELS[p.category], p.stock],
+              cells: (
+                <>
+                  <td className="stack-title">
+                    <strong>{p.name}</strong>
+                  </td>
+                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td className="num" data-label="Stock">
+                    {formatNumber(p.stock)} {plural(p.unit, p.stock)}
+                  </td>
+                  <EditCell product={p} edit={edit} />
+                </>
+              ),
+            }))}
+          />
         ))}
     </div>
+  );
+}
+
+function HidesTable({ products, edit, blacksmith }: { products: Product[]; edit: string | null; blacksmith: number }) {
+  return (
+    <>
+      <SortableTable
+        columns={withEdit(
+          [
+            { label: "Animal" },
+            { label: "Transformation" },
+            { label: "Rachat / peau", num: true },
+            { label: "Vente / peau", num: true },
+            { label: "Bénéfice / lot", num: true },
+          ],
+          edit,
+        )}
+        rows={products.map((p) => {
+          const gain = batchMargin(p, blacksmith);
+          return {
+            key: p.id,
+            values: [p.name, leatherPerHide(p), p.buyPrice, p.sellPrice, gain],
+            cells: (
+              <>
+                <td className="stack-title">
+                  <strong>{p.name}</strong>
+                </td>
+                <td data-label="Transformation">
+                  {p.hidesPerBatch && p.leatherPerBatch
+                    ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
+                    : "—"}
+                </td>
+                <td className="num minus" data-label="Rachat / peau">
+                  {p.buyPrice == null ? "—" : septims(p.buyPrice)}
+                  <CitizenPrice product={p} perUnit />
+                </td>
+                <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
+                <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                <EditCell product={p} edit={edit} />
+              </>
+            ),
+          };
+        })}
+      />
+      <p className="small muted" style={{ marginTop: 14 }}>
+        Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
+        {septims(blacksmith)}. Ils sont bruts, hors frais.
+      </p>
+    </>
+  );
+}
+
+/** A category's grid in the hunting products, with its own heading so it reads as a region. */
+function Grid({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id}>
+      <h3 id={id}>{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+/** A price as a tile shows it: per unit when it is for one. */
+function tilePrice(price: number | null, qty: number) {
+  if (price == null) return "—";
+  return qty === 1 ? septims(price) : rate(price, qty);
+}
+
+/**
+ * The featured product's buyback and sale prices, the citizens' one first when
+ * it has one; for leather, what the blacksmith pays for it beside the sale.
+ */
+function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: number }) {
+  return (
+    <>
+      <div className="stats" style={{ marginTop: 14 }}>
+        {product.citizenBuyPrice != null && (
+          <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
+            <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
+            <div className="stat-value">{tilePrice(product.citizenBuyPrice, product.buyQty)}</div>
+          </div>
+        )}
+        <div className="stat">
+          <div className="stat-label">{product.citizenBuyPrice == null ? "Rachat" : "Rachat · autres vendeurs"}</div>
+          <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
+        </div>
+      </div>
+      {/* What the comptoir pays on the first line, what it resells for on the second. */}
+      <div className="stats" style={{ marginTop: 12 }}>
+        <div className="stat">
+          <div className="stat-label">Vente</div>
+          <div className="stat-value">{tilePrice(product.sellPrice, product.sellQty)}</div>
+        </div>
+        {product.category === "cuir" && (
+          <div className="stat">
+            <div className="stat-label">Rachat par le forgeron</div>
+            <div className="stat-value">{septims(blacksmith)}</div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -217,14 +314,16 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const at = (path: string) => shopPath(member.shop.slug, path);
   const search = await searchParams;
   const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
-  // The shop whose tariffs a gérant may edit from here; null for an employee.
   const edit = isGerant(member) ? member.shop.slug : null;
-  const allHides = matching(products, search.peaux).filter((p) => p.category === "peau");
-  const hides = allHides.filter(priced);
-  const hunted = matching(products, search.chasse).filter((p) => p.category !== "peau" && p.category !== "cuir");
-  const leather = products.find((p) => p.category === "cuir");
+  const query = searchParam(search.q);
+  const featured = await featuredProduct(member.shopId, products);
+  // The featured product has its own tiles above; every other one is in a grid.
+  const hunted = matching(products, search.q).filter((p) => p.id !== featured?.id);
+  const hides = hunted.filter((p) => p.category === "peau" && priced(p));
   const meats = hunted.filter((p) => p.category === "viande" && priced(p));
-  const goods = hunted.filter((p) => p.category !== "viande" && priced(p));
+  const goods = hunted.filter((p) => p.category !== "peau" && p.category !== "viande" && priced(p));
+  const unpriced = hunted.filter((p) => !priced(p));
+  const autoUnpriced = Boolean(query) && hunted.length < AUTO_UNPRICED_BELOW;
   const calculable = products.filter(priced);
 
   return (
@@ -233,128 +332,55 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <PageHead title="Tarifs" />
         {edit && (
           <Link className="btn" href={at("/marchandises")}>
-            <Settings2 size={16} /> Gérer les tarifs
+            <Settings2 size={16} /> Gérer les marchandises
           </Link>
         )}
       </div>
 
       <div className="cols cols-stretch section-gap">
-        <section className="panel" aria-labelledby="cuir">
-          <div className="eyebrow">Produits transformés</div>
-          <h2 id="cuir">Tarifs du cuir</h2>
-          <div className="stats" style={{ marginTop: 14 }}>
-            {leather?.citizenBuyPrice != null && (
-              <div className="stat stat-citizen" data-testid="rachat-cuir-citoyens">
-                <div className="stat-label">Rachat de cuir · citoyens d&apos;Estemarche</div>
-                <div className="stat-value">{septims(leather.citizenBuyPrice)}</div>
-              </div>
-            )}
-            <div className="stat">
-              <div className="stat-label">
-                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
-              </div>
-              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
-            </div>
-          </div>
-          {/* What the comptoir pays on the first line, what it resells for on the second. */}
-          <div className="stats" style={{ marginTop: 12 }}>
-            <div className="stat">
-              <div className="stat-label">Vente de cuir</div>
-              <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Rachat par le forgeron</div>
-              <div className="stat-value">{septims(blacksmith)}</div>
-            </div>
-          </div>
+        <section className="panel" aria-labelledby="phare">
+          <div className="eyebrow">Produit phare</div>
+          <h2 id="phare">{featured?.name ?? "Aucun produit phare"}</h2>
+          {featured ? (
+            <FeaturedTiles product={featured} blacksmith={blacksmith} />
+          ) : (
+            <p className="muted">Un gérant le choisit dans Gérer les marchandises.</p>
+          )}
         </section>
 
         <section className="panel" aria-labelledby="calcul">
           <div className="eyebrow">Outil des marchands</div>
           <h2 id="calcul">Calculateur des prix</h2>
           <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-          <PriceCalculator products={calculable} initialId={leather?.id} />
+          <PriceCalculator products={calculable} initialId={featured?.id} />
         </section>
       </div>
 
-      <section className="panel" aria-labelledby="peaux">
-        <div className="eyebrow">Grille du comptoir</div>
-        <h2 id="peaux">
-          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Tarifs des peaux
-        </h2>
-        <p className="muted">Prix définis par la gérance et rentabilité des transformations.</p>
-        <LiveSearch name="peaux" />
-        {hides.length === 0 ? NO_MATCH : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Animal</th>
-                  <th>Transformation</th>
-                  <th className="num">Rachat / peau</th>
-                  <th className="num">Vente / peau</th>
-                  <th className="num">Bénéfice / lot</th>
-                  {edit && <th aria-label="Modifier" />}
-                </tr>
-              </thead>
-              <tbody>
-                {hides.map((p) => {
-                  const gain = batchMargin(p, blacksmith);
-                  return (
-                    <tr key={p.id}>
-                      <td>
-                        <strong>{p.name}</strong>
-                      </td>
-                      <td>
-                        {p.hidesPerBatch && p.leatherPerBatch
-                          ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
-                          : "—"}
-                      </td>
-                      <td className="num minus">
-                        {p.buyPrice == null ? "—" : septims(p.buyPrice)}
-                        <CitizenPrice product={p} perUnit />
-                      </td>
-                      <td className="num">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
-                      <td className="num plus">{gain == null ? "—" : septims(gain, { signed: true })}</td>
-                      <EditCell product={p} edit={edit} />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="small muted" style={{ marginTop: 14 }}>
-          Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
-          {septims(blacksmith)}. Ils sont bruts, hors frais.
-        </p>
-        <Unpriced
-          search={search}
-          table="peaux"
-          products={allHides.filter((p) => !priced(p))}
-          edit={edit}
-          slug={member.shop.slug}
-          auto={autoUnpriced(search, "peaux", allHides.length)}
-        />
-      </section>
-
       <section className="panel" aria-labelledby="chasse">
         <div className="eyebrow">Produits de chasse</div>
-        <h2 id="chasse">Viandes, venaison et ressources</h2>
-        <p className="muted">Prix de rachat, prix de vente et tarifs de gros.</p>
-        <LiveSearch name="chasse" />
-        <h3>Viandes et venaison</h3>
-        <GoodsTable products={meats} edit={edit} />
-        <h3>Autres ressources</h3>
-        <GoodsTable products={goods} edit={edit} />
-        <Unpriced
-          search={search}
-          table="chasse"
-          products={hunted.filter((p) => !priced(p))}
-          edit={edit}
-          slug={member.shop.slug}
-          auto={autoUnpriced(search, "chasse", hunted.length)}
-        />
+        <h2 id="chasse">
+          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Grille du comptoir
+        </h2>
+        <p className="muted">Prix de rachat et de vente, tarifs de gros et rentabilité des transformations.</p>
+        <LiveSearch />
+        {/* A search shows only the categories it finds something in. */}
+        {hides.length > 0 && (
+          <Grid id="grille-peaux" title="Peaux">
+            <HidesTable products={hides} edit={edit} blacksmith={blacksmith} />
+          </Grid>
+        )}
+        {meats.length > 0 && (
+          <Grid id="grille-viandes" title="Viandes et venaison">
+            <GoodsTable products={meats} edit={edit} />
+          </Grid>
+        )}
+        {goods.length > 0 && (
+          <Grid id="grille-ressources" title="Autres ressources">
+            <GoodsTable products={goods} edit={edit} />
+          </Grid>
+        )}
+        {hunted.length === 0 && NO_MATCH}
+        <Unpriced search={search} products={unpriced} edit={edit} slug={member.shop.slug} auto={autoUnpriced} />
       </section>
     </>
   );

@@ -5,8 +5,8 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   const name = uniqueName("Peau de chèvre des glaces");
   await loginAsGerant(page);
   await page.getByRole("link", { name: "Tarifs" }).click();
-  await page.getByRole("link", { name: "Gérer les tarifs" }).click();
-  await expect(page.getByRole("heading", { name: "Gérer les tarifs", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Gérer les marchandises" }).click();
+  await expect(page.getByRole("heading", { name: "Gérer les marchandises", level: 1 })).toBeVisible();
   // The page belongs to Tarifs in the menu.
   await expect(page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Tarifs" })).toHaveAttribute(
     "aria-current",
@@ -37,7 +37,7 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   await expect(page).toHaveURL(/\/marchandises$/);
 
   await page.getByRole("link", { name: "Tarifs" }).click();
-  const row = page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: new RegExp(name) });
+  const row = page.getByRole("region", { name: "Peaux", exact: true }).getByRole("row", { name: new RegExp(name) });
   // 2 cuirs × 6 (forgeron) − 2 peaux × 2 = +8
   await expect(row).toContainText("2 peaux → 2 cuirs");
   await expect(row).toContainText("+8 septims");
@@ -49,7 +49,7 @@ test("deux marchandises ne peuvent pas porter le même nom", async ({ page }) =>
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill("Biche");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(form.locator(ALERT)).toHaveText("Une marchandise porte déjà ce nom.");
+  await expect(form.locator(ALERT)).toHaveText("Il y a déjà une marchandise à ce nom.");
 });
 
 test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
@@ -61,7 +61,7 @@ test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
   await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("4");
   await form.getByLabel("Peaux par lot").fill("2");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
-  await expect(form.locator(ALERT)).toContainText("Indique les peaux ET les cuirs");
+  await expect(form.locator(ALERT)).toContainText("Remplis les peaux et les cuirs");
   await expect(form.getByLabel("Nom")).toHaveValue("Peau à moitié remplie");
   await expect(form.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("4");
 });
@@ -71,7 +71,7 @@ test("un employé ne voit pas la gestion des marchandises", async ({ browser }) 
   await expect(employee.getByRole("link", { name: "Tarifs" })).toBeVisible();
   await employee.getByRole("link", { name: "Tarifs" }).click();
   await expect(employee.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
-  await expect(employee.getByRole("link", { name: "Gérer les tarifs" })).toHaveCount(0);
+  await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
   await employee.goto("/marchandises");
   await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 });
@@ -81,6 +81,7 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
   await page.goto("/marchandises");
   await expect(page.getByRole("heading", { level: 2 })).toHaveText([
     "Ajouter une marchandise",
+    "Produit phare",
     "Rachat du cuir par le forgeron",
     "Toutes les marchandises",
   ]);
@@ -104,13 +105,13 @@ test("une marchandise archivée quitte les tarifs et les ventes, puis y revient"
   };
   const setArchived = async (archived: boolean) => {
     await (await search()).getByRole("link", { name: `Modifier ${name}` }).click();
-    await page.getByLabel(/Archivée/).setChecked(archived);
+    await page.getByLabel(/Ne plus utiliser/).setChecked(archived);
     await page.getByRole("button", { name: "Enregistrer la marchandise" }).click();
     await expect(page).toHaveURL(/\/marchandises$/);
   };
   const offeredForSale = async () => {
     await page.goto("/achat-vente/vente");
-    const box = page.getByRole("combobox", { name: "Article ou marchandise" });
+    const box = page.getByRole("combobox", { name: "Marchandise" });
     await box.fill(name);
     return page.getByRole("option", { name, exact: true });
   };

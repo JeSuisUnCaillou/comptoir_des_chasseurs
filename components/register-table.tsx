@@ -5,7 +5,7 @@ import { SettleButton } from "@/components/settle-button";
 import type { Member } from "@/lib/db/schema";
 import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
-import { isCashKind, signedAmount } from "@/lib/transaction-kinds";
+import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
 import { canActOn } from "@/lib/policies";
 
@@ -32,7 +32,7 @@ export function RegisterTable({
   const positions = entryPositions(entries, (e) => e.cancelledAt == null && e.tillPending);
   return (
     <div className="table-wrap">
-      <table data-testid="registre">
+      <table className="entry-cards" data-testid="registre">
         <thead>
           <tr>
             <th>Date</th>
@@ -59,6 +59,9 @@ export function RegisterTable({
             const canCancel = !cancelled && mine;
             // Its septims are not in the till yet: shown, but not counted.
             const waiting = !cancelled && e.tillPending;
+            // On a phone each line is a card (see `.entry-cards` in globals.css); a shared
+            // cell repeated on a later line stays for screen readers only.
+            const rep = place.first ? "" : " cell-repeat";
             const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
             return (
               <tr
@@ -71,11 +74,11 @@ export function RegisterTable({
                 }
                 data-testid={`ligne-${e.id}`}
               >
-                <td className="num">{shared(dateTime.format(e.createdAt))}</td>
-                <td>{shared(<OperationBadge kind={e.kind} />)}</td>
-                <td>{e.label}</td>
-                <td className="num">{cash ? "—" : formatNumber(e.quantity)}</td>
-                <td className={`num ${cancelled ? "" : waiting ? "muted" : amount >= 0 ? "plus" : "minus"}`}>
+                <td className={`num cell-date${rep}`}>{shared(dateTime.format(e.createdAt))}</td>
+                <td className={`cell-kind${rep}`}>{shared(<OperationBadge kind={e.kind} />)}</td>
+                <td className="cell-label">{e.label}</td>
+                <td className={`num cell-qty${cash ? " cell-none" : ""}`}>{cash ? "—" : formatNumber(e.quantity)}</td>
+                <td className={`num cell-amount ${cancelled ? "" : waiting ? "muted" : amount >= 0 ? "plus" : "minus"}`}>
                   {septims(amount, { signed: true })}
                   {waiting && (
                     <>
@@ -84,24 +87,28 @@ export function RegisterTable({
                     </>
                   )}
                 </td>
-                <td>{shared(e.counterparty ?? "—")}</td>
-                <td>{shared(e.member)}</td>
-                {showNotes && <td className="small">{shared(e.notes ?? "")}</td>}
-                <td>
+                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={counterpartyLabel(e.kind)}>
+                  {shared(e.counterparty ?? "—")}
+                </td>
+                <td className={`cell-member${rep}`} data-label="Employé">
+                  {shared(e.member)}
+                </td>
+                {showNotes && <td className={`small cell-notes${rep}`}>{shared(e.notes ?? "")}</td>}
+                <td className="cell-actions">
                   {cancelled ? (
                     <span className="small muted">Annulée{e.cancelledBy ? ` par ${e.cancelledBy}` : ""}</span>
                   ) : (
                     canCancel && (
                       <div className="row-actions">
-                        {waiting && place.settles && <SettleButton id={e.id} sale={sale} entry={e} />}
+                        {waiting && place.settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
                         <CancelButton
                           id={e.id}
                           label={label}
                           effect={
                             cash
-                              ? "L'argent ne compte plus dans la caisse."
+                              ? "L'argent est retiré de la caisse."
                               : e.productId == null
-                                ? "Le stock n'est pas touché."
+                                ? "Le stock ne change pas."
                                 : sale
                                   ? `${e.quantity} ${e.label} reviendront en stock.`
                                   : `${e.quantity} ${e.label} sortiront du stock.`

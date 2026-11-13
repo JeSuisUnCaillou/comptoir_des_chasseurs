@@ -22,7 +22,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Fournisseurs">Qui vend quelle ressource, où le trouver et à quel prix.</PageHead>
+      <PageHead title="Fournisseurs">Qui vend quoi, où, et à quel prix.</PageHead>
 
       <section className="panel">
         <div className="panel-head">
@@ -38,7 +38,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
             </Link>
           )}
         </div>
-        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur" style={{ marginTop: 14 }}>
+        <form className="inline-form filters" method="get" aria-label="Chercher un fournisseur">
           <input
             name="q"
             type="search"
