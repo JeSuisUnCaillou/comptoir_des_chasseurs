@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, eq, exists, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, exists, like, ne, or, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
@@ -96,12 +96,42 @@ export async function createFirstGerant(
   });
 }
 
-type NewAccount = { username: string; name: string; passwordHash: string };
+type NewAccount = {
+  username: string;
+  name: string;
+  // "" for an account opened with Discord alone, which has no password yet.
+  passwordHash: string;
+  discordId?: string;
+  discordName?: string;
+};
+
+/**
+ * A username nobody has, made from `wanted` (a Discord username): only the
+ * characters usernames allow, then -2, -3… if it is taken.
+ */
+export async function freeUsername(tx: Tx, wanted: string) {
+  const base = wanted.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 34) || "membre";
+  const taken = new Set(
+    (
+      await tx
+        .select({ username: schema.members.username })
+        .from(schema.members)
+        .where(like(schema.members.username, `${base}%`))
+    ).map((row) => row.username),
+  );
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+
+/** True when the account has a password: one opened with Discord alone has none until its owner chooses one. */
+export function hasPassword(member: Pick<Member, "passwordHash">) {
+  return member.passwordHash !== "";
+}
 
 /** Creates an account, with no shop yet, inside `tx`. Refuses a username already taken. */
-export async function insertAccount(tx: Tx, { username, name, passwordHash }: NewAccount, role: MemberRole = "employe") {
+export async function insertAccount(tx: Tx, account: NewAccount, role: MemberRole = "employe") {
   try {
-    const [member] = await tx.insert(schema.members).values({ username, name, role, passwordHash }).returning();
+    const [member] = await tx.insert(schema.members).values({ ...account, role }).returning();
     return member;
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError("Cet identifiant est déjà pris.");

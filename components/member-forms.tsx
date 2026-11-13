@@ -2,11 +2,13 @@
 
 import { useActionState } from "react";
 import {
+  inviteEmployee,
   createMember,
   resetPassword,
   type MemberFormState,
 } from "@/app/[boutique]/membres/actions";
 import { keepValues } from "@/components/keep-values";
+import { InvitationLink } from "@/components/shop-forms";
 
 function Status({ state }: { state: MemberFormState }) {
   if (!state) return null;
@@ -69,6 +71,24 @@ export function ResetPasswordForm({ id }: { id: number }) {
         </button>
       </div>
       <Status state={state} />
+    </form>
+  );
+}
+
+/** Creates an employé invitation link, and shows it ready to copy. */
+export function InviteEmployeeForm() {
+  const [state, action, pending] = useActionState(inviteEmployee, null);
+  return (
+    <form action={action}>
+      {state && (
+        <div className="notice" role="status">
+          <p style={{ marginTop: 0 }}>Lien créé. Envoie-le à la personne : il ne sert qu&apos;une fois.</p>
+          <InvitationLink path={state.link} label="Nouveau lien d'invitation" />
+        </div>
+      )}
+      <button className="btn" type="submit" disabled={pending}>
+        Créer un lien d&apos;invitation
+      </button>
     </form>
   );
 }

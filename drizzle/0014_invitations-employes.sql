@@ -1,0 +1,1 @@
+ALTER TABLE "shop_invitations" ADD COLUMN "role" "member_role" DEFAULT 'gerant' NOT NULL;

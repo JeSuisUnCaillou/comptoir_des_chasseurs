@@ -4,14 +4,22 @@ import { useActionState } from "react";
 import { changePassword } from "@/app/[boutique]/mot-de-passe/actions";
 import { keepValues } from "@/components/keep-values";
 
-export function ChangePasswordForm() {
+/** Changes the password; an account opened with Discord alone, which has none, chooses its first. */
+export function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const [state, action, pending] = useActionState(changePassword, null);
   return (
     <form onSubmit={keepValues(action)} key={state?.ok ? "done" : "form"}>
-      <div className="field">
-        <label htmlFor="pw-current">Mot de passe actuel</label>
-        <input id="pw-current" name="current" type="password" required autoComplete="current-password" />
-      </div>
+      {hasPassword ? (
+        <div className="field">
+          <label htmlFor="pw-current">Mot de passe actuel</label>
+          <input id="pw-current" name="current" type="password" required autoComplete="current-password" />
+        </div>
+      ) : (
+        <p className="muted">
+          Ton compte s&apos;ouvre avec Discord. Choisis un mot de passe pour pouvoir aussi entrer avec
+          ton identifiant.
+        </p>
+      )}
       <div className="field">
         <label htmlFor="pw-new">Nouveau mot de passe</label>
         <input id="pw-new" name="password" type="password" required minLength={8} autoComplete="new-password" />
@@ -26,7 +34,7 @@ export function ChangePasswordForm() {
         </p>
       )}
       <button className="btn btn-primary" type="submit" disabled={pending}>
-        Changer mon mot de passe
+        {hasPassword ? "Changer mon mot de passe" : "Choisir mon mot de passe"}
       </button>
     </form>
   );

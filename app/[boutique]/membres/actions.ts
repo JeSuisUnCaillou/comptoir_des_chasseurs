@@ -4,6 +4,8 @@ import { MIN_PASSWORD_LENGTH, hashPassword, newPasswordError, normalizeUsername,
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
+import { createEmployeeInvitation } from "@/lib/invitations";
+import { invitationPath } from "@/lib/paths";
 import { readRole, text } from "@/lib/forms";
 import { createAccount, resetAccountPassword, updateAccount } from "@/lib/members";
 
@@ -47,4 +49,12 @@ export async function resetPassword(_prev: MemberFormState, formData: FormData):
   const result = await attempt(() => resetAccountPassword(me, id, passwordHash));
   if (!result.ok) return result;
   return { ok: true, message: "Mot de passe changé." };
+}
+
+/** A gérant creates a link that makes whoever opens it an employé of the shop. */
+export async function inviteEmployee(): Promise<{ link: string }> {
+  const me = await requireMember(["gerant"]);
+  const token = await createEmployeeInvitation(me);
+  revalidateShop();
+  return { link: invitationPath(token) };
 }

@@ -51,6 +51,9 @@ export const shopInvitations = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     usedBy: integer("used_by").references(() => members.id),
+    // What the link makes of whoever takes it: gérant of a new shop (from the
+    // super admin), or employé (from a gérant of the shop).
+    role: memberRole("role").notNull().default("gerant"),
   },
   (t) => [uniqueIndex("shop_invitations_token_idx").on(t.token)],
 );

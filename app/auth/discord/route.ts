@@ -6,12 +6,15 @@ import { requireAccount } from "@/lib/auth/session";
 
 /**
  * Sends the visitor to Discord: to sign in, or, signed in, to link their
- * Discord account (`?lier`). `?suite=` is the page to come back to.
+ * Discord account (`?lier`), or to take an invitation link
+ * (`?invitation=<token>`). `?suite=` is the page to come back to.
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   if (!discordConfigured()) redirect("/connexion");
   const origin = request.nextUrl.origin;
+  const token = params.get("invitation");
+  if (token) redirect(await startDiscordFlow(origin, { mode: "invite", token: token.slice(0, 100) }));
   const returnPath = safeReturnPath(params.get(RETURN_PARAM));
   if (params.has("lier")) {
     const account = await requireAccount(returnPath);

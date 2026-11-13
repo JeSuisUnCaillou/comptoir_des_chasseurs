@@ -61,7 +61,8 @@ export default async function Connexion({
                 <p style={{ marginTop: 0 }}>
                   Ton compte Discord <strong>{pending.name}</strong> n&apos;est encore lié à aucun
                   membre. Entre une fois avec ton identifiant et ton mot de passe : il sera lié à ton
-                  compte, et Discord suffira ensuite.
+                  compte, et Discord suffira ensuite. Pas encore de compte ? Demande un lien
+                  d&apos;invitation à un gérant de ta boutique.
                 </p>
                 <form action={cancelPendingDiscord}>
                   <button className="btn btn-ghost btn-small" type="submit">

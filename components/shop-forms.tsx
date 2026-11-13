@@ -99,14 +99,14 @@ export function InviteGerantForm() {
 }
 
 /** The signed-in account takes an invitation. */
-export function JoinShopForm({ token, shopName }: { token: string; shopName: string }) {
+export function JoinShopForm({ token, label }: { token: string; label: string }) {
   const [state, action, pending] = useActionState<InvitationState, FormData>(joinShop, null);
   return (
     <form onSubmit={keepValues(action)}>
       <input type="hidden" name="token" value={token} />
       <ErrorNotice message={state?.error} />
       <button className="btn btn-primary" type="submit" disabled={pending}>
-        Devenir gérant de « {shopName} »
+        {label}
       </button>
     </form>
   );

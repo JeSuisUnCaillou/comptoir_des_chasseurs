@@ -4,6 +4,7 @@ import { unlinkMyDiscord } from "@/app/[boutique]/mot-de-passe/actions";
 import { discordConfigured } from "@/lib/auth/discord";
 import { RETURN_PARAM } from "@/lib/auth/return-path";
 import { requireMember } from "@/lib/auth/session";
+import { hasPassword } from "@/lib/members";
 import { shopPath } from "@/lib/paths";
 
 const DISCORD_NOTICES: Record<string, { ok: boolean; message: string }> = {
@@ -11,6 +12,7 @@ const DISCORD_NOTICES: Record<string, { ok: boolean; message: string }> = {
   delie: { ok: true, message: "Discord n'est plus lié à ton compte." },
   pris: { ok: false, message: "Ce compte Discord est déjà lié à un autre membre." },
   erreur: { ok: false, message: "La liaison avec Discord n'a pas abouti. Réessaie." },
+  "sans-mot-de-passe": { ok: false, message: "Choisis d'abord un mot de passe : sans lui, plus rien n'ouvrirait ton compte." },
 };
 
 export default async function MotDePasse({
@@ -26,7 +28,7 @@ export default async function MotDePasse({
         Identifiant : {member.username}
       </PageHead>
       <section className="panel" style={{ maxWidth: 520 }}>
-        <ChangePasswordForm />
+        <ChangePasswordForm hasPassword={hasPassword(member)} />
       </section>
       {(discordConfigured() || member.discordId) && (
         <section className="panel" style={{ maxWidth: 520, marginTop: 18 }}>
@@ -40,13 +42,17 @@ export default async function MotDePasse({
             <>
               <p>
                 Lié au compte Discord <strong>{member.discordName}</strong> : tu peux te connecter
-                avec Discord ou avec ton mot de passe.
+                avec Discord{hasPassword(member) ? " ou avec ton mot de passe" : ""}.
               </p>
-              <form action={unlinkMyDiscord}>
-                <button className="btn btn-ghost" type="submit">
-                  Délier Discord
-                </button>
-              </form>
+              {hasPassword(member) ? (
+                <form action={unlinkMyDiscord}>
+                  <button className="btn btn-ghost" type="submit">
+                    Délier Discord
+                  </button>
+                </form>
+              ) : (
+                <p className="muted">Pour délier Discord, choisis d&apos;abord un mot de passe.</p>
+              )}
             </>
           ) : (
             <>

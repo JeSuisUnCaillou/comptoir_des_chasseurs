@@ -14,12 +14,17 @@ import { linkDiscord } from "@/lib/members";
  * links their Discord account themself.
  */
 
-export type DiscordUser = { id: string; name: string };
+/** `name` is the name shown on Discord, `username` the unique one. */
+export type DiscordUser = { id: string; name: string; username: string };
 
-/** Where the flow goes back to: sign in, or link Discord to the signed-in member. */
+/**
+ * Where the flow goes back to: sign in, link Discord to the signed-in member,
+ * or take an invitation link with Discord (creating the account if need be).
+ */
 export type DiscordFlow =
   | { mode: "login"; returnPath: string }
-  | { mode: "link"; memberId: number; returnPath: string };
+  | { mode: "link"; memberId: number; returnPath: string }
+  | { mode: "invite"; token: string };
 
 export const CALLBACK_PATH = "/auth/discord/callback";
 
@@ -90,6 +95,7 @@ export async function finishDiscordFlow(state: string | null): Promise<DiscordFl
   if (payload.mode === "link" && typeof payload.memberId === "number") {
     return { mode: "link", memberId: payload.memberId, returnPath: safeReturnPath(payload.returnPath) };
   }
+  if (payload.mode === "invite" && typeof payload.token === "string") return { mode: "invite", token: payload.token };
   if (payload.mode === "login") return { mode: "login", returnPath: safeReturnPath(payload.returnPath) };
   return null;
 }
@@ -121,7 +127,7 @@ export async function discordUser(origin: string, code: string): Promise<Discord
     if (!me.ok) return null;
     const user = (await me.json()) as { id?: string; username?: string; global_name?: string | null };
     if (!user.id || !user.username) return null;
-    return { id: user.id, name: user.global_name || user.username };
+    return { id: user.id, name: user.global_name || user.username, username: user.username };
   } catch {
     return null;
   }
@@ -132,13 +138,14 @@ export async function discordUser(origin: string, code: string): Promise<Discord
  * visitor can sign in once with their username and password to link it.
  */
 export async function rememberPendingDiscord(user: DiscordUser) {
-  await setCookie(PENDING_COOKIE, await sign({ discordId: user.id, discordName: user.name }));
+  await setCookie(PENDING_COOKIE, await sign({ discordId: user.id, discordName: user.name, discordUsername: user.username }));
 }
 
 export async function pendingDiscord(): Promise<DiscordUser | null> {
   const payload = await verify((await cookies()).get(PENDING_COOKIE)?.value);
-  if (typeof payload?.discordId !== "string" || typeof payload.discordName !== "string") return null;
-  return { id: payload.discordId, name: payload.discordName };
+  const { discordId, discordName, discordUsername } = payload ?? {};
+  if (typeof discordId !== "string" || typeof discordName !== "string" || typeof discordUsername !== "string") return null;
+  return { id: discordId, name: discordName, username: discordUsername };
 }
 
 export async function forgetPendingDiscord() {

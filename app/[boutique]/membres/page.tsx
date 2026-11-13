@@ -3,12 +3,16 @@ import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { pageParam } from "@/lib/pagination";
-import { NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
+import { InviteEmployeeForm, NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
 import { requireMember } from "@/lib/auth/session";
-import { shopPath } from "@/lib/paths";
+import { invitationPath, shopPath } from "@/lib/paths";
 import { shopMemberPage } from "@/lib/members";
 import type { MemberRole } from "@/lib/db/schema";
+import { InvitationLink } from "@/components/shop-forms";
+import { pendingEmployeeInvitations } from "@/lib/invitations";
 import { updateMember } from "./actions";
+
+const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" });
 
 const ROLES: { value: MemberRole; label: string }[] = [
   { value: "gerant", label: "Gérant" },
@@ -36,6 +40,7 @@ export default async function Membres({
   const at = (path: string) => shopPath(me.shop.slug, path);
   const page = pageParam((await searchParams).page);
   const { members, total } = await shopMemberPage(me.shopId, page);
+  const invitations = await pendingEmployeeInvitations(me.shopId);
 
   return (
     <>
@@ -51,6 +56,29 @@ export default async function Membres({
           Elle pourra le changer ensuite avec l&apos;icône de clé, en haut à droite.
         </p>
         <NewMemberForm />
+      </section>
+
+      <section className="panel" aria-labelledby="inviter">
+        <div className="eyebrow">Lien d&apos;invitation</div>
+        <h2 id="inviter">Inviter un employé</h2>
+        <p className="muted">
+          Crée un lien et envoie-le, sur Discord par exemple : la personne qui l&apos;ouvre entre
+          dans la boutique comme employé, avec son compte, un compte qu&apos;elle crée, ou Discord
+          seul. Un lien ne sert qu&apos;une fois.
+        </p>
+        <InviteEmployeeForm />
+        {invitations.length > 0 && (
+          <ul className="invitation-list" aria-label="Liens pas encore utilisés">
+            {invitations.map((invitation) => (
+              <li key={invitation.id}>
+                <span className="small muted">
+                  Créé le {longDate.format(invitation.createdAt)}
+                </span>
+                <InvitationLink path={invitationPath(invitation.token)} label="Lien d'invitation d'employé" />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="panel" aria-labelledby="personnel">

@@ -4,7 +4,9 @@ import { discordUser, finishDiscordFlow, rememberPendingDiscord } from "@/lib/au
 import { loginUrl } from "@/lib/auth/return-path";
 import { currentAccount, startSession } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
+import { acceptInvitation, signUpWithDiscord } from "@/lib/invitations";
 import { accountByDiscordId, canSignIn, linkDiscord } from "@/lib/members";
+import { invitationPath, shopPath } from "@/lib/paths";
 
 /** Where Discord sends the visitor back, with a code that says who they are. */
 export async function GET(request: NextRequest) {
@@ -13,6 +15,20 @@ export async function GET(request: NextRequest) {
   if (!flow) redirect("/connexion?discord=erreur");
   const code = params.get("code");
   const user = code ? await discordUser(request.nextUrl.origin, code) : null;
+
+  if (flow.mode === "invite") {
+    const here = invitationPath(flow.token);
+    if (!user) redirect(`${here}?discord=erreur`);
+    const known = await accountByDiscordId(user.id);
+    const taken = await attempt(async () =>
+      known
+        ? { member: known, shop: await acceptInvitation(flow.token, known) }
+        : signUpWithDiscord(flow.token, user),
+    );
+    if (!taken.ok) redirect(here);
+    await startSession(taken.value.member);
+    redirect(shopPath(taken.value.shop.slug));
+  }
 
   if (flow.mode === "link") {
     // Back on the page the link started from (Mon compte), saying how it went.
