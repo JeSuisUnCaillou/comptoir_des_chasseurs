@@ -3,6 +3,7 @@ import { PageHead } from "@/components/page-head";
 import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
 import { activeProducts } from "@/lib/products";
+import { contactNames } from "@/lib/suppliers";
 import { DRAFT_PARAM, decodeDraft } from "@/lib/transaction-draft";
 
 /**
@@ -21,7 +22,10 @@ export default async function NouvelleEcriture({
   if (segment !== "vente" && segment !== "achat") notFound();
   const kind = segment === "vente" ? "vente" : "rachat";
   const sale = kind === "vente";
-  const products = await activeProducts(member.shopId);
+  const [products, contacts] = await Promise.all([
+    activeProducts(member.shopId),
+    contactNames(member.shopId, sale ? "buys" : "sells"),
+  ]);
 
   return (
     <>
@@ -48,6 +52,7 @@ export default async function NouvelleEcriture({
           bulkQty: p.bulkQty,
           privileged: p.privileged,
         }))}
+        contacts={contacts}
         draft={decodeDraft((await searchParams)[DRAFT_PARAM])}
       />
     </>

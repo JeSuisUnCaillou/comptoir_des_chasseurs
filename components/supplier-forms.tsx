@@ -6,7 +6,7 @@ import {
   saveOffer,
   saveSupplier,
   type SupplierFormState,
-} from "@/app/[boutique]/fournisseurs/actions";
+} from "@/app/[boutique]/contacts/actions";
 import type { Supplier } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
 import { ProductField } from "@/components/product-field";
@@ -36,11 +36,11 @@ export function SupplierForm({ supplier }: { supplier?: Supplier }) {
         </div>
         <div className="field span-2">
           <label htmlFor="s-notes">Note</label>
-          <input id="s-notes" name="notes" maxLength={300} defaultValue={supplier?.notes} placeholder="ex. Représentant des Guerriers-Nés" />
+          <input id="s-notes" name="notes" maxLength={300} defaultValue={supplier?.notes} placeholder="ex. Représentant des Guerriers-Nés, ou ce qu'il fait de nos marchandises" />
         </div>
       </div>
       <button className="btn btn-primary" type="submit" disabled={pending}>
-        {supplier ? "Enregistrer le fournisseur" : "Ajouter le fournisseur"}
+        {supplier ? "Enregistrer le contact" : "Ajouter le contact"}
       </button>
       <Status state={state} />
     </form>
@@ -68,6 +68,13 @@ export function OfferForm({
             products={products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})` }))}
           />
         </div>
+        <div className="field span-2">
+          <label htmlFor="o-side">Sens</label>
+          <select id="o-side" name="side" required defaultValue="sells">
+            <option value="sells">Il nous la vend</option>
+            <option value="buys">Il nous l&apos;achète</option>
+          </select>
+        </div>
         <div className="field">
           <label htmlFor="o-price">Prix en septims</label>
           <input id="o-price" name="price" type="number" min={0} step={1} required />
@@ -93,10 +100,10 @@ export function DeleteSupplierButton({ id, name }: { id: number; name: string })
         className="btn btn-small minus"
         type="submit"
         onClick={(e) => {
-          if (!window.confirm(`Supprimer ${name} et tout ce qu'il propose ?`)) e.preventDefault();
+          if (!window.confirm(`Supprimer ${name} et tout ce qu'il vend ou achète ?`)) e.preventDefault();
         }}
       >
-        Supprimer le fournisseur
+        Supprimer le contact
       </button>
     </form>
   );

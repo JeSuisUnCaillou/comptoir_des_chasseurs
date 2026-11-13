@@ -9,8 +9,8 @@ export default async function NewSupplier() {
   const at = (path: string) => shopPath(member.shop.slug, path);
   return (
     <>
-      <PageHead title="Nouveau fournisseur">
-        <Link href={at("/fournisseurs")}>← Fournisseurs</Link>
+      <PageHead title="Nouveau contact">
+        <Link href={at("/contacts")}>← Contacts</Link>
       </PageHead>
       <section className="panel" style={{ maxWidth: 760 }}>
         <SupplierForm />

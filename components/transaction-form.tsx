@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2, TriangleAlert } from "
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
+import { Combobox, type Choice } from "@/components/combobox";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import type { TransactionKind } from "@/lib/db/schema";
@@ -97,10 +98,13 @@ function evaluate(line: Line, kind: TransactionKind, products: TransactionProduc
 export function TransactionForm({
   kind,
   products,
+  contacts,
   draft,
 }: {
   kind: TransactionKind;
   products: TransactionProduct[];
+  /** The shop's contacts, suggested in the name field. */
+  contacts: Choice<number>[];
   /** What was filled in on the other form before switching to this one. */
   draft: TransactionDraft | null;
 }) {
@@ -368,13 +372,16 @@ export function TransactionForm({
           </fieldset>
         )}
         <div className="field full">
-          <label htmlFor="t-counterparty">Nom du client / vendeur RP (facultatif)</label>
-          <input
+          <label htmlFor="t-counterparty">Nom RP du client / vendeur (facultatif)</label>
+          <Combobox
+            free
             id="t-counterparty"
             name="counterparty"
             maxLength={100}
+            choices={contacts}
+            listLabel="Contacts"
             value={counterparty}
-            onChange={(ev) => setCounterparty(ev.target.value)}
+            onChange={setCounterparty}
           />
         </div>
         <div className="field full">

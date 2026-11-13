@@ -28,7 +28,7 @@ async function record(
   await form.getByLabel("Quantité").fill(String(quantity));
   // The tariff fills the amount on its own.
   await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
-  if (counterparty) await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill(counterparty);
+  if (counterparty) await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   const status = page.getByRole("status").filter({ hasText: `${quantity} × ${product}` });
@@ -627,7 +627,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   // The total sits beside "Ajouter une marchandise", above the client's name.
   const add = (await form.getByRole("button", { name: "Ajouter une marchandise" }).boundingBox())!;
   const sum = (await total.boundingBox())!;
-  const client = (await form.getByLabel("Nom du client / vendeur RP (facultatif)").boundingBox())!;
+  const client = (await form.getByLabel("Nom RP du client / vendeur (facultatif)").boundingBox())!;
   expect(Math.abs(sum.y + sum.height / 2 - (add.y + add.height / 2))).toBeLessThan(4);
   expect(sum.x).toBeGreaterThan(add.x + add.width);
   // Right-aligned, on the right edge of the fields.
@@ -655,7 +655,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(line(form, 3)).toHaveCount(0);
   await expect(total).toHaveText("Total de la vente : 21 septims");
 
-  await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Ysolda");
+  await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Ysolda");
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: hide })).toHaveText(
     `Vente inscrite : 2 × ${hide}, 3 × ${meat}, 21 septims au total.`,
@@ -751,7 +751,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await pickProduct(line(purchase, 2), "Autre article (hors stock)…");
   await line(purchase, 2).getByLabel("Nom de l'article").fill("Corne");
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
-  await purchase.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Brenuin");
+  await purchase.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
   await purchase.getByLabel("Pas encore sorti de la caisse").check();
   await toSale.click();
@@ -768,7 +768,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await expect(line(sale, 2).getByLabel("Nom de l'article")).toHaveValue("Corne");
   await expect(line(sale, 2).getByLabel("Montant (septims)")).toHaveValue("5");
   await expect(sale.getByTestId("total")).toHaveText("Total de la vente : 17 septims");
-  await expect(sale.getByLabel("Nom du client / vendeur RP (facultatif)")).toHaveValue("Brenuin");
+  await expect(sale.getByLabel("Nom RP du client / vendeur (facultatif)")).toHaveValue("Brenuin");
   await expect(sale.getByLabel("Notes (facultatif)")).toHaveValue("Il a hésité");
   await expect(sale.getByLabel("Pas encore mis en caisse")).toBeChecked();
 
@@ -787,4 +787,60 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
     `Achat inscrit : 4 × ${product}, 1 × Corne, 15 septims au total.`,
   );
+});
+
+test("le nom du client ou du vendeur propose les contacts, et garde un nom inconnu", async ({ browser }) => {
+  const product = uniqueName("Peau de chaurus");
+  const customer = uniqueName("Roy");
+  const supplier = uniqueName("Markir");
+  await createProduct(product, { buyPrice: 2, sellPrice: 3 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    for (const [name, side] of [[customer, "buys"], [supplier, "sells"]]) {
+      await sql`
+        with s as (insert into suppliers (shop_id, name) values (1, ${name}) returning id)
+        insert into supplier_offers (supplier_id, product_id, price, side)
+        select s.id, p.id, 2, ${side} from s, products p where p.name = ${product}`;
+    }
+  } finally {
+    await sql.end();
+  }
+  const { page } = await newEmployeePage(browser, "contacts-ventes");
+  const name = "Nom RP du client / vendeur (facultatif)";
+
+  // A sale: the customer is under Clients; a click puts his name in the field.
+  await page.goto("/achat-vente/vente");
+  let form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(form, product);
+  await form.getByLabel("Quantité").fill("1");
+  await form.getByLabel(name).fill(customer.slice(0, -2));
+  const contacts = form.getByRole("listbox", { name: "Contacts" });
+  await expect(contacts.getByRole("option", { name: customer })).toBeVisible();
+  await expect(contacts.getByText("Clients", { exact: true })).toBeVisible();
+  await contacts.getByRole("option", { name: customer }).click();
+  await expect(form.getByLabel(name)).toHaveValue(customer);
+  await expect(contacts).toHaveCount(0);
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByTestId("registre").locator("tr.fresh")).toContainText(customer);
+
+  // A purchase: the supplier is under Fournisseurs, picked with the arrows and Enter.
+  await page.goto("/achat-vente/achat");
+  form = page.getByRole("region", { name: "Inscrire un achat" });
+  await form.getByLabel(name).fill(supplier);
+  await expect(form.getByRole("listbox", { name: "Contacts" })).toHaveCount(0);
+  await form.getByLabel(name).fill(supplier.slice(0, -1));
+  await expect(form.getByRole("listbox", { name: "Contacts" }).getByText("Fournisseurs", { exact: true })).toBeVisible();
+  await form.getByLabel(name).press("ArrowDown");
+  await form.getByLabel(name).press("Enter");
+  await expect(form.getByLabel(name)).toHaveValue(supplier);
+
+  // A name no contact has stays as typed, and Enter sends the form.
+  const stranger = uniqueName("Inconnu");
+  await pickProduct(form, product);
+  await form.getByLabel("Quantité").fill("2");
+  await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
+  await form.getByLabel(name).fill(stranger);
+  await form.getByLabel(name).press("Enter");
+  await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
+  await expect(page.getByTestId("registre").locator("tr.fresh")).toContainText(stranger);
 });
