@@ -89,8 +89,8 @@ test("le comptoir ne montre rien d'une autre boutique", async ({ page }) => {
   await page.goto("/annonces");
   await expect(page.getByText(other.announcement)).toHaveCount(0);
 
-  await page.goto("/fournisseurs");
-  await expect(page.getByRole("heading", { name: "Fournisseurs", level: 1 })).toBeVisible();
+  await page.goto("/contacts");
+  await expect(page.getByRole("heading", { name: "Contacts", level: 1 })).toBeVisible();
   await expect(page.getByText(other.supplier)).toHaveCount(0);
 
   await page.goto("/membres");
@@ -98,7 +98,7 @@ test("le comptoir ne montre rien d'une autre boutique", async ({ page }) => {
   await expect(page.getByText(other.member)).toHaveCount(0);
 
   // Its pages can't be opened by their address either.
-  for (const path of [`/membres/${other.memberId}`, `/marchandises/${other.productId}`, `/fournisseurs/${other.supplierId}`]) {
+  for (const path of [`/membres/${other.memberId}`, `/marchandises/${other.productId}`, `/contacts/${other.supplierId}`]) {
     await page.goto(path);
     await expect(page.getByText("This page could not be found."), path).toBeVisible();
   }

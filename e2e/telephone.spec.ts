@@ -50,7 +50,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/inventaire/mouvement", "Mouvement de stock"],
     ["/tarifs", "Tarifs"],
     ["/marchandises", "Gérer les marchandises"],
-    ["/fournisseurs", "Fournisseurs"],
+    ["/contacts", "Contacts"],
     ["/annonces", "Annonces"],
     ["/membres", "Membres"],
     ["/boutiques", "Mes boutiques"],
@@ -331,7 +331,7 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
   // The Grand livre shows the whole board; the Annonces page could have it past its first page.
   await page.goto(COMPTOIR);
   const edit = (await page.getByRole("link", { name: `Modifier « ${parchment} 1 »` }).getAttribute("href"))!;
-  const pages = [COMPTOIR, "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity, edit];
+  const pages = [COMPTOIR, "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/contacts", "/annonces", "/membres", activity, edit];
   for (let width = 320; width <= 1600; width += 160) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of pages) {

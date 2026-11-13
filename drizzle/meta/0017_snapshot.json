@@ -1,5 +1,5 @@
 {
-  "id": "0dc5cba5-ba2c-4e9c-8f9a-e9abd25d1a1d",
+  "id": "0b4e1e7f-c68f-44a6-84c3-7b895c0aa614",
   "prevId": "2ff01126-03b7-43ea-b6dd-92ba24a2f73a",
   "version": "7",
   "dialect": "postgresql",
@@ -402,13 +402,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -1148,6 +1141,14 @@
           "primaryKey": false,
           "notNull": true,
           "default": 1
+        },
+        "side": {
+          "name": "side",
+          "type": "offer_side",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'sells'"
         }
       },
       "indexes": {
@@ -1506,6 +1507,14 @@
         "gerant",
         "employe",
         "desactive"
+      ]
+    },
+    "public.offer_side": {
+      "name": "offer_side",
+      "schema": "public",
+      "values": [
+        "sells",
+        "buys"
       ]
     },
     "public.product_category": {

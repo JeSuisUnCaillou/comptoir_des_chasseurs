@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers and
+// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy) and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -126,6 +126,15 @@ const SUPPLIERS = [
   },
 ];
 
+// A customer: what he buys from us, [product name, septims, units]. Put back
+// whenever he is missing, so a deleted Roy comes again on the next preview.
+const CUSTOMER = {
+  name: "Roy",
+  place: "Vendeaume",
+  notes: "Nous achète du cuir et le revend plus cher à Solitude",
+  buys: [["Cuir", 5, 1], ["Venaison", 2, 1]],
+};
+
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 try {
@@ -183,6 +192,20 @@ try {
         }
       }
       console.log("Fournisseurs d'exemple ajoutés.");
+    }
+
+    const [customer] = await tx`
+      insert into suppliers (shop_id, name, place, notes)
+      values (1, ${CUSTOMER.name}, ${CUSTOMER.place}, ${CUSTOMER.notes})
+      on conflict (shop_id, name) do nothing
+      returning id`;
+    if (customer) {
+      for (const [product, price, qty] of CUSTOMER.buys) {
+        await tx`
+          insert into supplier_offers (supplier_id, product_id, price, qty, side)
+          select ${customer.id}, id, ${price}, ${qty}, 'buys' from products where shop_id = 1 and name = ${product}`;
+      }
+      console.log("Client d'exemple Roy ajouté.");
     }
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;

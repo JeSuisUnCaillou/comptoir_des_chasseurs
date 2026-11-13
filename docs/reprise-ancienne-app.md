@@ -40,6 +40,8 @@ frappe.
      vendent, rattaché aux marchandises déjà dans la base cible : le registre,
      le stock et les annonces ne bougent pas. C'est ainsi qu'on les reprend
      en prod après le premier import.
+     Il vide tous les contacts avant : les clients saisis depuis (Roy…)
+     disparaissent, et tout ce qui est repris redevient « il nous vend ».
    - `--cible=preview` ou `--cible=prod` est obligatoire ; on tape
      « écraser la preview » ou « écraser la prod » pour confirmer
      (`--cible=local`, pour le test, n'accepte qu'une base sur la machine).

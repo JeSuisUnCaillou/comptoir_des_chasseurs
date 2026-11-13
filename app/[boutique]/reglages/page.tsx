@@ -20,7 +20,7 @@ export default async function Reglages() {
           <h2>Supprimer la boutique</h2>
           <p className="muted">
             Tout ce qu&apos;elle contient disparaît pour de bon : marchandises, stock, registre, annonces,
-            fournisseurs. Les comptes de ses membres restent, mais ceux qui n&apos;ont pas d&apos;autre boutique ne pourront plus se connecter.
+            contacts. Les comptes de ses membres restent, mais ceux qui n&apos;ont pas d&apos;autre boutique ne pourront plus se connecter.
           </p>
           <DeleteShopForm name={me.shop.name} />
         </section>

@@ -339,7 +339,11 @@ export const announcements = pgTable(
 export type Announcement = typeof announcements.$inferSelect;
 export type AnnouncementPin = (typeof announcementPin.enumValues)[number];
 
-/** Someone the comptoir buys from: where to find them and what they sell. */
+/**
+ * A contact of the shop, supplier and/or customer: where to find them, what
+ * they sell us and what they buy from us (their offers). Still named
+ * "suppliers" in the database.
+ */
 export const suppliers = pgTable(
   "suppliers",
   {
@@ -355,7 +359,13 @@ export const suppliers = pgTable(
   (t) => [uniqueIndex("suppliers_shop_name_idx").on(t.shopId, t.name)],
 );
 
-/** A merchandise a supplier sells: price septims for qty units. */
+/** Which way an offer goes: the contact sells it to us, or buys it from us. */
+export const offerSide = pgEnum("offer_side", ["sells", "buys"]);
+
+/**
+ * A merchandise a contact sells us or buys from us: price septims for qty
+ * units. One side per merchandise and contact.
+ */
 export const supplierOffers = pgTable(
   "supplier_offers",
   {
@@ -368,6 +378,7 @@ export const supplierOffers = pgTable(
       .references(() => products.id),
     price: integer("price").notNull(),
     qty: integer("qty").notNull().default(1),
+    side: offerSide("side").notNull().default("sells"),
   },
   (t) => [
     uniqueIndex("supplier_offers_supplier_product_idx").on(t.supplierId, t.productId),
@@ -378,3 +389,4 @@ export const supplierOffers = pgTable(
 
 export type Supplier = typeof suppliers.$inferSelect;
 export type SupplierOffer = typeof supplierOffers.$inferSelect;
+export type OfferSide = (typeof offerSide.enumValues)[number];
