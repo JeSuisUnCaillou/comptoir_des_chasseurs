@@ -1,4 +1,6 @@
-ALTER TABLE "products" ADD COLUMN "featured_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "featured_at" timestamp with time zone;--> statement-breakpoint
+-- IF NOT EXISTS: the shared preview database already has the column, added when
+-- this migration was numbered 0012.
 -- Each shop keeps the product it already put forward: the one it chose, or else
 -- its leather, as the Tarifs page showed until now.
 UPDATE "products" p SET "featured_at" = now()
