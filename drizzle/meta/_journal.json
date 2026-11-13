@@ -85,6 +85,13 @@
       "when": 1794434233309,
       "tag": "0011_boutiques",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794584119060,
+      "tag": "0012_produits-phares",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { checked, optionalInt, readProductIdentity, readProductPrices } from "@/lib/forms";
-import { saveProduct as save, setBlacksmithLeatherPrice, setFeaturedProduct } from "@/lib/products";
+import { saveProduct as save, setBlacksmithLeatherPrice, setFeatured } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -35,11 +35,11 @@ export async function saveBlacksmithPrice(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
-/** A gérant's choice of the product the Tarifs page puts forward, among the shop's active ones. */
-export async function saveFeaturedProduct(formData: FormData) {
+/** A gérant puts a product forward on top of the Tarifs, after the others already there, or takes it back. */
+export async function saveFeatured(formData: FormData) {
   const member = await requireMember(["gerant"]);
   const id = optionalInt(formData, "productId");
   if (id == null || Number.isNaN(id)) return;
-  const result = await attempt(() => setFeaturedProduct(member.shopId, id));
+  const result = await attempt(() => setFeatured(member.shopId, id, formData.get("featured") === "1"));
   if (result.ok) revalidatePath("/", "layout");
 }

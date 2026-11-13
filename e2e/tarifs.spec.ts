@@ -141,15 +141,15 @@ test("le calculateur a le cuir choisi par défaut", async ({ page }) => {
   await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue("Cuir");
 });
 
-test("les tarifs du cuir et le calculateur finissent à la même hauteur", async ({ page }) => {
+test("les produits phares prennent toute la largeur, le calculateur vient dessous", async ({ page }) => {
   await page.setViewportSize({ width: 1300, height: 900 });
-  const cuir = page.getByRole("region", { name: "Cuir", exact: true });
+  const featured = page.getByRole("region", { name: "Produits phares" });
   const calcul = page.getByRole("region", { name: "Calculateur des prix" });
   await expect(page.getByTestId("calculateur")).toBeVisible();
-  const a = (await cuir.boundingBox())!;
+  const a = (await featured.boundingBox())!;
   const b = (await calcul.boundingBox())!;
-  expect(a.y).toBeCloseTo(b.y, 0);
-  expect(a.y + a.height).toBeCloseTo(b.y + b.height, 0);
+  expect(b.y).toBeGreaterThan(a.y + a.height);
+  expect(a.width).toBeCloseTo(b.width, 0);
 });
 
 test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {

@@ -2017,3 +2017,54 @@ tr.fresh td {
   vertical-align: -2px;
   margin-left: 4px;
 }
+
+/* Tarifs: the featured products' cards, about three side by side, with smaller tiles. */
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  gap: 14px;
+}
+
+.featured-card {
+  border: 1px solid var(--border);
+  padding: 12px;
+  min-width: 0;
+}
+
+.featured-card h3 {
+  margin: 0 0 10px;
+}
+
+.featured-card .stats {
+  grid-template-columns: repeat(auto-fit, minmax(min(100px, 100%), 1fr));
+  gap: 8px;
+}
+
+.featured-card .stats + .stats {
+  margin-top: 8px;
+}
+
+.featured-card .stat {
+  padding: 8px 10px;
+}
+
+.featured-card .stat-value {
+  font-size: 19px;
+  margin-top: 4px;
+}
+
+/* Gérer les marchandises: the featured products, each with its button to take it back. */
+.featured-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.featured-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}

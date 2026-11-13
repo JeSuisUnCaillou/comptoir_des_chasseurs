@@ -22,7 +22,7 @@ import {
   unitMargin,
   unitPrice,
 } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProducts } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
@@ -265,13 +265,16 @@ function tilePrice(price: number | null, qty: number) {
 }
 
 /**
- * The featured product's buyback and sale prices, the citizens' one first when
- * it has one; for leather, what the blacksmith pays for it beside the sale.
+ * A featured product's card: its buyback and sale prices, the citizens' one
+ * first when it has one; for leather, what the blacksmith pays for it beside
+ * the sale.
  */
-function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: number }) {
+function FeaturedCard({ product, blacksmith }: { product: Product; blacksmith: number }) {
+  const id = `phare-${product.id}`;
   return (
-    <>
-      <div className="stats" style={{ marginTop: 14 }}>
+    <section className="featured-card" aria-labelledby={id}>
+      <h3 id={id}>{product.name}</h3>
+      <div className="stats">
         {product.citizenBuyPrice != null && (
           <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
             <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
@@ -284,7 +287,7 @@ function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: 
         </div>
       </div>
       {/* What the comptoir pays on the first line, what it resells for on the second. */}
-      <div className="stats" style={{ marginTop: 12 }}>
+      <div className="stats">
         <div className="stat">
           <div className="stat-label">Vente</div>
           <div className="stat-value">{tilePrice(product.sellPrice, product.sellQty)}</div>
@@ -296,7 +299,7 @@ function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: 
           </div>
         )}
       </div>
-    </>
+    </section>
   );
 }
 
@@ -312,9 +315,9 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
   const canEdit = isGerant(member);
   const query = searchParam(search.q);
-  const featured = await featuredProduct(member.shopId, products);
-  // The featured product has its own tiles above; every other one is in a grid.
-  const hunted = matching(products, search.q).filter((p) => p.id !== featured?.id);
+  const featured = featuredProducts(products);
+  // The featured products have their own cards above; every other one is in a grid.
+  const hunted = matching(products, search.q).filter((p) => p.featuredAt == null);
   const hides = hunted.filter((p) => p.category === "peau" && priced(p));
   const meats = hunted.filter((p) => p.category === "viande" && priced(p));
   const goods = hunted.filter((p) => p.category !== "peau" && p.category !== "viande" && priced(p));
@@ -333,24 +336,40 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         )}
       </div>
 
-      <div className="cols cols-stretch section-gap">
-        <section className="panel" aria-labelledby="phare">
-          <div className="eyebrow">Produit phare</div>
-          <h2 id="phare">{featured?.name ?? "Aucun produit phare"}</h2>
-          {featured ? (
-            <FeaturedTiles product={featured} blacksmith={blacksmith} />
-          ) : (
-            <p className="muted">Un gérant le choisit dans Gérer les marchandises.</p>
+      <section className="panel" aria-labelledby="phare">
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">À la une</div>
+            <h2 id="phare">Produits phares</h2>
+          </div>
+          {canEdit && (
+            <Link
+              className="icon-btn"
+              href="/marchandises#phare"
+              title="Gérer les produits phares"
+              aria-label="Gérer les produits phares"
+            >
+              <Pencil size={18} />
+            </Link>
           )}
-        </section>
+        </div>
+        {featured.length > 0 ? (
+          <div className="featured-grid">
+            {featured.map((p) => (
+              <FeaturedCard key={p.id} product={p} blacksmith={blacksmith} />
+            ))}
+          </div>
+        ) : (
+          <p className="muted">Aucun produit phare. Un gérant les choisit dans Gérer les marchandises.</p>
+        )}
+      </section>
 
-        <section className="panel" aria-labelledby="calcul">
-          <div className="eyebrow">Outil des marchands</div>
-          <h2 id="calcul">Calculateur des prix</h2>
-          <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-          <PriceCalculator products={calculable} initialId={featured?.id} />
-        </section>
-      </div>
+      <section className="panel" aria-labelledby="calcul">
+        <div className="eyebrow">Outil des marchands</div>
+        <h2 id="calcul">Calculateur des prix</h2>
+        <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
+        <PriceCalculator products={calculable} initialId={featured[0]?.id} />
+      </section>
 
       <section className="panel" aria-labelledby="chasse">
         <div className="eyebrow">Produits de chasse</div>

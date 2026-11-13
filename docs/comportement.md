@@ -193,23 +193,25 @@ sortie d'argent) les septims :
 Une marchandise peut avoir un second prix de rachat, pour les citoyens
 d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres). Vide, tout le
 monde a le même prix. Les Tarifs le montrent en évidence : une tuile à lui
-pour le produit phare, une étiquette dorée dans les tableaux.
+pour un produit phare, une étiquette dorée dans les tableaux.
 
 ### Tarifs (tous les membres)
 
 Dans l'ordre de la page :
 
-1. Le produit phare, choisi par un gérant dans Gérer les marchandises (le cuir tant
-   qu'aucun autre n'est choisi, ou si le choisi est archivé) : ses prix de
-   rachat et de vente en tuiles ; pour le cuir, le rachat par le forgeron en
-   plus.
-2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
-   cherche en tapant, parmi toutes celles qui ont un prix.
+1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
+   dans l'ordre où ils ont été ajoutés : une carte chacun, environ trois côte à
+   côte, avec ses prix de rachat et de vente en petites tuiles ; pour le cuir,
+   le rachat par le forgeron en plus. Un produit phare archivé n'y est plus.
+   Sans produit phare, le bloc le dit. Pour un gérant, un crayon sur le bloc
+   ouvre le réglage.
+2. Le calculateur, réglé sur le premier produit phare à l'ouverture ; la
+   marchandise se cherche en tapant, parmi toutes celles qui ont un prix.
 3. La grille du comptoir (produits de chasse) : une seule recherche par nom,
    qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
    (transformation et bénéfice par lot), viandes et venaison, autres
-   ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
-   produit phare n'y est pas : il a ses tuiles en haut.
+   ressources (où va aussi le cuir quand il n'est pas produit phare). Les
+   produits phares n'y sont pas : ils ont leurs cartes en haut.
 
 Dans la grille :
 
@@ -235,7 +237,9 @@ Dans la grille :
 
 - S'ouvre par le bouton du même nom sur la page Tarifs.
 - Créer et modifier les marchandises et leurs prix.
-- Choisir le produit phare des Tarifs, parmi les marchandises non archivées.
+- Choisir les produits phares des Tarifs, parmi les marchandises non
+  archivées : en ajouter un (il passe après les autres), en retirer un. Le
+  cuir l'est tant qu'on ne l'a pas retiré.
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.
 - Même recherche par nom que les Tarifs et l'Inventaire.

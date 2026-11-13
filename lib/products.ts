@@ -42,23 +42,18 @@ export async function blacksmithLeatherPrice(shopId: number) {
 /** Settings key of the price the blacksmith pays for a leather. */
 export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
 
-/** Settings key of the id of the product the Tarifs page puts forward. */
-export const FEATURED_PRODUCT = "produit_phare";
-
-/**
- * The product the Tarifs page puts forward, among the shop's active ones: the
- * one a gérant chose, or else the leather, as before the choice existed.
- */
-export async function featuredProduct<P extends { id: number; category: ProductCategory }>(shopId: number, active: P[]) {
-  const id = await readSetting(shopId, FEATURED_PRODUCT);
-  return active.find((p) => p.id === id) ?? active.find((p) => p.category === "cuir");
+/** The products the Tarifs page puts forward, among the given active ones, in the order gérants added them. */
+export function featuredProducts<P extends { id: number; featuredAt: Date | null }>(active: P[]) {
+  return active
+    .filter((p) => p.featuredAt != null)
+    .sort((a, b) => a.featuredAt!.getTime() - b.featuredAt!.getTime() || a.id - b.id);
 }
 
-/** Puts one of the shop's active products forward on the Tarifs page. */
-export async function setFeaturedProduct(shopId: number, productId: number) {
+/** Puts one of the shop's active products forward on the Tarifs page, after the others, or takes it back. */
+export async function setFeatured(shopId: number, productId: number, featured: boolean) {
   const [product] = await getDb()
-    .select({ id: schema.products.id })
-    .from(schema.products)
+    .update(schema.products)
+    .set({ featuredAt: featured ? new Date() : null })
     .where(
       and(
         eq(schema.products.id, productId),
@@ -66,9 +61,8 @@ export async function setFeaturedProduct(shopId: number, productId: number) {
         eq(schema.products.archived, false),
       ),
     )
-    .limit(1);
+    .returning({ id: schema.products.id });
   if (!product) throw new UserError("Marchandise inconnue.");
-  await writeSetting(shopId, FEATURED_PRODUCT, productId);
 }
 
 export type MovementFilter = {

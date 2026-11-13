@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { X } from "lucide-react";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { pageParam, searchParam } from "@/lib/pagination";
@@ -6,8 +7,8 @@ import { LiveSearch } from "@/components/live-search";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
-import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
+import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
+import { saveBlacksmithPrice, saveFeatured } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
@@ -21,7 +22,8 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
     blacksmithLeatherPrice(member.shopId),
     activeProducts(member.shopId),
   ]);
-  const featured = await featuredProduct(member.shopId, active);
+  const featured = featuredProducts(active);
+  const others = active.filter((p) => p.featuredAt == null);
 
   return (
     <>
@@ -38,24 +40,46 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <div className="panel-stack">
           <section className="panel" aria-labelledby="phare">
             <div className="eyebrow">Réglage</div>
-            <h2 id="phare">Produit phare</h2>
+            <h2 id="phare">Produits phares</h2>
             <p className="muted">
-              Mis en avant en haut des Tarifs, et choisi d&apos;office dans le calculateur. Actuel :{" "}
-              {featured?.name ?? "aucun"}.
+              Mis en avant en haut des Tarifs, dans cet ordre ; le premier est choisi d&apos;office dans le
+              calculateur.
             </p>
-            <form action={saveFeaturedProduct} className="inline-form">
-              <select name="productId" defaultValue={featured?.id} aria-label="Produit phare" required>
-                {!featured && <option value="">Aucun</option>}
-                {active.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+            {featured.length === 0 ? (
+              <p className="muted">Aucun produit phare.</p>
+            ) : (
+              <ul className="featured-list" aria-label="Produits phares actuels">
+                {featured.map((p) => (
+                  <li key={p.id}>
+                    <span>{p.name}</span>
+                    <form action={saveFeatured}>
+                      <input type="hidden" name="productId" value={p.id} />
+                      <button className="icon-btn" type="submit" title={`Retirer ${p.name}`} aria-label={`Retirer ${p.name}`}>
+                        <X size={16} />
+                      </button>
+                    </form>
+                  </li>
                 ))}
-              </select>
-              <button className="btn btn-small" type="submit">
-                Enregistrer
-              </button>
-            </form>
+              </ul>
+            )}
+            {others.length > 0 && (
+              <form action={saveFeatured} className="inline-form">
+                <input type="hidden" name="featured" value="1" />
+                <select name="productId" aria-label="Produit phare à ajouter" required defaultValue="">
+                  <option value="" disabled>
+                    Choisir une marchandise
+                  </option>
+                  {others.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn btn-small" type="submit">
+                  Ajouter
+                </button>
+              </form>
+            )}
           </section>
           <section className="panel" aria-labelledby="forgeron">
             <div className="eyebrow">Réglage</div>
