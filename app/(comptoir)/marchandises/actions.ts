@@ -4,51 +4,22 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { checked, optionalInt, readProductIdentity } from "@/lib/forms";
+import { checked, optionalInt, readProductIdentity, readProductPrices } from "@/lib/forms";
 import { saveProduct as save, setBlacksmithLeatherPrice, setFeaturedProduct } from "@/lib/products";
 
 export type ProductFormState = { error: string } | null;
-
-/** A quantity a price is given for: 1 when left empty. */
-function perQty(formData: FormData, key: string) {
-  const n = optionalInt(formData, key);
-  return n == null ? 1 : n;
-}
 
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
   const member = await requireMember(["gerant"]);
   const id = optionalInt(formData, "id");
   const { name, category, unit, error: identityError } = readProductIdentity(formData);
 
-  const values = {
-    name,
-    category,
-    unit,
-    buyPrice: optionalInt(formData, "buyPrice"),
-    buyQty: perQty(formData, "buyQty"),
-    citizenBuyPrice: optionalInt(formData, "citizenBuyPrice"),
-    sellPrice: optionalInt(formData, "sellPrice"),
-    sellQty: perQty(formData, "sellQty"),
-    bulkMin: optionalInt(formData, "bulkMin"),
-    bulkPrice: optionalInt(formData, "bulkPrice"),
-    bulkQty: perQty(formData, "bulkQty"),
-    hidesPerBatch: category === "peau" ? optionalInt(formData, "hidesPerBatch") : null,
-    leatherPerBatch: category === "peau" ? optionalInt(formData, "leatherPerBatch") : null,
-    archived: checked(formData, "archived"),
-  };
+  const { prices, error: priceError } = readProductPrices(formData, category);
+  const values = { name, category, unit, ...prices, archived: checked(formData, "archived") };
 
   if (Number.isNaN(id)) return { error: "Marchandise inconnue." };
   if (identityError) return { error: identityError };
-  const numbers = Object.values(values).filter((v) => typeof v === "number") as number[];
-  if (numbers.some((n) => Number.isNaN(n))) {
-    return { error: "Les prix et quantités doivent être des nombres entiers positifs." };
-  }
-  if ([values.buyQty, values.sellQty, values.bulkQty].some((n) => n < 1)) {
-    return { error: "La quantité doit être un nombre entier d'au moins 1." };
-  }
-  if ((values.hidesPerBatch == null) !== (values.leatherPerBatch == null)) {
-    return { error: "Remplis les peaux et les cuirs, ou laisse les deux vides." };
-  }
+  if (priceError) return { error: priceError };
 
   const result = await attempt(() => save(member.shopId, id, values));
   if (!result.ok) return { error: result.message };

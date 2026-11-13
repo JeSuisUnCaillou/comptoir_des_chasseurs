@@ -52,3 +52,38 @@ export function readProductIdentity(formData: FormData) {
       : undefined;
   return { name, category, unit, error };
 }
+
+/** A quantity a price is given for: 1 when left empty. */
+function perQty(formData: FormData, key: string) {
+  const n = optionalInt(formData, key);
+  return n == null ? 1 : n;
+}
+
+/**
+ * Reads a merchandise's prices from a form, the same way for every form that
+ * sets them. The leather batch only counts for hides. `error` says what is
+ * wrong, if anything.
+ */
+export function readProductPrices(formData: FormData, category: ProductCategory) {
+  const prices = {
+    buyPrice: optionalInt(formData, "buyPrice"),
+    buyQty: perQty(formData, "buyQty"),
+    citizenBuyPrice: optionalInt(formData, "citizenBuyPrice"),
+    sellPrice: optionalInt(formData, "sellPrice"),
+    sellQty: perQty(formData, "sellQty"),
+    bulkMin: optionalInt(formData, "bulkMin"),
+    bulkPrice: optionalInt(formData, "bulkPrice"),
+    bulkQty: perQty(formData, "bulkQty"),
+    hidesPerBatch: category === "peau" ? optionalInt(formData, "hidesPerBatch") : null,
+    leatherPerBatch: category === "peau" ? optionalInt(formData, "leatherPerBatch") : null,
+  };
+  const numbers = Object.values(prices).filter((v) => typeof v === "number");
+  const error = numbers.some((n) => Number.isNaN(n))
+    ? "Les prix et quantités doivent être des nombres entiers positifs."
+    : [prices.buyQty, prices.sellQty, prices.bulkQty].some((n) => n < 1)
+      ? "La quantité doit être un nombre entier d'au moins 1."
+      : (prices.hidesPerBatch == null) !== (prices.leatherPerBatch == null)
+        ? "Remplis les peaux et les cuirs, ou laisse les deux vides."
+        : undefined;
+  return { prices, error };
+}

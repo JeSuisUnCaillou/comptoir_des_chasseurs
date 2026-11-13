@@ -5,6 +5,7 @@ import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
+import { isGerant } from "@/lib/policies";
 import { lineMessage } from "@/lib/transaction-kinds";
 
 export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
@@ -231,20 +232,22 @@ export async function recordMovements(
 }
 
 /**
- * Creates a merchandise that does not exist yet, without prices, and records
- * its first entry in stock.
+ * Creates a merchandise and records its first entry in stock, together.
+ * `prices` are set at once when given, which only a gérant may do.
  */
 export async function createStocked(
-  member: Actor,
+  member: Pick<ShopMember, "id" | "shopId" | "role">,
   identity: { name: string; category: ProductCategory; unit: string },
+  prices: ProductPrices | null,
   quantity: number,
   reason: string,
 ) {
+  if (prices && !isGerant(member)) throw new UserError("Seul un gérant fixe les prix.");
   try {
     await getDb().transaction(async (tx) => {
       const [product] = await tx
         .insert(schema.products)
-        .values({ ...identity, shopId: member.shopId })
+        .values({ ...identity, ...prices, shopId: member.shopId })
         .returning({ id: schema.products.id });
       const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
       if (!result.ok) throw new UserError(result.error);
@@ -259,6 +262,9 @@ export async function createStocked(
 
 /** What Gérer les marchandises sets on a merchandise. */
 export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "shopId" | "stock" | "createdAt">;
+
+/** A merchandise's prices, without its name, category, unit or archiving. */
+export type ProductPrices = Omit<ProductValues, "name" | "category" | "unit" | "archived">;
 
 /** Creates a merchandise of the shop, or updates it when `id` is given. */
 export async function saveProduct(shopId: number, id: number | null, values: ProductValues) {
