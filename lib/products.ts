@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gt, gte, ilike, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, isNotNull, lt, sql, type SQL } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
 import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
@@ -63,6 +63,29 @@ export async function setFeatured(shopId: number, productId: number, featured: b
     )
     .returning({ id: schema.products.id });
   if (!product) throw new UserError("Marchandise inconnue.");
+}
+
+/** Moves a featured product one place earlier (-1) or later (1) on the Tarifs page. */
+export async function moveFeatured(shopId: number, productId: number, step: -1 | 1) {
+  const p = schema.products;
+  await getDb().transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: p.id, featuredAt: p.featuredAt })
+      .from(p)
+      .where(and(eq(p.shopId, shopId), eq(p.archived, false), isNotNull(p.featuredAt)))
+      .orderBy(asc(p.featuredAt), asc(p.id))
+      .for("update");
+    const from = rows.findIndex((r) => r.id === productId);
+    if (from < 0) throw new UserError("Marchandise inconnue.");
+    const to = from + step;
+    if (to < 0 || to >= rows.length) return;
+    [rows[from], rows[to]] = [rows[to], rows[from]];
+    // The order is the featured date: the same first one, then a millisecond apart.
+    const first = rows.reduce((min, r) => Math.min(min, r.featuredAt!.getTime()), Infinity);
+    for (const [i, row] of rows.entries()) {
+      await tx.update(p).set({ featuredAt: new Date(first + i) }).where(eq(p.id, row.id));
+    }
+  });
 }
 
 export type MovementFilter = {

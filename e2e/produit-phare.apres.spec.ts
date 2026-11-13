@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { createProduct, loginAsGerant, uniqueName } from "./helpers";
+import { createProduct, loginAsGerant, pickProduct, uniqueName } from "./helpers";
 
 // These tests change the same setting: one after the other.
 test.describe.configure({ mode: "serial" });
@@ -27,7 +27,8 @@ function featuredPanel(page: Page) {
 async function add(page: Page, name: string) {
   await page.goto("/marchandises");
   const panel = featuredPanel(page);
-  await panel.getByLabel("Produit phare à ajouter").selectOption({ label: name });
+  // The usual picker: typed, then chosen in its list.
+  await pickProduct(panel, name, "Ajouter un produit phare");
   await panel.getByRole("button", { name: "Ajouter" }).click();
   await expect(panel.getByRole("list", { name: "Produits phares actuels" })).toContainText(name);
 }
@@ -74,11 +75,24 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
     await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row", { name: /Flèches d'acier/ })).toHaveCount(0);
 
-    // Taken back, the leather returns to its grid, and the calculator starts on the next one.
+    // Reordered in Gérer les marchandises: the arrows move a product one place.
+    await page.goto("/marchandises");
+    const list = featuredPanel(page).getByRole("list", { name: "Produits phares actuels" });
+    await expect(featuredPanel(page).getByRole("button", { name: "Monter Cuir" })).toBeDisabled();
+    await expect(featuredPanel(page).getByRole("button", { name: "Descendre Flèches d'acier" })).toBeDisabled();
+    await featuredPanel(page).getByRole("button", { name: "Monter Flèches d'acier" }).click();
+    await expect(list.getByRole("listitem")).toHaveText(["Cuir", "Flèches d'acier", "Venaison"]);
+    await featuredPanel(page).getByRole("button", { name: "Descendre Cuir" }).click();
+    await expect(list.getByRole("listitem")).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
+    await page.goto("/tarifs");
+    await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
+    await expect(calculatorProduct(page)).toHaveValue("Flèches d'acier");
+
+    // Taken back, the leather returns to its grid, and the others keep their order.
     await remove(page, "Cuir");
     await page.goto("/tarifs");
-    await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Venaison", "Flèches d'acier"]);
-    await expect(calculatorProduct(page)).toHaveValue("Venaison");
+    await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Flèches d'acier", "Venaison"]);
+    await expect(calculatorProduct(page)).toHaveValue("Flèches d'acier");
     await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row").filter({ has: page.getByText("Cuir", { exact: true }) })).toBeVisible();
 
     // None left: the block says so.

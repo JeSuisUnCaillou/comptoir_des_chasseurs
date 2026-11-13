@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
+import { ProductField } from "@/components/product-field";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { pageParam, searchParam } from "@/lib/pagination";
@@ -9,7 +10,7 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
-import { saveBlacksmithPrice, saveFeatured } from "./actions";
+import { saveBlacksmithPrice, saveFeatured, saveFeaturedOrder } from "./actions";
 
 type Search = { q?: string | string[]; page?: string | string[] };
 
@@ -51,35 +52,63 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
               <p className="muted">Aucun produit phare.</p>
             ) : (
               <ul className="featured-list" aria-label="Produits phares actuels">
-                {featured.map((p) => (
+                {featured.map((p, i) => (
                   <li key={p.id}>
                     <span>{p.name}</span>
-                    <form action={saveFeatured}>
-                      <input type="hidden" name="productId" value={p.id} />
-                      <button className="icon-btn" type="submit" title={`Retirer ${p.name}`} aria-label={`Retirer ${p.name}`}>
-                        <X size={16} />
-                      </button>
-                    </form>
+                    <span className="featured-actions">
+                      <form action={saveFeaturedOrder}>
+                        <input type="hidden" name="productId" value={p.id} />
+                        <input type="hidden" name="step" value="up" />
+                        <button
+                          className="icon-btn"
+                          type="submit"
+                          disabled={i === 0}
+                          title={`Monter ${p.name}`}
+                          aria-label={`Monter ${p.name}`}
+                        >
+                          <ArrowUp size={16} />
+                        </button>
+                      </form>
+                      <form action={saveFeaturedOrder}>
+                        <input type="hidden" name="productId" value={p.id} />
+                        <input type="hidden" name="step" value="down" />
+                        <button
+                          className="icon-btn"
+                          type="submit"
+                          disabled={i === featured.length - 1}
+                          title={`Descendre ${p.name}`}
+                          aria-label={`Descendre ${p.name}`}
+                        >
+                          <ArrowDown size={16} />
+                        </button>
+                      </form>
+                      <form action={saveFeatured}>
+                        <input type="hidden" name="productId" value={p.id} />
+                        <button className="icon-btn" type="submit" title={`Retirer ${p.name}`} aria-label={`Retirer ${p.name}`}>
+                          <X size={16} />
+                        </button>
+                      </form>
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
             {others.length > 0 && (
-              <form action={saveFeatured} className="inline-form">
+              // A new form once a product is added, so the field starts empty again.
+              <form action={saveFeatured} className="featured-add" key={featured.map((p) => p.id).join()}>
                 <input type="hidden" name="featured" value="1" />
-                <select name="productId" aria-label="Produit phare à ajouter" required defaultValue="">
-                  <option value="" disabled>
-                    Choisir une marchandise
-                  </option>
-                  {others.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn btn-small" type="submit">
-                  Ajouter
-                </button>
+                <label htmlFor="phare-ajout">Ajouter un produit phare</label>
+                <div className="inline-form">
+                  <ProductField
+                    id="phare-ajout"
+                    name="productId"
+                    required
+                    products={others.map((p) => ({ id: p.id, name: p.name }))}
+                  />
+                  <button className="btn btn-small" type="submit">
+                    Ajouter
+                  </button>
+                </div>
               </form>
             )}
           </section>

@@ -2214,8 +2214,8 @@ tr.fresh td {
 
 .featured-prices {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(78px, 100%), 1fr));
-  gap: 8px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(70px, 100%), 1fr));
+  gap: 8px;
 }
 
 /* A price as a label over its value, set off by a thin rule rather than a box. */
@@ -2223,7 +2223,7 @@ tr.fresh td {
   background: none;
   border: none;
   border-left: 1px solid var(--border);
-  padding: 0 0 0 10px;
+  padding: 0 0 0 8px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2239,15 +2239,20 @@ tr.fresh td {
 }
 
 .featured-prices .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.2;
   margin-top: 2px;
+  white-space: nowrap;
 }
 
-/* On a phone, two prices per line. */
+/* On a phone, two prices per line, and a long price may wrap. */
 @media (max-width: 600px) {
   .featured-prices {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .featured-prices .stat-value {
+    white-space: normal;
   }
 }
 
@@ -2265,4 +2270,26 @@ tr.fresh td {
   gap: 8px;
   padding: 4px 0;
   border-bottom: 1px solid var(--border);
+}
+
+.featured-actions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.featured-actions .icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.featured-add label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.featured-add .combobox {
+  flex: 1;
+  min-width: 0;
 }

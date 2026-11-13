@@ -242,7 +242,8 @@ sortie d'argent) les septims :
 - Une recherche trouve un nom, un lieu ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
   (nom, lieu, note, marchandises et prix) ou les suppriment, par les boutons
-  de la page.
+  de la page. La marchandise d'un prix se cherche en tapant, comme dans
+  Achat / Vente.
 
 ## Tarifs et Gérer les marchandises
 
@@ -297,8 +298,9 @@ Dans la grille :
 - S'ouvre par le bouton du même nom sur la page Tarifs.
 - Créer et modifier les marchandises et leurs prix.
 - Choisir les produits phares des Tarifs, parmi les marchandises non
-  archivées : en ajouter un (il passe après les autres), en retirer un. Le
-  cuir l'est tant qu'on ne l'a pas retiré.
+  archivées : en ajouter un (la marchandise se cherche en tapant ; il passe
+  après les autres), le monter ou le descendre d'une place avec les flèches,
+  le retirer. Le cuir l'est tant qu'on ne l'a pas retiré.
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.
 - Même recherche par nom que les Tarifs et l'Inventaire.
