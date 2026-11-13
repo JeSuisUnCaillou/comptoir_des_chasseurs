@@ -45,7 +45,7 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   const { error, ...identity } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
   const reason = text(formData, "reason", 200);
-  const { prices, error: priceError } = readProductPrices(formData, identity.category);
+  const { prices, privileged, error: priceError } = readProductPrices(formData, identity.category);
   const withPrices = checked(formData, "withPrices");
 
   if (error) return { ok: false, message: error };
@@ -55,7 +55,7 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   if (!reason) return { ok: false, message: "Précise la raison." };
   if (withPrices && priceError) return { ok: false, message: priceError };
 
-  const result = await attempt(() => createStocked(member, identity, withPrices ? prices : null, quantity, reason));
+  const result = await attempt(() => createStocked(member, identity, withPrices ? { prices, privileged } : null, quantity, reason));
   if (!result.ok) return result;
 
   revalidateShop();

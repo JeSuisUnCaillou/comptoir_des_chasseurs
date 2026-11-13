@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, a second shop (La Taverne du Port), a few announcements, the old app's suppliers and
+// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -40,6 +40,12 @@ const STOCK = {
   "Flèches d'acier": 220,
   "Kit débutant": 5,
 };
+
+// The comptoir's privileged groups and their price for a leather (the usual one is 4).
+const PRIVILEGED = [
+  ["Citoyens d'Estemarche", 5],
+  ["Compagnons", 6],
+];
 
 // A few parchments for the board, oldest first.
 const ANNOUNCEMENTS = [
@@ -215,6 +221,21 @@ try {
         }
       }
       console.log("Achats et ventes groupés d'exemple ajoutés.");
+    }
+
+    // Privileged groups of the comptoir, both with a price on the leather, to
+    // try a purchase at each group's price. Again once a group was removed.
+    for (const [group, price] of PRIVILEGED) {
+      const [made] = await tx`
+        insert into privileged_groups (shop_id, name)
+        select 1, ${group}
+        where not exists (select 1 from privileged_groups where shop_id = 1 and name = ${group})
+        returning id`;
+      if (!made) continue;
+      await tx`
+        insert into privileged_prices (product_id, group_id, buy_price)
+        select id, ${made.id}, ${price} from products where shop_id = 1 and name = 'Cuir'`;
+      console.log(`Clients privilégiés « ${group} » ajoutés, avec un prix pour le cuir.`);
     }
 
     // A second shop, to see shops side by side: Aela is gérante of both, so

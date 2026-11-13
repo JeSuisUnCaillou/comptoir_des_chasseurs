@@ -1,5 +1,5 @@
 {
-  "id": "abc0063c-8802-4bc7-b3fa-c02a0ade87e1",
+  "id": "97945dbf-a9eb-4db9-a794-7dcf181e8dab",
   "prevId": "c803aa3b-fd9e-48c0-a423-fc04c4daff34",
   "version": "7",
   "dialect": "postgresql",
@@ -154,18 +154,6 @@
           "notNull": true,
           "default": false
         },
-        "discord_id": {
-          "name": "discord_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "discord_name": {
-          "name": "discord_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -189,21 +177,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "members_discord_id_idx": {
-          "name": "members_discord_id_idx",
-          "columns": [
-            {
-              "expression": "discord_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {},
@@ -216,6 +189,162 @@
           "value": "not \"members\".\"super_admin\" or \"members\".\"role\" = 'gerant'"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.privileged_groups": {
+      "name": "privileged_groups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "privileged_groups_shop_name_idx": {
+          "name": "privileged_groups_shop_name_idx",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "privileged_groups_shop_id_shops_id_fk": {
+          "name": "privileged_groups_shop_id_shops_id_fk",
+          "tableFrom": "privileged_groups",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.privileged_prices": {
+      "name": "privileged_prices",
+      "schema": "",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buy_price": {
+          "name": "buy_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "privileged_prices_group_idx": {
+          "name": "privileged_prices_group_idx",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "privileged_prices_product_id_products_id_fk": {
+          "name": "privileged_prices_product_id_products_id_fk",
+          "tableFrom": "privileged_prices",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "privileged_prices_group_id_privileged_groups_id_fk": {
+          "name": "privileged_prices_group_id_privileged_groups_id_fk",
+          "tableFrom": "privileged_prices",
+          "tableTo": "privileged_groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "privileged_prices_product_id_group_id_pk": {
+          "name": "privileged_prices_product_id_group_id_pk",
+          "columns": [
+            "product_id",
+            "group_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.products": {

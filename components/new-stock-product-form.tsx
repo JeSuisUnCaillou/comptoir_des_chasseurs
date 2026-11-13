@@ -5,7 +5,7 @@ import { createAndStock, type CreateState } from "@/app/[boutique]/inventaire/ac
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";
-import { ProductPriceFields } from "@/components/product-price-fields";
+import { ProductPriceFields, type GroupChoice } from "@/components/product-price-fields";
 
 /**
  * Brings a merchandise that does not exist yet into stock: creates it, then
@@ -16,12 +16,15 @@ export function NewStockProductForm({
   name,
   category: initialCategory,
   canSetPrices,
+  groups,
   onCreated,
   onCancel,
 }: {
   name: string;
   category: ProductCategory | "";
   canSetPrices: boolean;
+  /** The shop's privileged groups, a price field each. */
+  groups: GroupChoice[];
   onCreated: (name: string) => void;
   onCancel: () => void;
 }) {
@@ -85,7 +88,7 @@ export function NewStockProductForm({
           Ajouter des prix
         </label>
       )}
-      {withPrices && <ProductPriceFields id={id} category={category} />}
+      {withPrices && <ProductPriceFields id={id} category={category} groups={groups} />}
       {state && !state.ok && (
         <p className="notice error" role="alert">
           {state.message}

@@ -20,6 +20,7 @@ export default async function globalSetup() {
     // Shops other than the first are made by the tests: they go with what they sell.
     await sql`delete from suppliers where shop_id <> 1`;
     await sql`delete from products where shop_id <> 1`;
+    await sql`delete from privileged_groups where shop_id <> 1`;
     await sql`delete from settings where shop_id <> 1`;
     await sql`delete from shops where id <> 1`;
     await sql`

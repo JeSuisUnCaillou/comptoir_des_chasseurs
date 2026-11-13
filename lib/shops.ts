@@ -143,6 +143,8 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
     await tx.delete(schema.stockMovements).where(of(schema.stockMovements));
     await tx.delete(schema.transactions).where(of(schema.transactions));
     await tx.delete(schema.products).where(of(schema.products));
+    // Their prices went with the merchandises.
+    await tx.delete(schema.privilegedGroups).where(of(schema.privilegedGroups));
     await tx.delete(schema.announcements).where(of(schema.announcements));
     await tx.delete(schema.settings).where(of(schema.settings));
     await tx.delete(schema.shopInvitations).where(of(schema.shopInvitations));

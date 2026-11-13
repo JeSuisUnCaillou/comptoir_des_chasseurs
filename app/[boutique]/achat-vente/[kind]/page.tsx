@@ -40,12 +40,12 @@ export default async function NouvelleEcriture({
           stock: p.stock,
           buyPrice: p.buyPrice,
           buyQty: p.buyQty,
-          citizenBuyPrice: p.citizenBuyPrice,
           sellPrice: p.sellPrice,
           sellQty: p.sellQty,
           bulkMin: p.bulkMin,
           bulkPrice: p.bulkPrice,
           bulkQty: p.bulkQty,
+          privileged: p.privileged,
         }))}
         draft={decodeDraft((await searchParams)[DRAFT_PARAM])}
       />
