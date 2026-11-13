@@ -953,6 +953,11 @@ tr.cancelled td {
   display: none;
 }
 
+/* A cancelled line can carry its entry's total, which still counts: not dimmed. */
+tr.cancelled td.cell-party:has(.entry-total) {
+  opacity: 1;
+}
+
 tr.cancelled td:last-child {
   opacity: 1;
   text-decoration: none;

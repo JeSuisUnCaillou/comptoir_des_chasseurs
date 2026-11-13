@@ -692,7 +692,8 @@ test("une écriture de plusieurs lignes montre son total sous le client, sans le
   await form.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: hide })).toContainText("17 septims au total");
 
-  // Only this member's lines: one entry, one total, under the seller's name.
+  // Only this member's lines, as a table: one entry, one total, under the seller's name.
+  await page.setViewportSize({ width: 2100, height: 900 });
   await page.getByLabel("Employé").selectOption({ label: username });
   await page.getByRole("button", { name: "Filtrer" }).click();
   await expect(page).toHaveURL(/employe=\d+/);
@@ -703,7 +704,9 @@ test("une écriture de plusieurs lignes montre son total sous le client, sans le
   const name = (await table.getByText("Ixchelor", { exact: true }).first().boundingBox())!;
   const sum = (await total.boundingBox())!;
   expect(sum.y).toBeGreaterThan(name.y + name.height - 1);
-  expect(Math.abs(sum.x - name.x)).toBeLessThan(2);
+  // In the same column (the name's cell, padding included).
+  expect(sum.x).toBeGreaterThanOrEqual(name.x);
+  expect(sum.x).toBeLessThan(name.x + name.width / 2);
 
   // A cancelled line no longer counts.
   const meatRow = table.locator("tbody tr").filter({ hasText: meat });
@@ -711,6 +714,9 @@ test("une écriture de plusieurs lignes montre son total sous le client, sans le
   await meatRow.getByRole("button", { name: /Annuler/ }).click();
   await expect(meatRow).toContainText("Annulée par");
   await expect(total).toHaveText("Total : −7 septims");
+  // The cancelled line carries it, and it still counts: not dimmed.
+  await expect(meatRow.getByTestId("total-ecriture")).toBeVisible();
+  await expect(total.locator("xpath=..")).toHaveCSS("opacity", "1");
 
   // The member's activity shows it too; as a card, at the bottom, under every line.
   await page.setViewportSize({ width: 390, height: 900 });
