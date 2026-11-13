@@ -6,7 +6,7 @@ import { ALERT, createProduct, newEmployeePage, pickProduct, uniqueName } from "
 async function setStock(name: string, stock: number) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    await sql`update products set stock = ${stock} where name = ${name}`;
+    await sql`update products set stock = ${stock} where shop_id = 1 and name = ${name}`;
   } finally {
     await sql.end();
   }

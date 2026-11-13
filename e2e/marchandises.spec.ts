@@ -73,7 +73,7 @@ test("un employé ne voit pas la gestion des marchandises", async ({ browser }) 
   await expect(employee.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
   await expect(employee.getByRole("link", { name: "Gérer les marchandises" })).toHaveCount(0);
   await employee.goto("/marchandises");
-  await expect(employee).toHaveURL(/\/$/);
+  await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 });
 
 test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }) => {

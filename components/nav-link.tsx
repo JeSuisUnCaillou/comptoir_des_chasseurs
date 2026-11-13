@@ -4,10 +4,23 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
 
-/** A menu link, marked current on its page and on the `also` pages that belong to it. */
-export function NavLink({ href, also = [], children }: { href: string; also?: string[]; children: ReactNode }) {
+/**
+ * A menu link, marked current on its page and the pages under it, and on the
+ * `also` pages that belong to it; on its page alone when `exact`.
+ */
+export function NavLink({
+  href,
+  also = [],
+  exact = false,
+  children,
+}: {
+  href: string;
+  also?: string[];
+  exact?: boolean;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
-  const active = href === "/" ? pathname === "/" : [href, ...also].some((p) => pathname.startsWith(p));
+  const active = exact ? pathname === href : [href, ...also].some((p) => pathname.startsWith(p));
   const ref = useRef<HTMLAnchorElement>(null);
   // On a phone the menu is one line that scrolls sideways: bring the current page into view.
   // Only the menu scrolls, never the page; a menu that does not scroll is left alone.

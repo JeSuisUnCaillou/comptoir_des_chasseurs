@@ -2,8 +2,9 @@
 
 import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus, Settings2 } from "lucide-react";
 import Link from "next/link";
+import { useShopPath } from "@/components/use-shop-path";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
-import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
+import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";
@@ -101,6 +102,7 @@ const CARDS_PER_PAGE = 24;
 /** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
 export function StockBoard({ items, canManage }: { items: StockItem[]; canManage: boolean }) {
   const id = useId();
+  const path = useShopPath();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"" | ProductCategory>("");
   const [page, setPage] = useState(1);
@@ -163,7 +165,7 @@ export function StockBoard({ items, canManage }: { items: StockItem[]; canManage
             <PackagePlus size={14} /> Nouvelle marchandise
           </button>
           {canManage && (
-            <Link className="btn btn-small" href="/marchandises">
+            <Link className="btn btn-small" href={path("/marchandises")}>
               <Settings2 size={14} /> Gérer les marchandises
             </Link>
           )}

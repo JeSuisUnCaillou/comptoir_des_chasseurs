@@ -5,7 +5,7 @@ import {
   createMember,
   resetPassword,
   type MemberFormState,
-} from "@/app/(comptoir)/membres/actions";
+} from "@/app/[boutique]/membres/actions";
 import { keepValues } from "@/components/keep-values";
 
 function Status({ state }: { state: MemberFormState }) {

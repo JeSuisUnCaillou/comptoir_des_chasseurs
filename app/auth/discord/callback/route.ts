@@ -6,8 +6,6 @@ import { currentAccount, startSession } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { accountByDiscordId, canSignIn, linkDiscord } from "@/lib/members";
 
-const ACCOUNT_PAGE = "/mot-de-passe";
-
 /** Where Discord sends the visitor back, with a code that says who they are. */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -17,9 +15,12 @@ export async function GET(request: NextRequest) {
   const user = code ? await discordUser(request.nextUrl.origin, code) : null;
 
   if (flow.mode === "link") {
+    // Back on the page the link started from (Mon compte), saying how it went.
+    const back = (outcome: string) =>
+      `${flow.returnPath}${flow.returnPath.includes("?") ? "&" : "?"}discord=${outcome}`;
     const account = await currentAccount();
-    if (!account || account.id !== flow.memberId) redirect(loginUrl(ACCOUNT_PAGE));
-    if (!user) redirect(`${ACCOUNT_PAGE}?discord=erreur`);
+    if (!account || account.id !== flow.memberId) redirect(loginUrl(flow.returnPath));
+    if (!user) redirect(back("erreur"));
     let outcome = "lie";
     try {
       await startSession(await linkDiscord(account.id, user));
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
       if (!(error instanceof UserError)) throw error;
       outcome = "pris";
     }
-    redirect(`${ACCOUNT_PAGE}?discord=${outcome}`);
+    redirect(back(outcome));
   }
 
   const back = (query: string) =>

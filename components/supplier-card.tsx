@@ -3,13 +3,14 @@ import Link from "next/link";
 import type { SupplierWithOffers } from "@/lib/suppliers";
 import { formatNumber, plural, septims } from "@/lib/pricing";
 
-export function SupplierCard({ supplier, editable }: { supplier: SupplierWithOffers; editable: boolean }) {
+/** A supplier's card; `editHref` is the address of its form, for a gérant. */
+export function SupplierCard({ supplier, editHref }: { supplier: SupplierWithOffers; editHref?: string }) {
   return (
     <article className="supplier-card" aria-label={supplier.name}>
       <div className="supplier-card-head">
         <div className="eyebrow">Fournisseur</div>
-        {editable && (
-          <Link className="btn btn-small btn-ghost" href={`/fournisseurs/${supplier.id}`} aria-label={`Modifier ${supplier.name}`}>
+        {editHref && (
+          <Link className="btn btn-small btn-ghost" href={editHref} aria-label={`Modifier ${supplier.name}`}>
             Modifier
           </Link>
         )}

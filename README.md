@@ -39,7 +39,6 @@ registre, les annonces, les fournisseurs et les réglages appartiennent chacun �
 une boutique (`shop_id`), et chaque page ou action ne lit et n'écrit que ceux de
 la boutique visitée (`currentShop`, `lib/shops.ts`). La migration des boutiques
 a rangé tout l'existant dans la première, « Le Comptoir Des Chasseurs »
-(`le-comptoir-des-chasseurs`), la seule que l'app montre pour l'instant
 ([#113](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues/113)).
 
 Après une modification du schéma :
@@ -56,7 +55,7 @@ commune à toutes les pull requests,
 connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
-un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
+un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, une seconde boutique, « La Taverne du Port » (`/taverne-du-port`, Aela gérante, quelques marchandises et une annonce) si elle manque, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
 
 ## Reprendre les données de l'ancienne app
 

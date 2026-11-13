@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import {
-  MIN_PASSWORD_LENGTH,
   hashPassword,
+  newPasswordError,
   normalizeUsername,
   verifyPassword,
 } from "@/lib/auth/password";
@@ -12,7 +12,7 @@ import { forgetPendingDiscord, linkPendingDiscord } from "@/lib/auth/discord";
 import { endSession, startSession } from "@/lib/auth/session";
 import { text } from "@/lib/forms";
 import { accountByUsername, canSignIn, createFirstGerant as createFirst } from "@/lib/members";
-import { currentShop } from "@/lib/shops";
+import { firstShop } from "@/lib/shops";
 
 export type AuthState = { error: string } | null;
 
@@ -44,21 +44,19 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
   const name = text(formData, "name", 60);
   const password = String(formData.get("password") ?? "");
   if (!username || !name) return { error: "Identifiant et nom sont obligatoires." };
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
-  }
-  if (password !== formData.get("confirm")) {
-    return { error: "Les deux mots de passe ne correspondent pas." };
-  }
+  const invalid = newPasswordError(password, formData.get("confirm"));
+  if (invalid) return { error: invalid };
   const passwordHash = await hashPassword(password);
 
-  const created = await createFirst((await currentShop()).id, { username, name, passwordHash });
-  if (!created) return { error: "Le comptoir a déjà un gérant. Connecte-toi." };
+  const created = await createFirst((await firstShop()).id, { username, name, passwordHash });
+  if (!created) return { error: "Le premier gérant existe déjà. Connecte-toi." };
   await startSession(created);
   redirect("/");
 }
 
-export async function logout() {
+/** Signs out, to the login page or, when the form names one, back to a page (an invitation). */
+export async function logout(formData?: FormData) {
   await endSession();
-  redirect("/connexion");
+  const back = formData?.get(RETURN_PARAM);
+  redirect(back ? safeReturnPath(back) : "/connexion");
 }

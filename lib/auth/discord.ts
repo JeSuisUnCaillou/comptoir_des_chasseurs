@@ -19,7 +19,7 @@ export type DiscordUser = { id: string; name: string };
 /** Where the flow goes back to: sign in, or link Discord to the signed-in member. */
 export type DiscordFlow =
   | { mode: "login"; returnPath: string }
-  | { mode: "link"; memberId: number };
+  | { mode: "link"; memberId: number; returnPath: string };
 
 export const CALLBACK_PATH = "/auth/discord/callback";
 
@@ -88,7 +88,7 @@ export async function finishDiscordFlow(state: string | null): Promise<DiscordFl
   jar.delete(FLOW_COOKIE);
   if (!payload || !state || payload.state !== state) return null;
   if (payload.mode === "link" && typeof payload.memberId === "number") {
-    return { mode: "link", memberId: payload.memberId };
+    return { mode: "link", memberId: payload.memberId, returnPath: safeReturnPath(payload.returnPath) };
   }
   if (payload.mode === "login") return { mode: "login", returnPath: safeReturnPath(payload.returnPath) };
   return null;

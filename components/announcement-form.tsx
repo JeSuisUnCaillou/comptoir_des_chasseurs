@@ -2,16 +2,18 @@
 
 import { Megaphone, Save } from "lucide-react";
 import { useActionState } from "react";
-import { editAnnouncement, postAnnouncement } from "@/app/(comptoir)/annonces/actions";
+import { editAnnouncement, postAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { BODY_MAX, PINS, TITLE_MAX } from "@/lib/announcement-rules";
 import type { AnnouncementPin } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
+import { useShopPath } from "@/components/use-shop-path";
 
 type Editing = { id: number; title: string; body: string; pin: AnnouncementPin };
 
 /** Pins a new parchment, or, given `announcement`, rewrites it and goes back to `back`. */
 export function AnnouncementForm({ announcement, back }: { announcement?: Editing; back?: string }) {
+  const path = useShopPath();
   const [state, action, pending] = useActionState(announcement ? editAnnouncement : postAnnouncement, null);
   const pin = announcement?.pin ?? PINS[0].value;
   return (
@@ -19,7 +21,7 @@ export function AnnouncementForm({ announcement, back }: { announcement?: Editin
       {announcement && (
         <>
           <input type="hidden" name="id" value={announcement.id} />
-          <input type="hidden" name="back" value={back ?? "/annonces"} />
+          <input type="hidden" name="back" value={back ?? path("/annonces")} />
         </>
       )}
       <div className="field">

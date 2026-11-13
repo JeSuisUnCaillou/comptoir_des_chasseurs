@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
-import { ALERT, GERANT, loginAsGerant, uniqueName } from "./helpers";
+import { ALERT, COMPTOIR, GERANT, createMember, loginAsGerant, uniqueName } from "./helpers";
 
 /** Points hidden "id" fields at another row, once the page is hydrated (React would put them back). */
 async function retarget(page: Page, inputs: Locator, id: number) {
@@ -55,7 +55,7 @@ async function createOtherShop(product: string) {
       insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, till_pending, member_id)
       values (${shop.id}, 'vente', ${item.id}, ${product}, 1, 2, ${names.counterparty}, true, ${member.id})`;
     const [line] = await sql`select id from transactions where shop_id = ${shop.id}`;
-    return { ...names, memberId: member.id, productId: item.id, supplierId: supplier.id, lineId: line.id as number };
+    return { ...names, slug, shopId: shop.id as number, memberId: member.id, productId: item.id, supplierId: supplier.id, lineId: line.id as number };
   } finally {
     await sql.end();
   }
@@ -66,7 +66,7 @@ test("le comptoir ne montre rien d'une autre boutique", async ({ page }) => {
   const other = await createOtherShop(product);
   await loginAsGerant(page);
 
-  await page.goto("/");
+  await page.goto(COMPTOIR);
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
   await expect(page.getByText(other.announcement)).toHaveCount(0);
 
@@ -119,17 +119,79 @@ test("deux boutiques peuvent avoir une marchandise du même nom", async ({ page 
   await expect(page.getByTestId(`stock-${product}`).getByTestId("stock-value")).toHaveText("2");
 });
 
-test("le gérant d'une autre boutique n'entre pas au comptoir", async ({ page }) => {
-  const other = await createOtherShop(uniqueName("Hydromel"));
+test("le gérant d'une autre boutique entre dans la sienne, pas au comptoir", async ({ page }) => {
+  const product = uniqueName("Hydromel");
+  const other = await createOtherShop(product);
   await page.goto("/connexion");
   await page.getByLabel("Identifiant").fill(other.member.toLowerCase());
   await page.getByLabel("Mot de passe").fill("mot-de-passe");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
-  await expect(page).toHaveURL(/\/connexion/);
-  await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
+  await page.getByRole("button", { name: "Se connecter" }).click();
+
+  // Their only shop opens at its own address, with its own data.
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
+  await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
+  await expect(page.getByText(other.announcement)).toBeVisible();
+  await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Inventaire" }).click();
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}/inventaire$`));
+  await expect(page.getByTestId(`stock-${product}`).getByTestId("stock-value")).toHaveText("9");
+
+  // The comptoir's pages send them back to their shop.
+  await page.goto(`${COMPTOIR}/achat-vente`);
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
   await page.goto("/achat-vente");
-  await expect(page).toHaveURL(/\/connexion/);
-  await expect(page.getByRole("heading", { name: "Achat / Vente" })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
+});
+
+test("un membre de deux boutiques choisit la sienne, et en change", async ({ page }) => {
+  const other = await createOtherShop(uniqueName("Hydromel"));
+  const username = uniqueName("Vilkas").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe");
+  const sql = db();
+  try {
+    await sql`
+      insert into shop_members (shop_id, member_id, role)
+      select ${other.shopId}, id, 'gerant' from members where username = ${username}`;
+  } finally {
+    await sql.end();
+  }
+
+  await page.goto("/connexion");
+  await page.getByLabel("Identifiant").fill(username);
+  await page.getByLabel("Mot de passe").fill("mot-de-passe");
+  await page.getByRole("button", { name: "Se connecter" }).click();
+  await expect(page.getByTestId("account-name")).toHaveText(username);
+  const shops = page.getByRole("navigation", { name: "Mes boutiques" });
+  // Each shop is a card with their role there, and the settings for a gérant only.
+  const comptoir = shops.getByRole("article", { name: "Le Comptoir Des Chasseurs" });
+  const theirs = shops.getByRole("article", { name: other.shop });
+  await expect(comptoir).toContainText("Employé");
+  await expect(comptoir).toContainText("/le-comptoir-des-chasseurs");
+  await expect(comptoir.getByRole("link", { name: /Réglages/ })).toHaveCount(0);
+  await expect(theirs).toContainText("Gérant");
+  await expect(theirs).toContainText("2 membres");
+  await expect(theirs.getByRole("link", { name: `Réglages de ${other.shop}` })).toHaveAttribute(
+    "href",
+    `/${other.slug}/reglages`,
+  );
+  await theirs.getByRole("link", { name: `Entrer dans ${other.shop}` }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
+  await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
+  // Gérant there: the Membres page is theirs.
+  await expect(page.getByRole("link", { name: "Membres" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
+  await comptoir.getByRole("link", { name: "Entrer dans Le Comptoir Des Chasseurs" }).click();
+  await expect(page).toHaveURL(new RegExp(`${COMPTOIR}$`));
+  await expect(page.getByTestId("shop-name")).toHaveText("Le Comptoir Des Chasseurs");
+  // Employé here: no Membres page.
+  await expect(page.getByRole("link", { name: "Membres" })).toHaveCount(0);
+});
+
+test("une adresse qui ne nomme aucune boutique n'existe pas", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto(`/${uniqueName("nulle-part")}/inventaire`);
+  await expect(page.getByText("This page could not be found.")).toBeVisible();
 });
 
 test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en changeant son numéro", async ({ page }) => {
@@ -140,8 +202,8 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   const sql = db();
   try {
     await sql`
-      insert into transactions (kind, label, quantity, amount, till_pending, member_id)
-      values ('vente', ${label}, 1, 4, true, (select id from members where username = ${GERANT.username}))`;
+      insert into transactions (shop_id, kind, label, quantity, amount, till_pending, member_id)
+      values (1, 'vente', ${label}, 1, 4, true, (select id from members where username = ${GERANT.username}))`;
   } finally {
     await sql.end();
   }
@@ -160,7 +222,7 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   const mine = uniqueName("Peau du comptoir");
   const sql2 = db();
   try {
-    await sql2`insert into products (name, category, unit) values (${mine}, 'peau', 'peau')`;
+    await sql2`insert into products (shop_id, name, category, unit) values (1, ${mine}, 'peau', 'peau')`;
   } finally {
     await sql2.end();
   }
@@ -180,4 +242,35 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   } finally {
     await check.end();
   }
+});
+
+test("un membre désactivé au comptoir mais actif ailleurs est renvoyé vers sa boutique", async ({ page }) => {
+  const other = await createOtherShop(uniqueName("Hydromel"));
+  const username = uniqueName("Farkas").toLowerCase();
+  await createMember(username, "mot-de-passe", "desactive");
+  const sql = db();
+  try {
+    await sql`
+      insert into shop_members (shop_id, member_id, role)
+      select ${other.shopId}, id, 'employe' from members where username = ${username}`;
+  } finally {
+    await sql.end();
+  }
+  await page.goto(`/connexion?suite=${encodeURIComponent(`${COMPTOIR}/inventaire`)}`);
+  await page.getByLabel("Identifiant").fill(username);
+  await page.getByLabel("Mot de passe").fill("mot-de-passe");
+  await page.getByRole("button", { name: "Se connecter" }).click();
+  // Deactivated at the comptoir, they land in the shop they still belong to.
+  await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
+  await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
+});
+
+test("une ancienne adresse du comptoir garde sa page et ses filtres", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  const own = new URL(page.url()).pathname.split("/").pop();
+  await page.goto(`/membres/${own}?du=2020-01-01&au=2020-01-31`);
+  await expect(page).toHaveURL(new RegExp(`${COMPTOIR}/membres/${own}\\?du=2020-01-01&au=2020-01-31$`));
+  await expect(page.getByRole("heading", { level: 1, name: "Lomone" })).toBeVisible();
 });

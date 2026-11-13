@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ALERT, createMember, loginAs, newEmployeePage, setRole, uniqueName } from "./helpers";
+import { ALERT, COMPTOIR, createMember, loginAs, newEmployeePage, setRole, uniqueName } from "./helpers";
 
 // Discord is played by e2e/fake-discord.mjs, started by playwright.config.ts.
 test.skip(!!process.env.BASE_URL, "Le faux Discord ne tourne qu'avec le serveur local.");
@@ -33,7 +33,7 @@ test("un membre lie Discord depuis Mon compte, puis entre avec Discord", async (
   const { page } = await newEmployeePage(browser, "discord-lie");
   const discord = discordAccount("Hrodulf");
 
-  await page.goto("/mot-de-passe");
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
   await page.getByRole("link", { name: "Lier mon compte Discord" }).click();
   await approveOnDiscord(page, discord);
 
@@ -44,7 +44,7 @@ test("un membre lie Discord depuis Mon compte, puis entre avec Discord", async (
   await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
 
   await logout(page);
-  await signInWithDiscord(page, discord, "/inventaire");
+  await signInWithDiscord(page, discord, `${COMPTOIR}/inventaire`);
   await expect(page).toHaveURL(/\/inventaire$/);
   await expect(page.getByRole("heading", { name: "Inventaire", exact: true })).toBeVisible();
 });
@@ -62,7 +62,7 @@ test("un compte Discord inconnu se lie en entrant une fois avec son mot de passe
   await expect(page.getByRole("link", { name: "Se connecter avec Discord" })).toBeHidden();
 
   await loginAs(page, username, "mot-de-passe");
-  await page.goto("/mot-de-passe");
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
   await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
 
   await logout(page);
@@ -80,20 +80,20 @@ test("« Ce n'est pas mon compte Discord » ne lie rien", async ({ page }) => {
   await expect(page.getByRole("status")).toBeHidden();
 
   await loginAs(page, username, "mot-de-passe");
-  await page.goto("/mot-de-passe");
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
   await expect(page.getByRole("link", { name: "Lier mon compte Discord" })).toBeVisible();
 });
 
 test("un compte Discord ne se lie qu'à un seul membre", async ({ browser }) => {
   const discord = discordAccount("Partage");
   const first = await newEmployeePage(browser, "discord-premier");
-  await first.page.goto("/mot-de-passe");
+  await first.page.goto(`${COMPTOIR}/mot-de-passe`);
   await first.page.getByRole("link", { name: "Lier mon compte Discord" }).click();
   await approveOnDiscord(first.page, discord);
   await expect(first.page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
 
   const second = await newEmployeePage(browser, "discord-second");
-  await second.page.goto("/mot-de-passe");
+  await second.page.goto(`${COMPTOIR}/mot-de-passe`);
   await second.page.getByRole("link", { name: "Lier mon compte Discord" }).click();
   await approveOnDiscord(second.page, discord);
   await expect(second.page.locator(ALERT)).toHaveText("Ce compte Discord est déjà lié à un autre membre.");
@@ -103,7 +103,7 @@ test("un compte Discord ne se lie qu'à un seul membre", async ({ browser }) => 
 test("délier Discord ferme les sessions ouvertes avec Discord", async ({ browser }) => {
   const { page, username } = await newEmployeePage(browser, "discord-delie");
   const discord = discordAccount("Delie");
-  await page.goto("/mot-de-passe");
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
   await page.getByRole("link", { name: "Lier mon compte Discord" }).click();
   await approveOnDiscord(page, discord);
   await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
@@ -126,7 +126,7 @@ test("délier Discord ferme les sessions ouvertes avec Discord", async ({ browse
 test("un membre désactivé n'entre pas avec Discord", async ({ browser }) => {
   const { page, username } = await newEmployeePage(browser, "discord-desactive");
   const discord = discordAccount("Desactive");
-  await page.goto("/mot-de-passe");
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
   await page.getByRole("link", { name: "Lier mon compte Discord" }).click();
   await approveOnDiscord(page, discord);
   await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();

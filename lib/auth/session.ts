@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { getDb, schema } from "@/lib/db";
-import type { Member, MemberRole } from "@/lib/db/schema";
+import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import { authKey } from "@/lib/auth/key";
+import { canSignIn } from "@/lib/members";
+import { shopPath } from "@/lib/paths";
 import { PATH_HEADER, loginUrl } from "@/lib/auth/return-path";
 import { currentShop } from "@/lib/shops";
 
@@ -68,10 +70,21 @@ export const currentAccount = cache(async function currentAccount(): Promise<Mem
 });
 
 /**
+ * The signed-in account, outside any shop (Mes boutiques, an invitation…).
+ * Not signed in, or deactivated everywhere (so unable to sign in again), it
+ * goes to the login page, which brings it back to `path`.
+ */
+export async function requireAccount(path: string): Promise<Member> {
+  const account = await currentAccount();
+  if (!account || !(await canSignIn(account))) redirect(loginUrl(path));
+  return account;
+}
+
+/**
  * A signed-in account inside the shop being visited: `role` is its role in
  * that shop, and `shopId` the shop every query of the page or action is about.
  */
-export type ShopMember = Member & { shopId: number };
+export type ShopMember = Member & { shopId: number; shop: Shop };
 
 /**
  * The signed-in member of the current shop, or null. The role is always read
@@ -82,26 +95,31 @@ export const currentMember = cache(async function currentMember(): Promise<ShopM
   const account = await currentAccount();
   if (!account) return null;
   const shop = await currentShop();
-  if (account.superAdmin) return { ...account, role: "gerant", shopId: shop.id };
+  if (account.superAdmin) return { ...account, role: "gerant", shopId: shop.id, shop };
   const [membership] = await getDb()
     .select({ role: schema.shopMembers.role })
     .from(schema.shopMembers)
     .where(and(eq(schema.shopMembers.shopId, shop.id), eq(schema.shopMembers.memberId, account.id)))
     .limit(1);
   if (!membership || membership.role === "desactive") return null;
-  return { ...account, role: membership.role, shopId: shop.id };
+  return { ...account, role: membership.role, shopId: shop.id, shop };
 });
 
 /**
- * Redirects away unless the member is signed in with one of the given roles.
- * A visitor who isn't signed in goes to the login page, which brings them
- * back to the page they asked for.
+ * Redirects away unless the member is signed in with one of the given roles
+ * in the shop being visited. A visitor who isn't signed in goes to the login
+ * page, which brings them back to the page they asked for; an account with no
+ * role in this shop goes to the choice of its own shops; a role that isn't
+ * enough goes back to the shop's Grand livre.
  */
 export async function requireMember(
   roles: MemberRole[] = ["gerant", "employe"],
 ): Promise<ShopMember> {
   const member = await currentMember();
-  if (!member) redirect(loginUrl((await headers()).get(PATH_HEADER)));
-  if (!roles.includes(member.role)) redirect("/");
+  if (!member) {
+    if (await currentAccount()) redirect("/");
+    redirect(loginUrl((await headers()).get(PATH_HEADER)));
+  }
+  if (!roles.includes(member.role)) redirect(shopPath(member.shop.slug));
   return member;
 }

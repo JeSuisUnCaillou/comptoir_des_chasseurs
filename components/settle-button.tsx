@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { settleTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { settleTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import type { TransactionKind } from "@/lib/db/schema";
 import { septims } from "@/lib/pricing";
 import { signedAmount } from "@/lib/transaction-kinds";
