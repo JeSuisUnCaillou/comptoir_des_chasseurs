@@ -156,8 +156,8 @@ export const products = pgTable(
     categoryId: integer("category_id")
       .notNull()
       .references(() => productCategories.id),
-    // The leather the hides turn into: the blacksmith buys it, the Inventaire
-    // counts it apart, and it is the featured product until one is chosen.
+    // The leather the hides turn into: the blacksmith buys it (shown on its
+    // featured line), and the Inventaire counts it apart.
     leather: boolean("leather").notNull().default(false),
     unit: text("unit").notNull().default("pièce"),
     stock: integer("stock").notNull().default(0),

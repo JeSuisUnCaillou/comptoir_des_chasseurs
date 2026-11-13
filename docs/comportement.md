@@ -333,8 +333,8 @@ Dans la grille :
   alchimiques. Sa catégorie des peaux le reste même renommée : ses
   marchandises se transforment en cuir par lots (champs « Peaux par lot » et
   « Cuirs obtenus », grille des peaux aux Tarifs, total « Peaux en réserve »).
-  Son Cuir, rangé dans Autres ressources, reste le cuir : produit phare par
-  défaut, rachat par le forgeron, total « Cuirs en réserve ». Ces deux
+  Son Cuir, rangé dans Autres ressources, reste le cuir : rachat par le forgeron
+  sur sa ligne de produit phare, total « Cuirs en réserve ». Ces deux
   marques ne se règlent pas dans l'app : une autre boutique n'en a pas.
 
 ## Inventaire
