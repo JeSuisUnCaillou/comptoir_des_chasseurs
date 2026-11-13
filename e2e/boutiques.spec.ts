@@ -70,7 +70,7 @@ test("le comptoir ne montre rien d'une autre boutique", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
   await expect(page.getByText(other.announcement)).toHaveCount(0);
 
-  await page.goto(`/tarifs?chasse=${encodeURIComponent(product)}`);
+  await page.goto(`/tarifs?q=${encodeURIComponent(product)}`);
   await expect(page.getByRole("heading", { name: "Tarifs", level: 1 })).toBeVisible();
   await expect(page.getByText(product)).toHaveCount(0);
 

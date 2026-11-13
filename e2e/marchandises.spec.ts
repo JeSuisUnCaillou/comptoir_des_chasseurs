@@ -37,7 +37,7 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
   await expect(page).toHaveURL(/\/marchandises$/);
 
   await page.getByRole("link", { name: "Tarifs" }).click();
-  const row = page.getByRole("region", { name: /Tarifs des peaux/ }).getByRole("row", { name: new RegExp(name) });
+  const row = page.getByRole("region", { name: "Peaux", exact: true }).getByRole("row", { name: new RegExp(name) });
   // 2 cuirs × 6 (forgeron) − 2 peaux × 2 = +8
   await expect(row).toContainText("2 peaux → 2 cuirs");
   await expect(row).toContainText("+8 septims");
