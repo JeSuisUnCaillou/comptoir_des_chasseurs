@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
@@ -118,7 +118,8 @@ export function TransactionForm({
   // A sale has no box: it keeps the choice for a switch back to the purchase.
   if (!sale && citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
 
-  // A product sold on several lines must have enough stock for all of them.
+  // A product sold on several lines is checked against its stock for all of them.
+  // Selling more than the stock is allowed: the member is warned, the stock stops at zero.
   const wanted = new Map<TransactionProduct, number>();
   if (sale) for (const e of evaluated) if (e.product) wanted.set(e.product, (wanted.get(e.product) ?? 0) + e.qty);
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
@@ -182,8 +183,17 @@ export function TransactionForm({
                   {e.product && (
                     <span className="small muted" data-testid="stock-dispo">
                       En stock :{" "}
-                      <strong className="tx-figure">
+                      <strong className={`tx-figure${short.includes(e.product) ? " stock-short" : ""}`}>
                         {e.product.stock} {plural(e.product.unit, e.product.stock)}
+                        {short.includes(e.product) && (
+                          <TriangleAlert
+                            size={14}
+                            role="img"
+                            aria-label="Stock insuffisant : la vente passera quand même, et le stock descendra à 0"
+                          >
+                            <title>Stock insuffisant : la vente passera quand même, et le stock descendra à 0</title>
+                          </TriangleAlert>
+                        )}
                       </strong>
                     </span>
                   )}
@@ -371,18 +381,12 @@ export function TransactionForm({
           </span>
         </div>
       </div>
-      {short.map((p) => (
-        <p key={p.id} className="notice error" role="alert">
-          Stock insuffisant{lines.length > 1 ? ` de ${p.name}` : ""} : il ne reste que {p.stock}{" "}
-          {plural(p.unit, p.stock)}.
-        </p>
-      ))}
       {state && (
         <p className="notice error" role="alert">
           {state.message}
         </p>
       )}
-      <button className="btn btn-primary" type="submit" disabled={pending || short.length > 0}>
+      <button className="btn btn-primary" type="submit" disabled={pending}>
         <Plus size={16} /> {submitLabel}
       </button>
     </form>

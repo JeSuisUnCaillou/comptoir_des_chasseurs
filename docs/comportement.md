@@ -106,6 +106,10 @@ page ; l'écriture enregistrée ramène au registre.
   (marchandises, quantités, client, notes, cases). Un montant calculé est
   recalculé avec le tarif de l'autre côté ; un montant tapé à la main est
   gardé.
+- **Stock insuffisant** : vendre plus que le stock (toutes les lignes d'une
+  même marchandise comptées ensemble) n'est pas bloqué. Sur la ligne, le
+  stock s'affiche en orange avec un panneau d'avertissement (« la vente
+  passera quand même, et le stock descendra à 0 »), et l'on peut confirmer.
 - **Enregistrement** : chaque marchandise devient sa propre ligne du
   registre ; toutes sont inscrites ensemble, ou aucune.
 
@@ -114,11 +118,13 @@ page ; l'écriture enregistrée ramène au registre.
 | Opération | Stock |
 | --- | --- |
 | Achat | + quantité |
-| Vente | − quantité, jamais sous zéro |
-| Annulation | revient à l'état d'avant |
+| Vente | − quantité, mais jamais sous zéro : sans assez de stock, seul ce qui reste sort |
+| Annulation | revient à l'état d'avant : remet ce qui est sorti du stock, pas la quantité vendue |
 
 Chaque mouvement de stock né d'une écriture (vente, achat ou son annulation)
-garde le numéro de sa ligne, pour le distinguer de ceux faits à la main.
+garde le numéro de sa ligne, pour le distinguer de ceux faits à la main. Une
+vente faite sans rien en stock a quand même son mouvement, de 0, dans
+l'historique du stock.
 
 ### Pas encore en caisse
 

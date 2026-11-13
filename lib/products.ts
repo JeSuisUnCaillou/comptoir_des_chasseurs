@@ -103,7 +103,9 @@ export type MoveResult = { ok: true; stock: number; id: number } | { ok: false; 
 /**
  * Adds `delta` units to a product of the shop and records the movement, tied
  * to the register line that caused it when there is one.
- * Refuses to go below zero, and a product of another shop. Runs inside the
+ * Refuses to go below zero, and a product of another shop. With `clamp`, a
+ * removal takes only what is left instead of refusing: the stock stops at zero
+ * and the movement records what really left (possibly 0). Runs inside the
  * given transaction.
  */
 export async function moveStock(
@@ -114,7 +116,17 @@ export async function moveStock(
   memberId: number,
   reason: string,
   transactionId: number | null = null,
+  { clamp = false }: { clamp?: boolean } = {},
 ): Promise<MoveResult> {
+  if (clamp && delta < 0) {
+    const [locked] = await tx
+      .select({ stock: schema.products.stock })
+      .from(schema.products)
+      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, shopId)))
+      .for("update");
+    if (!locked) return { ok: false, error: "Marchandise inconnue." };
+    delta = -Math.min(-delta, locked.stock);
+  }
   const [updated] = await tx
     .update(schema.products)
     .set({ stock: sql`${schema.products.stock} + ${delta}` })

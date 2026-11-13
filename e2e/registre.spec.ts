@@ -66,7 +66,7 @@ test("un achat puis une vente mettent à jour le stock et le registre", async ({
   await expect(rows.filter({ hasText: "Belethor" })).toHaveCount(0);
 });
 
-test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
+test("une vente peut dépasser le stock : un avertissement, et le stock s'arrête à zéro", async ({ browser }) => {
   const product = uniqueName("Peau de loup-garou");
   await createProduct(product, { stock: 2 });
   const { page } = await newEmployeePage(browser, "onmund");
@@ -75,9 +75,31 @@ test("une vente ne peut pas dépasser le stock", async ({ browser }) => {
   const form = page.getByRole("region", { name: "Inscrire une vente" });
   await pickProduct(form, product);
   await expect(form.getByTestId("stock-dispo")).toHaveText("En stock : 2 peaux");
+  const warning = form.getByTestId("stock-dispo").getByRole("img", { name: /^Stock insuffisant/ });
+  await expect(warning).toHaveCount(0);
   await form.getByLabel("Quantité").fill("5");
-  await expect(form.locator(ALERT)).toContainText("il ne reste que 2 peaux");
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeDisabled();
+  // The stock turns orange with a warning sign; nothing blocks the sale.
+  await expect(warning).toBeVisible();
+  await expect(form.getByTestId("stock-dispo").locator("strong")).toHaveCSS("color", "rgb(245, 132, 60)");
+  await expect(form.locator(ALERT)).toHaveCount(0);
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: `5 × ${product}` })).toContainText("15 septims");
+  await expect(await stockOf(page, product)).toHaveText("0");
+
+  // With nothing left, a sale still goes through and the stock stays at zero.
+  await record(page, "vente", { product, quantity: 1 });
+  await expect(await stockOf(page, product)).toHaveText("0");
+
+  // Cancelling puts back what really left the stock: 2 peaux, not 5, and nothing for the last sale.
+  await page.goto("/achat-vente");
+  const rows = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
+  page.on("dialog", (dialog) => dialog.accept());
+  for (const quantity of ["1", "5"]) {
+    const row = rows.filter({ has: page.locator("td.cell-qty", { hasText: new RegExp(`^${quantity}$`) }) });
+    await row.getByRole("button", { name: /Annuler/ }).click();
+    await expect(row).toContainText("Annulée par");
+  }
+  await expect(await stockOf(page, product)).toHaveText("2");
 });
 
 test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
@@ -645,7 +667,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(await stockOf(page, meat)).toHaveText("7");
 });
 
-test("une marchandise vendue sur deux lignes doit avoir le stock des deux", async ({ browser }) => {
+test("une marchandise vendue sur deux lignes est comparée au stock pour les deux", async ({ browser }) => {
   const product = uniqueName("Peau de sabrecat");
   await createProduct(product, { stock: 3 });
   const { page } = await newEmployeePage(browser, "mjoll");
@@ -656,11 +678,11 @@ test("une marchandise vendue sur deux lignes doit avoir le stock des deux", asyn
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(line(form, 2), product);
   await line(form, 2).getByLabel("Quantité").fill("2");
-  await expect(form.locator(ALERT)).toHaveText(`Stock insuffisant de ${product} : il ne reste que 3 peaux.`);
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeDisabled();
+  const warnings = form.getByRole("img", { name: /^Stock insuffisant/ });
+  // Both lines of the merchandise show it.
+  await expect(warnings).toHaveCount(2);
   await line(form, 2).getByLabel("Quantité").fill("1");
-  await expect(form.locator(ALERT)).toHaveCount(0);
-  await expect(form.getByRole("button", { name: "Confirmer la vente" })).toBeEnabled();
+  await expect(warnings).toHaveCount(0);
 });
 
 test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", async ({ browser }) => {
@@ -677,15 +699,15 @@ test("une vente de plusieurs marchandises s'inscrit en entier ou pas du tout", a
   await pickProduct(line(form, 2), second);
   await line(form, 2).getByLabel("Quantité").fill("4");
 
-  // Someone else sells the lynx hides meanwhile.
+  // A gérant archives the lynx hides meanwhile.
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    await sql`update products set stock = 1 where name = ${second}`;
+    await sql`update products set archived = true where name = ${second}`;
   } finally {
     await sql.end();
   }
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
-  await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Stock insuffisant pour cette vente.");
+  await expect(form.locator(ALERT)).toHaveText("Marchandise 2 : Marchandise inconnue.");
   // What was typed stays, and the first line was not written either.
   await expect(line(form, 1).getByRole("combobox", { name: "Marchandise" })).toHaveValue(first);
   await expect(await stockOf(page, first)).toHaveText("5");
