@@ -8,9 +8,10 @@ import {
   verifyPassword,
 } from "@/lib/auth/password";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
+import { forgetPendingDiscord, linkPendingDiscord } from "@/lib/auth/discord";
 import { endSession, startSession } from "@/lib/auth/session";
 import { text } from "@/lib/forms";
-import { accountByUsername, createFirstGerant as createFirst, canSignIn } from "@/lib/members";
+import { accountByUsername, canSignIn, createFirstGerant as createFirst } from "@/lib/members";
 import { firstShop } from "@/lib/shops";
 
 export type AuthState = { error: string } | null;
@@ -27,8 +28,14 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   if (!member || !valid || !(await canSignIn(member))) {
     return { error: "Identifiant ou mot de passe incorrect." };
   }
-  await startSession(member);
+  await startSession(await linkPendingDiscord(member));
   redirect(safeReturnPath(formData.get(RETURN_PARAM)));
+}
+
+/** Forgets the Discord account waiting to be linked: it wasn't theirs. */
+export async function cancelPendingDiscord() {
+  await forgetPendingDiscord();
+  redirect("/connexion");
 }
 
 /** Creates the first gérant. Only works while there is no member at all. */

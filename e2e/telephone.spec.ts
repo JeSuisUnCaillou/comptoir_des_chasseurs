@@ -367,3 +367,21 @@ test("au téléphone, les en-têtes des tarifs restent au-dessus des fiches et l
   await expect(names).toHaveText([`${tag} Aiguille`, `${tag} bois`]);
   await expectNoSideScroll(page);
 });
+
+test("au téléphone, inviter un employé et la page du lien ne débordent pas", async ({ page, browser }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await loginAsGerant(page);
+  await page.goto(`${COMPTOIR}/membres`);
+  await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+  const section = page.getByRole("region", { name: "Inviter un employé" });
+  await section.getByLabel("Nom de l'employé (facultatif)").fill(uniqueName("Ingrid-Pierre-Brisée"));
+  await section.getByRole("button", { name: "Créer un lien d'invitation" }).click();
+  const link = await section.getByLabel("Nouveau lien d'invitation").inputValue();
+  await expectNoSideScroll(page);
+
+  const visitor = await (await browser.newContext({ ...PHONE, viewport: { width: 320, height: 780 } })).newPage();
+  await visitor.goto(link);
+  await visitor.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+  await expect(visitor.getByRole("link", { name: "Entrer avec Discord" })).toBeVisible();
+  await expectNoSideScroll(visitor);
+});

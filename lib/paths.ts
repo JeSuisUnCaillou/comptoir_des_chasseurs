@@ -24,7 +24,7 @@ export const SHOP_PAGES = [
 ] as const;
 
 /** First segments that are no shop: the app's own pages, and the old addresses of the comptoir's pages. */
-export const RESERVED_SLUGS: readonly string[] = ["api", "boutiques", "connexion", "invitation", ...SHOP_PAGES];
+export const RESERVED_SLUGS: readonly string[] = ["api", "auth", "boutiques", "connexion", "invitation", ...SHOP_PAGES];
 
 /** Longest shop address, the slash aside. */
 export const MAX_SLUG_LENGTH = 40;

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
 // gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
@@ -261,6 +262,18 @@ try {
         insert into announcements (shop_id, title, body, pin, member_id)
         values (${tavern.id}, ${TAVERN.announcement.title}, ${TAVERN.announcement.body}, 'viande', ${aela})`;
       console.log("Boutique d'exemple « La Taverne du Port » créée.");
+    }
+
+    // An employé invitation link of the comptoir waiting in Membres, to try
+    // « Entrer avec Discord ». Again on each build once it has been taken.
+    const [{ invitations }] = await tx`
+      select count(*)::int as invitations from shop_invitations
+      where shop_id = 1 and role = 'employe' and used_at is null`;
+    if (invitations === 0) {
+      await tx`
+        insert into shop_invitations (token, shop_id, created_by, role)
+        values (${randomBytes(24).toString("base64url")}, 1, ${memberId}, 'employe')`;
+      console.log("Lien d'invitation d'employé ajouté.");
     }
 
     // Again on each build once both have been settled or cancelled. Mirrors recordCashLine (lib/transactions.ts).

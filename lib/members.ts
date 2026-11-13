@@ -1,5 +1,6 @@
 import "server-only";
-import { and, asc, count, eq, exists, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, exists, like, ne, or, sql } from "drizzle-orm";
+import { NO_PASSWORD } from "@/lib/auth/password";
 import type { ShopMember } from "@/lib/auth/session";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole } from "@/lib/db/schema";
@@ -20,6 +21,47 @@ export async function accountByUsername(username: string): Promise<Member | unde
     .from(schema.members)
     .where(eq(schema.members.username, username))
     .limit(1);
+  return member;
+}
+
+export async function accountByDiscordId(discordId: string): Promise<Member | undefined> {
+  const [member] = await getDb()
+    .select()
+    .from(schema.members)
+    .where(eq(schema.members.discordId, discordId))
+    .limit(1);
+  return member;
+}
+
+/**
+ * A member links their own account to a Discord account, replacing the one
+ * linked before. Returns the account as it now is, to restart its session.
+ */
+export async function linkDiscord(memberId: number, discord: { id: string; name: string }): Promise<Member> {
+  try {
+    const [member] = await getDb()
+      .update(schema.members)
+      .set({ discordId: discord.id, discordName: discord.name })
+      .where(eq(schema.members.id, memberId))
+      .returning();
+    return member;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError("Ce compte Discord est déjà lié à un autre membre.");
+    throw error;
+  }
+}
+
+/**
+ * A member unlinks Discord from their own account. Returns the account as it
+ * now is. Refused without a password: nothing would open the account any more.
+ */
+export async function unlinkDiscord(memberId: number): Promise<Member> {
+  const [member] = await getDb()
+    .update(schema.members)
+    .set({ discordId: null, discordName: null })
+    .where(and(eq(schema.members.id, memberId), ne(schema.members.passwordHash, NO_PASSWORD)))
+    .returning();
+  if (!member) throw new UserError("Choisis d'abord un mot de passe : sans lui, plus rien n'ouvrirait ton compte.");
   return member;
 }
 
@@ -59,12 +101,37 @@ export async function createFirstGerant(
   });
 }
 
-type NewAccount = { username: string; name: string; passwordHash: string };
+type NewAccount = {
+  username: string;
+  name: string;
+  // NO_PASSWORD for an account opened with Discord alone, which has no password yet.
+  passwordHash: string;
+  discordId?: string;
+  discordName?: string;
+};
+
+/**
+ * A username nobody has, made from `wanted` (a Discord username): only the
+ * characters usernames allow, then -2, -3… if it is taken.
+ */
+export async function freeUsername(tx: Tx, wanted: string) {
+  const base = wanted.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 34) || "membre";
+  const taken = new Set(
+    (
+      await tx
+        .select({ username: schema.members.username })
+        .from(schema.members)
+        .where(like(schema.members.username, `${base}%`))
+    ).map((row) => row.username),
+  );
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
 
 /** Creates an account, with no shop yet, inside `tx`. Refuses a username already taken. */
-export async function insertAccount(tx: Tx, { username, name, passwordHash }: NewAccount, role: MemberRole = "employe") {
+export async function insertAccount(tx: Tx, account: NewAccount, role: MemberRole = "employe") {
   try {
-    const [member] = await tx.insert(schema.members).values({ username, name, role, passwordHash }).returning();
+    const [member] = await tx.insert(schema.members).values({ ...account, role }).returning();
     return member;
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError("Cet identifiant est déjà pris.");
