@@ -153,6 +153,18 @@ test("les produits phares et le calculateur sont côte à côte et finissent à 
   expect(a.y + a.height).toBeCloseTo(b.y + b.height, 0);
 });
 
+test("les prix des produits phares ont les couleurs du calculateur : rachat en rouge, vente en vert", async ({ page }) => {
+  const calc = page.getByTestId("calculateur");
+  const red = await calc.getByTestId("calc-rachat").evaluate((e) => getComputedStyle(e).color);
+  const green = await calc.getByTestId("calc-vente").evaluate((e) => getComputedStyle(e).color);
+  expect(red).not.toBe(green);
+  const leather = page.getByRole("region", { name: "Cuir", exact: true });
+  const value = (label: string) => leather.locator(".stat").filter({ hasText: label }).locator(".stat-value");
+  await expect(value("Rachat").first()).toHaveCSS("color", red);
+  await expect(value("Vente")).toHaveCSS("color", green);
+  await expect(value("Rachat par le forgeron")).toHaveCSS("color", green);
+});
+
 test("le choix de la marchandise du calculateur se cherche en tapant", async ({ page }) => {
   const calc = page.getByTestId("calculateur");
   const box = calc.getByRole("combobox", { name: "Marchandise" });

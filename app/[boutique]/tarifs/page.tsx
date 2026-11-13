@@ -270,7 +270,8 @@ function tilePrice(price: number | null, qty: number) {
 /**
  * A featured product's line: its name, then its prices side by side, the
  * citizens' buyback first when it has one; for leather, what the blacksmith
- * pays for it after the sale.
+ * pays for it after the sale. What the shop pays is red, what it gets green,
+ * as in the calculator.
  */
 function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: number }) {
   const id = `phare-${product.id}`;
@@ -281,21 +282,21 @@ function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: nu
         {product.citizenBuyPrice != null && (
           <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
             <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
-            <div className="stat-value">{tilePrice(product.citizenBuyPrice, product.buyQty)}</div>
+            <div className="stat-value minus">{tilePrice(product.citizenBuyPrice, product.buyQty)}</div>
           </div>
         )}
         <div className="stat">
           <div className="stat-label">{product.citizenBuyPrice == null ? "Rachat" : "Rachat · autres vendeurs"}</div>
-          <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
+          <div className="stat-value minus">{tilePrice(product.buyPrice, product.buyQty)}</div>
         </div>
         <div className="stat">
           <div className="stat-label">Vente</div>
-          <div className="stat-value">{tilePrice(product.sellPrice, product.sellQty)}</div>
+          <div className="stat-value plus">{tilePrice(product.sellPrice, product.sellQty)}</div>
         </div>
         {product.category === "cuir" && (
           <div className="stat">
             <div className="stat-label">Rachat par le forgeron</div>
-            <div className="stat-value">{septims(blacksmith)}</div>
+            <div className="stat-value plus">{septims(blacksmith)}</div>
           </div>
         )}
       </div>
