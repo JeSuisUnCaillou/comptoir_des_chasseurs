@@ -20,6 +20,9 @@ fichier à jour dans le même commit.
 
 ## Partout
 
+- En haut du menu, le logo et « REGISTRE de Lomone » (Lomone est le
+  personnage du propriétaire dans Keizaal), sur toutes les boutiques.
+
 ### Téléphone et petites fenêtres
 
 L'app se sert aussi au téléphone, en jeu, et dans une fenêtre de n'importe
@@ -89,10 +92,12 @@ fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
   une carte par boutique du compte : son nom, son adresse, son nombre de
   membres actifs, le rôle du compte (badge Gérant ou Employé), un bouton
   « Entrer » et, pour un gérant, un lien vers ses Réglages.
-- Tout compte y **ouvre une boutique** en lui donnant un nom : il en devient
-  le gérant, et elle prend l'adresse tirée du nom (« Forge de Vendeaume » →
-  `/forge-de-vendeaume`). Un nom dont l'adresse est déjà prise, ou réservée
-  par l'app (`connexion`, `inventaire`…), est refusé.
+- Seul le super admin y **ouvre une boutique**, en lui donnant un nom : il en
+  devient le gérant, et elle prend l'adresse tirée du nom (« Forge de
+  Vendeaume » → `/forge-de-vendeaume`). Un nom dont l'adresse est déjà prise,
+  ou réservée par l'app (`connexion`, `inventaire`…), est refusé. Les autres
+  comptes voient « Pour ouvrir une nouvelle boutique, demande au super
+  admin. »
 - Le super admin y **ouvre aussi une boutique pour quelqu'un** : il reçoit un
   lien d'invitation (`/invitation/<jeton>`) à lui donner. Les liens pas
   encore utilisés restent listés sous « Invitations en attente », avec
@@ -102,6 +107,8 @@ fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
 
 - `/<slug>/reglages` : renommer la boutique, changer son adresse (le
   comptoir garde la sienne, où mènent ses anciens liens).
+  Sous les champs, le lien complet de la boutique suit l'adresse pendant
+  qu'on la tape.
 - **Supprimer** la boutique avec tout ce qu'elle contient, après avoir retapé
   son nom. Le comptoir ne se supprime pas, ni la seule boutique d'un gérant.
 - Les comptes de ses membres restent ; un compte resté sans aucune boutique
@@ -382,15 +389,14 @@ Ne comptent pas :
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un rôle dans chacune (`shop_members`).
 - Un compte sans boutique où il est actif ne peut plus se connecter.
-- Tout compte peut ouvrir sa propre boutique, dont il est le gérant ; le
-  super admin peut en ouvrir une pour quelqu'un d'autre, par un lien
-  d'invitation (voir [Mes boutiques](#mes-boutiques)).
+- Seul le super admin ouvre une boutique : pour lui, ou pour quelqu'un
+  d'autre par un lien d'invitation (voir [Mes boutiques](#mes-boutiques)).
 
 ### Qui peut quoi
 
 | Rôle | Peut |
 | --- | --- |
-| **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
+| **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
 | **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
 | **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 

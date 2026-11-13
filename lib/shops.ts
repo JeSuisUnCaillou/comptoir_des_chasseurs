@@ -132,7 +132,7 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
   if (typedName !== shop.name) throw new UserError("Écris exactement le nom de la boutique pour confirmer.");
   const others = (await accountShops(gerant)).filter(({ id }) => id !== shop.id);
   if (others.length === 0) {
-    throw new UserError("C'est ta seule boutique : ouvre-en une autre avant de supprimer celle-ci.");
+    throw new UserError("C'est ta seule boutique : sans elle, tu ne pourrais plus te connecter.");
   }
   await getDb().transaction(async (tx) => {
     const of = <T extends { shopId: AnyColumn }>(table: T) => eq(table.shopId, shop.id);

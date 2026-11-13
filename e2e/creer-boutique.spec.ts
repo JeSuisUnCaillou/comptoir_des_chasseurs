@@ -26,11 +26,9 @@ async function invite(page: Page, shop: string) {
   return link.inputValue();
 }
 
-test("un employé ouvre sa propre boutique, dont il est le gérant", async ({ browser }) => {
-  const { page } = await newEmployeePage(browser, "ysolda");
-  const shop = uniqueName("Échoppe d'Ysolda");
-  await expect(page.getByRole("link", { name: "Membres" })).toHaveCount(0);
-
+test("le super admin ouvre une boutique, dont il est le gérant", async ({ page }) => {
+  const shop = uniqueName("Échoppe de Lomone");
+  await loginAsGerant(page);
   await page.getByRole("link", { name: "Changer de boutique" }).click();
   const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
   await section.getByLabel("Nom de la boutique").fill(shop);
@@ -43,18 +41,24 @@ test("un employé ouvre sa propre boutique, dont il est le gérant", async ({ br
   await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Inventaire" }).click();
   await expect(page.getByText("Aucune marchandise ne correspond.")).toBeVisible();
 
-  // Both shops are now theirs to choose from, with their role in each.
-  await page.goto("/");
+  await page.goto("/boutiques");
+  await expect(page.getByRole("navigation", { name: "Mes boutiques" }).getByRole("article", { name: shop })).toContainText(
+    "Gérant",
+  );
+});
+
+test("un employé n'ouvre pas de boutique : il le demande au super admin", async ({ browser }) => {
+  const { page } = await newEmployeePage(browser, "ysolda");
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
   await expect(page).toHaveURL(/\/boutiques$/);
-  const shops = page.getByRole("navigation", { name: "Mes boutiques" });
-  await expect(shops.getByRole("article", { name: "Le Comptoir Des Chasseurs" })).toContainText("Employé");
-  await expect(shops.getByRole("article", { name: shop })).toContainText("Gérant");
-  // Only the super admin invites someone else.
+  await expect(page.getByRole("navigation", { name: "Mes boutiques" }).getByRole("article")).toHaveCount(1);
+  await expect(page.getByText("Pour ouvrir une nouvelle boutique, demande au super admin.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ouvrir une boutique", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Ouvrir une boutique pour quelqu'un" })).toHaveCount(0);
 });
 
-test("une boutique ne prend pas une adresse déjà prise ou réservée", async ({ browser }) => {
-  const { page } = await newEmployeePage(browser, "brenuin");
+test("une boutique ne prend pas une adresse déjà prise ou réservée", async ({ page }) => {
+  await loginAsGerant(page);
   await page.goto("/boutiques");
   const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
   const name = section.getByLabel("Nom de la boutique");
@@ -158,14 +162,20 @@ test("un lien d'invitation inconnu n'ouvre rien", async ({ page }) => {
   await expect(page.getByLabel("Identifiant")).toHaveCount(0);
 });
 
-/** An employee of the comptoir who opened a shop of their own, on its Grand livre. */
+/** An employee of the comptoir who is also the gérant of a shop of their own, on its Grand livre. */
 async function ownShop(browser: Browser, prefix: string) {
   const { page, username } = await newEmployeePage(browser, prefix);
   const shop = uniqueName(`Boutique de ${prefix}`);
-  await page.goto("/boutiques");
-  const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
-  await section.getByLabel("Nom de la boutique").fill(shop);
-  await section.getByRole("button", { name: "Ouvrir la boutique" }).click();
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      with shop as (insert into shops (name, slug) values (${shop}, ${slugOf(shop)}) returning id)
+      insert into shop_members (shop_id, member_id, role)
+      select shop.id, members.id, 'gerant' from shop, members where members.username = ${username}`;
+  } finally {
+    await sql.end();
+  }
+  await page.goto(`/${slugOf(shop)}`);
   await expect(page.getByTestId("shop-name")).toHaveText(shop);
   return { page, username, shop, slug: slugOf(shop) };
 }
@@ -174,7 +184,16 @@ test("un gérant renomme sa boutique et change son adresse", async ({ browser })
   const { page, slug } = await ownShop(browser, "idgrod");
   const renamed = uniqueName("Maison des Chants");
   await page.getByRole("link", { name: "Réglages" }).click();
+  // The brand names the app, not a shop.
+  await expect(page.getByText("de Lomone", { exact: true })).toBeVisible();
+  // The shop's link follows the address as it is typed.
+  const link = page.getByTestId("shop-link");
+  await expect(link).toHaveText(new RegExp(`^http://localhost:\\d+/${slug}$`));
   await page.getByLabel("Nom de la boutique").fill(renamed);
+  await page.getByLabel("Adresse").fill(renamed);
+  await expect(link).toHaveText(new RegExp(`/${slugOf(renamed)}$`));
+  await page.getByLabel("Adresse").fill("✦");
+  await expect(page.getByText("l'adresse doit contenir au moins une lettre ou un chiffre.")).toBeVisible();
   await page.getByLabel("Adresse").fill(renamed);
   await page.getByRole("button", { name: "Enregistrer la boutique" }).click();
 
@@ -262,7 +281,7 @@ test("un gérant ne supprime pas sa seule boutique", async ({ browser }) => {
   await danger.getByLabel(`Pour confirmer, écris « ${shop} »`).fill(shop);
   await danger.getByRole("button", { name: "Supprimer la boutique" }).click();
   await expect(danger.locator(ALERT)).toHaveText(
-    "C'est ta seule boutique : ouvre-en une autre avant de supprimer celle-ci.",
+    "C'est ta seule boutique : sans elle, tu ne pourrais plus te connecter.",
   );
   await page.reload();
   await expect(page.getByTestId("shop-name")).toHaveText(shop);

@@ -1682,6 +1682,11 @@ tr.fresh td {
   background: var(--gold-strong);
 }
 
+.shop-link-preview {
+  margin: 0 0 14px;
+  overflow-wrap: anywhere;
+}
+
 .invitation-list {
   list-style: none;
   margin: 0;

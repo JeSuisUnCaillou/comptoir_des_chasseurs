@@ -16,8 +16,8 @@ const ROLE_LABELS = { gerant: "Gérant", employe: "Employé", desactive: "Désac
 
 /**
  * /boutiques: the shops the signed-in account may enter, as cards with its
- * role in each; opening a shop of its own and, for the super admin, inviting
- * someone to run a new one, with the links not used yet.
+ * role in each; for the super admin, opening a shop and inviting someone to
+ * run a new one, with the links not used yet.
  */
 export default async function Boutiques() {
   const account = await requireAccount("/boutiques");
@@ -31,7 +31,7 @@ export default async function Boutiques() {
           <BrandMark />
           <span>
             <div className="brand-name">REGISTRE</div>
-            <div className="brand-sub">des marchands · Keizaal</div>
+            <div className="brand-sub">de Lomone</div>
           </span>
         </div>
         <div className="hub-account">
@@ -51,7 +51,7 @@ export default async function Boutiques() {
           <div className="eyebrow">✦ Registre des marchands ✦</div>
           <h1>Mes boutiques</h1>
           <p className="muted">
-            {shops.length > 0 ? "Choisis la boutique où entrer, ou ouvres-en une nouvelle." : "Tu n'as encore aucune boutique : ouvres-en une."}
+            Choisis la boutique où entrer.
           </p>
         </div>
 
@@ -95,17 +95,16 @@ export default async function Boutiques() {
           </nav>
         )}
 
-        <div className="cols">
-          <section className="panel" aria-labelledby="open-shop">
-            <div className="eyebrow">Nouvelle boutique</div>
-            <h2 id="open-shop">Ouvrir une boutique</h2>
-            <p className="small muted">
-              Tu en seras le gérant, et tu pourras y créer les comptes de tes employés. Son adresse vient de son nom.
-            </p>
-            <OpenShopForm />
-          </section>
-
-          {account.superAdmin && (
+        {account.superAdmin ? (
+          <div className="cols">
+            <section className="panel" aria-labelledby="open-shop">
+              <div className="eyebrow">Super admin</div>
+              <h2 id="open-shop">Ouvrir une boutique</h2>
+              <p className="small muted">
+                Tu en seras le gérant, et tu pourras y créer les comptes de ses employés. Son adresse vient de son nom.
+              </p>
+              <OpenShopForm />
+            </section>
             <section className="panel" aria-labelledby="invite-gerant">
               <div className="eyebrow">Super admin</div>
               <h2 id="invite-gerant">Ouvrir une boutique pour quelqu&apos;un</h2>
@@ -115,8 +114,10 @@ export default async function Boutiques() {
               </p>
               <InviteGerantForm />
             </section>
-          )}
-        </div>
+          </div>
+        ) : (
+          <p className="small muted">Pour ouvrir une nouvelle boutique, demande au super admin.</p>
+        )}
 
         {invitations.length > 0 && (
           <section className="panel" aria-labelledby="pending-invitations" style={{ marginTop: 22 }}>

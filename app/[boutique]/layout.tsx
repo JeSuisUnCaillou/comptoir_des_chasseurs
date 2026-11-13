@@ -35,7 +35,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           <BrandMark />
           <span>
             <div className="brand-name">REGISTRE</div>
-            <div className="brand-sub">des marchands · Keizaal</div>
+            <div className="brand-sub">de Lomone</div>
           </span>
         </Link>
         <div className="eyebrow nav-title">✦ Le registre ✦</div>
