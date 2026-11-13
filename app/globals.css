@@ -2276,6 +2276,21 @@ tr.fresh td {
   gap: 10px;
 }
 
+/* The handle on the left; the name, its count and its messages in one column beside it. */
+.category-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+}
+
+.category-row > .drag-handle {
+  align-self: center;
+}
+
+.category-row > :not(.drag-handle) {
+  grid-column: 2;
+}
+
 .category-row p {
   margin: 4px 0 0;
 }
@@ -2291,10 +2306,6 @@ tr.fresh td {
   white-space: nowrap;
 }
 
-.category-list li.dragging {
-  background: var(--panel-2);
-  outline: 1px solid var(--border-gold);
-}
 /* Tarifs: the featured products, one line each, their prices side by side. */
 .featured-rows {
   display: grid;
@@ -2385,6 +2396,7 @@ tr.fresh td {
   color: var(--muted);
 }
 
+.category-list li.dragging,
 .featured-list li.dragging {
   background: var(--panel-2);
   outline: 1px solid var(--border-gold);

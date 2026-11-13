@@ -87,6 +87,10 @@ test("le comptoir garde ses catégories, et les peaux leur transformation en cui
   }
   await expect(row(page, "Peaux")).toContainText("se transforment en cuir par lots");
   await expect(row(page, "Autres ressources")).not.toContainText("cuir par lots");
+  // The count lines up with the name, not with the handle.
+  const name = (await row(page, "Peaux").getByRole("textbox").boundingBox())!;
+  const count = (await row(page, "Peaux").getByText(/marchandises?/).boundingBox())!;
+  expect(Math.abs(count.x - name.x)).toBeLessThan(1);
   await page.goto("/inventaire");
   await expect(page.getByTestId("total-peaux")).toBeVisible();
   await expect(page.getByTestId("total-cuirs")).toBeVisible();
