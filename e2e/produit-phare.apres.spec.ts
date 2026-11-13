@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { loginAsGerant } from "./helpers";
+import postgres from "postgres";
+import { createProduct, loginAsGerant, uniqueName } from "./helpers";
+
+// Both tests change the same setting: one after the other.
+test.describe.configure({ mode: "serial" });
 
 /** Picks the featured product in Gérer les tarifs and saves it. */
 async function feature(page: Page, name: string) {
@@ -41,4 +45,27 @@ test("un gérant choisit le produit phare mis en avant en haut des Tarifs", asyn
   await expect(leather).toContainText("Rachat par le forgeron");
   await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toBeVisible();
   await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row").filter({ has: page.getByText("Cuir", { exact: true }) })).toHaveCount(0);
+});
+
+test("un produit phare archivé laisse la place au cuir", async ({ page }) => {
+  const name = uniqueName("Défense de mammouth");
+  await createProduct(name, { category: "ressource", unit: "pièce" });
+  await loginAsGerant(page);
+  try {
+    await feature(page, name);
+    await page.goto("/tarifs");
+    await expect(page.getByRole("region", { name, exact: true })).toContainText("Produit phare");
+
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+    try {
+      await sql`update products set archived = true where name = ${name}`;
+    } finally {
+      await sql.end();
+    }
+    await page.goto("/tarifs");
+    await expect(page.getByRole("region", { name: "Cuir", exact: true })).toContainText("Rachat par le forgeron");
+    await expect(page.getByTestId("calculateur").getByRole("combobox", { name: "Marchandise" })).toHaveValue("Cuir");
+  } finally {
+    await feature(page, "Cuir");
+  }
 });

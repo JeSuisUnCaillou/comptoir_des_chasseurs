@@ -102,8 +102,9 @@ Comment les tests sont écrits :
 - On attend sur des assertions (`await expect(...)`), jamais sur
   `waitForTimeout`.
 - Un test qui change un réglage de toute la boutique (le produit phare…)
-  va dans un `*.apres.spec.ts` : il tourne après tous les autres, et remet
-  le réglage comme il l'a trouvé.
+  va dans un `*.apres.spec.ts` : il tourne après tous les autres, en série
+  (`test.describe.configure({ mode: "serial" })`), et remet le réglage comme
+  il l'a trouvé.
 
 Vérifier les types ne suffit jamais : un changement n'est fini que quand il a
 été vu marcher dans l'app, par la suite ou un test piloté de la même façon.

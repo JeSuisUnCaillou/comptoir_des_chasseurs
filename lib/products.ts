@@ -17,13 +17,25 @@ export async function activeProducts(shopId: number) {
     .orderBy(byName(schema.products.name), asc(schema.products.id));
 }
 
-export async function blacksmithLeatherPrice(shopId: number) {
+/** A shop setting's value, undefined while it was never saved. */
+async function readSetting(shopId: number, key: string) {
   const [row] = await getDb()
     .select()
     .from(schema.settings)
-    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, BLACKSMITH_LEATHER_PRICE)))
+    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, key)))
     .limit(1);
-  return row?.value ?? 6;
+  return row?.value;
+}
+
+async function writeSetting(shopId: number, key: string, value: number) {
+  await getDb()
+    .insert(schema.settings)
+    .values({ shopId, key, value })
+    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+}
+
+export async function blacksmithLeatherPrice(shopId: number) {
+  return (await readSetting(shopId, BLACKSMITH_LEATHER_PRICE)) ?? 6;
 }
 
 /** Settings key of the price the blacksmith pays for a leather. */
@@ -37,18 +49,13 @@ export const FEATURED_PRODUCT = "produit_phare";
  * one a gérant chose, or else the leather, as before the choice existed.
  */
 export async function featuredProduct<P extends { id: number; category: ProductCategory }>(shopId: number, active: P[]) {
-  const [row] = await getDb()
-    .select()
-    .from(schema.settings)
-    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, FEATURED_PRODUCT)))
-    .limit(1);
-  return active.find((p) => p.id === row?.value) ?? active.find((p) => p.category === "cuir");
+  const id = await readSetting(shopId, FEATURED_PRODUCT);
+  return active.find((p) => p.id === id) ?? active.find((p) => p.category === "cuir");
 }
 
 /** Puts one of the shop's active products forward on the Tarifs page. */
 export async function setFeaturedProduct(shopId: number, productId: number) {
-  const db = getDb();
-  const [product] = await db
+  const [product] = await getDb()
     .select({ id: schema.products.id })
     .from(schema.products)
     .where(
@@ -60,10 +67,7 @@ export async function setFeaturedProduct(shopId: number, productId: number) {
     )
     .limit(1);
   if (!product) throw new UserError("Marchandise inconnue.");
-  await db
-    .insert(schema.settings)
-    .values({ shopId, key: FEATURED_PRODUCT, value: productId })
-    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value: productId } });
+  await writeSetting(shopId, FEATURED_PRODUCT, productId);
 }
 
 export type MovementFilter = {
@@ -263,10 +267,7 @@ export async function saveProduct(shopId: number, id: number | null, values: Pro
 }
 
 export async function setBlacksmithLeatherPrice(shopId: number, value: number) {
-  await getDb()
-    .insert(schema.settings)
-    .values({ shopId, key: BLACKSMITH_LEATHER_PRICE, value })
-    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
+  await writeSetting(shopId, BLACKSMITH_LEATHER_PRICE, value);
 }
 
 /** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name. */
