@@ -28,7 +28,7 @@ async function record(
   await form.getByLabel("Quantité").fill(String(quantity));
   // The tariff fills the amount on its own.
   await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
-  if (counterparty) await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill(counterparty);
+  if (counterparty) await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   const status = page.getByRole("status").filter({ hasText: `${quantity} × ${product}` });
@@ -618,7 +618,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   const hide = uniqueName("Peau de chèvre");
   const meat = uniqueName("Viande de chèvre");
   await createProduct(hide, { sellPrice: 3, stock: 10 });
-  await createProduct(meat, { sellPrice: 5, stock: 10, category: "viande", unit: "pièce" });
+  await createProduct(meat, { sellPrice: 5, stock: 10, category: "Viandes et venaison", unit: "pièce" });
   const { page } = await newEmployeePage(browser, "ysolda");
   await page.goto("/achat-vente/vente");
   const form = page.getByRole("region", { name: "Inscrire une vente" });
@@ -627,7 +627,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   // The total sits beside "Ajouter une marchandise", above the client's name.
   const add = (await form.getByRole("button", { name: "Ajouter une marchandise" }).boundingBox())!;
   const sum = (await total.boundingBox())!;
-  const client = (await form.getByLabel("Nom du client / vendeur RP (facultatif)").boundingBox())!;
+  const client = (await form.getByLabel("Nom RP du client / vendeur (facultatif)").boundingBox())!;
   expect(Math.abs(sum.y + sum.height / 2 - (add.y + add.height / 2))).toBeLessThan(4);
   expect(sum.x).toBeGreaterThan(add.x + add.width);
   // Right-aligned, on the right edge of the fields.
@@ -655,7 +655,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(line(form, 3)).toHaveCount(0);
   await expect(total).toHaveText("Total de la vente : 21 septims");
 
-  await form.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Ysolda");
+  await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Ysolda");
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: hide })).toHaveText(
     `Vente inscrite : 2 × ${hide}, 3 × ${meat}, 21 septims au total.`,
@@ -751,7 +751,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await pickProduct(line(purchase, 2), "Autre article (hors stock)…");
   await line(purchase, 2).getByLabel("Nom de l'article").fill("Corne");
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
-  await purchase.getByLabel("Nom du client / vendeur RP (facultatif)").fill("Brenuin");
+  await purchase.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
   await purchase.getByLabel("Pas encore sorti de la caisse").check();
   await toSale.click();
@@ -768,7 +768,7 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await expect(line(sale, 2).getByLabel("Nom de l'article")).toHaveValue("Corne");
   await expect(line(sale, 2).getByLabel("Montant (septims)")).toHaveValue("5");
   await expect(sale.getByTestId("total")).toHaveText("Total de la vente : 17 septims");
-  await expect(sale.getByLabel("Nom du client / vendeur RP (facultatif)")).toHaveValue("Brenuin");
+  await expect(sale.getByLabel("Nom RP du client / vendeur (facultatif)")).toHaveValue("Brenuin");
   await expect(sale.getByLabel("Notes (facultatif)")).toHaveValue("Il a hésité");
   await expect(sale.getByLabel("Pas encore mis en caisse")).toBeChecked();
 
@@ -806,7 +806,7 @@ test("le nom du client ou du vendeur propose les contacts, et garde un nom incon
     await sql.end();
   }
   const { page } = await newEmployeePage(browser, "contacts-ventes");
-  const name = "Nom du client / vendeur RP (facultatif)";
+  const name = "Nom RP du client / vendeur (facultatif)";
 
   // A sale: the customer is under Clients; a click puts his name in the field.
   await page.goto("/achat-vente/vente");

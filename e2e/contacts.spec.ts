@@ -27,7 +27,7 @@ test("le gérant crée un contact, lui donne des marchandises, le modifie puis l
   // Sorted by name: the gigot comes before the peau.
   const meat = uniqueName("Gigot");
   await createProduct(hide);
-  await createProduct(meat, { unit: "pièce", category: "viande" });
+  await createProduct(meat, { unit: "pièce", category: "Viandes et venaison" });
   await loginAsGerant(page);
 
   await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Contacts" }).click();
@@ -104,7 +104,7 @@ test("la recherche trouve un contact par son nom, son lieu ou ce qu'il vend", as
   const name = uniqueName("Swennec");
   const place = uniqueName("Pierre de Shor");
   const product = uniqueName("Cuir");
-  await createProduct(product, { unit: "cuir", category: "cuir" });
+  await createProduct(product, { unit: "cuir", category: "Autres ressources", leather: true });
   await createSuppliers([name], place);
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
@@ -165,7 +165,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   const name = uniqueName("Roy");
   const claw = uniqueName("Griffe de troll");
   const hide = uniqueName("Peau de horker");
-  await createProduct(claw, { unit: "pièce", category: "viande" });
+  await createProduct(claw, { unit: "pièce", category: "Viandes et venaison" });
   await createProduct(hide);
   await createSuppliers([name], "Vendeaume");
   await loginAsGerant(page);
@@ -185,6 +185,8 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await page.getByRole("link", { name: "← Contacts" }).click();
   await search(page, name);
   await expect(contact.getByText("Client", { exact: true })).toBeVisible();
+  // A customer's card is blue, a supplier's gold.
+  await expect(contact.getByText("Client", { exact: true })).toHaveCSS("color", "rgb(156, 192, 227)");
   await expect(contact.getByRole("list", { name: "Il nous achète" }).getByRole("listitem")).toHaveText([
     new RegExp(`${claw}1 septimpour 1 pièce`),
   ]);
@@ -213,4 +215,5 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await page.getByRole("link", { name: "← Contacts" }).click();
   await search(page, name);
   await expect(contact.getByText("Fournisseur", { exact: true })).toBeVisible();
+  await expect(contact.getByText("Fournisseur", { exact: true })).toHaveCSS("color", "rgb(207, 174, 110)");
 });

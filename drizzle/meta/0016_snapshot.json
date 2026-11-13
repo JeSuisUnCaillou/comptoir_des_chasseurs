@@ -1,5 +1,5 @@
 {
-  "id": "af9112a4-884b-4434-93d9-ca2bf2165727",
+  "id": "2ff01126-03b7-43ea-b6dd-92ba24a2f73a",
   "prevId": "77a29c7e-652a-4766-a84a-1383df1343d2",
   "version": "7",
   "dialect": "postgresql",
@@ -374,6 +374,87 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.product_categories": {
+      "name": "product_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hides": {
+          "name": "hides",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "product_categories_shop_name_idx": {
+          "name": "product_categories_shop_name_idx",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "product_categories_shop_id_shops_id_fk": {
+          "name": "product_categories_shop_id_shops_id_fk",
+          "tableFrom": "product_categories",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.products": {
       "name": "products",
       "schema": "",
@@ -401,7 +482,21 @@
           "type": "product_category",
           "typeSchema": "public",
           "primaryKey": false,
+          "notNull": true,
+          "default": "'autre'"
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "integer",
+          "primaryKey": false,
           "notNull": true
+        },
+        "leather": {
+          "name": "leather",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "unit": {
           "name": "unit",
@@ -531,6 +626,19 @@
           "tableTo": "shops",
           "columnsFrom": [
             "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "products_category_id_product_categories_id_fk": {
+          "name": "products_category_id_product_categories_id_fk",
+          "tableFrom": "products",
+          "tableTo": "product_categories",
+          "columnsFrom": [
+            "category_id"
           ],
           "columnsTo": [
             "id"
@@ -1033,14 +1141,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 1
-        },
-        "side": {
-          "name": "side",
-          "type": "offer_side",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'sells'"
         }
       },
       "indexes": {
@@ -1399,14 +1499,6 @@
         "gerant",
         "employe",
         "desactive"
-      ]
-    },
-    "public.offer_side": {
-      "name": "offer_side",
-      "schema": "public",
-      "values": [
-        "sells",
-        "buys"
       ]
     },
     "public.product_category": {

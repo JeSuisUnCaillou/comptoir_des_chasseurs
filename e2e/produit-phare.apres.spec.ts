@@ -122,7 +122,7 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
 
 test("un produit phare archivé quitte le haut des Tarifs", async ({ page }) => {
   const name = uniqueName("Défense de mammouth");
-  await createProduct(name, { category: "ressource", unit: "pièce" });
+  await createProduct(name, { category: "Autres ressources", unit: "pièce" });
   await loginAsGerant(page);
   try {
     await add(page, name);

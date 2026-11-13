@@ -117,8 +117,15 @@
     {
       "idx": 16,
       "version": "7",
-      "when": 1794596066244,
-      "tag": "0016_contacts-clients",
+      "when": 1794595900740,
+      "tag": "0016_categories-par-boutique",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794598719467,
+      "tag": "0017_contacts-clients",
       "breakpoints": true
     }
   ]

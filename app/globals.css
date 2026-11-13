@@ -1474,6 +1474,31 @@ tr.fresh td {
   padding: 20px;
 }
 
+/* Suppliers keep the gold of the app; customers are blue; both get a blue edge on gold. */
+.supplier-card-contact {
+  border-color: var(--border);
+}
+
+.supplier-card-client {
+  background: rgb(31 46 60 / 0.55);
+  border-color: rgb(156 192 227 / 0.45);
+}
+
+.supplier-card-client .eyebrow,
+.supplier-card-client .supplier-place svg,
+.supplier-offers-title.supplier-offers-buys,
+.supplier-offers.supplier-offers-buys .supplier-price strong {
+  color: var(--blue);
+}
+
+.supplier-card-client .supplier-place {
+  border-bottom-color: rgb(156 192 227 / 0.35);
+}
+
+.supplier-card-les-deux {
+  border-left: 4px solid var(--blue);
+}
+
 .supplier-card-head {
   display: flex;
   justify-content: space-between;
@@ -2241,6 +2266,30 @@ tr.fresh td {
   margin-left: 4px;
 }
 
+/* The shop's categories on Gérer les marchandises: one row each, the name taking the room left by the buttons. */
+.category-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.category-row p {
+  margin: 4px 0 0;
+}
+
+.category-row .inline-form input,
+.category-add input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.category-row .btn,
+.category-add .btn {
+  white-space: nowrap;
+}
 /* Tarifs: the featured products, one line each, their prices side by side. */
 .featured-rows {
   display: grid;

@@ -15,7 +15,7 @@ test("un gérant crée puis modifie une marchandise, visible dans les tarifs", a
 
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Catégorie").selectOption("Peaux");
   await form.getByLabel("Unité (au singulier)").fill("peau");
   await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("3");
   await form.getByRole("spinbutton", { name: "Prix en septims" }).nth(1).fill("5");
@@ -57,7 +57,7 @@ test("une saisie refusée garde ce qui a été tapé", async ({ page }) => {
   await page.goto("/marchandises");
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill("Peau à moitié remplie");
-  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Catégorie").selectOption("Peaux");
   await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("4");
   await form.getByLabel("Peaux par lot").fill("2");
   await form.getByRole("button", { name: "Ajouter la marchandise" }).click();
@@ -86,6 +86,7 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
     "Produits phares",
     "Clients privilégiés",
     "Rachat du cuir par le forgeron",
+    "Catégories",
     "Toutes les marchandises",
   ]);
   // The catalogue panel keeps the usual gap below the two panels above it.
@@ -97,7 +98,7 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
 
 test("une marchandise archivée quitte les tarifs et les ventes, puis y revient", async ({ page }) => {
   const name = uniqueName("Bois de cerf");
-  await createProduct(name, { category: "ressource", unit: "bois", buyPrice: 2, sellPrice: 4 });
+  await createProduct(name, { category: "Autres ressources", unit: "bois", buyPrice: 2, sellPrice: 4 });
   await loginAsGerant(page);
 
   const search = async () => {

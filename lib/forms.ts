@@ -1,6 +1,6 @@
 /** Reading the fields of a submitted form, the same way in every Server Action. */
 
-import { memberRole, productCategory, type MemberRole, type ProductCategory } from "@/lib/db/schema";
+import { memberRole, type MemberRole } from "@/lib/db/schema";
 
 /** A text field, trimmed and cut to `max` characters; "" when missing. */
 export function text(formData: FormData, key: string, max: number) {
@@ -43,14 +43,14 @@ export function readRole(formData: FormData): MemberRole | null {
  */
 export function readProductIdentity(formData: FormData) {
   const name = text(formData, "name", 100);
-  const category = String(formData.get("category")) as ProductCategory;
+  const categoryId = optionalId(formData, "categoryId");
   const unit = text(formData, "unit", 30) || "pièce";
   const error = !name
     ? "Le nom est obligatoire."
-    : !productCategory.enumValues.includes(category)
-      ? "Catégorie inconnue."
+    : categoryId == null || Number.isNaN(categoryId)
+      ? "Choisis une catégorie."
       : undefined;
-  return { name, category, unit, error };
+  return { name, categoryId: categoryId ?? 0, unit, error };
 }
 
 /** A quantity a price is given for: 1 when left empty. */
@@ -61,10 +61,10 @@ function perQty(formData: FormData, key: string) {
 
 /**
  * Reads a merchandise's prices from a form, the same way for every form that
- * sets them. The leather batch only counts for hides. `error` says what is
- * wrong, if anything.
+ * sets them. The leather batch only counts for hides, which the service
+ * checks against the category. `error` says what is wrong, if anything.
  */
-export function readProductPrices(formData: FormData, category: ProductCategory) {
+export function readProductPrices(formData: FormData) {
   const prices = {
     buyPrice: optionalInt(formData, "buyPrice"),
     buyQty: perQty(formData, "buyQty"),
@@ -73,8 +73,8 @@ export function readProductPrices(formData: FormData, category: ProductCategory)
     bulkMin: optionalInt(formData, "bulkMin"),
     bulkPrice: optionalInt(formData, "bulkPrice"),
     bulkQty: perQty(formData, "bulkQty"),
-    hidesPerBatch: category === "peau" ? optionalInt(formData, "hidesPerBatch") : null,
-    leatherPerBatch: category === "peau" ? optionalInt(formData, "leatherPerBatch") : null,
+    hidesPerBatch: optionalInt(formData, "hidesPerBatch"),
+    leatherPerBatch: optionalInt(formData, "leatherPerBatch"),
   };
   // One field per privileged group, named after the group's id: empty, the group gets the usual price.
   const privileged = [...formData.keys()]

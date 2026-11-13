@@ -100,7 +100,8 @@ export async function createProduct(
     sellPrice = 3,
     stock = 0,
     unit = "peau",
-    category = "peau",
+    category = "Peaux",
+    leather = false,
     buyQty = 1,
     bulkMin = null,
     bulkPrice = null,
@@ -110,7 +111,10 @@ export async function createProduct(
     sellPrice?: number | null;
     stock?: number;
     unit?: string;
-    category?: "peau" | "cuir" | "viande" | "ressource" | "autre";
+    /** One of the comptoir's categories (migration 0016), by name. */
+    category?: "Peaux" | "Viandes et venaison" | "Autres ressources" | "Composants alchimiques";
+    /** The leather: the blacksmith buys it, the Inventaire counts it apart. */
+    leather?: boolean;
     /** The buy price is for this many units. */
     buyQty?: number;
     /** Wholesale: from bulkMin units, sold at bulkPrice each. */
@@ -121,8 +125,9 @@ export async function createProduct(
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into products (shop_id, name, category, unit, stock, buy_price, sell_price, buy_qty, bulk_min, bulk_price)
-      values (1, ${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice}, ${buyQty}, ${bulkMin}, ${bulkPrice})`;
+      insert into products (shop_id, name, category_id, leather, unit, stock, buy_price, sell_price, buy_qty, bulk_min, bulk_price)
+      select 1, ${name}, id, ${leather}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice}, ${buyQty}, ${bulkMin}, ${bulkPrice}
+      from product_categories where shop_id = 1 and name = ${category}`;
   } finally {
     await sql.end();
   }

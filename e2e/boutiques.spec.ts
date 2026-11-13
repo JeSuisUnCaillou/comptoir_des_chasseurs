@@ -39,9 +39,11 @@ async function createOtherShop(product: string) {
       values (${names.member.toLowerCase()}, ${names.member}, ${await hashPassword("mot-de-passe")})
       returning id`;
     await sql`insert into shop_members (shop_id, member_id, role) values (${shop.id}, ${member.id}, 'gerant')`;
+    const [category] = await sql`
+      insert into product_categories (shop_id, name) values (${shop.id}, 'Boissons') returning id`;
     const [item] = await sql`
-      insert into products (shop_id, name, category, unit, stock, buy_price, sell_price)
-      values (${shop.id}, ${product}, 'viande', 'pièce', 9, 1, 2)
+      insert into products (shop_id, name, category_id, unit, stock, buy_price, sell_price)
+      values (${shop.id}, ${product}, ${category.id}, 'pièce', 9, 1, 2)
       returning id`;
     await sql`
       insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason)
@@ -112,7 +114,7 @@ test("deux boutiques peuvent avoir une marchandise du même nom", async ({ page 
   await expect(page.getByText("Aucune marchandise ne correspond.")).toBeVisible();
   await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = page.getByRole("form", { name: "Nouvelle marchandise" });
-  await form.getByLabel("Catégorie").selectOption("viande");
+  await form.getByLabel("Catégorie").selectOption("Viandes et venaison");
   await form.getByLabel("Quantité ajoutée").fill("2");
   await form.getByLabel("Motif").fill("brassé au comptoir");
   await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();
@@ -222,7 +224,9 @@ test("une ligne ou une marchandise d'une autre boutique ne se modifie pas en cha
   const mine = uniqueName("Peau du comptoir");
   const sql2 = db();
   try {
-    await sql2`insert into products (shop_id, name, category, unit) values (1, ${mine}, 'peau', 'peau')`;
+    await sql2`
+      insert into products (shop_id, name, category_id, unit)
+      select 1, ${mine}, id, 'peau' from product_categories where shop_id = 1 and name = 'Peaux'`;
   } finally {
     await sql2.end();
   }

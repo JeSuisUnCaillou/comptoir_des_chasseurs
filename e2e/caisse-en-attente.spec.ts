@@ -23,7 +23,7 @@ test("une vente dont les septims ne sont pas encore déposés attend la caisse, 
   const hide = uniqueName("Peau de sabrecat");
   const meat = uniqueName("Viande de cheval");
   await createProduct(hide, { stock: 5, sellPrice: 3 });
-  await createProduct(meat, { stock: 5, sellPrice: 5, category: "viande", unit: "morceau" });
+  await createProduct(meat, { stock: 5, sellPrice: 5, category: "Viandes et venaison", unit: "morceau" });
   const { page, username } = await newEmployeePage(browser, "sigurd");
   const { page: colleague } = await newEmployeePage(browser, "hroki");
 

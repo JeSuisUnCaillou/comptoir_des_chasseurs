@@ -26,7 +26,7 @@ export default async function MouvementDeStock() {
         <div className="eyebrow">Nouveau mouvement</div>
         <h2>Inscrire un mouvement de stock</h2>
         <StockMovementForm
-          products={products.map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}
+          products={products.map(({ id, name, categoryId, categoryName, unit, stock }) => ({ id, name, categoryId, categoryName, unit, stock }))}
         />
       </section>
     </>

@@ -45,7 +45,7 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   const { error, ...identity } = readProductIdentity(formData);
   const quantity = Number(formData.get("quantity"));
   const reason = text(formData, "reason", 200);
-  const { prices, privileged, error: priceError } = readProductPrices(formData, identity.category);
+  const { prices, privileged, error: priceError } = readProductPrices(formData);
   const withPrices = checked(formData, "withPrices");
 
   if (error) return { ok: false, message: error };

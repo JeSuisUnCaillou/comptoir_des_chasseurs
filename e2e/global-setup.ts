@@ -23,6 +23,7 @@ export default async function globalSetup() {
     await sql`delete from suppliers where shop_id <> 1`;
     await sql`delete from products where shop_id <> 1`;
     await sql`delete from privileged_groups where shop_id <> 1`;
+    await sql`delete from product_categories where shop_id <> 1`;
     await sql`delete from settings where shop_id <> 1`;
     await sql`delete from shops where id <> 1`;
     await sql`

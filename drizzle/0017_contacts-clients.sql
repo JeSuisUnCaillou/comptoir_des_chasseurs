@@ -1,5 +1,5 @@
 -- IF NOT EXISTS: the previews' database already has the type and the column,
--- added when this migration was numbered 0014.
+-- added when this migration was numbered 0014 and 0016.
 DO $$ BEGIN
   CREATE TYPE "public"."offer_side" AS ENUM('sells', 'buys');
 EXCEPTION WHEN duplicate_object THEN NULL;

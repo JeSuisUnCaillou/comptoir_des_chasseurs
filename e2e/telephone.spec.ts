@@ -190,7 +190,7 @@ test("au téléphone, un gérant gère un compte et une marchandise sans faire g
   const username = uniqueName("lydia").toLowerCase();
   await createMember(username, "mot-de-passe", "employe");
   const product = uniqueName("Corne de mammouth");
-  await createProduct(product, { category: "ressource", unit: "corne" });
+  await createProduct(product, { category: "Autres ressources", unit: "corne" });
   await loginAsGerant(page);
 
   const row = await memberRow(page, username);
@@ -353,8 +353,8 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
 
 test("au téléphone, les en-têtes des tarifs restent au-dessus des fiches et les trient", async ({ page }) => {
   const tag = uniqueName("Tri tel");
-  await createProduct(`${tag} Aiguille`, { category: "ressource", unit: "unité", sellPrice: 3 });
-  await createProduct(`${tag} bois`, { category: "ressource", unit: "unité", sellPrice: 1 });
+  await createProduct(`${tag} Aiguille`, { category: "Autres ressources", unit: "unité", sellPrice: 3 });
+  await createProduct(`${tag} bois`, { category: "Autres ressources", unit: "unité", sellPrice: 1 });
   await loginAsGerant(page);
   await page.goto(`/tarifs?q=${encodeURIComponent(tag)}`);
   const grid = page.getByRole("region", { name: "Autres ressources" });

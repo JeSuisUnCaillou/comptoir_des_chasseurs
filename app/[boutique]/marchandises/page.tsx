@@ -8,8 +8,10 @@ import { LiveSearch } from "@/components/live-search";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
-import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
+import { rate, septims } from "@/lib/pricing";
 import { MAX_PRIVILEGED_GROUPS, privilegedGroups } from "@/lib/privileged-groups";
+import { CategoryManager } from "@/components/category-manager";
+import { shopCategories } from "@/lib/categories";
 import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
 import { PrivilegedGroupsForm } from "@/components/privileged-groups-form";
 import { saveBlacksmithPrice, saveFeatured } from "./actions";
@@ -22,11 +24,12 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
   const search = await searchParams;
   const q = searchParam(search.q);
   const page = pageParam(search.page);
-  const [{ products, total }, blacksmith, active, privileged] = await Promise.all([
+  const [{ products, total }, blacksmith, active, privileged, categories] = await Promise.all([
     productPage(member.shopId, q, page),
     blacksmithLeatherPrice(member.shopId),
     activeProducts(member.shopId),
     privilegedGroups(member.shopId),
+    shopCategories(member.shopId),
   ]);
   const groups = privileged.map(({ id, name }) => ({ id, name }));
   const featured = featuredProducts(active);
@@ -42,7 +45,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
         <section className="panel" aria-labelledby="ajout">
           <div className="eyebrow">Nouvelle référence</div>
           <h2 id="ajout">Ajouter une marchandise</h2>
-          <ProductForm groups={groups} />
+          <ProductForm groups={groups} categories={categories} />
         </section>
         <div className="panel-stack">
           <section className="panel" aria-labelledby="phare">
@@ -104,6 +107,15 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
               </button>
             </form>
           </section>
+          <section className="panel" aria-labelledby="categories">
+            <div className="eyebrow">Réglage</div>
+            <h2 id="categories">Catégories</h2>
+            <p className="muted">
+              Elles rangent les marchandises dans les Tarifs, l&apos;inventaire et les formulaires, dans cet ordre.
+              Une catégorie se supprime une fois vide.
+            </p>
+            <CategoryManager categories={categories} />
+          </section>
         </div>
       </div>
 
@@ -129,7 +141,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
                   <td className="stack-title">
                     <strong>{p.name}</strong> {p.archived && <span className="badge">Archivée</span>}
                   </td>
-                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td data-label="Catégorie">{p.categoryName}</td>
                   <td className="num" data-label="Rachat">{p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}</td>
                   <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
                   <td className="stack-aside">
