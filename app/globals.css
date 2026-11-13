@@ -816,7 +816,7 @@ th.num {
   margin-bottom: 12px;
 }
 
-.new-product h3 {
+.new-product > h3:first-child {
   margin-top: 0;
 }
 

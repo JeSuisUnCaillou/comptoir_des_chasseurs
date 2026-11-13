@@ -229,6 +229,10 @@ test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async 
   const prices = form.getByRole("spinbutton", { name: "Prix en septims" });
   await expect(prices).toHaveCount(0);
   await form.getByLabel("Ajouter des prix").check();
+  // The first price heading keeps its space below the checkbox.
+  const box = (await form.locator("label.check").boundingBox())!;
+  const heading = (await form.getByRole("heading", { name: "Achat (on paie)" }).boundingBox())!;
+  expect(heading.y - (box.y + box.height)).toBeGreaterThanOrEqual(16);
   await prices.first().fill("12");
   await form.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" }).fill("15");
   await prices.nth(1).fill("30");
