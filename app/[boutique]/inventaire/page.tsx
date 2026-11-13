@@ -12,6 +12,7 @@ import { MovementTable } from "@/components/movement-table";
 import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
+import { privilegedGroups } from "@/lib/privileged-groups";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
@@ -52,11 +53,12 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     to,
   };
   const filtered = Boolean(q || employe || sens || du || au);
-  const [products, movements, total, till] = await Promise.all([
+  const [products, movements, total, till, groups] = await Promise.all([
     activeProducts(member.shopId),
     recentMovements(member.shopId, filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     movementCount(member.shopId, filter),
     tillTotals(member.shopId),
+    privilegedGroups(member.shopId),
   ]);
   const sum = (category: string) =>
     products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
@@ -124,6 +126,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         </div>
         <StockBoard
           canManage={isGerant(member)}
+          groups={groups.map(({ id, name }) => ({ id, name }))}
           items={[...products]
             .sort((a, b) => stockGroup(a.category) - stockGroup(b.category))
             .map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}

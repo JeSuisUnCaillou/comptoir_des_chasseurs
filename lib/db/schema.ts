@@ -132,8 +132,8 @@ export const products = pgTable(
     stock: integer("stock").notNull().default(0),
     buyPrice: integer("buy_price"),
     buyQty: integer("buy_qty").notNull().default(1),
-    // Buyback price for citizens of Estemarche, for the same buyQty units.
-    // Null: they get the usual buyPrice.
+    // Replaced by privilegedPrices: no longer read, dropped once the code in
+    // production no longer writes it.
     citizenBuyPrice: integer("citizen_buy_price"),
     sellPrice: integer("sell_price"),
     sellQty: integer("sell_qty").notNull().default(1),
@@ -155,6 +155,44 @@ export const products = pgTable(
       sql`${t.buyQty} > 0 and ${t.sellQty} > 0 and ${t.bulkQty} > 0`,
     ),
   ],
+);
+
+/**
+ * A group of sellers a shop buys back from at its own prices, such as the
+ * citizens of Estemarche. A shop may have none, one or several.
+ */
+export const privilegedGroups = pgTable(
+  "privileged_groups",
+  {
+    id: serial("id").primaryKey(),
+    shopId: integer("shop_id")
+      .notNull()
+      .references(() => shops.id),
+    // As the shop calls them, plural: "Citoyens d'Estemarche".
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("privileged_groups_shop_name_idx").on(t.shopId, t.name)],
+);
+
+export type PrivilegedGroup = typeof privilegedGroups.$inferSelect;
+
+/**
+ * A group's buyback price for a merchandise, for the merchandise's buyQty
+ * units. Without a row, the group gets the usual buyPrice.
+ */
+export const privilegedPrices = pgTable(
+  "privileged_prices",
+  {
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => privilegedGroups.id, { onDelete: "cascade" }),
+    buyPrice: integer("buy_price").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.productId, t.groupId] }), index("privileged_prices_group_idx").on(t.groupId)],
 );
 
 export const stockMovements = pgTable("stock_movements", {

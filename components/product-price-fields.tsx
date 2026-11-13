@@ -1,4 +1,8 @@
 import type { Product, ProductCategory } from "@/lib/db/schema";
+import { PRIVILEGED_PREFIX } from "@/lib/forms";
+
+/** A privileged group, as the price fields show it. */
+export type GroupChoice = { id: number; name: string };
 
 function NumberField({
   id,
@@ -31,16 +35,19 @@ function NumberField({
 
 /**
  * A merchandise's price fields, read by `readProductPrices`: buying, selling,
- * bulk, and the leather batch for hides. `id` prefixes the inputs' ids.
+ * the shop's privileged groups, bulk, and the leather batch for hides. `id`
+ * prefixes the inputs' ids.
  */
 export function ProductPriceFields({
   id,
   category,
   product,
+  groups,
 }: {
   id: string;
   category: ProductCategory;
-  product?: Product;
+  product?: Product & { privileged: { groupId: number; price: number }[] };
+  groups: GroupChoice[];
 }) {
   return (
     <>
@@ -48,13 +55,16 @@ export function ProductPriceFields({
       <div className="form-grid">
         <NumberField id={id} name="buyPrice" label="Prix en septims" defaultValue={product?.buyPrice} placeholder="Laisser vide si on n'en achète pas" />
         <NumberField id={id} name="buyQty" label="Pour (unités)" defaultValue={product?.buyQty ?? 1} />
-        <NumberField
-          id={id}
-          name="citizenBuyPrice"
-          label="Prix pour les citoyens d'Estemarche"
-          defaultValue={product?.citizenBuyPrice}
-          placeholder="Laisser vide si c'est le même prix"
-        />
+        {groups.map((g) => (
+          <NumberField
+            key={g.id}
+            id={id}
+            name={`${PRIVILEGED_PREFIX}${g.id}`}
+            label={`Prix pour : ${g.name}`}
+            defaultValue={product?.privileged.find((p) => p.groupId === g.id)?.price}
+            placeholder="Laisser vide si c'est le même prix"
+          />
+        ))}
       </div>
 
       <h3>Vente (on encaisse)</h3>

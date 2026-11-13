@@ -5,10 +5,19 @@ import { saveProduct, type ProductFormState } from "@/app/[boutique]/marchandise
 import type { Product, ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";
-import { ProductPriceFields } from "@/components/product-price-fields";
+import { ProductPriceFields, type GroupChoice } from "@/components/product-price-fields";
 
 /** `fromTarifs`: the form was opened from the Tarifs page, which saving goes back to. */
-export function ProductForm({ product, fromTarifs = false }: { product?: Product; fromTarifs?: boolean }) {
+export function ProductForm({
+  product,
+  groups,
+  fromTarifs = false,
+}: {
+  product?: Product & { privileged: { groupId: number; price: number }[] };
+  /** The shop's privileged groups, a price field each. */
+  groups: GroupChoice[];
+  fromTarifs?: boolean;
+}) {
   const [state, action, pending] = useActionState<ProductFormState, FormData>(saveProduct, null);
   const [category, setCategory] = useState<ProductCategory>(product?.category ?? "ressource");
 
@@ -42,7 +51,7 @@ export function ProductForm({ product, fromTarifs = false }: { product?: Product
         </div>
       </div>
 
-      <ProductPriceFields id="f" category={category} product={product} />
+      <ProductPriceFields id="f" category={category} product={product} groups={groups} />
 
       {product && (
         <label className="check">

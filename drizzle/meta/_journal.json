@@ -92,6 +92,13 @@
       "when": 1794440361594,
       "tag": "0012_creer-des-boutiques",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794593322827,
+      "tag": "0013_prix-privilegies",
+      "breakpoints": true
     }
   ]
 }

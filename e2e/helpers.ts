@@ -128,6 +128,24 @@ export async function createProduct(
   }
 }
 
+/** The comptoir's privileged group, made by its migration. */
+export const CITIZENS = "Citoyens d'Estemarche";
+
+/** Gives a product of the comptoir a privileged group's buyback price, straight in the database. */
+export async function setPrivilegedPrice(product: string, price: number, group = CITIZENS) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into privileged_prices (product_id, group_id, buy_price)
+      select p.id, g.id, ${price} from products p
+      join privileged_groups g on g.shop_id = p.shop_id and g.name = ${group}
+      where p.shop_id = 1 and p.name = ${product}
+      on conflict (product_id, group_id) do update set buy_price = excluded.buy_price`;
+  } finally {
+    await sql.end();
+  }
+}
+
 /**
  * Writes `n` off-stock sales (or buybacks) by a member straight in the
  * database, dated yesterday so they never push other tests' fresh lines off
