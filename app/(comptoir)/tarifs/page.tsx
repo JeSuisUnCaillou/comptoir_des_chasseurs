@@ -5,6 +5,7 @@ import { LiveSearch } from "@/components/live-search";
 import { PageHead } from "@/components/page-head";
 import { PendingSpinner } from "@/components/nav-link";
 import { PriceCalculator } from "@/components/price-calculator";
+import { SortableTable, type SortColumn } from "@/components/sortable-table";
 import { requireMember } from "@/lib/auth/session";
 import { param, searchParam } from "@/lib/pagination";
 import type { Product } from "@/lib/db/schema";
@@ -16,7 +17,10 @@ import {
   referenceQuantity,
   septims,
   formatNumber,
+  leatherPerHide,
   plural,
+  unitMargin,
+  unitPrice,
 } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
@@ -57,56 +61,66 @@ function CitizenPrice({ product, perUnit = false }: { product: Product; perUnit?
   );
 }
 
+/** The pencil's column, last, for a gérant. */
+function withEdit(columns: SortColumn[], canEdit: boolean): SortColumn[] {
+  return canEdit ? [...columns, { label: "", ariaLabel: "Modifier" }] : columns;
+}
+
 function GoodsTable({ products, canEdit }: { products: Product[]; canEdit: boolean }) {
-  return (
-    <div className="table-wrap">
-      <table className="stack-cards">
-        <thead>
-          <tr>
-            <th>Marchandise</th>
-            <th className="num">Rachat</th>
-            <th className="num">Vente</th>
-            <th className="num">Gros</th>
-            <th className="num">Stock</th>
-            <th className="num">Bénéfice brut indicatif</th>
-            {canEdit && <th aria-label="Modifier" />}
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => {
-            const ref = referenceQuantity(p);
-            const gross = margin(p, ref);
-            return (
-              <tr key={p.id}>
-                <td className="stack-title">
-                  <strong>{p.name}</strong>
-                </td>
-                <td className="num minus" data-label="Rachat">
-                  {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
-                  <CitizenPrice product={p} />
-                </td>
-                <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
-                <td className="num" data-label="Gros">
-                  {p.bulkMin != null && p.bulkPrice != null
-                    ? `Dès ${formatNumber(p.bulkMin)} : ${rate(p.bulkPrice, p.bulkQty)}`
-                    : "—"}
-                </td>
-                <td className="num" data-label="Stock">
-                  {formatNumber(p.stock)} {plural(p.unit, p.stock)}
-                </td>
-                <td className="num plus" data-label="Bénéfice brut indicatif">
-                  {gross == null
-                    ? "—"
-                    : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
-                </td>
-                <EditCell product={p} canEdit={canEdit} />
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+  const columns = withEdit(
+    [
+      { label: "Marchandise" },
+      { label: "Rachat", num: true },
+      { label: "Vente", num: true },
+      { label: "Gros", num: true },
+      { label: "Stock", num: true },
+      { label: "Bénéfice brut indicatif", num: true },
+    ],
+    canEdit,
   );
+  const rows = products.map((p) => {
+    const ref = referenceQuantity(p);
+    const gross = margin(p, ref);
+    return {
+      key: p.id,
+      // Prices for different lots compare per unit.
+      values: [
+        p.name,
+        unitPrice(p.buyPrice, p.buyQty),
+        unitPrice(p.sellPrice, p.sellQty),
+        p.bulkMin == null ? null : unitPrice(p.bulkPrice, p.bulkQty),
+        p.stock,
+        unitMargin(p),
+      ],
+      cells: (
+        <>
+          <td className="stack-title">
+            <strong>{p.name}</strong>
+          </td>
+          <td className="num minus" data-label="Rachat">
+            {p.buyPrice == null ? "—" : rate(p.buyPrice, p.buyQty)}
+            <CitizenPrice product={p} />
+          </td>
+          <td className="num" data-label="Vente">{p.sellPrice == null ? "—" : rate(p.sellPrice, p.sellQty)}</td>
+          <td className="num" data-label="Gros">
+            {p.bulkMin != null && p.bulkPrice != null
+              ? `Dès ${formatNumber(p.bulkMin)} : ${rate(p.bulkPrice, p.bulkQty)}`
+              : "—"}
+          </td>
+          <td className="num" data-label="Stock">
+            {formatNumber(p.stock)} {plural(p.unit, p.stock)}
+          </td>
+          <td className="num plus" data-label="Bénéfice brut indicatif">
+            {gross == null
+              ? "—"
+              : `${septims(gross, { signed: true })} pour ${formatNumber(ref)} unité${ref > 1 ? "s" : ""}`}
+          </td>
+          <EditCell product={p} canEdit={canEdit} />
+        </>
+      ),
+    };
+  });
+  return <SortableTable columns={columns} rows={rows} />;
 }
 
 type Search = { q?: string | string[]; "sans-tarif"?: string | string[] };
@@ -157,32 +171,29 @@ function Unpriced({
         (products.length === 0 ? (
           <p className="muted">Aucune marchandise sans tarif.</p>
         ) : (
-          <div className="table-wrap">
-            <table className="stack-cards" aria-label="Marchandises sans tarif">
-              <thead>
-                <tr>
-                  <th>Marchandise sans tarif</th>
-                  <th>Catégorie</th>
-                  <th className="num">Stock</th>
-                  {canEdit && <th aria-label="Modifier" />}
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id}>
-                    <td className="stack-title">
-                      <strong>{p.name}</strong>
-                    </td>
-                    <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
-                    <td className="num" data-label="Stock">
-                      {formatNumber(p.stock)} {plural(p.unit, p.stock)}
-                    </td>
-                    <EditCell product={p} canEdit={canEdit} />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableTable
+            ariaLabel="Marchandises sans tarif"
+            columns={withEdit(
+              [{ label: "Marchandise sans tarif" }, { label: "Catégorie" }, { label: "Stock", num: true }],
+              canEdit,
+            )}
+            rows={products.map((p) => ({
+              key: p.id,
+              values: [p.name, CATEGORY_LABELS[p.category], p.stock],
+              cells: (
+                <>
+                  <td className="stack-title">
+                    <strong>{p.name}</strong>
+                  </td>
+                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td className="num" data-label="Stock">
+                    {formatNumber(p.stock)} {plural(p.unit, p.stock)}
+                  </td>
+                  <EditCell product={p} canEdit={canEdit} />
+                </>
+              ),
+            }))}
+          />
         ))}
     </div>
   );
@@ -191,44 +202,44 @@ function Unpriced({
 function HidesTable({ products, canEdit, blacksmith }: { products: Product[]; canEdit: boolean; blacksmith: number }) {
   return (
     <>
-      <div className="table-wrap">
-        <table className="stack-cards">
-          <thead>
-            <tr>
-              <th>Animal</th>
-              <th>Transformation</th>
-              <th className="num">Rachat / peau</th>
-              <th className="num">Vente / peau</th>
-              <th className="num">Bénéfice / lot</th>
-              {canEdit && <th aria-label="Modifier" />}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => {
-              const gain = batchMargin(p, blacksmith);
-              return (
-                <tr key={p.id}>
-                  <td className="stack-title">
-                    <strong>{p.name}</strong>
-                  </td>
-                  <td data-label="Transformation">
-                    {p.hidesPerBatch && p.leatherPerBatch
-                      ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
-                      : "—"}
-                  </td>
-                  <td className="num minus" data-label="Rachat / peau">
-                    {p.buyPrice == null ? "—" : septims(p.buyPrice)}
-                    <CitizenPrice product={p} perUnit />
-                  </td>
-                  <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
-                  <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
-                  <EditCell product={p} canEdit={canEdit} />
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <SortableTable
+        columns={withEdit(
+          [
+            { label: "Animal" },
+            { label: "Transformation" },
+            { label: "Rachat / peau", num: true },
+            { label: "Vente / peau", num: true },
+            { label: "Bénéfice / lot", num: true },
+          ],
+          canEdit,
+        )}
+        rows={products.map((p) => {
+          const gain = batchMargin(p, blacksmith);
+          return {
+            key: p.id,
+            values: [p.name, leatherPerHide(p), p.buyPrice, p.sellPrice, gain],
+            cells: (
+              <>
+                <td className="stack-title">
+                  <strong>{p.name}</strong>
+                </td>
+                <td data-label="Transformation">
+                  {p.hidesPerBatch && p.leatherPerBatch
+                    ? `${p.hidesPerBatch} ${plural("peau", p.hidesPerBatch)} → ${p.leatherPerBatch} ${plural("cuir", p.leatherPerBatch)}`
+                    : "—"}
+                </td>
+                <td className="num minus" data-label="Rachat / peau">
+                  {p.buyPrice == null ? "—" : septims(p.buyPrice)}
+                  <CitizenPrice product={p} perUnit />
+                </td>
+                <td className="num" data-label="Vente / peau">{p.sellPrice == null ? "—" : septims(p.sellPrice)}</td>
+                <td className="num plus" data-label="Bénéfice / lot">{gain == null ? "—" : septims(gain, { signed: true })}</td>
+                <EditCell product={p} canEdit={canEdit} />
+              </>
+            ),
+          };
+        })}
+      />
       <p className="small muted" style={{ marginTop: 14 }}>
         Les bénéfices sont calculés avec le prix actuel de rachat du cuir par le forgeron :{" "}
         {septims(blacksmith)}. Ils sont bruts, hors frais.

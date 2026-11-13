@@ -1865,6 +1865,36 @@ tr.fresh td {
   }
 }
 
+/* A sortable list's headers are buttons that look like headers. */
+.sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-align: inherit;
+}
+
+.sort-btn svg {
+  flex: none;
+  opacity: 0.5;
+}
+
+.sort-btn.sorted svg {
+  opacity: 1;
+}
+
+.sort-btn:hover,
+.sort-btn.sorted {
+  color: var(--gold-strong);
+}
+
 /* Price and member lists, when their box is narrower than their columns:
    one card per row, its name on top (with its pencil, button or badge
    beside it), then one "label  value" line per column, instead of columns
@@ -1948,6 +1978,32 @@ tr.fresh td {
   .stack-cards td[data-label] > .citizen-price {
     flex-basis: 100%;
     margin-top: 2px;
+  }
+
+  /* In cards, a sortable list keeps its headers above, as a row of buttons. */
+  .stack-cards.sortable-table thead {
+    display: block;
+  }
+
+  .stack-cards.sortable-table thead tr {
+    gap: 6px;
+    padding: 0 0 12px;
+  }
+
+  .stack-cards.sortable-table th {
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  .stack-cards.sortable-table th:empty {
+    display: none;
+  }
+
+  .stack-cards.sortable-table .sort-btn {
+    border: 1px solid var(--border-gold);
+    border-radius: 999px;
+    padding: 4px 10px;
   }
 }
 

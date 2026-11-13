@@ -348,3 +348,20 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
     }
   }
 });
+
+test("au téléphone, les en-têtes des tarifs restent au-dessus des fiches et les trient", async ({ page }) => {
+  const tag = uniqueName("Tri tel");
+  await createProduct(`${tag} Aiguille`, { category: "ressource", unit: "unité", sellPrice: 3 });
+  await createProduct(`${tag} bois`, { category: "ressource", unit: "unité", sellPrice: 1 });
+  await loginAsGerant(page);
+  await page.goto(`/tarifs?q=${encodeURIComponent(tag)}`);
+  const grid = page.getByRole("region", { name: "Autres ressources" });
+  const names = grid.locator("tbody td.stack-title");
+  await expect(names).toHaveText([`${tag} Aiguille`, `${tag} bois`]);
+
+  await grid.getByRole("button", { name: "Vente", exact: true }).click();
+  await expect(names).toHaveText([`${tag} bois`, `${tag} Aiguille`]);
+  await grid.getByRole("button", { name: "Vente", exact: true }).click();
+  await expect(names).toHaveText([`${tag} Aiguille`, `${tag} bois`]);
+  await expectNoSideScroll(page);
+});
