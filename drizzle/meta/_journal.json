@@ -113,6 +113,13 @@
       "when": 1794595185784,
       "tag": "0015_discord-et-invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794595900740,
+      "tag": "0016_categories-par-boutique",
+      "breakpoints": true
     }
   ]
 }

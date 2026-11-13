@@ -27,7 +27,7 @@ test("le gérant crée un fournisseur, lui donne des marchandises, le modifie pu
   // Sorted by name: the gigot comes before the peau.
   const meat = uniqueName("Gigot");
   await createProduct(hide);
-  await createProduct(meat, { unit: "pièce", category: "viande" });
+  await createProduct(meat, { unit: "pièce", category: "Viandes et venaison" });
   await loginAsGerant(page);
 
   await page.getByRole("navigation", { name: "Menu principal" }).getByRole("link", { name: "Fournisseurs" }).click();
@@ -103,7 +103,7 @@ test("la recherche trouve un fournisseur par son nom, son lieu ou ce qu'il vend"
   const name = uniqueName("Swennec");
   const place = uniqueName("Pierre de Shor");
   const product = uniqueName("Cuir");
-  await createProduct(product, { unit: "cuir", category: "cuir" });
+  await createProduct(product, { unit: "cuir", category: "Autres ressources", leather: true });
   await createSuppliers([name], place);
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {

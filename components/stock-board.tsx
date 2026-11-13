@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useShopPath } from "@/components/use-shop-path";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
-import type { ProductCategory } from "@/lib/db/schema";
-import { CATEGORY_LABELS, formatNumber, plural } from "@/lib/pricing";
+import { formatNumber, plural } from "@/lib/pricing";
+import type { CategoryChoice } from "@/components/category-select";
 import { keepValues } from "@/components/keep-values";
 import { NewStockProductForm } from "@/components/new-stock-product-form";
 import type { GroupChoice } from "@/components/product-price-fields";
@@ -14,7 +14,8 @@ import type { GroupChoice } from "@/components/product-price-fields";
 export type StockItem = {
   id: number;
   name: string;
-  category: ProductCategory;
+  categoryId: number;
+  categoryName: string;
   unit: string;
   stock: number;
 };
@@ -69,7 +70,7 @@ function StockCard({ item }: { item: StockItem }) {
   return (
     <article className="stock-card" data-testid={`stock-${item.name}`}>
       <div className="stock-card-head">
-        <span className="small muted">{CATEGORY_LABELS[item.category]}</span>
+        <span className="small muted">{item.categoryName}</span>
         {item.stock === 0 && <span className="badge badge-red">Rupture</span>}
       </div>
       <h3>{item.name}</h3>
@@ -103,10 +104,12 @@ const CARDS_PER_PAGE = 24;
 /** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
 export function StockBoard({
   items,
+  categories,
   canManage,
   groups,
 }: {
   items: StockItem[];
+  categories: CategoryChoice[];
   canManage: boolean;
   /** The shop's privileged groups, priced with a new merchandise. */
   groups: GroupChoice[];
@@ -114,7 +117,7 @@ export function StockBoard({
   const id = useId();
   const path = useShopPath();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"" | ProductCategory>("");
+  const [category, setCategory] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   // Name prefilled in the "Nouvelle marchandise" form; null while it is closed.
   const [creating, setCreating] = useState<string | null>(null);
@@ -122,14 +125,14 @@ export function StockBoard({
   // Shows the new merchandise's card once it exists.
   const created = useCallback((name: string) => {
     setCreating(null);
-    setCategory("");
+    setCategory(undefined);
     setQuery(name);
     setPage(1);
   }, []);
   const normalized = query.trim().toLocaleLowerCase("fr");
   const visible = items.filter(
     (i) =>
-      (!category || i.category === category) &&
+      (category == null || i.categoryId === category) &&
       (!normalized || i.name.toLocaleLowerCase("fr").includes(normalized)),
   );
   const pages = Math.max(1, Math.ceil(visible.length / CARDS_PER_PAGE));
@@ -148,14 +151,14 @@ export function StockBoard({
         </div>
         <div className="field">
           <label htmlFor={`${id}-c`}>Catégorie</label>
-          <select id={`${id}-c`} value={category} onChange={(e) => {
-              setCategory(e.target.value as ProductCategory | "");
+          <select id={`${id}-c`} value={category ?? ""} onChange={(e) => {
+              setCategory(e.target.value ? Number(e.target.value) : undefined);
               setPage(1);
             }}>
             <option value="">Toutes</option>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -165,6 +168,7 @@ export function StockBoard({
         <NewStockProductForm
           name={creating}
           category={category}
+          categories={categories}
           canSetPrices={canManage}
           groups={groups}
           onCreated={created}

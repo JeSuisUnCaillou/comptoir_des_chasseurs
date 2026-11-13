@@ -120,6 +120,11 @@ export const shopMembers = pgTable(
   ],
 );
 
+/**
+ * The old fixed categories, kept in products.category until the code in
+ * production stops writing it (issue #184); the shop's own categories are
+ * productCategories.
+ */
 export const productCategory = pgEnum("product_category", [
   "peau",
   "cuir",
@@ -127,6 +132,25 @@ export const productCategory = pgEnum("product_category", [
   "ressource",
   "autre",
 ]);
+
+/**
+ * A shop's own category of merchandise, which its gérants rename, add and
+ * delete. `hides` marks the category of hides: their merchandises turn into
+ * leather by batches and have the hides grid on the Tarifs page.
+ */
+export const productCategories = pgTable(
+  "product_categories",
+  {
+    id: serial("id").primaryKey(),
+    shopId: shopColumn(),
+    name: text("name").notNull(),
+    hides: boolean("hides").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("product_categories_shop_name_idx").on(t.shopId, t.name)],
+);
+
+export type Category = typeof productCategories.$inferSelect;
 
 /**
  * A merchandise of the comptoir: its price grid and its stock.
@@ -139,7 +163,14 @@ export const products = pgTable(
     id: serial("id").primaryKey(),
     shopId: shopColumn(),
     name: text("name").notNull(),
-    category: productCategory("category").notNull(),
+    // Old fixed category, no longer read: see productCategory.
+    category: productCategory("category").notNull().default("autre"),
+    categoryId: integer("category_id")
+      .notNull()
+      .references(() => productCategories.id),
+    // The leather the hides turn into: the blacksmith buys it (shown on its
+    // featured line), and the Inventaire counts it apart.
+    leather: boolean("leather").notNull().default(false),
     unit: text("unit").notNull().default("pièce"),
     stock: integer("stock").notNull().default(0),
     buyPrice: integer("buy_price"),
@@ -240,7 +271,6 @@ export const settings = pgTable(
 );
 
 export type Product = typeof products.$inferSelect;
-export type ProductCategory = (typeof productCategory.enumValues)[number];
 
 export const transactionKind = pgEnum("transaction_kind", ["vente", "rachat", "entree", "sortie"]);
 

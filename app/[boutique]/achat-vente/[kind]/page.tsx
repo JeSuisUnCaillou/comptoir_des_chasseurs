@@ -35,7 +35,8 @@ export default async function NouvelleEcriture({
         products={products.map((p) => ({
           id: p.id,
           name: p.name,
-          category: p.category,
+          categoryId: p.categoryId,
+          categoryName: p.categoryName,
           unit: p.unit,
           stock: p.stock,
           buyPrice: p.buyPrice,

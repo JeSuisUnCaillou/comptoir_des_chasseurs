@@ -2,29 +2,29 @@ import { expect, test } from "@playwright/test";
 import { createMember, createProduct, loginAsGerant, uniqueName } from "./helpers";
 
 // Case and accents must not push "Élan" after "zèbre". Leather comes first,
-// then meats, then hides, then everything else mixed by name.
-test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, chacun par nom", async ({ page }) => {
+// then each category in its order (hides, meats, other resources), by name.
+test("le stock montre le cuir, puis chaque catégorie dans son ordre, chacune par nom", async ({ page }) => {
   const tag = uniqueName("Tri stock");
   await createProduct(`${tag} zèbre`);
   await createProduct(`${tag} Élan`);
   await createProduct(`${tag} loup`);
-  await createProduct(`${tag} sanglier`, { category: "viande", unit: "morceau" });
-  await createProduct(`${tag} Aurochs`, { category: "viande", unit: "morceau" });
-  await createProduct(`${tag} Argent`, { category: "ressource", unit: "lingot" });
-  await createProduct(`${tag} Cuir`, { category: "cuir", unit: "pièce" });
-  // A leading digit would put this resource ahead of everything by name alone.
-  await createProduct(`0 ${tag} Ambre`, { category: "autre", unit: "pierre" });
+  await createProduct(`${tag} sanglier`, { category: "Viandes et venaison", unit: "morceau" });
+  await createProduct(`${tag} Aurochs`, { category: "Viandes et venaison", unit: "morceau" });
+  await createProduct(`${tag} Argent`, { category: "Autres ressources", unit: "lingot" });
+  await createProduct(`${tag} Cuir`, { category: "Autres ressources", leather: true, unit: "pièce" });
+  // A leading digit puts this resource ahead of the others by name.
+  await createProduct(`0 ${tag} Ambre`, { category: "Autres ressources", unit: "pierre" });
   await loginAsGerant(page);
 
   await page.goto("/inventaire");
   await page.getByLabel("Rechercher une marchandise").fill(tag);
   await expect(page.locator(".stock-card h3")).toHaveText([
     `${tag} Cuir`,
-    `${tag} Aurochs`,
-    `${tag} sanglier`,
     `${tag} Élan`,
     `${tag} loup`,
     `${tag} zèbre`,
+    `${tag} Aurochs`,
+    `${tag} sanglier`,
     `0 ${tag} Ambre`,
     `${tag} Argent`,
   ]);
@@ -38,26 +38,20 @@ test("le stock montre le cuir, puis les viandes, puis les peaux, puis le reste, 
     `${tag} Élan`,
     `${tag} loup`,
     `${tag} zèbre`,
-    `${tag} Cuir`,
     `${tag} Aurochs`,
     `${tag} sanglier`,
-    `${tag} Argent`,
     `0 ${tag} Ambre`,
+    `${tag} Argent`,
+    `${tag} Cuir`,
     "Autre article (hors stock)…",
   ]);
-  await expect(list.locator(".combobox-group")).toHaveText([
-    "Peaux",
-    "Cuirs",
-    "Viandes et venaison",
-    "Ressources",
-    "Autres marchandises",
-  ]);
+  await expect(list.locator(".combobox-group")).toHaveText(["Peaux", "Viandes et venaison", "Autres ressources"]);
 });
 
 test("Gérer les marchandises range les marchandises par nom", async ({ page }) => {
   const tag = uniqueName("Tri catalogue");
   await createProduct(`${tag} zèbre`);
-  await createProduct(`${tag} Élan`, { category: "viande", unit: "morceau" });
+  await createProduct(`${tag} Élan`, { category: "Viandes et venaison", unit: "morceau" });
   await createProduct(`${tag} loup`);
   await loginAsGerant(page);
 
@@ -86,8 +80,8 @@ test("les membres sont rangés par nom, quel que soit leur rôle", async ({ page
 
 test("les sections des Tarifs sont rangées par nom, catégories mêlées", async ({ page }) => {
   const tag = uniqueName("Tri tarifs");
-  await createProduct(`${tag} zinc`, { category: "ressource", unit: "lingot" });
-  await createProduct(`${tag} Ambre`, { category: "autre", unit: "pierre" });
+  await createProduct(`${tag} zinc`, { category: "Autres ressources", unit: "lingot" });
+  await createProduct(`${tag} Ambre`, { category: "Autres ressources", unit: "pierre" });
   await loginAsGerant(page);
 
   await page.goto("/tarifs");

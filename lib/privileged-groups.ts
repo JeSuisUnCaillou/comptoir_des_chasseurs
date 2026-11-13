@@ -18,7 +18,7 @@ export type PrivilegedPrice = { groupId: number; name: string; price: number };
 export type ShopProduct = Product & { privileged: PrivilegedPrice[] };
 
 /** Gives each product its privileged prices. */
-export async function withPrivilegedPrices(products: Product[]): Promise<ShopProduct[]> {
+export async function withPrivilegedPrices<P extends Product>(products: P[]): Promise<(P & ShopProduct)[]> {
   if (products.length === 0) return [];
   const rows = await getDb()
     .select({

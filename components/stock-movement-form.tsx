@@ -4,12 +4,12 @@ import { ArrowDownToLine, ArrowUpFromLine, Plus, Trash2 } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
 import { recordStockMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { keepValues } from "@/components/keep-values";
-import { ProductCombobox } from "@/components/product-combobox";
-import type { Product } from "@/lib/db/schema";
-import { CATEGORY_LABELS, plural } from "@/lib/pricing";
+import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
+import type { CategorizedProduct } from "@/lib/products";
+import { plural } from "@/lib/pricing";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 
-export type StockMovementProduct = Pick<Product, "id" | "name" | "category" | "unit" | "stock">;
+export type StockMovementProduct = Pick<CategorizedProduct, "id" | "name" | "categoryId" | "categoryName" | "unit" | "stock">;
 
 const REASONS = ["Arrivage", "Transformation", "Perte", "Correction d'inventaire"];
 
@@ -45,12 +45,7 @@ export function StockMovementForm({ products }: { products: StockMovementProduct
   }
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
 
-  // Groups keep the catalogue's category order; names are sorted inside each.
-  const choices = (Object.keys(CATEGORY_LABELS) as Product["category"][]).flatMap((category) =>
-    products
-      .filter((p) => p.category === category)
-      .map((p) => ({ id: String(p.id), name: p.name, group: CATEGORY_LABELS[category] })),
-  );
+  const choices = choicesByCategory(products);
 
   function update(key: number, change: Partial<Line>) {
     setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));

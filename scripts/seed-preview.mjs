@@ -88,14 +88,15 @@ const CASH_SAMPLES = [
   ["entree", "Apport du gérant", 150, null],
 ];
 
-// A second shop, with a few goods of its own and a parchment.
+// A second shop, with categories and goods of its own and a parchment.
 const TAVERN = {
   name: "La Taverne du Port",
   slug: "taverne-du-port",
+  categories: ["Boissons", "Plats"],
   products: [
-    ["Hydromel Black-Briar", "autre", 24, 8],
-    ["Ragoût de venaison", "viande", 10, 5],
-    ["Pain de miel", "autre", 30, 2],
+    ["Hydromel Black-Briar", "Boissons", 24, 8],
+    ["Ragoût de venaison", "Plats", 10, 5],
+    ["Pain de miel", "Plats", 30, 2],
   ],
   announcement: {
     title: "Soirée des bardes",
@@ -242,6 +243,20 @@ try {
       console.log(`Clients privilégiés « ${group} » ajoutés, avec un prix pour le cuir.`);
     }
 
+    // The comptoir's « Composants alchimiques » (migration 0016) with a
+    // merchandise in it, again once it was emptied; nothing if it was deleted.
+    const [alchemy] = await tx`
+      select c.id from product_categories c
+      where c.shop_id = 1 and c.name = 'Composants alchimiques'
+        and not exists (select 1 from products p where p.category_id = c.id)`;
+    if (alchemy) {
+      await tx`
+        insert into products (shop_id, name, category_id, unit, stock, buy_price, sell_price)
+        values (1, 'Oeil de smilodon', ${alchemy.id}, 'œil', 3, 4, 7)
+        on conflict (shop_id, name) do update set category_id = excluded.category_id`;
+      console.log("Oeil de smilodon rangé dans les Composants alchimiques.");
+    }
+
     // A second shop, to see shops side by side: Aela is gérante of both, so
     // she chooses between them; Lomone, super admin, enters both.
     const [tavern] = await tx`
@@ -252,10 +267,14 @@ try {
       await tx`
         insert into shop_members (shop_id, member_id, role)
         select ${tavern.id}, id, 'gerant' from members where username = ${SECOND_GERANT.username}`;
+      for (const name of TAVERN.categories) {
+        await tx`insert into product_categories (shop_id, name) values (${tavern.id}, ${name})`;
+      }
       for (const [name, category, stock, sell] of TAVERN.products) {
         await tx`
-          insert into products (shop_id, name, category, stock, sell_price)
-          values (${tavern.id}, ${name}, ${category}, ${stock}, ${sell})`;
+          insert into products (shop_id, name, category_id, stock, sell_price)
+          select ${tavern.id}, ${name}, id, ${stock}, ${sell} from product_categories
+          where shop_id = ${tavern.id} and name = ${category}`;
       }
       const [{ id: aela }] = await tx`select id from members where username = ${SECOND_GERANT.username}`;
       await tx`

@@ -618,7 +618,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   const hide = uniqueName("Peau de chèvre");
   const meat = uniqueName("Viande de chèvre");
   await createProduct(hide, { sellPrice: 3, stock: 10 });
-  await createProduct(meat, { sellPrice: 5, stock: 10, category: "viande", unit: "pièce" });
+  await createProduct(meat, { sellPrice: 5, stock: 10, category: "Viandes et venaison", unit: "pièce" });
   const { page } = await newEmployeePage(browser, "ysolda");
   await page.goto("/achat-vente/vente");
   const form = page.getByRole("region", { name: "Inscrire une vente" });

@@ -10,7 +10,6 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { param, searchParam } from "@/lib/pagination";
 import {
-  CATEGORY_LABELS,
   batchMargin,
   margin,
   rate,
@@ -23,7 +22,8 @@ import {
   unitPrice,
 } from "@/lib/pricing";
 import type { ShopProduct as Product } from "@/lib/privileged-groups";
-import { activeProducts, blacksmithLeatherPrice, featuredProducts } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProducts, type CategorizedProduct } from "@/lib/products";
+import { shopCategories } from "@/lib/categories";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
@@ -140,7 +140,7 @@ function Unpriced({
   auto,
 }: {
   search: Search;
-  products: Product[];
+  products: CategorizedProduct[];
   edit: string | null;
   slug: string;
   auto: boolean;
@@ -180,13 +180,13 @@ function Unpriced({
             )}
             rows={products.map((p) => ({
               key: p.id,
-              values: [p.name, CATEGORY_LABELS[p.category], p.stock],
+              values: [p.name, p.categoryName, p.stock],
               cells: (
                 <>
                   <td className="stack-title">
                     <strong>{p.name}</strong>
                   </td>
-                  <td data-label="Catégorie">{CATEGORY_LABELS[p.category]}</td>
+                  <td data-label="Catégorie">{p.categoryName}</td>
                   <td className="num" data-label="Stock">
                     {formatNumber(p.stock)} {plural(p.unit, p.stock)}
                   </td>
@@ -291,7 +291,7 @@ function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: nu
           <div className="stat-label">Vente</div>
           <div className="stat-value plus">{tilePrice(product.sellPrice, product.sellQty)}</div>
         </div>
-        {product.category === "cuir" && (
+        {product.leather && (
           <div className="stat">
             <div className="stat-label">Rachat par le forgeron</div>
             <div className="stat-value plus">{septims(blacksmith)}</div>
@@ -303,7 +303,7 @@ function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: nu
 }
 
 /** Products whose name holds the search, ignoring case. */
-function matching(products: Product[], search: string | string[] | undefined) {
+function matching<P extends Product>(products: P[], search: string | string[] | undefined) {
   const q = searchParam(search).toLocaleLowerCase("fr");
   return q ? products.filter((p) => p.name.toLocaleLowerCase("fr").includes(q)) : products;
 }
@@ -312,15 +312,20 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const member = await requireMember();
   const at = (path: string) => shopPath(member.shop.slug, path);
   const search = await searchParams;
-  const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
+  const [products, blacksmith, categories] = await Promise.all([
+    activeProducts(member.shopId),
+    blacksmithLeatherPrice(member.shopId),
+    shopCategories(member.shopId),
+  ]);
   const edit = isGerant(member) ? member.shop.slug : null;
   const query = searchParam(search.q);
   const featured = featuredProducts(products);
   // The featured products have their own cards above; every other one is in a grid.
   const hunted = matching(products, search.q).filter((p) => p.featuredAt == null);
-  const hides = hunted.filter((p) => p.category === "peau" && priced(p));
-  const meats = hunted.filter((p) => p.category === "viande" && priced(p));
-  const goods = hunted.filter((p) => p.category !== "peau" && p.category !== "viande" && priced(p));
+  // One grid per category, in their order; the hides' one shows their batches.
+  const grids = categories
+    .map((category) => ({ category, products: hunted.filter((p) => p.categoryId === category.id && priced(p)) }))
+    .filter((grid) => grid.products.length > 0);
   const unpriced = hunted.filter((p) => !priced(p));
   const autoUnpriced = Boolean(query) && hunted.length < AUTO_UNPRICED_BELOW;
   const calculable = products.filter(priced);
@@ -381,21 +386,15 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <p className="muted">Prix de rachat et de vente, tarifs de gros et rentabilité des transformations.</p>
         <LiveSearch />
         {/* A search shows only the categories it finds something in. */}
-        {hides.length > 0 && (
-          <Grid id="grille-peaux" title="Peaux">
-            <HidesTable products={hides} edit={edit} blacksmith={blacksmith} />
+        {grids.map(({ category, products }) => (
+          <Grid key={category.id} id={`grille-${category.id}`} title={category.name}>
+            {category.hides ? (
+              <HidesTable products={products} edit={edit} blacksmith={blacksmith} />
+            ) : (
+              <GoodsTable products={products} edit={edit} />
+            )}
           </Grid>
-        )}
-        {meats.length > 0 && (
-          <Grid id="grille-viandes" title="Viandes et venaison">
-            <GoodsTable products={meats} edit={edit} />
-          </Grid>
-        )}
-        {goods.length > 0 && (
-          <Grid id="grille-ressources" title="Autres ressources">
-            <GoodsTable products={goods} edit={edit} />
-          </Grid>
-        )}
+        ))}
         {hunted.length === 0 && NO_MATCH}
         <Unpriced search={search} products={unpriced} edit={edit} slug={member.shop.slug} auto={autoUnpriced} />
       </section>

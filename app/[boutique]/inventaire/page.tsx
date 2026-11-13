@@ -7,13 +7,13 @@ import { StockBoard } from "@/components/stock-board";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
-import type { ProductCategory } from "@/lib/db/schema";
 import { MovementTable } from "@/components/movement-table";
 import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
 import { privilegedGroups } from "@/lib/privileged-groups";
-import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
+import { activeProducts, movementCount, recentMovements, type CategorizedProduct, type MovementFilter } from "@/lib/products";
+import { shopCategories } from "@/lib/categories";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
@@ -26,11 +26,11 @@ function asDirection(value: string | undefined) {
   return value && Object.hasOwn(DIRECTIONS, value) ? (value as keyof typeof DIRECTIONS) : undefined;
 }
 
-// Leather first, then meats, then hides, then everything else; the database
-// already sorts by name and Array.prototype.sort is stable, so names stay in
-// order inside each group.
-const STOCK_GROUP: Partial<Record<ProductCategory, number>> = { cuir: 0, viande: 1, peau: 2 };
-const stockGroup = (category: ProductCategory) => STOCK_GROUP[category] ?? 3;
+// Leather first, then each category in its order; the database already sorts
+// by name and Array.prototype.sort is stable, so names stay in order inside
+// each group.
+const stockOrder = (a: CategorizedProduct, b: CategorizedProduct) =>
+  Number(b.leather) - Number(a.leather) || a.categoryId - b.categoryId;
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();
@@ -53,16 +53,20 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     to,
   };
   const filtered = Boolean(q || employe || sens || du || au);
-  const [products, movements, total, till, groups] = await Promise.all([
+  const [products, movements, total, till, groups, categories] = await Promise.all([
     activeProducts(member.shopId),
     recentMovements(member.shopId, filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     movementCount(member.shopId, filter),
     tillTotals(member.shopId),
     privilegedGroups(member.shopId),
+    shopCategories(member.shopId),
   ]);
-  const sum = (category: string) =>
-    products.filter((p) => p.category === category).reduce((total, p) => total + p.stock, 0);
-  const others = products.filter((p) => p.category !== "peau" && p.category !== "cuir").length;
+  // Hides and leather are counted apart in a shop that has them; other goods are only numbered.
+  const sum = (of: CategorizedProduct[]) => of.reduce((total, p) => total + p.stock, 0);
+  const hides = products.filter((p) => p.hides);
+  const leather = products.filter((p) => p.leather);
+  const hasHides = categories.some((c) => c.hides);
+  const others = products.filter((p) => !p.hides && !p.leather).length;
 
   // Coming back from the Mouvement de stock form: confirm the movements just written, in the order they were typed.
   const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
@@ -100,20 +104,24 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             <div className="stat-label">Septims en caisse</div>
             <div className={`stat-value ${till.balance < 0 ? "minus" : ""}`}>{septims(till.balance)}</div>
           </div>
-          <div className="stat">
-            <div className="stat-label">Peaux en réserve</div>
-            <div className="stat-value" data-testid="total-peaux">
-              {formatNumber(sum("peau"))}
+          {hasHides && (
+            <div className="stat">
+              <div className="stat-label">Peaux en réserve</div>
+              <div className="stat-value" data-testid="total-peaux">
+                {formatNumber(sum(hides))}
+              </div>
             </div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Cuirs en réserve</div>
-            <div className="stat-value" data-testid="total-cuirs">
-              {formatNumber(sum("cuir"))}
+          )}
+          {leather.length > 0 && (
+            <div className="stat">
+              <div className="stat-label">Cuirs en réserve</div>
+              <div className="stat-value" data-testid="total-cuirs">
+                {formatNumber(sum(leather))}
+              </div>
             </div>
-          </div>
+          )}
           <div className="stat">
-            <div className="stat-label">Autres marchandises</div>
+            <div className="stat-label">{hasHides || leather.length > 0 ? "Autres marchandises" : "Marchandises"}</div>
             <div className="stat-value">{formatNumber(others)}</div>
           </div>
         </div>
@@ -127,9 +135,10 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         <StockBoard
           canManage={isGerant(member)}
           groups={groups.map(({ id, name }) => ({ id, name }))}
+          categories={categories}
           items={[...products]
-            .sort((a, b) => stockGroup(a.category) - stockGroup(b.category))
-            .map(({ id, name, category, unit, stock }) => ({ id, name, category, unit, stock }))}
+            .sort(stockOrder)
+            .map(({ id, name, categoryId, categoryName, unit, stock }) => ({ id, name, categoryId, categoryName, unit, stock }))}
         />
       </section>
 

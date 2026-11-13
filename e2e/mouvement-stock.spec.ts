@@ -16,7 +16,7 @@ test("un mouvement de stock fait entrer plusieurs marchandises d'un coup, sans s
   const hide = uniqueName("Peau de loup");
   const leather = uniqueName("Cuir");
   await createProduct(hide, { stock: 0 });
-  await createProduct(leather, { stock: 4, unit: "cuir", category: "cuir" });
+  await createProduct(leather, { stock: 4, unit: "cuir", category: "Autres ressources", leather: true });
   const reason = uniqueName("Chasse");
   const { page, username } = await newEmployeePage(browser, "chasseur");
 
@@ -66,7 +66,7 @@ test("une sortie de stock de plusieurs marchandises s'inscrit entière ou pas du
   const hide = uniqueName("Peau de sabrecat");
   const meat = uniqueName("Viande");
   await createProduct(hide, { stock: 2 });
-  await createProduct(meat, { stock: 5, unit: "morceau", category: "viande" });
+  await createProduct(meat, { stock: 5, unit: "morceau", category: "Viandes et venaison" });
   const { page } = await newEmployeePage(browser, "boucher");
 
   // From the Inventaire.
