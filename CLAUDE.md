@@ -1,12 +1,13 @@
 # Travailler sur le Comptoir des chasseurs
 
-Une app web de gestion du comptoir des chasseurs de Vendeaume (serveur Skyrim
-RP Keizaal) : tarifs, inventaire, ventes et rachats, registre. Une dizaine
-d'utilisateurs : le gérant et ses employés. Next.js (App Router, Server
-Actions) sur Vercel, Postgres chez Supabase via Drizzle ORM. **Tout doit
-rester gratuit** : offre Hobby de Vercel, offre gratuite de Supabase. Une
-dépendance, un service ou une option payante se propose au propriétaire, ne
-s'ajoute pas.
+Une app web de gestion de boutiques du serveur Skyrim RP Keizaal : tarifs,
+inventaire, ventes et rachats, registre. Chaque boutique vit sous
+`/<boutique>/…` ; la première est le comptoir des chasseurs de Vendeaume
+(`/le-comptoir-des-chasseurs`), avec une dizaine de gérants et d'employés.
+Next.js (App Router, Server Actions) sur Vercel, Postgres chez Supabase via
+Drizzle ORM. **Tout doit rester gratuit** : offre Hobby de Vercel, offre
+gratuite de Supabase. Une dépendance, un service ou une option payante se
+propose au propriétaire, ne s'ajoute pas.
 
 ## À lire d'abord
 
@@ -101,6 +102,11 @@ Comment les tests sont écrits :
   vérifie ce qui est à l'écran, pas l'état interne.
 - On attend sur des assertions (`await expect(...)`), jamais sur
   `waitForTimeout`.
+- Une mise en page se regarde de 320 à 1600 px, avec une police un peu
+  élargie : celles de la CI sont plus larges que celles d'une session. On y
+  cherche ce qui déborde et ce qui se colle, et le test mesure l'écart
+  (`e2e/telephone.spec.ts`) ; le propriétaire a dû signaler cinq blocs
+  collés ou débordants en quatre jours (2026-11-10 au 13).
 - Un test qui change un réglage de toute la boutique (le produit phare…)
   va dans un `*.apres.spec.ts` : il tourne après tous les autres, en série
   (`test.describe.configure({ mode: "serial" })`), et remet le réglage comme
@@ -141,9 +147,9 @@ par jour. Le lien est dans la description de la PR, entre
 `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
 réécris la description).
 
-Donne **toujours le lien de la page précise à essayer** (`…vercel.app/fournisseurs`),
-jamais la racine (« donne moi TOUJOURS le lien de la page spécifique à
-tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
+Donne **toujours le lien de la page précise à essayer**
+(`…vercel.app/le-comptoir-des-chasseurs/fournisseurs`), jamais la racine
+(« donne moi TOUJOURS le lien de la page spécifique à tester », 2026-11-10), **et de quoi l'essayer** : une session ne peut pas
 écrire dans la base des previews, donc si la fonctionnalité demande des
 données que le seed n'apporte pas, étends `scripts/seed-preview.mjs` dans la
 même PR, sans rien écraser, avec une condition qui remet l'exemple une fois

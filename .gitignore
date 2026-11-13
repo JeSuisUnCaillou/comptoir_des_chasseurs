@@ -11,3 +11,6 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 /legacy-export/
+
+# Review notes live in .git/revue-en-boucle/, never in the repository.
+.claude/reviews/
