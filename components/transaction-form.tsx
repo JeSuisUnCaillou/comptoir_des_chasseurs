@@ -21,6 +21,7 @@ export type TransactionProduct = Pick<
   | "name"
   | "categoryId"
   | "categoryName"
+  | "categoryPosition"
   | "unit"
   | "stock"
   | "buyPrice"

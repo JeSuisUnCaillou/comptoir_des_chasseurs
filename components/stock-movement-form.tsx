@@ -9,7 +9,7 @@ import type { CategorizedProduct } from "@/lib/products";
 import { plural } from "@/lib/pricing";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 
-export type StockMovementProduct = Pick<CategorizedProduct, "id" | "name" | "categoryId" | "categoryName" | "unit" | "stock">;
+export type StockMovementProduct = Pick<CategorizedProduct, "id" | "name" | "categoryId" | "categoryName" | "categoryPosition" | "unit" | "stock">;
 
 const REASONS = ["Arrivage", "Transformation", "Perte", "Correction d'inventaire"];
 

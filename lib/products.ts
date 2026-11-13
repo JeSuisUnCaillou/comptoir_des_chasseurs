@@ -16,6 +16,7 @@ const withCategory = {
   ...getTableColumns(schema.products),
   categoryName: schema.productCategories.name,
   hides: schema.productCategories.hides,
+  categoryPosition: schema.productCategories.position,
 };
 
 export type CategorizedProduct = Awaited<ReturnType<typeof activeProducts>>[number];

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { createProduct, loginAsGerant, pickProduct, uniqueName } from "./helpers";
+import { createProduct, dragAbove, loginAsGerant, pickProduct, uniqueName } from "./helpers";
 
 // These tests change the same setting: one after the other.
 test.describe.configure({ mode: "serial" });
@@ -85,7 +85,7 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
         await page.reload();
         await expect(list.getByRole("listitem")).toHaveText(names, { timeout: 1000 });
       }).toPass();
-    await handle("Flèches d'acier").dragTo(list.getByRole("listitem").filter({ hasText: "Cuir" }));
+    await dragAbove(page, handle("Flèches d'acier"), list.getByRole("listitem").filter({ hasText: "Cuir" }));
     await expect(list.getByRole("listitem")).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
     await saved(["Flèches d'acier", "Cuir", "Venaison"]);
     await handle("Venaison").focus();

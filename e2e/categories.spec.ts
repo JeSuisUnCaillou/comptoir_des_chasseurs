@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ALERT, loginAsGerant, uniqueName } from "./helpers";
+import { ALERT, dragAbove, loginAsGerant, uniqueName } from "./helpers";
 
 /** The super admin opens a shop from Mes boutiques and lands in it; its address is returned. */
 async function openShop(page: Page, name: string) {
@@ -90,4 +90,52 @@ test("le comptoir garde ses catégories, et les peaux leur transformation en cui
   await page.goto("/inventaire");
   await expect(page.getByTestId("total-peaux")).toBeVisible();
   await expect(page.getByTestId("total-cuirs")).toBeVisible();
+});
+
+test("un gérant réordonne ses catégories en les glissant, ou au clavier, et tout l'app suit cet ordre", async ({ page }) => {
+  const shop = await openShop(page, uniqueName("Bazar"));
+  await page.goto(`${shop}/marchandises`);
+  for (const name of ["Armes", "Armures"]) {
+    await panel(page).getByLabel("Nouvelle catégorie").fill(name);
+    await panel(page).getByRole("button", { name: "Ajouter" }).click();
+    await expect(row(page, name)).toBeVisible();
+  }
+  const list = panel(page).getByRole("list", { name: "Catégories de la boutique" });
+  // The categories' names, as their fields show them, in the list's order.
+  const names = () => list.getByRole("listitem").getByRole("textbox").evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value));
+  await expect.poll(names).toEqual(["Autres marchandises", "Armes", "Armures"]);
+  const handle = (name: string) => list.getByRole("button", { name: `Déplacer ${name}` });
+  // Saved: a fresh page shows the same order, once the save has reached the server.
+  const saved = (order: string[]) =>
+    expect(async () => {
+      await page.reload();
+      await expect.poll(names, { timeout: 1000 }).toEqual(order);
+    }).toPass();
+
+  // Dragged by its handle above the first one, the others making room.
+  await dragAbove(page, handle("Armures"), row(page, "Autres marchandises"));
+  await expect.poll(names).toEqual(["Armures", "Autres marchandises", "Armes"]);
+  await saved(["Armures", "Autres marchandises", "Armes"]);
+
+  // With the keyboard, the handle keeping the focus.
+  await handle("Armes").focus();
+  await page.keyboard.press("ArrowUp");
+  await expect.poll(names).toEqual(["Armures", "Armes", "Autres marchandises"]);
+  await expect(handle("Armes")).toBeFocused();
+  await saved(["Armures", "Armes", "Autres marchandises"]);
+
+  // A new category comes last; the forms and the Inventaire follow the order.
+  await panel(page).getByLabel("Nouvelle catégorie").fill("Bijoux");
+  await panel(page).getByRole("button", { name: "Ajouter" }).click();
+  await expect.poll(names).toEqual(["Armures", "Armes", "Autres marchandises", "Bijoux"]);
+  const form = page.getByRole("region", { name: "Ajouter une marchandise" });
+  await expect(form.getByLabel("Catégorie").locator("option")).toHaveText(["Armures", "Armes", "Autres marchandises", "Bijoux"]);
+  await page.goto(`${shop}/inventaire`);
+  await expect(page.getByLabel("Catégorie").locator("option")).toHaveText([
+    "Toutes",
+    "Armures",
+    "Armes",
+    "Autres marchandises",
+    "Bijoux",
+  ]);
 });

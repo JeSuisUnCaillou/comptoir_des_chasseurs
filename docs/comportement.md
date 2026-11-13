@@ -65,7 +65,7 @@ sur une page du registre.
 | --- | --- |
 | Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
-| Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre où elles ont été créées |
+| Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
@@ -341,8 +341,8 @@ Dans la grille :
 - Créer et modifier les marchandises et leurs prix.
 - Choisir les produits phares des Tarifs, parmi les marchandises non
   archivées : en ajouter un (la marchandise se cherche en tapant ; il passe
-  après les autres), changer l'ordre en le glissant par sa poignée (souris ou
-  doigt ; au clavier, flèches haut et bas sur la poignée), le retirer. Le comptoir
+  après les autres), changer l'ordre en le glissant par sa poignée (§ Glisser
+  pour ordonner), le retirer. Le comptoir
   a gardé le cuir, son produit phare d'avant ; une nouvelle boutique n'en a
   aucun.
 - Nommer les clients privilégiés de la boutique (§ Clients privilégiés).
@@ -350,6 +350,13 @@ Dans la grille :
   peaux.
 - Gérer les catégories (§ Catégories).
 - Même recherche par nom que les Tarifs et l'Inventaire.
+
+### Glisser pour ordonner
+
+Les produits phares et les catégories se rangent de la même façon : on saisit
+la poignée d'une ligne (souris ou doigt) et les autres s'écartent pendant
+qu'on la déplace ; l'ordre s'enregistre quand on la lâche. Au clavier, les
+flèches haut et bas sur la poignée la montent ou la descendent d'un cran.
 
 ### Catégories
 
@@ -361,6 +368,9 @@ Dans la grille :
   catégorie ne se supprime que vide (marchandises archivées comprises), et
   la boutique en garde au moins une. Chaque catégorie dit combien de
   marchandises elle contient.
+- Un gérant change leur ordre en les glissant par leur poignée (§ Glisser
+  pour ordonner). Les Tarifs, l'Inventaire et les formulaires le suivent ;
+  une nouvelle catégorie va à la fin.
 - Le comptoir a Peaux, Viandes et venaison, Autres ressources et Composants
   alchimiques. Sa catégorie des peaux le reste même renommée : ses
   marchandises se transforment en cuir par lots (champs « Peaux par lot » et

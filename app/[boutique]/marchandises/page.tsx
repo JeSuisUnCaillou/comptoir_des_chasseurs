@@ -111,8 +111,8 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
             <div className="eyebrow">Réglage</div>
             <h2 id="categories">Catégories</h2>
             <p className="muted">
-              Elles rangent les marchandises dans les Tarifs, l&apos;inventaire et les formulaires, dans cet ordre.
-              Une catégorie se supprime une fois vide.
+              Elles rangent les marchandises dans les Tarifs, l&apos;inventaire et les formulaires, dans cet ordre :
+              glisse-les par leur poignée pour le changer. Une catégorie se supprime une fois vide.
             </p>
             <CategoryManager categories={categories} />
           </section>

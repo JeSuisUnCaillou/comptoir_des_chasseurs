@@ -1,14 +1,17 @@
 "use client";
 
 import { Combobox, type Choice } from "@/components/combobox";
+import { byCategoryOrder } from "@/lib/category-order";
 
 /**
  * The shop's merchandises as choices grouped by category, in the categories'
- * order (their ids); names keep their order inside each group.
+ * order; names keep their order inside each group.
  */
-export function choicesByCategory(products: { id: number; name: string; categoryId: number; categoryName: string }[]) {
+export function choicesByCategory(
+  products: { id: number; name: string; categoryId: number; categoryName: string; categoryPosition: number }[],
+) {
   return [...products]
-    .sort((a, b) => a.categoryId - b.categoryId)
+    .sort(byCategoryOrder)
     .map((p) => ({ id: String(p.id), name: p.name, group: p.categoryName }));
 }
 

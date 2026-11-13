@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import { getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 
@@ -9,7 +9,7 @@ export const DEFAULT_CATEGORY = "Autres marchandises";
 const DUPLICATE = "Il y a déjà une catégorie à ce nom.";
 
 /**
- * The shop's categories in their order (the order they were created in), with
+ * The shop's categories in the order gérants set (else the order they were created in), with
  * how many merchandises each holds, archived ones included.
  */
 export async function shopCategories(shopId: number) {
@@ -20,7 +20,7 @@ export async function shopCategories(shopId: number) {
     .leftJoin(schema.products, eq(schema.products.categoryId, c.id))
     .where(eq(c.shopId, shopId))
     .groupBy(c.id)
-    .orderBy(asc(c.id));
+    .orderBy(asc(c.position), asc(c.id));
 }
 
 export type ShopCategory = Awaited<ReturnType<typeof shopCategories>>[number];
@@ -51,8 +51,33 @@ async function refusingDuplicates<T>(write: () => Promise<T>) {
   }
 }
 
+/** Adds a category after the shop's others. */
 export async function addCategory(shopId: number, name: string) {
-  await refusingDuplicates(() => getDb().insert(schema.productCategories).values({ shopId, name }));
+  const c = schema.productCategories;
+  await refusingDuplicates(() =>
+    getDb()
+      .insert(c)
+      .values({
+        shopId,
+        name,
+        position: sql`(select coalesce(max(${c.position}), -1) + 1 from ${c} where ${c.shopId} = ${shopId})`,
+      }),
+  );
+}
+
+/** Puts the shop's categories in the given order: all of them, each once. */
+export async function setCategoryOrder(shopId: number, ids: number[]) {
+  const c = schema.productCategories;
+  await getDb().transaction(async (tx) => {
+    const rows = await tx.select({ id: c.id }).from(c).where(eq(c.shopId, shopId)).for("update");
+    const all = new Set(rows.map((r) => r.id));
+    if (ids.length !== all.size || new Set(ids).size !== ids.length || !ids.every((id) => all.has(id))) {
+      throw new UserError("La liste des catégories a changé : recharge la page.");
+    }
+    for (const [position, id] of ids.entries()) {
+      await tx.update(c).set({ position }).where(eq(c.id, id));
+    }
+  });
 }
 
 /** Renames a category of the shop; its merchandises and what it does (hides) stay. */
