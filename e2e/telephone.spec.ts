@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  COMPTOIR,
   createAnnouncements,
   createMember,
   createProduct,
@@ -40,7 +41,7 @@ async function expectNoSideScroll(page: Page) {
 test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) => {
   await loginAsGerant(page);
   const pages = [
-    ["/", "Grand livre"],
+    [COMPTOIR, "Grand livre"],
     ["/achat-vente", "Achat / Vente"],
     ["/achat-vente/achat", "Nouvel achat"],
     ["/achat-vente/vente", "Nouvelle vente"],
@@ -52,6 +53,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/fournisseurs", "Fournisseurs"],
     ["/annonces", "Annonces"],
     ["/membres", "Membres"],
+    ["/boutiques", "Mes boutiques"],
     ["/mot-de-passe", "Mot de passe"],
   ];
   for (const [path, title] of pages) {
@@ -327,9 +329,9 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
   const parchment = uniqueName("Grande battue des chasseurs de Vendeaume et de Rorikbourg");
   await createAnnouncements(GERANT.username, 1, parchment);
   // The Grand livre shows the whole board; the Annonces page could have it past its first page.
-  await page.goto("/");
+  await page.goto(COMPTOIR);
   const edit = (await page.getByRole("link", { name: `Modifier « ${parchment} 1 »` }).getAttribute("href"))!;
-  const pages = ["/", "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity, edit];
+  const pages = [COMPTOIR, "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/fournisseurs", "/annonces", "/membres", activity, edit];
   for (let width = 320; width <= 1600; width += 160) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of pages) {

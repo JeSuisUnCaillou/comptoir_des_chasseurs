@@ -14,7 +14,7 @@ export function PageHead({
       {eyebrow && <div className="eyebrow">{eyebrow}</div>}
       <h1>{title}</h1>
       <p className="muted" style={{ margin: 0 }}>
-        {children ?? "Les comptes et les échanges du Comptoir des chasseurs"}
+        {children ?? "Les comptes et les échanges de la boutique"}
       </p>
     </header>
   );

@@ -1,11 +1,12 @@
 import { Pencil, X } from "lucide-react";
 import Link from "next/link";
-import { takeDownAnnouncement } from "@/app/(comptoir)/annonces/actions";
+import { takeDownAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { PINS } from "@/lib/announcement-rules";
 import { canActOn } from "@/lib/policies";
 import type { AnnouncementEntry } from "@/lib/announcements";
-import type { Member } from "@/lib/db/schema";
+import type { ShopMember } from "@/lib/auth/session";
+import { shopPath } from "@/lib/paths";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "medium",
@@ -23,7 +24,7 @@ export function AnnouncementBoard({
   back,
 }: {
   announcements: AnnouncementEntry[];
-  member: Member;
+  member: ShopMember;
   back: string;
 }) {
   return (
@@ -46,7 +47,7 @@ export function AnnouncementBoard({
                 {canActOn(member, a) && (
                   <div className="parchment-actions">
                     <Link
-                      href={`/annonces/${a.id}/modifier?retour=${encodeURIComponent(back)}`}
+                      href={shopPath(member.shop.slug, `/annonces/${a.id}/modifier?retour=${encodeURIComponent(back)}`)}
                       className="icon-btn"
                       aria-label={`Modifier « ${a.title} »`}
                       title="Modifier"
@@ -80,7 +81,7 @@ export function AnnouncementBoard({
           ))}
         </ul>
       )}
-      <div className="board-banner board-banner-foot">⚔ Comptoir de chasse · Vendeaume ⚔</div>
+      <div className="board-banner board-banner-foot">⚔ {member.shop.name} ⚔</div>
     </div>
   );
 }

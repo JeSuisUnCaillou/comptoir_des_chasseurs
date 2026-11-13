@@ -7,6 +7,7 @@ fichier à jour dans le même commit.
 ## Sommaire
 
 - [Partout](#partout) : téléphone, pagination, ordre des listes
+- [Boutiques](#boutiques) : adresses, Mes boutiques, réglages, invitations
 - [Grand livre](#grand-livre)
 - [Achat, Vente et registre](#achat-vente-et-registre)
 - [Mouvement de caisse](#mouvement-de-caisse)
@@ -19,6 +20,9 @@ fichier à jour dans le même commit.
 
 ## Partout
 
+- En haut du menu, le logo et « REGISTRE de Lomone » (Lomone est le
+  personnage du propriétaire dans Keizaal), sur toutes les boutiques.
+
 ### Téléphone et petites fenêtres
 
 L'app se sert aussi au téléphone, en jeu, et dans une fenêtre de n'importe
@@ -26,7 +30,7 @@ quelle taille : rien ne déborde sur le côté ni ne se colle.
 
 Sur un écran étroit :
 
-- le menu tient en une ligne qui défile de côté, sous le nom du comptoir et
+- le menu tient en une ligne qui défile de côté, sous le nom de l'app et
   du membre ;
 - les filtres (opération, employé, dates) passent à un par ligne, champs
   alignés ;
@@ -62,6 +66,60 @@ sur une page du registre.
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
 sont à l'heure de Paris.
+
+## Boutiques
+
+L'app héberge plusieurs boutiques ; « Le Comptoir Des Chasseurs » est la
+première. Ses textes sont génériques : ce qui est propre à une boutique (son
+nom, ses marchandises, ses annonces…) vient de sa base, jamais du code. Chacune a ses marchandises, son registre, son tableau, ses
+fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
+
+### Adresses
+
+- Chaque boutique a ses pages sous son adresse : `/<slug>` pour son Grand
+  livre, `/<slug>/inventaire`, `/<slug>/achat-vente`… (`lib/paths.ts`).
+- Le comptoir est `/le-comptoir-des-chasseurs` ; ses anciennes adresses
+  (`/inventaire`, `/achat-vente/vente`…) y mènent toujours (`next.config.ts`).
+- Une adresse qui ne nomme aucune boutique n'existe pas.
+- La racine `/` ouvre la boutique du membre s'il n'en a qu'une, et sinon Mes
+  boutiques.
+- Le nom de la boutique est en haut de chaque page ; « Changer de boutique »,
+  en bas du menu, mène à Mes boutiques.
+
+### Mes boutiques
+
+- `/boutiques` : en haut, le compte connecté et « Se déconnecter » ; puis
+  une carte par boutique du compte : son nom, son adresse, son nombre de
+  membres actifs, le rôle du compte (badge Gérant ou Employé), un bouton
+  « Entrer » et, pour un gérant, un lien vers ses Réglages.
+- Seul le super admin y **ouvre une boutique**, en lui donnant un nom : il en
+  devient le gérant, et elle prend l'adresse tirée du nom (« Forge de
+  Vendeaume » → `/forge-de-vendeaume`). Un nom dont l'adresse est déjà prise,
+  ou réservée par l'app (`connexion`, `inventaire`…), est refusé. Les autres
+  comptes voient « Pour ouvrir une nouvelle boutique, demande au super
+  admin. »
+- Le super admin y **ouvre aussi une boutique pour quelqu'un** : il reçoit un
+  lien d'invitation (`/invitation/<jeton>`) à lui donner. Les liens pas
+  encore utilisés restent listés sous « Invitations en attente », avec
+  l'adresse de la boutique, la date de création et un bouton « Copier ».
+
+### Réglages (gérants)
+
+- `/<slug>/reglages` : renommer la boutique, changer son adresse (le
+  comptoir garde la sienne, où mènent ses anciens liens).
+  Sous les champs, le lien complet de la boutique suit l'adresse pendant
+  qu'on la tape.
+- **Supprimer** la boutique avec tout ce qu'elle contient, après avoir retapé
+  son nom. Le comptoir ne se supprime pas, ni la seule boutique d'un gérant.
+- Les comptes de ses membres restent ; un compte resté sans aucune boutique
+  ne peut plus se connecter, comme un compte désactivé.
+
+### Invitation
+
+- `/invitation/<jeton>` : qui ouvre le lien devient gérant de la boutique,
+  avec son compte (connecté, ou après « J'ai déjà un compte ») ou un compte
+  qu'il crée là.
+- Le lien ne sert qu'une fois.
 
 ## Grand livre
 
@@ -167,7 +225,7 @@ sortie d'argent) les septims :
 
 ## Annonces
 
-- Le tableau du comptoir : des parchemins épinglés sur du bois (titre,
+- Le tableau de la boutique : des parchemins épinglés sur du bois (titre,
   texte, auteur, date).
 - Chacun en accroche avec « Afficher un parchemin » et choisit ce qui le
   fixe : couteau, hache nordique ou morceau de viande.
@@ -179,7 +237,7 @@ sortie d'argent) les septims :
 ## Fournisseurs
 
 - Une carte par fournisseur : son lieu, une note (qui il représente…), et
-  les marchandises du comptoir qu'il vend, chacune à son prix (« 1 septim
+  les marchandises de la boutique qu'il vend, chacune à son prix (« 1 septim
   pour 6 pièces »).
 - Une recherche trouve un nom, un lieu ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
@@ -205,7 +263,7 @@ Dans l'ordre de la page :
    plus.
 2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
    cherche en tapant, parmi toutes celles qui ont un prix.
-3. La grille du comptoir (produits de chasse) : une seule recherche par nom,
+3. La grille des prix (« Marchandises ») : une seule recherche par nom,
    qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
    (transformation et bénéfice par lot), viandes et venaison, autres
    ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
@@ -330,15 +388,17 @@ Ne comptent pas :
 
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un rôle dans chacune (`shop_members`).
-- Un compte désactivé partout ne peut plus se connecter.
+- Un compte sans boutique où il est actif ne peut plus se connecter.
+- Seul le super admin ouvre une boutique : pour lui, ou pour quelqu'un
+  d'autre par un lien d'invitation (voir [Mes boutiques](#mes-boutiques)).
 
 ### Qui peut quoi
 
 | Rôle | Peut |
 | --- | --- |
-| **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
+| **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
 | **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
-| **Employé** | les pages du comptoir, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
+| **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.
@@ -355,8 +415,10 @@ Ne comptent pas :
 
 ### Connexion
 
-- Un visiteur non connecté qui ouvre une page du comptoir passe par la page
+- Un visiteur non connecté qui ouvre une page d'une boutique passe par la page
   de connexion, puis revient sur cette page, avec ses filtres (paramètre
   `suite` de `/connexion`).
-- Seul un chemin du comptoir lui-même est suivi ; tout autre lien ramène au
-  Grand livre.
+- Seul un chemin de l'app elle-même est suivi ; tout autre lien ramène à `/`.
+- Un compte qui ouvre une boutique où il n'a pas de rôle revient à `/` ; un
+  employé qui ouvre une page de gérant revient au Grand livre de sa
+  boutique.

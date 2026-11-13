@@ -19,7 +19,7 @@ test("un gérant crée un compte employé, qui peut entrer", async ({ page, brow
   await expect(employee.getByTestId("member-name")).toHaveText("Einar le Chasseur");
   await expect(employee.getByRole("link", { name: "Membres" })).toHaveCount(0);
   await employee.goto("/membres");
-  await expect(employee).toHaveURL(/\/$/);
+  await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 });
 
 test("un identifiant déjà pris est refusé", async ({ page }) => {
@@ -46,7 +46,7 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
   await expect(employee).toHaveURL(/\/connexion$/);
   await employee.getByLabel("Identifiant").fill(username);
   await employee.getByLabel("Mot de passe").fill("mot-de-passe");
-  await employee.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await employee.getByRole("button", { name: "Se connecter" }).click();
   await expect(employee.locator(ALERT)).toHaveText("Identifiant ou mot de passe incorrect.");
 });
 

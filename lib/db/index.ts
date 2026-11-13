@@ -22,6 +22,9 @@ export function getDb() {
 
 export { schema };
 
+/** The handle of a database transaction, for a service step that runs inside another's. */
+export type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+
 /** True for a Postgres unique constraint violation (drizzle wraps the driver error). */
 export function isUniqueViolation(error: unknown) {
   const e = error as { code?: string; cause?: { code?: string } };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { cancelTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { cancelTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 
 export function CancelButton({ id, label, effect }: { id: number; label: string; effect: string }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(cancelTransaction, null);
