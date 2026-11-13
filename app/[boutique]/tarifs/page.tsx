@@ -22,7 +22,8 @@ import {
   unitMargin,
   unitPrice,
 } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice, featuredProduct, type ShopProduct as Product } from "@/lib/products";
+import type { ShopProduct as Product } from "@/lib/privileged-groups";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {

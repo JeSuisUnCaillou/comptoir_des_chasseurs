@@ -12,7 +12,8 @@ import { MovementTable } from "@/components/movement-table";
 import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
-import { activeProducts, privilegedGroups, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
+import { privilegedGroups } from "@/lib/privileged-groups";
+import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;

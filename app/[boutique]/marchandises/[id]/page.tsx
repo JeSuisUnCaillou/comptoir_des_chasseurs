@@ -4,7 +4,8 @@ import { PageHead } from "@/components/page-head";
 import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
-import { privilegedGroups, productOf } from "@/lib/products";
+import { privilegedGroups } from "@/lib/privileged-groups";
+import { productOf } from "@/lib/products";
 
 export default async function EditProduct({
   params,

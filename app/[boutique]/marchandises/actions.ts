@@ -6,10 +6,8 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { GROUP_NAME_MAX, checked, optionalId, optionalInt, readProductIdentity, readProductPrices, text } from "@/lib/forms";
+import { createPrivilegedGroup, deletePrivilegedGroup, renamePrivilegedGroup } from "@/lib/privileged-groups";
 import {
-  createPrivilegedGroup,
-  deletePrivilegedGroup,
-  renamePrivilegedGroup,
   saveProduct as save,
   setBlacksmithLeatherPrice,
   setFeaturedProduct,

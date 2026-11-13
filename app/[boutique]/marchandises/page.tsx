@@ -7,7 +7,8 @@ import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
-import { MAX_PRIVILEGED_GROUPS, activeProducts, blacksmithLeatherPrice, featuredProduct, privilegedGroups, productPage } from "@/lib/products";
+import { MAX_PRIVILEGED_GROUPS, privilegedGroups } from "@/lib/privileged-groups";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
 import { PrivilegedGroupsForm } from "@/components/privileged-groups-form";
 import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
 
