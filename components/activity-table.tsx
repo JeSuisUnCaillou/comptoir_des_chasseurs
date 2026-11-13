@@ -31,7 +31,7 @@ export function ActivityTable({
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(lines, (l) => l.cancelledAt == null && l.tillPending);
   const totals = entryTotals(lines, positions, (l) =>
-    l.cancelledAt == null && l.kind !== "stock" ? signedAmount(l.kind, l.amount) : null,
+    l.entrySum == null || l.kind === "stock" ? null : signedAmount(l.kind, l.entrySum),
   );
   return (
     <div className="table-wrap">

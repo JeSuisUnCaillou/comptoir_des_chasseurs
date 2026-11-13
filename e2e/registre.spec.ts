@@ -723,6 +723,22 @@ test("une écriture de plusieurs lignes montre son total sous le client, sans le
   expect((await cardTotal.boundingBox())!.y).toBeGreaterThan(lastLabel.y + lastLabel.height - 1);
 });
 
+test("une écriture coupée par la pagination montre son total entier sur chaque page", async ({ browser }) => {
+  const { page, username } = await newEmployeePage(browser, "brelyna");
+  // 27 lines written at one instant: one entry, cut after the 25th.
+  await createTransactions(username, 27, { amount: 2 });
+  await page.goto("/achat-vente");
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const total = page.getByTestId("registre").getByTestId("total-ecriture").filter({ visible: true });
+  await expect(total).toHaveText("Total : +54 septims");
+  await page.getByRole("navigation", { name: "Pages du registre" }).getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByTestId("registre").locator("tbody tr")).toHaveCount(2);
+  await expect(total).toHaveText("Total : +54 septims");
+});
+
 test("une marchandise vendue sur deux lignes est comparée au stock pour les deux", async ({ browser }) => {
   const product = uniqueName("Peau de sabrecat");
   await createProduct(product, { stock: 3 });

@@ -194,7 +194,8 @@ page ; l'écriture enregistrée ramène au registre.
 - **Enregistrement** : chaque marchandise devient sa propre ligne du
   registre ; toutes sont inscrites ensemble, ou aucune. Dans le registre et
   l'activité d'un membre, une écriture de plusieurs lignes porte son total
-  (lignes annulées non comptées) sous le client ou le vendeur.
+  (lignes annulées non comptées) sous le client ou le vendeur, et le même
+  sur chaque page quand la pagination la coupe.
 
 ### Effet sur le stock
 

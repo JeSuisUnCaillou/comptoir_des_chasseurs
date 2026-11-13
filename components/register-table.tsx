@@ -31,7 +31,7 @@ export function RegisterTable({
   if (entries.length === 0) return <p className="muted">Aucune écriture pour l&apos;instant.</p>;
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(entries, (e) => e.cancelledAt == null && e.tillPending);
-  const totals = entryTotals(entries, positions, (e) => (e.cancelledAt == null ? signedAmount(e.kind, e.amount) : null));
+  const totals = entryTotals(entries, positions, (e) => (e.entrySum == null ? null : signedAmount(e.kind, e.entrySum)));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="registre">

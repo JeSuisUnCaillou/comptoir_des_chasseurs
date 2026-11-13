@@ -5,7 +5,7 @@ import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
 import { movementEntryKey } from "@/lib/products";
-import { entryKeyColumn, pendingEntryColumns } from "@/lib/register";
+import { entryKeyColumn, entrySumColumn, pendingEntryColumns } from "@/lib/register";
 
 export type HandStock = {
   /** Units put in and taken out. */
@@ -86,6 +86,8 @@ export type ActivityLine = {
   entryLines: number;
   entryTotal: number;
   entryItems: string;
+  /** The septims of its whole entry: see `entrySumColumn`. */
+  entrySum: number | null;
   createdAt: Date;
   cancelledAt: Date | null;
   cancelledBy: string | null;
@@ -106,12 +108,12 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
       ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by,
       ${entry.entryLines} as entry_lines, ${entry.entryTotal} as entry_total, ${entry.entryItems} as entry_items,
-      ${entryKeyColumn()} as entry_key
+      ${entryKeyColumn()} as entry_key, ${entrySumColumn()} as entry_sum
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
     where ${t.shopId} = ${shopId} and ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}, null
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.shopId} = ${shopId} and ${m.memberId} = ${memberId} and ${m.transactionId} is null
@@ -144,6 +146,7 @@ export async function memberActivity(
     entryTotal: Number(r.entry_total),
     entryItems: String(r.entry_items ?? ""),
     entryKey: (r.entry_key as string | null) ?? null,
+    entrySum: r.entry_sum == null ? null : Number(r.entry_sum),
     createdAt: new Date(r.created_at as string),
     cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
     cancelledBy: (r.cancelled_by as string | null) ?? null,
