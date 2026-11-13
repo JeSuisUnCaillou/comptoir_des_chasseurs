@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Coins, ShoppingBasket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { MemberDateFilters } from "@/components/member-date-filters";
@@ -19,6 +20,8 @@ import {
   tillTotals,
   type RegisterFilter,
 } from "@/lib/register";
+
+export const metadata: Metadata = { title: "Achat / Vente" };
 
 type Search = Record<"type" | "employe" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 

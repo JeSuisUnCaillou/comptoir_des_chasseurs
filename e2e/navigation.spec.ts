@@ -63,3 +63,22 @@ test("les pages n'affichent plus la mention « Registres » en tête", async ({ 
     await expect(page.getByText(/Registres ·/)).toHaveCount(0);
   }
 });
+
+test("l'onglet porte le nom de la page et de la boutique, ou Registre de Lomone hors boutique", async ({ page }) => {
+  await page.goto("/connexion");
+  await expect(page).toHaveTitle("Connexion · Registre de Lomone");
+
+  await loginAsGerant(page);
+  const shop = await page.getByTestId("shop-name").textContent();
+  await expect(page).toHaveTitle(`Grand livre · ${shop}`);
+
+  await menuLink(page, "Inventaire").click();
+  await expect(page).toHaveTitle(`Inventaire · ${shop}`);
+
+  await page.goto(`${COMPTOIR}/achat-vente/vente`);
+  await expect(page).toHaveTitle(`Nouvelle vente · ${shop}`);
+
+  await page.goto("/boutiques");
+  await expect(page).toHaveTitle("Mes boutiques · Registre de Lomone");
+  await expect(page.getByText(/Registre des marchands/)).toHaveCount(0);
+});

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import {
   Archive,
@@ -20,8 +21,15 @@ import { logout } from "@/app/connexion/actions";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
+import { currentShop } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
+
+/** Browser tab: "<page> · <shop name>". */
+export async function generateMetadata(): Promise<Metadata> {
+  const shop = await currentShop();
+  return { title: { absolute: shop.name, template: `%s · ${shop.name}` } };
+}
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   const member = await requireMember();
@@ -97,7 +105,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           </div>
         </header>
         <main className="content">{children}</main>
-        <footer className="footer">✦ Registre des marchands · Keizaal ✦</footer>
+        <footer className="footer">✦ Registre de Lomone · Keizaal ✦</footer>
       </div>
     </div>
   );

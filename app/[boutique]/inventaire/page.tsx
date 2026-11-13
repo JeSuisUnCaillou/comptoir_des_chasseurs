@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Archive, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { LiveSearch } from "@/components/live-search";
@@ -14,6 +15,8 @@ import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
 import { activeProducts, movementCount, recentMovements, type MovementFilter } from "@/lib/products";
 import { dayRange, memberNames, tillTotals } from "@/lib/register";
+
+export const metadata: Metadata = { title: "Inventaire" };
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 

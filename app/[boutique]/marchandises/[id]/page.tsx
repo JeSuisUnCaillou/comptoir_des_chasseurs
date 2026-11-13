@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
@@ -5,6 +6,8 @@ import { ProductForm } from "@/components/product-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { productOf } from "@/lib/products";
+
+export const metadata: Metadata = { title: "Marchandise" };
 
 export default async function EditProduct({
   params,

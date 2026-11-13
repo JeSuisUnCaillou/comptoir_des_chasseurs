@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { PageHead } from "@/components/page-head";
 import { DeleteShopForm, ShopForm } from "@/components/shop-settings-forms";
 import { requireMember } from "@/lib/auth/session";
 import { isComptoir } from "@/lib/paths";
+
+export const metadata: Metadata = { title: "Réglages" };
 
 /** /<slug>/reglages: a gérant renames the shop, moves it, or deletes it. */
 export default async function Reglages() {

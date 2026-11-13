@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Megaphone } from "lucide-react";
 import { AnnouncementBoard } from "@/components/announcement-board";
 import { AnnouncementForm } from "@/components/announcement-form";
@@ -7,6 +8,8 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { announcementCount, announcementList, BOARD_SIZE } from "@/lib/announcements";
 import { offsetOf, pageParam } from "@/lib/pagination";
+
+export const metadata: Metadata = { title: "Annonces" };
 
 export default async function Annonces({
   searchParams,

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnnouncementForm } from "@/components/announcement-form";
@@ -6,6 +7,8 @@ import { requireMember } from "@/lib/auth/session";
 import { safeReturnPath } from "@/lib/auth/return-path";
 import { editableAnnouncement } from "@/lib/announcements";
 import { shopPath } from "@/lib/paths";
+
+export const metadata: Metadata = { title: "Modifier un parchemin" };
 
 export default async function EditAnnouncement({
   params,

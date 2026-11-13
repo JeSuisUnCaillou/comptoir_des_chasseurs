@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { authConfigured, currentAccount } from "@/lib/auth/session";
 import { accountCount, canSignIn } from "@/lib/members";
+
+export const metadata: Metadata = { title: "Connexion" };
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ export default async function Connexion({
         <BrandMark />
         <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
-          Registre <span>des marchands</span>
+          Registre <span>de Lomone</span>
         </h1>
         <p className="muted">Stock, achats et ventes de vos boutiques</p>
         <div className="gate-divider" aria-hidden="true">

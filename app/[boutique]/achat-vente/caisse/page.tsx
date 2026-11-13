@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { CashMovementForm } from "@/components/cash-movement-form";
@@ -5,6 +6,8 @@ import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { tillTotals } from "@/lib/register";
+
+export const metadata: Metadata = { title: "Mouvement de caisse" };
 
 /** /achat-vente/caisse: septims in or out of the till, with no merchandise. */
 export default async function MouvementDeCaisse() {

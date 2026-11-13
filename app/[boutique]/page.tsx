@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ArrowLeftRight, Coins, Megaphone, ShoppingBasket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
@@ -9,6 +10,13 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { announcementList } from "@/lib/announcements";
 import { registerEntries, tillSummary } from "@/lib/register";
+import { currentShop } from "@/lib/shops";
+
+// The shop layout's title template stops at its own segment, which this page shares.
+export async function generateMetadata(): Promise<Metadata> {
+  const shop = await currentShop();
+  return { title: { absolute: `Grand livre · ${shop.name}` } };
+}
 
 export default async function GrandLivre() {
   const member = await requireMember();

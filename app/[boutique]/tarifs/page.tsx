@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
@@ -25,6 +26,8 @@ import {
 } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
+
+export const metadata: Metadata = { title: "Tarifs" };
 
 function priced(p: Product) {
   return p.buyPrice != null || p.sellPrice != null;

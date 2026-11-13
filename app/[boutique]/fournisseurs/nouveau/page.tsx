@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { SupplierForm } from "@/components/supplier-forms";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
+
+export const metadata: Metadata = { title: "Nouveau fournisseur" };
 
 export default async function NewSupplier() {
   const member = await requireMember(["gerant"]);
