@@ -2018,39 +2018,62 @@ tr.fresh td {
   margin-left: 4px;
 }
 
-/* Tarifs: the featured products' cards, about three side by side, with smaller tiles. */
-.featured-grid {
+/* Tarifs: the featured products, one line each, their prices side by side. */
+.featured-rows {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
-.featured-card {
+.featured-row {
+  background: var(--panel-2);
   border: 1px solid var(--border);
-  padding: 12px;
+  border-left: 3px solid var(--gold);
+  padding: 10px 14px 12px;
   min-width: 0;
 }
 
-.featured-card h3 {
-  margin: 0 0 10px;
+.featured-row h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
 }
 
-.featured-card .stats {
-  grid-template-columns: repeat(auto-fit, minmax(min(100px, 100%), 1fr));
-  gap: 8px;
+.featured-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(78px, 100%), 1fr));
+  gap: 8px 12px;
 }
 
-.featured-card .stats + .stats {
-  margin-top: 8px;
+/* A price as a label over its value, set off by a thin rule rather than a box. */
+.featured-prices .stat {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 0 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.featured-card .stat {
-  padding: 8px 10px;
+.featured-prices .stat-citizen {
+  border-left: 2px solid var(--gold);
 }
 
-.featured-card .stat-value {
-  font-size: 19px;
-  margin-top: 4px;
+.featured-prices .stat-label {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.featured-prices .stat-value {
+  font-size: 18px;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+/* On a phone, two prices per line. */
+@media (max-width: 600px) {
+  .featured-prices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Gérer les marchandises: the featured products, each with its button to take it back. */

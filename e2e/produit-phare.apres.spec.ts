@@ -42,7 +42,7 @@ async function remove(page: Page, name: string) {
 
 const calculatorProduct = (page: Page) => page.getByTestId("calculateur").getByRole("combobox", { name: "Marchandise" });
 
-test("un gérant met plusieurs produits phares côte à côte en haut des Tarifs", async ({ page }) => {
+test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne chacun", async ({ page }) => {
   await loginAsGerant(page);
   await page.goto("/tarifs");
   // The pencil on the block leads to the setting.
@@ -57,9 +57,12 @@ test("un gérant met plusieurs produits phares côte à côte en haut des Tarifs
     await page.goto("/tarifs");
     const cards = featuredPanel(page).getByRole("region");
     await expect(cards.getByRole("heading", { level: 3 })).toHaveText(["Cuir", "Venaison", "Flèches d'acier"]);
-    // Three side by side, on one line.
-    const tops = await Promise.all([0, 1, 2].map(async (i) => (await cards.nth(i).boundingBox())!.y));
-    expect(new Set(tops).size).toBe(1);
+    // One line each, one under the other, beside the calculator.
+    const rows = await Promise.all([0, 1, 2].map(async (i) => (await cards.nth(i).boundingBox())!));
+    expect(rows[1].y).toBeGreaterThanOrEqual(rows[0].y + rows[0].height);
+    expect(rows[2].y).toBeGreaterThanOrEqual(rows[1].y + rows[1].height);
+    const calc = (await page.getByRole("region", { name: "Calculateur des prix" }).boundingBox())!;
+    expect(rows[0].x + rows[0].width).toBeLessThan(calc.x);
     const venison = page.getByRole("region", { name: "Venaison", exact: true });
     await expect(venison.locator(".stat").filter({ hasText: "Rachat" })).toHaveCount(1);
     await expect(venison.locator(".stat").filter({ hasText: "Vente" })).toHaveCount(1);

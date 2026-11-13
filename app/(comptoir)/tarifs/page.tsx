@@ -265,16 +265,16 @@ function tilePrice(price: number | null, qty: number) {
 }
 
 /**
- * A featured product's card: its buyback and sale prices, the citizens' one
- * first when it has one; for leather, what the blacksmith pays for it beside
- * the sale.
+ * A featured product's line: its name, then its prices side by side, the
+ * citizens' buyback first when it has one; for leather, what the blacksmith
+ * pays for it after the sale.
  */
-function FeaturedCard({ product, blacksmith }: { product: Product; blacksmith: number }) {
+function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: number }) {
   const id = `phare-${product.id}`;
   return (
-    <section className="featured-card" aria-labelledby={id}>
+    <section className="featured-row" aria-labelledby={id}>
       <h3 id={id}>{product.name}</h3>
-      <div className="stats">
+      <div className="featured-prices">
         {product.citizenBuyPrice != null && (
           <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
             <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
@@ -285,9 +285,6 @@ function FeaturedCard({ product, blacksmith }: { product: Product; blacksmith: n
           <div className="stat-label">{product.citizenBuyPrice == null ? "Rachat" : "Rachat · autres vendeurs"}</div>
           <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
         </div>
-      </div>
-      {/* What the comptoir pays on the first line, what it resells for on the second. */}
-      <div className="stats">
         <div className="stat">
           <div className="stat-label">Vente</div>
           <div className="stat-value">{tilePrice(product.sellPrice, product.sellQty)}</div>
@@ -336,40 +333,42 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         )}
       </div>
 
-      <section className="panel" aria-labelledby="phare">
-        <div className="panel-head">
-          <div>
-            <div className="eyebrow">À la une</div>
-            <h2 id="phare">Produits phares</h2>
+      <div className="cols cols-stretch section-gap">
+        <section className="panel" aria-labelledby="phare">
+          <div className="panel-head">
+            <div>
+              <div className="eyebrow">À la une</div>
+              <h2 id="phare">Produits phares</h2>
+            </div>
+            {canEdit && (
+              <Link
+                className="icon-btn"
+                href="/marchandises#phare"
+                title="Gérer les produits phares"
+                aria-label="Gérer les produits phares"
+              >
+                <Pencil size={18} />
+              </Link>
+            )}
           </div>
-          {canEdit && (
-            <Link
-              className="icon-btn"
-              href="/marchandises#phare"
-              title="Gérer les produits phares"
-              aria-label="Gérer les produits phares"
-            >
-              <Pencil size={18} />
-            </Link>
+          {featured.length > 0 ? (
+            <div className="featured-rows">
+              {featured.map((p) => (
+                <FeaturedRow key={p.id} product={p} blacksmith={blacksmith} />
+              ))}
+            </div>
+          ) : (
+            <p className="muted">Aucun produit phare. Un gérant les choisit dans Gérer les marchandises.</p>
           )}
-        </div>
-        {featured.length > 0 ? (
-          <div className="featured-grid">
-            {featured.map((p) => (
-              <FeaturedCard key={p.id} product={p} blacksmith={blacksmith} />
-            ))}
-          </div>
-        ) : (
-          <p className="muted">Aucun produit phare. Un gérant les choisit dans Gérer les marchandises.</p>
-        )}
-      </section>
+        </section>
 
-      <section className="panel" aria-labelledby="calcul">
-        <div className="eyebrow">Outil des marchands</div>
-        <h2 id="calcul">Calculateur des prix</h2>
-        <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-        <PriceCalculator products={calculable} initialId={featured[0]?.id} />
-      </section>
+        <section className="panel" aria-labelledby="calcul">
+          <div className="eyebrow">Outil des marchands</div>
+          <h2 id="calcul">Calculateur des prix</h2>
+          <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
+          <PriceCalculator products={calculable} initialId={featured[0]?.id} />
+        </section>
+      </div>
 
       <section className="panel" aria-labelledby="chasse">
         <div className="eyebrow">Produits de chasse</div>
