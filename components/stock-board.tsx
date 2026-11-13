@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus, Settings2 } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/(comptoir)/inventaire/actions";
 import type { ProductCategory } from "@/lib/db/schema";
@@ -97,7 +98,8 @@ function StockCard({ item }: { item: StockItem }) {
 
 const CARDS_PER_PAGE = 24;
 
-export function StockBoard({ items }: { items: StockItem[] }) {
+/** `canManage`: shows the link to Gérer les marchandises, a gérant-only page. */
+export function StockBoard({ items, canManage }: { items: StockItem[]; canManage: boolean }) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"" | ProductCategory>("");
@@ -154,6 +156,11 @@ export function StockBoard({ items }: { items: StockItem[] }) {
           <button className="btn btn-small" type="button" onClick={() => setCreating(visible.length === 0 ? query.trim() : "")}>
             <PackagePlus size={14} /> Nouvelle marchandise
           </button>
+          {canManage && (
+            <Link className="btn btn-small" href="/marchandises">
+              <Settings2 size={14} /> Gérer les marchandises
+            </Link>
+          )}
         </div>
       )}
       {visible.length === 0 ? (

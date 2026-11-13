@@ -5,7 +5,7 @@ import { createProduct, loginAsGerant, uniqueName } from "./helpers";
 // Both tests change the same setting: one after the other.
 test.describe.configure({ mode: "serial" });
 
-/** Picks the featured product in Gérer les tarifs and saves it. */
+/** Picks the featured product in Gérer les marchandises and saves it. */
 async function feature(page: Page, name: string) {
   await page.goto("/marchandises");
   const panel = page.getByRole("region", { name: "Produit phare" });

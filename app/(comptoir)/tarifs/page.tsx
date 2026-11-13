@@ -27,7 +27,7 @@ function priced(p: Product) {
 
 const NO_MATCH = <p className="muted">Aucune marchandise ne correspond.</p>;
 
-/** A gérant's pencil to the product's form in Gérer les tarifs, at the end of its row. */
+/** A gérant's pencil to the product's form in Gérer les marchandises, at the end of its row. */
 function EditCell({ product, canEdit }: { product: Product; canEdit: boolean }) {
   if (!canEdit) return null;
   return (
@@ -317,7 +317,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
         <PageHead title="Tarifs" />
         {canEdit && (
           <Link className="btn" href="/marchandises">
-            <Settings2 size={16} /> Gérer les tarifs
+            <Settings2 size={16} /> Gérer les marchandises
           </Link>
         )}
       </div>
@@ -329,7 +329,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
           {featured ? (
             <FeaturedTiles product={featured} blacksmith={blacksmith} />
           ) : (
-            <p className="muted">Un gérant le choisit dans Gérer les tarifs.</p>
+            <p className="muted">Un gérant le choisit dans Gérer les marchandises.</p>
           )}
         </section>
 

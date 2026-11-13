@@ -822,6 +822,8 @@ th.num {
 
 .stock-tools {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
   margin: 12px 0;
 }
