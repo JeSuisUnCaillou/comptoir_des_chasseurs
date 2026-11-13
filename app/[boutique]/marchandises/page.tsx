@@ -67,8 +67,8 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
             <div className="eyebrow">Réglage</div>
             <h2 id="privilegies">Clients privilégiés</h2>
             <p className="muted">
-              Des vendeurs à qui la boutique rachète à leur propre prix, comme les citoyens d&apos;une ville. Chaque
-              marchandise peut avoir un prix pour chacun ; vide, ils ont le prix habituel.
+              Chaque groupe de clients privilégiés a ses propres prix de rachat, à fixer sur chaque marchandise. Par
+              exemple : les citoyens d&apos;une ville, les membres d&apos;une guilde, les Compagnons, les habitués.
             </p>
             <PrivilegedGroupsForm groups={groups} max={MAX_PRIVILEGED_GROUPS} />
           </section>

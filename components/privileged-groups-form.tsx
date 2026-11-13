@@ -87,7 +87,7 @@ export function PrivilegedGroupsForm({ groups, max }: { groups: GroupChoice[]; m
             required
             maxLength={GROUP_NAME_MAX}
             autoComplete="off"
-            placeholder="Citoyens de Blancherive…"
+            placeholder="Membres de la guilde des voleurs…"
             aria-label="Nouveau groupe"
           />
           <button className="btn btn-small" type="submit" disabled={pending}>
