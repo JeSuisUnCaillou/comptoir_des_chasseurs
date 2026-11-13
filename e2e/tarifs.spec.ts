@@ -299,3 +299,36 @@ test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tari
   await expect(employee.getByRole("row", { name: new RegExp(name) })).toBeVisible();
   await expect(employee.getByRole("link", { name: /^Modifier / })).toHaveCount(0);
 });
+
+test("un clic sur un en-tête trie la grille, un second clic dans l'autre sens", async ({ page }) => {
+  const tag = uniqueName("Tri tarifs");
+  // 2 septims for 4 units is cheaper per unit than 1 septim for one.
+  await createProduct(`${tag} Aiguille`, { category: "ressource", unit: "unité", buyPrice: 2, buyQty: 4, sellPrice: 3 });
+  await createProduct(`${tag} bois`, { category: "ressource", unit: "unité", buyPrice: 1, sellPrice: 1 });
+  await createProduct(`${tag} Cire`, { category: "ressource", unit: "unité", buyPrice: null, sellPrice: 2 });
+  await page.goto(`/tarifs?q=${encodeURIComponent(tag)}`);
+  const { ressources } = grids(page);
+  const names = ressources.locator("tbody td.stack-title");
+  await expect(names).toHaveText([`${tag} Aiguille`, `${tag} bois`, `${tag} Cire`]);
+
+  const vente = ressources.getByRole("button", { name: "Vente", exact: true });
+  await vente.click();
+  await expect(names).toHaveText([`${tag} bois`, `${tag} Cire`, `${tag} Aiguille`]);
+  await expect(ressources.getByRole("columnheader", { name: "Vente", exact: true })).toHaveAttribute("aria-sort", "ascending");
+  await vente.click();
+  await expect(names).toHaveText([`${tag} Aiguille`, `${tag} Cire`, `${tag} bois`]);
+  await expect(ressources.getByRole("columnheader", { name: "Vente", exact: true })).toHaveAttribute("aria-sort", "descending");
+
+  // Per unit, and the one without a buyback price stays last both ways.
+  const rachat = ressources.getByRole("button", { name: "Rachat", exact: true });
+  await rachat.click();
+  await expect(names).toHaveText([`${tag} Aiguille`, `${tag} bois`, `${tag} Cire`]);
+  await rachat.click();
+  await expect(names).toHaveText([`${tag} bois`, `${tag} Aiguille`, `${tag} Cire`]);
+
+  // Names ignore case: "bois" between "Aiguille" and "Cire".
+  const nom = ressources.getByRole("button", { name: "Marchandise", exact: true });
+  await nom.click();
+  await nom.click();
+  await expect(names).toHaveText([`${tag} Cire`, `${tag} bois`, `${tag} Aiguille`]);
+});
