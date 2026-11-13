@@ -34,14 +34,31 @@ export const shops = pgTable(
 export type Shop = typeof shops.$inferSelect;
 
 /**
- * Every shop's data belongs to one shop. Until every write names its shop,
- * rows written without one go to the first shop, created by the shops
- * migration with id 1.
+ * A link the super admin gives someone to become gérant of a shop made for
+ * them: /invitation/<token>, used once.
  */
+export const shopInvitations = pgTable(
+  "shop_invitations",
+  {
+    id: serial("id").primaryKey(),
+    token: text("token").notNull(),
+    shopId: integer("shop_id")
+      .notNull()
+      .references(() => shops.id),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => members.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    usedBy: integer("used_by").references(() => members.id),
+  },
+  (t) => [uniqueIndex("shop_invitations_token_idx").on(t.token)],
+);
+
+/** Every shop's data belongs to one shop, which every write names. */
 function shopColumn() {
   return integer("shop_id")
     .notNull()
-    .default(1)
     .references(() => shops.id);
 }
 
@@ -55,7 +72,7 @@ export const members = pgTable(
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
     // Replaced by the role in each shop (shopMembers.role): no longer read,
-    // dropped once the code in production no longer writes it.
+    // dropped by a later migration.
     role: memberRole("role").notNull().default("employe"),
     // The comptoir's owner: always a gérant, and nobody else can change their
     // account (name, role, password).
@@ -165,13 +182,11 @@ export const stockMovements = pgTable("stock_movements", {
 export const settings = pgTable(
   "settings",
   {
-    // Still the primary key alone while the code in production writes
-    // without a shop; (shop_id, key) becomes the key when shops are created.
-    key: text("key").primaryKey(),
+    key: text("key").notNull(),
     shopId: shopColumn(),
     value: integer("value").notNull(),
   },
-  (t) => [uniqueIndex("settings_shop_key_idx").on(t.shopId, t.key)],
+  (t) => [primaryKey({ columns: [t.shopId, t.key] })],
 );
 
 export type Product = typeof products.$inferSelect;

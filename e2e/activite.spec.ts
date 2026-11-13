@@ -113,10 +113,10 @@ test("chacun ouvre son activité depuis son nom, un employé ne voit que la sien
   await other.getByTestId("member-name").click();
   await expect(other.getByRole("heading", { level: 1, name: otherName })).toBeVisible();
   await employee.goto(other.url());
-  await expect(employee).toHaveURL(/\/$/);
+  await expect(employee).toHaveURL(/\/le-comptoir-des-chasseurs$/);
   // Nor can the other one open theirs.
   await other.goto(own);
-  await expect(other).toHaveURL(/\/$/);
+  await expect(other).toHaveURL(/\/le-comptoir-des-chasseurs$/);
 
   // A gérant opens their own from their name, and any member's from Membres.
   await loginAsGerant(page);

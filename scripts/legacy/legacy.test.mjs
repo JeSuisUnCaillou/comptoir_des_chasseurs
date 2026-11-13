@@ -274,7 +274,7 @@ test("export puis import, sans toucher aux membres", async () => {
   // Suppliers alone: the register and stock of the target stay as they are.
   await admin`update transactions set notes = 'Écrit après l''import' where id = 1`;
   await admin`delete from supplier_offers`;
-  await admin`insert into suppliers (name) values ('Créé dans la nouvelle app')`;
+  await admin`insert into suppliers (shop_id, name) values (1, 'Créé dans la nouvelle app')`;
   const only = await run(
     ["scripts/legacy/import.mjs", file, "--cible=local", `--base=${dbUrl}`, "--oui", "--seulement=fournisseurs"],
     "",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { saveProduct, type ProductFormState } from "@/app/(comptoir)/marchandises/actions";
+import { saveProduct, type ProductFormState } from "@/app/[boutique]/marchandises/actions";
 import type { Product, ProductCategory } from "@/lib/db/schema";
 import { CATEGORY_LABELS } from "@/lib/pricing";
 import { keepValues } from "@/components/keep-values";

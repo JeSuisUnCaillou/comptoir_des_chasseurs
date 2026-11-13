@@ -80,8 +80,8 @@ async function oldMovement(username: string, product: string, delta: number, rea
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into stock_movements (product_id, delta, stock_after, member_id, reason, created_at)
-      select p.id, ${delta}, p.stock, m.id, ${reason}, now() - make_interval(days => ${daysAgo})
+      insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason, created_at)
+      select p.shop_id, p.id, ${delta}, p.stock, m.id, ${reason}, now() - make_interval(days => ${daysAgo})
       from products p, members m
       where p.name = ${product} and m.username = ${username.toLowerCase()}`;
   } finally {
@@ -279,10 +279,10 @@ test("l'inventaire montre les septims en caisse, sans ceux qui attendent la cais
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into transactions (kind, label, quantity, amount, member_id, till_pending)
-      select 'vente'::transaction_kind, ${uniqueName("Vente encaissée")}, 1, 5000000, id, false from members where username = ${username}
+      insert into transactions (shop_id, kind, label, quantity, amount, member_id, till_pending)
+      select 1, 'vente'::transaction_kind, ${uniqueName("Vente encaissée")}, 1, 5000000, id, false from members where username = ${username}
       union all
-      select 'vente'::transaction_kind, ${uniqueName("Vente en attente")}, 1, 7000000, id, true from members where username = ${username}`;
+      select 1, 'vente'::transaction_kind, ${uniqueName("Vente en attente")}, 1, 7000000, id, true from members where username = ${username}`;
   } finally {
     await sql.end();
   }

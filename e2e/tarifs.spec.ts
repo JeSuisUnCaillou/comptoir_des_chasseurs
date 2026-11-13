@@ -58,7 +58,7 @@ test("le calculateur donne rachat, vente et transformation", async ({ page }) =>
 });
 
 test("une seule recherche pour toutes les grilles, qui ne montre que les catégories trouvées", async ({ page }) => {
-  const block = page.getByRole("region", { name: "Grille du comptoir" });
+  const block = page.getByRole("region", { name: "Grille des prix" });
   const { peaux, viandes, ressources } = grids(page);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
   await expect(viandes.getByRole("row", { name: /^Venaison/ })).toBeVisible();
@@ -69,7 +69,7 @@ test("une seule recherche pour toutes les grilles, qui ne montre que les catégo
   await expect(page.getByRole("searchbox")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
   await expect(search).toHaveAttribute("placeholder", "Chercher une marchandise");
-  await expect(block).toContainText("Produits de chasse");
+  await expect(block).toContainText("Marchandises");
   const bar = (await search.boundingBox())!;
   const [p, v, r] = [(await peaux.boundingBox())!, (await viandes.boundingBox())!, (await ressources.boundingBox())!];
   expect(bar.y).toBeLessThan(p.y);
@@ -186,7 +186,7 @@ test("les marchandises sans tarif de toutes les catégories se montrent sur dema
   await createProduct(ressource, { buyPrice: null, sellPrice: null, category: "ressource", unit: "pièce" });
   // The beforeEach click may still be on its way: open the page itself.
   await page.goto("/tarifs");
-  const block = page.getByRole("region", { name: "Grille du comptoir" });
+  const block = page.getByRole("region", { name: "Grille des prix" });
   const unpriced = block.getByRole("table", { name: "Marchandises sans tarif" });
   const { peaux, ressources } = grids(page);
   await expect(peaux.getByRole("row", { name: /Biche/ })).toBeVisible();
@@ -235,7 +235,7 @@ test("une recherche à moins de 10 résultats montre d'office les marchandises s
   await createProduct(`${many} sans tarif`, { buyPrice: null, sellPrice: null });
   for (let i = 1; i <= 9; i++) await createProduct(`${many} avec tarif ${i}`);
   await page.goto("/tarifs");
-  const peaux = page.getByRole("region", { name: "Grille du comptoir" });
+  const peaux = page.getByRole("region", { name: "Grille des prix" });
   const unpriced = peaux.getByRole("table", { name: "Marchandises sans tarif" });
   const search = peaux.getByRole("searchbox", { name: "Chercher une marchandise" });
 

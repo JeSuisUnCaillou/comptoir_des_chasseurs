@@ -7,12 +7,15 @@ export const ALERT = "[role=alert]:not(#__next-route-announcer__)";
 
 export const GERANT = { username: "lomone", password: "lomone-secret", name: "Lomone" };
 
-/** Signs in through the real sign-in form. */
+/** Address of the comptoir, the first shop, which the tests drive. */
+export const COMPTOIR = "/le-comptoir-des-chasseurs";
+
+/** Signs in through the real sign-in form, into the comptoir. */
 export async function loginAs(page: Page, username: string, password: string) {
-  await page.goto("/connexion");
+  await page.goto(`/connexion?suite=${encodeURIComponent(COMPTOIR)}`);
   await page.getByLabel("Identifiant").fill(username);
   await page.getByLabel("Mot de passe").fill(password);
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 }
 
@@ -118,8 +121,8 @@ export async function createProduct(
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into products (name, category, unit, stock, buy_price, sell_price, buy_qty, bulk_min, bulk_price)
-      values (${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice}, ${buyQty}, ${bulkMin}, ${bulkPrice})`;
+      insert into products (shop_id, name, category, unit, stock, buy_price, sell_price, buy_qty, bulk_min, bulk_price)
+      values (1, ${name}, ${category}, ${unit}, ${stock}, ${buyPrice}, ${sellPrice}, ${buyQty}, ${bulkMin}, ${bulkPrice})`;
   } finally {
     await sql.end();
   }
@@ -143,8 +146,8 @@ export async function createTransactions(
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into transactions (kind, label, quantity, amount, member_id, created_at)
-      select ${kind}::transaction_kind, ${label} || ' ' || i, 1, ${amount}, m.id, ${sql.unsafe(at)}
+      insert into transactions (shop_id, kind, label, quantity, amount, member_id, created_at)
+      select 1, ${kind}::transaction_kind, ${label} || ' ' || i, 1, ${amount}, m.id, ${sql.unsafe(at)}
       from generate_series(1, ${n}::int) as i, members m
       where m.username = ${username.toLowerCase()}`;
   } finally {
@@ -160,8 +163,8 @@ export async function createAnnouncements(username: string, n: number, title = "
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      insert into announcements (title, body, member_id, created_at)
-      select ${title} || ' ' || i, 'Texte ' || i, m.id, now() - interval '1 day' - i * interval '1 minute'
+      insert into announcements (shop_id, title, body, member_id, created_at)
+      select 1, ${title} || ' ' || i, 'Texte ' || i, m.id, now() - interval '1 day' - i * interval '1 minute'
       from generate_series(1, ${n}::int) as i, members m
       where m.username = ${username.toLowerCase()}`;
   } finally {

@@ -1,5 +1,5 @@
 {
-  "id": "e0d5ba91-8d6d-4f9d-a767-43408bea0f9a",
+  "id": "c803aa3b-fd9e-48c0-a423-fc04c4daff34",
   "prevId": "6c6c30bb-f27e-4d99-8a4d-93302fcb31d3",
   "version": "7",
   "dialect": "postgresql",
@@ -18,8 +18,7 @@
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "title": {
           "name": "title",
@@ -206,8 +205,7 @@
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -306,12 +304,6 @@
           "notNull": true,
           "default": false
         },
-        "featured_at": {
-          "name": "featured_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -380,15 +372,14 @@
         "key": {
           "name": "key",
           "type": "text",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "shop_id": {
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "value": {
           "name": "value",
@@ -397,18 +388,90 @@
           "notNull": true
         }
       },
+      "indexes": {},
+      "foreignKeys": {
+        "settings_shop_id_shops_id_fk": {
+          "name": "settings_shop_id_shops_id_fk",
+          "tableFrom": "settings",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "settings_shop_id_key_pk": {
+          "name": "settings_shop_id_key_pk",
+          "columns": [
+            "shop_id",
+            "key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.shop_invitations": {
+      "name": "shop_invitations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_by": {
+          "name": "used_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
       "indexes": {
-        "settings_shop_key_idx": {
-          "name": "settings_shop_key_idx",
+        "shop_invitations_token_idx": {
+          "name": "shop_invitations_token_idx",
           "columns": [
             {
-              "expression": "shop_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "key",
+              "expression": "token",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -421,12 +484,38 @@
         }
       },
       "foreignKeys": {
-        "settings_shop_id_shops_id_fk": {
-          "name": "settings_shop_id_shops_id_fk",
-          "tableFrom": "settings",
+        "shop_invitations_shop_id_shops_id_fk": {
+          "name": "shop_invitations_shop_id_shops_id_fk",
+          "tableFrom": "shop_invitations",
           "tableTo": "shops",
           "columnsFrom": [
             "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "shop_invitations_created_by_members_id_fk": {
+          "name": "shop_invitations_created_by_members_id_fk",
+          "tableFrom": "shop_invitations",
+          "tableTo": "members",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "shop_invitations_used_by_members_id_fk": {
+          "name": "shop_invitations_used_by_members_id_fk",
+          "tableFrom": "shop_invitations",
+          "tableTo": "members",
+          "columnsFrom": [
+            "used_by"
           ],
           "columnsTo": [
             "id"
@@ -600,8 +689,7 @@
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "product_id": {
           "name": "product_id",
@@ -824,8 +912,7 @@
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -913,8 +1000,7 @@
           "name": "shop_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "kind": {
           "name": "kind",

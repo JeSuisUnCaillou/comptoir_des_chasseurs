@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import { ProductCombobox } from "@/components/product-combobox";
-import { recordTransaction, type TransactionState } from "@/app/(comptoir)/achat-vente/actions";
+import { recordTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
+import { useShopPath } from "@/components/use-shop-path";
 import { DRAFT_PARAM, encodeDraft, type TransactionDraft } from "@/lib/transaction-draft";
 import { MAX_LINES } from "@/lib/transaction-kinds";
 import { CATEGORY_LABELS, appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
@@ -100,6 +101,7 @@ export function TransactionForm({
   draft: TransactionDraft | null;
 }) {
   const router = useRouter();
+  const at = useShopPath();
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
   const sale = kind === "vente";
   const submitLabel = sale ? "Confirmer la vente" : "Confirmer l'achat";
@@ -151,7 +153,7 @@ export function TransactionForm({
       citizen,
     };
     const params = new URLSearchParams({ [DRAFT_PARAM]: encodeDraft(carried) });
-    router.push(`/achat-vente/${sale ? "achat" : "vente"}?${params}`);
+    router.push(at(`/achat-vente/${sale ? "achat" : "vente"}?${params}`));
   }
 
   const form = (
@@ -395,7 +397,7 @@ export function TransactionForm({
   return (
     <>
       <p className="row-actions">
-        <Link className="btn btn-small btn-ghost" href="/achat-vente">
+        <Link className="btn btn-small btn-ghost" href={at("/achat-vente")}>
           <ArrowLeft size={14} /> Retour au registre
         </Link>
         <button type="button" className="btn btn-small btn-ghost" onClick={switchKind}>

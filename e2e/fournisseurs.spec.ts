@@ -6,7 +6,7 @@ import { createProduct, loginAsGerant, newEmployeePage, uniqueName } from "./hel
 async function createSuppliers(names: string[], place = "") {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    for (const name of names) await sql`insert into suppliers (name, place) values (${name}, ${place})`;
+    for (const name of names) await sql`insert into suppliers (shop_id, name, place) values (1, ${name}, ${place})`;
   } finally {
     await sql.end();
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { changePassword } from "@/app/(comptoir)/mot-de-passe/actions";
+import { changePassword } from "@/app/[boutique]/mot-de-passe/actions";
 import { keepValues } from "@/components/keep-values";
 
 export function ChangePasswordForm() {
