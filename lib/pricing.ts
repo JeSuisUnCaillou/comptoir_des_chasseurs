@@ -130,14 +130,6 @@ export function transformation(p: Hide, hides: number) {
   };
 }
 
-export const CATEGORY_LABELS = {
-  peau: "Peaux",
-  cuir: "Cuirs",
-  viande: "Viandes et venaison",
-  ressource: "Ressources",
-  autre: "Autres marchandises",
-} as const;
-
 /** French plural of a unit: pièce → pièces, peau → peaux, lot → lots. */
 export function plural(unit: string, n: number) {
   if (Math.abs(n) < 2 || /[sxz]$/.test(unit)) return unit;

@@ -61,7 +61,8 @@ sur une page du registre.
 | Liste | Ordre |
 | --- | --- |
 | Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, fournisseurs | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
-| Cartes du stock (Inventaire) | cuirs, puis viandes, puis peaux, puis le reste ; chaque groupe par nom comme ci-dessus |
+| Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
+| Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre où elles ont été créées |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
@@ -271,10 +272,12 @@ Dans l'ordre de la page :
 2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
    cherche en tapant, parmi toutes celles qui ont un prix.
 3. La grille des prix (« Marchandises ») : une seule recherche par nom,
-   qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
-   (transformation et bénéfice par lot), viandes et venaison, autres
-   ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
-   produit phare n'y est pas : il a ses tuiles en haut.
+   qui filtre pendant qu'on tape, puis une grille par catégorie de la
+   boutique, à son nom (§ Catégories) ; celle des peaux montre la
+   transformation et le bénéfice par lot. Au comptoir : Peaux, Viandes et
+   venaison, Autres ressources (où va aussi le cuir quand il n'est pas le
+   produit phare), Composants alchimiques. Le produit phare n'y est pas : il
+   a ses tuiles en haut.
 
 Dans la grille :
 
@@ -304,14 +307,36 @@ Dans la grille :
 - Nommer les clients privilégiés de la boutique (§ Clients privilégiés).
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.
+- Gérer les catégories (§ Catégories).
 - Même recherche par nom que les Tarifs et l'Inventaire.
+
+### Catégories
+
+- Chaque boutique a ses catégories de marchandises ; une nouvelle boutique
+  commence avec une seule, « Autres marchandises ». Chaque marchandise est
+  dans une catégorie de sa boutique.
+- Un gérant les renomme, en ajoute et en supprime dans Gérer les
+  marchandises. Deux catégories d'une boutique n'ont pas le même nom. Une
+  catégorie ne se supprime que vide (marchandises archivées comprises), et
+  la boutique en garde au moins une. Chaque catégorie dit combien de
+  marchandises elle contient.
+- Le comptoir a Peaux, Viandes et venaison, Autres ressources et Composants
+  alchimiques. Sa catégorie des peaux le reste même renommée : ses
+  marchandises se transforment en cuir par lots (champs « Peaux par lot » et
+  « Cuirs obtenus », grille des peaux aux Tarifs, total « Peaux en réserve »).
+  Son Cuir, rangé dans Autres ressources, reste le cuir : produit phare par
+  défaut, rachat par le forgeron, total « Cuirs en réserve ». Ces deux
+  marques ne se règlent pas dans l'app : une autre boutique n'en a pas.
 
 ## Inventaire
 
 ### En tête
 
 Les septims en caisse, calculés comme la trésorerie du Grand livre, sans
-les septims *Pas encore en caisse*.
+les septims *Pas encore en caisse*. Puis les peaux en réserve (si la
+boutique a une catégorie des peaux), les cuirs en réserve (si elle a du
+cuir), et le nombre des autres marchandises (« Marchandises » s'il n'y a ni
+peaux ni cuir).
 
 ### Cartes du stock
 
@@ -339,7 +364,8 @@ registre.
 
 - Le bouton « Nouvelle marchandise » fait entrer en stock une marchandise
   qui n'existe pas encore.
-- Tout membre la crée : nom, catégorie, unité, quantité, motif. Un employé
+- Tout membre la crée : nom, catégorie (parmi celles de la boutique, celle
+  du filtre du stock d'office), unité, quantité, motif. Un employé
   la crée sans prix ; un gérant règle ses prix ensuite dans Gérer les
   marchandises.
 - Un gérant a en plus la case « Ajouter des prix » : cochée, elle montre les

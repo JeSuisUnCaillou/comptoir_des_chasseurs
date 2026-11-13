@@ -8,6 +8,7 @@ import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
 import { canOpenShop } from "@/lib/policies";
+import { insertDefaultCategory } from "@/lib/categories";
 import { RESERVED_SLUGS, isComptoir, slugOf, slugify } from "@/lib/paths";
 
 export async function shopBySlug(slug: string): Promise<Shop | undefined> {
@@ -91,6 +92,7 @@ export async function insertShop(tx: Tx, name: string): Promise<Shop> {
   checkSlug(slug);
   return claimingSlug(slug, async () => {
     const [shop] = await tx.insert(schema.shops).values({ name, slug }).returning();
+    await insertDefaultCategory(tx, shop.id);
     return shop;
   });
 }
@@ -123,7 +125,7 @@ export async function updateShop(shop: Shop, name: string, address: string): Pro
 }
 
 /**
- * A gérant deletes a shop with everything in it: merchandises, register,
+ * A gérant deletes a shop with everything in it: merchandises and their categories, register,
  * stock history, board, suppliers, settings, invitations and memberships,
  * once they have typed its name again. The accounts stay, but one left
  * with no shop can't sign in any more: a gérant keeps at least one shop
@@ -145,6 +147,7 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
     await tx.delete(schema.products).where(of(schema.products));
     // Their prices went with the merchandises.
     await tx.delete(schema.privilegedGroups).where(of(schema.privilegedGroups));
+    await tx.delete(schema.productCategories).where(of(schema.productCategories));
     await tx.delete(schema.announcements).where(of(schema.announcements));
     await tx.delete(schema.settings).where(of(schema.settings));
     await tx.delete(schema.shopInvitations).where(of(schema.shopInvitations));

@@ -20,7 +20,7 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   await page.goto("/marchandises");
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Catégorie").selectOption("ressource");
+  await form.getByLabel("Catégorie").selectOption("Autres ressources");
   await form.getByRole("spinbutton", { name: "Prix en septims" }).first().fill("3");
   await form.getByLabel(`Prix pour : ${CITIZENS}`).fill("4");
   await form.getByRole("spinbutton", { name: "Prix en septims" }).nth(1).fill("6");
@@ -92,7 +92,7 @@ test("le prix privilégié du produit phare a sa propre tuile sur les Tarifs", a
 test("à l'achat de plusieurs marchandises, un seul choix pour le vendeur", async ({ browser }) => {
   const leather = uniqueName("Cuir épais");
   const hide = uniqueName("Peau de daim");
-  await createProduct(leather, { buyPrice: 3, category: "cuir", unit: "pièce" });
+  await createProduct(leather, { buyPrice: 3, category: "Autres ressources", leather: true, unit: "pièce" });
   await createProduct(hide, { buyPrice: 2 });
   await setPrivilegedPrice(leather, 4);
   const { page } = await newEmployeePage(browser, "camilla");
@@ -145,8 +145,9 @@ async function newShop(page: Page) {
       returning id`;
     await sql`insert into shop_members (shop_id, member_id, role) values (${shop.id}, ${member.id}, 'gerant')`;
     await sql`
-      insert into products (shop_id, name, category, unit, buy_price, buy_qty, sell_price)
-      values (${shop.id}, ${product}, 'cuir', 'pièce', 3, 1, 6)`;
+      with category as (insert into product_categories (shop_id, name) values (${shop.id}, 'Autres marchandises') returning id)
+      insert into products (shop_id, name, category_id, leather, unit, buy_price, buy_qty, sell_price)
+      select ${shop.id}, ${product}, id, true, 'pièce', 3, 1, 6 from category`;
   } finally {
     await sql.end();
   }

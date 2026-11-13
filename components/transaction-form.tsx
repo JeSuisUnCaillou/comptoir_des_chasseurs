@@ -4,20 +4,22 @@ import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2, TriangleAlert } from "
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
-import { ProductCombobox } from "@/components/product-combobox";
+import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
-import type { Product, TransactionKind } from "@/lib/db/schema";
+import type { TransactionKind } from "@/lib/db/schema";
+import type { CategorizedProduct } from "@/lib/products";
 import { keepValues } from "@/components/keep-values";
 import { useShopPath } from "@/components/use-shop-path";
 import { DRAFT_PARAM, encodeDraft, type TransactionDraft } from "@/lib/transaction-draft";
 import { MAX_LINES } from "@/lib/transaction-kinds";
-import { CATEGORY_LABELS, appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
+import { appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
-  Product,
+  CategorizedProduct,
   | "id"
   | "name"
-  | "category"
+  | "categoryId"
+  | "categoryName"
   | "unit"
   | "stock"
   | "buyPrice"
@@ -135,12 +137,7 @@ export function TransactionForm({
   if (sale) for (const e of evaluated) if (e.product) wanted.set(e.product, (wanted.get(e.product) ?? 0) + e.qty);
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
 
-  // Groups keep the catalogue's category order; names are sorted inside each.
-  const choices = (Object.keys(CATEGORY_LABELS) as Product["category"][]).flatMap((category) =>
-    products
-      .filter((p) => p.category === category)
-      .map((p) => ({ id: String(p.id), name: p.name, group: CATEGORY_LABELS[category] })),
-  );
+  const choices = choicesByCategory(products);
 
   function update(key: number, change: Partial<Line>) {
     setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));

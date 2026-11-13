@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, count, desc, eq, gt, gte, ilike, inArray, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, gt, gte, ilike, inArray, lt, sql, type SQL } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
-import type { ProductCategory } from "@/lib/db/schema";
+import { categoryOf } from "@/lib/categories";
 import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
@@ -11,10 +11,20 @@ import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type S
 
 export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 
+/** A merchandise's columns, with its category's name and whether it holds hides. */
+const withCategory = {
+  ...getTableColumns(schema.products),
+  categoryName: schema.productCategories.name,
+  hides: schema.productCategories.hides,
+};
+
+export type CategorizedProduct = Awaited<ReturnType<typeof activeProducts>>[number];
+
 export async function activeProducts(shopId: number) {
   const products = await getDb()
-    .select()
+    .select(withCategory)
     .from(schema.products)
+    .innerJoin(schema.productCategories, eq(schema.productCategories.id, schema.products.categoryId))
     .where(and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false)))
     .orderBy(byName(schema.products.name), asc(schema.products.id));
   return withPrivilegedPrices(products);
@@ -51,9 +61,9 @@ export const FEATURED_PRODUCT = "produit_phare";
  * The product the Tarifs page puts forward, among the shop's active ones: the
  * one a gérant chose, or else the leather, as before the choice existed.
  */
-export async function featuredProduct<P extends { id: number; category: ProductCategory }>(shopId: number, active: P[]) {
+export async function featuredProduct<P extends { id: number; leather: boolean }>(shopId: number, active: P[]) {
   const id = await readSetting(shopId, FEATURED_PRODUCT);
-  return active.find((p) => p.id === id) ?? active.find((p) => p.category === "cuir");
+  return active.find((p) => p.id === id) ?? active.find((p) => p.leather);
 }
 
 /** Puts one of the shop's active products forward on the Tarifs page. */
@@ -239,7 +249,7 @@ export async function recordMovements(
  */
 export async function createStocked(
   member: Pick<ShopMember, "id" | "shopId" | "role">,
-  identity: { name: string; category: ProductCategory; unit: string },
+  identity: { name: string; categoryId: number; unit: string },
   prices: { prices: ProductPrices; privileged: PrivilegedInput } | null,
   quantity: number,
   reason: string,
@@ -247,9 +257,10 @@ export async function createStocked(
   if (prices && !isGerant(member)) throw new UserError("Seul un gérant fixe les prix.");
   try {
     await getDb().transaction(async (tx) => {
+      const category = await categoryOf(tx, member.shopId, identity.categoryId);
       const [product] = await tx
         .insert(schema.products)
-        .values({ ...identity, ...prices?.prices, shopId: member.shopId })
+        .values({ ...identity, ...(prices && batchFor(category, prices.prices)), shopId: member.shopId })
         .returning({ id: schema.products.id });
       if (prices) await setPrivilegedPrices(tx, member.shopId, product.id, prices.privileged);
       const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
@@ -264,18 +275,27 @@ export async function createStocked(
 }
 
 /** What Gérer les marchandises sets on a merchandise. */
-export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "shopId" | "stock" | "createdAt">;
+export type ProductValues = Omit<
+  typeof schema.products.$inferInsert,
+  "id" | "shopId" | "stock" | "createdAt" | "category" | "leather"
+> & { categoryId: number };
 
 /** A merchandise's prices, without its name, category, unit or archiving. */
-export type ProductPrices = Omit<ProductValues, "name" | "category" | "unit" | "archived">;
+export type ProductPrices = Omit<ProductValues, "name" | "categoryId" | "unit" | "archived">;
+
+/** The prices as saved: only a merchandise of the hides' category turns into leather by batches. */
+function batchFor<P extends ProductPrices>(category: { hides: boolean }, prices: P): P {
+  return category.hides ? prices : { ...prices, hidesPerBatch: null, leatherPerBatch: null };
+}
 
 /** Creates a merchandise of the shop, or updates it when `id` is given. */
 export async function saveProduct(
   shopId: number,
   id: number | null,
-  values: ProductValues,
+  given: ProductValues,
   privileged: PrivilegedInput = [],
 ) {
+  const values = batchFor(await categoryOf(getDb(), shopId, given.categoryId), given);
   try {
     await getDb().transaction(async (tx) => {
       const [saved] =
@@ -305,8 +325,9 @@ export async function productPage(shopId: number, q: string, page: number) {
   const db = getDb();
   const [products, [{ total }]] = await Promise.all([
     db
-      .select()
+      .select(withCategory)
       .from(schema.products)
+      .innerJoin(schema.productCategories, eq(schema.productCategories.id, schema.products.categoryId))
       .where(where)
       .orderBy(asc(schema.products.archived), byName(schema.products.name), asc(schema.products.id))
       .limit(PAGE_SIZE)

@@ -1,4 +1,4 @@
-import type { Product, ProductCategory } from "@/lib/db/schema";
+import type { Product } from "@/lib/db/schema";
 import { PRIVILEGED_PREFIX } from "@/lib/forms";
 
 /** A privileged group, as the price fields show it. */
@@ -40,12 +40,13 @@ function NumberField({
  */
 export function ProductPriceFields({
   id,
-  category,
+  hides,
   product,
   groups,
 }: {
   id: string;
-  category: ProductCategory;
+  /** The merchandise is in the hides' category: it turns into leather by batches. */
+  hides: boolean;
   product?: Product & { privileged: { groupId: number; price: number }[] };
   groups: GroupChoice[];
 }) {
@@ -80,7 +81,7 @@ export function ProductPriceFields({
         <NumberField id={id} name="bulkQty" label="Pour (unités)" defaultValue={product?.bulkQty ?? 1} />
       </div>
 
-      {category === "peau" && (
+      {hides && (
         <>
           <h3>Transformation en cuir</h3>
           <div className="form-grid">

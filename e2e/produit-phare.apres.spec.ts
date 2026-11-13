@@ -49,7 +49,7 @@ test("un gérant choisit le produit phare mis en avant en haut des Tarifs", asyn
 
 test("un produit phare archivé laisse la place au cuir", async ({ page }) => {
   const name = uniqueName("Défense de mammouth");
-  await createProduct(name, { category: "ressource", unit: "pièce" });
+  await createProduct(name, { category: "Autres ressources", unit: "pièce" });
   await loginAsGerant(page);
   try {
     await feature(page, name);

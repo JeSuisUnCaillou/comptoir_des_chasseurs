@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useId, useState } from "react";
 import { createAndStock, type CreateState } from "@/app/[boutique]/inventaire/actions";
-import type { ProductCategory } from "@/lib/db/schema";
-import { CATEGORY_LABELS } from "@/lib/pricing";
+import { CategorySelect, defaultCategory, type CategoryChoice } from "@/components/category-select";
 import { keepValues } from "@/components/keep-values";
 import { ProductPriceFields, type GroupChoice } from "@/components/product-price-fields";
 
@@ -15,13 +14,16 @@ import { ProductPriceFields, type GroupChoice } from "@/components/product-price
 export function NewStockProductForm({
   name,
   category: initialCategory,
+  categories,
   canSetPrices,
   groups,
   onCreated,
   onCancel,
 }: {
   name: string;
-  category: ProductCategory | "";
+  /** The category the stock is filtered on, if any. */
+  category: number | undefined;
+  categories: CategoryChoice[];
   canSetPrices: boolean;
   /** The shop's privileged groups, a price field each. */
   groups: GroupChoice[];
@@ -29,7 +31,8 @@ export function NewStockProductForm({
   onCancel: () => void;
 }) {
   const id = useId();
-  const [category, setCategory] = useState<ProductCategory>(initialCategory || "ressource");
+  const [categoryId, setCategoryId] = useState(initialCategory ?? defaultCategory(categories));
+  const hides = categories.some((c) => c.id === categoryId && c.hides);
   const [withPrices, setWithPrices] = useState(false);
   const [state, action, pending] = useActionState<CreateState, FormData>(createAndStock, null);
   useEffect(() => {
@@ -49,21 +52,7 @@ export function NewStockProductForm({
           <label htmlFor={`${id}-n`}>Nom</label>
           <input id={`${id}-n`} name="name" required maxLength={100} defaultValue={name} autoFocus />
         </div>
-        <div className="field">
-          <label htmlFor={`${id}-c`}>Catégorie</label>
-          <select
-            id={`${id}-c`}
-            name="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as ProductCategory)}
-          >
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CategorySelect id={`${id}-c`} categories={categories} value={categoryId} onChange={setCategoryId} />
         <div className="field">
           <label htmlFor={`${id}-u`}>Unité (au singulier)</label>
           <input id={`${id}-u`} name="unit" maxLength={30} defaultValue="pièce" />
@@ -88,7 +77,7 @@ export function NewStockProductForm({
           Ajouter des prix
         </label>
       )}
-      {withPrices && <ProductPriceFields id={id} category={category} groups={groups} />}
+      {withPrices && <ProductPriceFields id={id} hides={hides} groups={groups} />}
       {state && !state.ok && (
         <p className="notice error" role="alert">
           {state.message}

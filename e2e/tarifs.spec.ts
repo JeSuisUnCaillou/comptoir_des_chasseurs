@@ -128,7 +128,7 @@ test("une seule recherche pour toutes les grilles, qui ne montre que les catégo
 test("une recherche montre chaque catégorie où elle trouve, et seulement celles-là", async ({ page }) => {
   const base = uniqueName("Troll");
   await createProduct(`${base} peau`);
-  await createProduct(`${base} gigot`, { category: "viande", unit: "pièce" });
+  await createProduct(`${base} gigot`, { category: "Viandes et venaison", unit: "pièce" });
   await page.goto(`/tarifs?q=${encodeURIComponent(base)}`);
   const { peaux, viandes, ressources } = grids(page);
   await expect(peaux.getByRole("row", { name: new RegExp(`${base} peau`) })).toBeVisible();
@@ -182,7 +182,7 @@ test("les marchandises sans tarif de toutes les catégories se montrent sur dema
   const ressource = `${base} résine`;
   await createProduct(peauZ, { buyPrice: null, sellPrice: null });
   await createProduct(peauA, { buyPrice: null, sellPrice: null });
-  await createProduct(ressource, { buyPrice: null, sellPrice: null, category: "ressource", unit: "pièce" });
+  await createProduct(ressource, { buyPrice: null, sellPrice: null, category: "Autres ressources", unit: "pièce" });
   // The beforeEach click may still be on its way: open the page itself.
   await page.goto("/tarifs");
   const block = page.getByRole("region", { name: "Grille des prix" });
@@ -216,7 +216,7 @@ test("les marchandises sans tarif de toutes les catégories se montrent sur dema
     new RegExp(peauZ),
   ]);
   await expect(unpriced.getByRole("row", { name: new RegExp(peauA) })).toContainText("Peaux");
-  await expect(unpriced.getByRole("row", { name: new RegExp(ressource) })).toContainText("Ressources");
+  await expect(unpriced.getByRole("row", { name: new RegExp(ressource) })).toContainText("Autres ressources");
   const button = (await block.getByRole("link", { name: "Masquer les marchandises sans tarif" }).boundingBox())!;
   expect((await unpriced.boundingBox())!.y).toBeGreaterThan(button.y);
   await expect(peaux.getByText(base)).toHaveCount(0);
@@ -266,7 +266,7 @@ test("une recherche à moins de 10 résultats montre d'office les marchandises s
 
 test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tarifs", async ({ page, browser }) => {
   const name = uniqueName("Viande au crayon");
-  await createProduct(name, { buyPrice: 2, sellPrice: 3, category: "viande", unit: "pièce" });
+  await createProduct(name, { buyPrice: 2, sellPrice: 3, category: "Viandes et venaison", unit: "pièce" });
   // The beforeEach click may still be on its way: open the page itself.
   await page.goto("/tarifs");
   const chasse = grids(page).viandes;
@@ -303,9 +303,9 @@ test("un gérant modifie un tarif par le crayon de sa ligne, et revient aux tari
 test("un clic sur un en-tête trie la grille, un second clic dans l'autre sens", async ({ page }) => {
   const tag = uniqueName("Tri tarifs");
   // 2 septims for 4 units is cheaper per unit than 1 septim for one.
-  await createProduct(`${tag} Aiguille`, { category: "ressource", unit: "unité", buyPrice: 2, buyQty: 4, sellPrice: 3 });
-  await createProduct(`${tag} bois`, { category: "ressource", unit: "unité", buyPrice: 1, sellPrice: 1 });
-  await createProduct(`${tag} Cire`, { category: "ressource", unit: "unité", buyPrice: null, sellPrice: 2 });
+  await createProduct(`${tag} Aiguille`, { category: "Autres ressources", unit: "unité", buyPrice: 2, buyQty: 4, sellPrice: 3 });
+  await createProduct(`${tag} bois`, { category: "Autres ressources", unit: "unité", buyPrice: 1, sellPrice: 1 });
+  await createProduct(`${tag} Cire`, { category: "Autres ressources", unit: "unité", buyPrice: null, sellPrice: 2 });
   await page.goto(`/tarifs?q=${encodeURIComponent(tag)}`);
   const { ressources } = grids(page);
   const names = ressources.locator("tbody td.stack-title");

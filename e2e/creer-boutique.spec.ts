@@ -198,7 +198,8 @@ async function ownShop(browser: Browser, prefix: string) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     await sql`
-      with shop as (insert into shops (name, slug) values (${shop}, ${slugOf(shop)}) returning id)
+      with shop as (insert into shops (name, slug) values (${shop}, ${slugOf(shop)}) returning id),
+      category as (insert into product_categories (shop_id, name) select id, 'Autres marchandises' from shop)
       insert into shop_members (shop_id, member_id, role)
       select shop.id, members.id, 'gerant' from shop, members where members.username = ${username}`;
   } finally {
@@ -247,7 +248,6 @@ test("un gérant supprime sa boutique, avec tout ce qu'elle contient", async ({ 
   await page.getByLabel("Rechercher une marchandise").fill(uniqueName("Hydromel"));
   await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = page.getByRole("form", { name: "Nouvelle marchandise" });
-  await form.getByLabel("Catégorie").selectOption("viande");
   await form.getByLabel("Quantité ajoutée").fill("3");
   await form.getByLabel("Motif").fill("brassé sur place");
   await form.getByRole("button", { name: "Créer et ajouter au stock" }).click();

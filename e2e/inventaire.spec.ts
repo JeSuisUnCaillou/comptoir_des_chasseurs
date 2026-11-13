@@ -6,7 +6,7 @@ async function addProduct(page: Page, name: string) {
   await page.goto("/marchandises");
   const form = page.getByRole("region", { name: "Ajouter une marchandise" });
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Catégorie").selectOption("Peaux");
   await form.getByLabel("Unité (au singulier)").fill("peau");
   await page.getByRole("button", { name: "Ajouter la marchandise" }).click();
   await expect(async () => {
@@ -179,7 +179,7 @@ test("un membre crée depuis l'inventaire une marchandise qui n'existe pas encor
   await expect(form.getByLabel("Nom")).toHaveValue(name);
   // An employee does not set prices.
   await expect(form.getByLabel("Ajouter des prix")).toHaveCount(0);
-  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Catégorie").selectOption("Peaux");
   await form.getByLabel("Unité (au singulier)").fill("peau");
   await form.getByLabel("Quantité ajoutée").fill("3");
   await form.getByLabel("Motif").fill("chasse en montagne");
@@ -221,7 +221,7 @@ test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async 
   await page.getByRole("button", { name: "Nouvelle marchandise" }).click();
   const form = page.getByRole("form", { name: "Nouvelle marchandise" });
   await form.getByLabel("Nom").fill(name);
-  await form.getByLabel("Catégorie").selectOption("peau");
+  await form.getByLabel("Catégorie").selectOption("Peaux");
   await form.getByLabel("Quantité ajoutée").fill("2");
   await form.getByLabel("Motif").fill("chasse au troll");
 
