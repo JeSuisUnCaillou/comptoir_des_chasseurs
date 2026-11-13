@@ -1653,8 +1653,10 @@ tr.fresh td {
   }
 }
 
-/* A note under tiles (the activity's stock left aside) does not touch them. */
-.stats + p {
+/* A note or a table under tiles (the activity's stock left aside, the
+   register under its till tiles) does not touch them. */
+.stats + p,
+.stats + .table-wrap {
   margin-top: 12px;
 }
 

@@ -107,6 +107,10 @@ test("au téléphone, une ligne du registre montre son article, ses septims et s
     await expect(part).toBeInViewport({ ratio: 1 });
   }
   await expectNoSideScroll(page);
+  // The register's first card does not touch the « Pas encore en caisse » tile above it.
+  const tile = (await page.getByTestId("en-attente").boundingBox())!;
+  const register = (await page.getByTestId("registre").boundingBox())!;
+  expect(register.y - (tile.y + tile.height)).toBeGreaterThanOrEqual(12);
 
   page.once("dialog", (dialog) => dialog.accept());
   await line.getByRole("button", { name: /^Mettre en caisse/ }).click();
