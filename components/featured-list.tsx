@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent } from "react";
+import { useRouter } from "next/navigation";
 import { GripVertical, X } from "lucide-react";
 import { saveFeatured, saveFeaturedOrder } from "@/app/[boutique]/marchandises/actions";
 
@@ -34,6 +35,7 @@ export function FeaturedList({ products }: { products: Item[] }) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [focus, setFocus] = useState<number | null>(null);
   const [, startTransition] = useTransition();
+  const router = useRouter();
   const list = useRef<HTMLUListElement>(null);
 
   // A new list from the server (a product added or taken back) wins.
@@ -54,8 +56,11 @@ export function FeaturedList({ products }: { products: Item[] }) {
     setOrder(next);
     if (sameOrder(next, products)) return;
     startTransition(async () => {
-      // Refused (the list changed meanwhile): back to the saved order.
-      if (!(await saveFeaturedOrder(next.map((p) => p.id)))) setOrder(products);
+      // Refused (the list changed meanwhile): back to the list as the server has it now.
+      if (!(await saveFeaturedOrder(next.map((p) => p.id)))) {
+        setOrder(products);
+        router.refresh();
+      }
     });
   }
 

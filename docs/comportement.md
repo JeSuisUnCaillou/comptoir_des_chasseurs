@@ -259,7 +259,7 @@ pour un produit phare, une étiquette dorée dans les tableaux.
 Dans l'ordre de la page :
 
 1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
-   dans l'ordre où ils ont été ajoutés, à côté du calculateur : une ligne
+   dans l'ordre qu'ils y ont réglé, à côté du calculateur : une ligne
    chacun, son nom puis ses prix de rachat et de vente côte à côte (deux par
    ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus. Un
    produit phare archivé n'y est plus (il y revient si on le désarchive).

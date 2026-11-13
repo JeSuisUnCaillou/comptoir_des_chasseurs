@@ -42,7 +42,7 @@ export async function blacksmithLeatherPrice(shopId: number) {
 /** Settings key of the price the blacksmith pays for a leather. */
 export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
 
-/** The products the Tarifs page puts forward, among the given active ones, in the order gérants added them. */
+/** The products the Tarifs page puts forward, among the given active ones, in the order gérants set. */
 export function featuredProducts<P extends { id: number; featuredAt: Date | null }>(active: P[]) {
   return active
     .filter((p) => p.featuredAt != null)
