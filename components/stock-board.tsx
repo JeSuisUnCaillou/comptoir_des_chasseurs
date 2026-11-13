@@ -1,8 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus, Settings2 } from "lucide-react";
-import Link from "next/link";
-import { useShopPath } from "@/components/use-shop-path";
+import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-react";
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { formatNumber, plural } from "@/lib/pricing";
@@ -101,7 +99,7 @@ function StockCard({ item }: { item: StockItem }) {
 
 const CARDS_PER_PAGE = 24;
 
-/** `canManage`: a gérant, who has the link to Gérer les marchandises and can price a new merchandise. */
+/** `canManage`: a gérant, who can price a new merchandise. */
 export function StockBoard({
   items,
   categories,
@@ -115,7 +113,6 @@ export function StockBoard({
   groups: GroupChoice[];
 }) {
   const id = useId();
-  const path = useShopPath();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -179,11 +176,6 @@ export function StockBoard({
           <button className="btn btn-small" type="button" onClick={() => setCreating(visible.length === 0 ? query.trim() : "")}>
             <PackagePlus size={14} /> Nouvelle marchandise
           </button>
-          {canManage && (
-            <Link className="btn btn-small" href={path("/marchandises")}>
-              <Settings2 size={14} /> Gérer les marchandises
-            </Link>
-          )}
         </div>
       )}
       {visible.length === 0 ? (

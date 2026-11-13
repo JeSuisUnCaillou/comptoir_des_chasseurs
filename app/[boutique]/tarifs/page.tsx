@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Eye, EyeOff, Pencil, Settings2, Tag } from "lucide-react";
+import { Eye, EyeOff, Pencil, Tag } from "lucide-react";
 import { LiveSearch } from "@/components/live-search";
+import { ManageProductsLink } from "@/components/manage-products-link";
 import { PageHead } from "@/components/page-head";
 import { PendingSpinner } from "@/components/nav-link";
 import { PriceCalculator } from "@/components/price-calculator";
@@ -335,9 +336,7 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
       <div className="panel-head">
         <PageHead title="Tarifs" />
         {edit && (
-          <Link className="btn" href={at("/marchandises")}>
-            <Settings2 size={16} /> Gérer les marchandises
-          </Link>
+          <ManageProductsLink shop={edit} />
         )}
       </div>
 

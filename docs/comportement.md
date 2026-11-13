@@ -426,8 +426,9 @@ registre.
   marchandise.
 - Quand la recherche du stock ne trouve rien, le formulaire reprend le nom
   cherché.
-- À côté, un gérant a le bouton « Gérer les marchandises », qui mène à la
-  page du même nom.
+- Un gérant a le bouton « Gérer les marchandises », qui mène à la page du
+  même nom : le même qu'en Tarifs, au même endroit, à côté du titre de la
+  page.
 
 ### Historique des mouvements
 
