@@ -63,7 +63,7 @@ sur une page du registre.
 
 | Liste | Ordre |
 | --- | --- |
-| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
+| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées et membres désactivés en dernier |
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
 | Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
@@ -490,6 +490,14 @@ Ne comptent pas :
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.
+- Le sélecteur de rôle d'une ligne de Membres passe de Gérant à Employé et
+  retour ; il n'est pas sur la ligne d'un compte désactivé. Désactiver se
+  fait par le bouton « Désactiver » de la ligne, et « Réactiver » rend le
+  compte employé de la boutique. Ces boutons ne sont ni sur la ligne du
+  gérant connecté ni sur celle du super admin, et le serveur refuse le geste
+  à qui n'est pas gérant de la boutique.
+- Les comptes désactivés sont en fin de liste, et ne comptent pas dans le
+  nombre de membres de Mes boutiques.
 - Chacun change son mot de passe avec la clé, en haut à droite.
 
 ### Le super admin

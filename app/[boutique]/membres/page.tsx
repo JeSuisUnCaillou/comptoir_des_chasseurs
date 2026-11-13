@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { pageParam } from "@/lib/pagination";
-import { InviteEmployeeForm, NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
+import { ActiveToggleForm, InviteEmployeeForm, NewMemberForm, ResetPasswordForm } from "@/components/member-forms";
 import { requireMember } from "@/lib/auth/session";
 import { invitationPath, shopPath } from "@/lib/paths";
 import { shopMemberPage } from "@/lib/members";
@@ -14,11 +14,14 @@ import { updateMember } from "./actions";
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" });
 
-const ROLES: { value: MemberRole; label: string }[] = [
-  { value: "gerant", label: "Gérant" },
-  { value: "employe", label: "Employé" },
-  { value: "desactive", label: "Désactivé" },
-];
+const LABELS: Record<MemberRole, string> = {
+  gerant: "Gérant",
+  employe: "Employé",
+  desactive: "Désactivé",
+};
+
+/** The selector moves between these; deactivating has its own button. */
+const ROLES = ["gerant", "employe"] as const;
 
 const BADGE: Record<MemberRole, string> = {
   gerant: "badge badge-gold",
@@ -88,8 +91,8 @@ export default async function Membres({
         <h2 id="personnel">Comptes</h2>
         <p className="muted">
           Le nom affiché est celui utilisé dans les registres. Un compte désactivé ne peut plus
-          entrer, mais son nom reste dans l&apos;historique. Seul le super admin peut modifier
-          son propre compte.
+          entrer, mais son nom reste dans l&apos;historique ; il passe en fin de liste et
+          « Réactiver » le rend employé. Seul le super admin peut modifier son propre compte.
         </p>
         <div className="table-wrap">
           <table className="stack-cards">
@@ -99,7 +102,7 @@ export default async function Membres({
                 <th>Statut</th>
                 <th>Nom et rôle</th>
                 <th>Mot de passe</th>
-                <th>Activité</th>
+                <th>Activité et accès</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +111,7 @@ export default async function Membres({
                   <td className="stack-title">{m.username}</td>
                   <td className="stack-aside">
                     <span className="badges">
-                      <span className={BADGE[roleOf(m)]}>{ROLES.find((r) => r.value === roleOf(m))?.label}</span>
+                      <span className={BADGE[roleOf(m)]}>{LABELS[roleOf(m)]}</span>
                       {m.superAdmin && <span className="badge badge-gold">Super admin</span>}
                     </span>
                   </td>
@@ -122,13 +125,15 @@ export default async function Membres({
                         {m.id === me.id ? (
                           <input type="hidden" name="role" value="gerant" />
                         ) : (
-                          <select name="role" defaultValue={roleOf(m)} aria-label="Rôle">
-                            {ROLES.map((r) => (
-                              <option key={r.value} value={r.value}>
-                                {r.label}
-                              </option>
-                            ))}
-                          </select>
+                          roleOf(m) !== "desactive" && (
+                            <select name="role" defaultValue={roleOf(m)} aria-label="Rôle">
+                              {ROLES.map((r) => (
+                                <option key={r} value={r}>
+                                  {LABELS[r]}
+                                </option>
+                              ))}
+                            </select>
+                          )
                         )}
                         <button className="btn btn-small" type="submit">
                           Enregistrer
@@ -138,9 +143,14 @@ export default async function Membres({
                   </td>
                   <td>{m.id !== me.id && !m.superAdmin && <ResetPasswordForm id={m.id} />}</td>
                   <td>
-                    <Link className="btn btn-small btn-ghost" href={at(`/membres/${m.id}`)}>
-                      <ScrollText size={14} /> Activité
-                    </Link>
+                    <div className="row-actions">
+                      <Link className="btn btn-small btn-ghost" href={at(`/membres/${m.id}`)}>
+                        <ScrollText size={14} /> Activité
+                      </Link>
+                      {m.id !== me.id && !m.superAdmin && (
+                        <ActiveToggleForm id={m.id} name={m.name} active={roleOf(m) !== "desactive"} />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -148,11 +148,17 @@ test("un membre de deux boutiques choisit la sienne, et en change", async ({ pag
   const other = await createOtherShop(uniqueName("Hydromel"));
   const username = uniqueName("Vilkas").toLowerCase();
   await createMember(username, "mot-de-passe", "employe");
+  // Deactivated there: not counted among its members.
+  const gone = uniqueName("Skjor").toLowerCase();
+  await createMember(gone, "mot-de-passe", "employe");
   const sql = db();
   try {
     await sql`
       insert into shop_members (shop_id, member_id, role)
       select ${other.shopId}, id, 'gerant' from members where username = ${username}`;
+    await sql`
+      insert into shop_members (shop_id, member_id, role)
+      select ${other.shopId}, id, 'desactive' from members where username = ${gone}`;
   } finally {
     await sql.end();
   }
