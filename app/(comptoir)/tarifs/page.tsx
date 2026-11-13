@@ -18,7 +18,7 @@ import {
   formatNumber,
   plural,
 } from "@/lib/pricing";
-import { activeProducts, blacksmithLeatherPrice } from "@/lib/products";
+import { activeProducts, blacksmithLeatherPrice, featuredProduct } from "@/lib/products";
 import { isGerant } from "@/lib/policies";
 
 function priced(p: Product) {
@@ -247,6 +247,48 @@ function Grid({ id, title, children }: { id: string; title: string; children: Re
   );
 }
 
+/** A price as a tile shows it: per unit when it is for one. */
+function tilePrice(price: number | null, qty: number) {
+  if (price == null) return "—";
+  return qty === 1 ? septims(price) : rate(price, qty);
+}
+
+/**
+ * The featured product's buyback and sale prices, the citizens' one first when
+ * it has one; for leather, what the blacksmith pays for it beside the sale.
+ */
+function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: number }) {
+  return (
+    <>
+      <div className="stats" style={{ marginTop: 14 }}>
+        {product.citizenBuyPrice != null && (
+          <div className="stat stat-citizen" data-testid="rachat-phare-citoyens">
+            <div className="stat-label">Rachat · citoyens d&apos;Estemarche</div>
+            <div className="stat-value">{tilePrice(product.citizenBuyPrice, product.buyQty)}</div>
+          </div>
+        )}
+        <div className="stat">
+          <div className="stat-label">{product.citizenBuyPrice == null ? "Rachat" : "Rachat · autres vendeurs"}</div>
+          <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
+        </div>
+      </div>
+      {/* What the comptoir pays on the first line, what it resells for on the second. */}
+      <div className="stats" style={{ marginTop: 12 }}>
+        <div className="stat">
+          <div className="stat-label">Vente</div>
+          <div className="stat-value">{tilePrice(product.sellPrice, product.sellQty)}</div>
+        </div>
+        {product.category === "cuir" && (
+          <div className="stat">
+            <div className="stat-label">Rachat par le forgeron</div>
+            <div className="stat-value">{septims(blacksmith)}</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 /** Products whose name holds the search, ignoring case. */
 function matching(products: Product[], search: string | string[] | undefined) {
   const q = searchParam(search).toLocaleLowerCase("fr");
@@ -259,12 +301,12 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const [products, blacksmith] = await Promise.all([activeProducts(member.shopId), blacksmithLeatherPrice(member.shopId)]);
   const canEdit = isGerant(member);
   const query = searchParam(search.q);
-  // Leather has its own tiles above; every other category has a grid.
-  const hunted = matching(products, search.q).filter((p) => p.category !== "cuir");
-  const leather = products.find((p) => p.category === "cuir");
+  const featured = await featuredProduct(member.shopId, products);
+  // The featured product has its own tiles above; every other one is in a grid.
+  const hunted = matching(products, search.q).filter((p) => p.id !== featured?.id);
   const hides = hunted.filter((p) => p.category === "peau" && priced(p));
   const meats = hunted.filter((p) => p.category === "viande" && priced(p));
-  const goods = hunted.filter((p) => (p.category === "ressource" || p.category === "autre") && priced(p));
+  const goods = hunted.filter((p) => p.category !== "peau" && p.category !== "viande" && priced(p));
   const unpriced = hunted.filter((p) => !priced(p));
   const autoUnpriced = Boolean(query) && hunted.length < AUTO_UNPRICED_BELOW;
   const calculable = products.filter(priced);
@@ -281,41 +323,21 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
       </div>
 
       <div className="cols cols-stretch section-gap">
-        <section className="panel" aria-labelledby="cuir">
-          <div className="eyebrow">Produits transformés</div>
-          <h2 id="cuir">Tarifs du cuir</h2>
-          <div className="stats" style={{ marginTop: 14 }}>
-            {leather?.citizenBuyPrice != null && (
-              <div className="stat stat-citizen" data-testid="rachat-cuir-citoyens">
-                <div className="stat-label">Rachat de cuir · citoyens d&apos;Estemarche</div>
-                <div className="stat-value">{septims(leather.citizenBuyPrice)}</div>
-              </div>
-            )}
-            <div className="stat">
-              <div className="stat-label">
-                {leather?.citizenBuyPrice == null ? "Rachat de cuir" : "Rachat de cuir · autres vendeurs"}
-              </div>
-              <div className="stat-value">{leather?.buyPrice == null ? "—" : septims(leather.buyPrice)}</div>
-            </div>
-          </div>
-          {/* What the comptoir pays on the first line, what it resells for on the second. */}
-          <div className="stats" style={{ marginTop: 12 }}>
-            <div className="stat">
-              <div className="stat-label">Vente de cuir</div>
-              <div className="stat-value">{leather?.sellPrice == null ? "—" : septims(leather.sellPrice)}</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Rachat par le forgeron</div>
-              <div className="stat-value">{septims(blacksmith)}</div>
-            </div>
-          </div>
+        <section className="panel" aria-labelledby="phare">
+          <div className="eyebrow">Produit phare</div>
+          <h2 id="phare">{featured?.name ?? "Aucun produit phare"}</h2>
+          {featured ? (
+            <FeaturedTiles product={featured} blacksmith={blacksmith} />
+          ) : (
+            <p className="muted">Un gérant le choisit dans Gérer les tarifs.</p>
+          )}
         </section>
 
         <section className="panel" aria-labelledby="calcul">
           <div className="eyebrow">Outil des marchands</div>
           <h2 id="calcul">Calculateur des prix</h2>
           <p className="muted">Rachat, revente et bénéfice pour une quantité donnée.</p>
-          <PriceCalculator products={calculable} initialId={leather?.id} />
+          <PriceCalculator products={calculable} initialId={featured?.id} />
         </section>
       </div>
 

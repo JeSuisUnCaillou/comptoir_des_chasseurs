@@ -187,19 +187,23 @@ sortie d'argent) les septims :
 Une marchandise peut avoir un second prix de rachat, pour les citoyens
 d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres). Vide, tout le
 monde a le même prix. Les Tarifs le montrent en évidence : une tuile à lui
-pour le cuir, une étiquette dorée dans les tableaux.
+pour le produit phare, une étiquette dorée dans les tableaux.
 
 ### Tarifs (tous les membres)
 
 Dans l'ordre de la page :
 
-1. Les tarifs du cuir.
-2. Le calculateur, réglé sur le cuir à l'ouverture ; la marchandise se
+1. Le produit phare, choisi par un gérant dans Gérer les tarifs (le cuir tant
+   qu'aucun autre n'est choisi, ou si le choisi est archivé) : ses prix de
+   rachat et de vente en tuiles ; pour le cuir, le rachat par le forgeron en
+   plus.
+2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
    cherche en tapant, parmi toutes celles qui ont un prix.
 3. La grille du comptoir (produits de chasse) : une seule recherche par nom,
    qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
    (transformation et bénéfice par lot), viandes et venaison, autres
-   ressources. Le cuir n'y est pas : il a ses tuiles en haut.
+   ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
+   produit phare n'y est pas : il a ses tuiles en haut.
 
 Dans la grille :
 
@@ -219,6 +223,9 @@ Dans la grille :
 
 - S'ouvre par le bouton du même nom sur la page Tarifs.
 - Créer et modifier les marchandises et leurs prix.
+- Choisir le produit phare des Tarifs, parmi les marchandises non archivées.
+- Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
+  peaux.
 - Même recherche par nom que les Tarifs et l'Inventaire.
 
 ## Inventaire

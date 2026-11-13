@@ -29,6 +29,43 @@ export async function blacksmithLeatherPrice(shopId: number) {
 /** Settings key of the price the blacksmith pays for a leather. */
 export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
 
+/** Settings key of the id of the product the Tarifs page puts forward. */
+export const FEATURED_PRODUCT = "produit_phare";
+
+/**
+ * The product the Tarifs page puts forward, among the shop's active ones: the
+ * one a gérant chose, or else the leather, as before the choice existed.
+ */
+export async function featuredProduct<P extends { id: number; category: ProductCategory }>(shopId: number, active: P[]) {
+  const [row] = await getDb()
+    .select()
+    .from(schema.settings)
+    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, FEATURED_PRODUCT)))
+    .limit(1);
+  return active.find((p) => p.id === row?.value) ?? active.find((p) => p.category === "cuir");
+}
+
+/** Puts one of the shop's active products forward on the Tarifs page. */
+export async function setFeaturedProduct(shopId: number, productId: number) {
+  const db = getDb();
+  const [product] = await db
+    .select({ id: schema.products.id })
+    .from(schema.products)
+    .where(
+      and(
+        eq(schema.products.id, productId),
+        eq(schema.products.shopId, shopId),
+        eq(schema.products.archived, false),
+      ),
+    )
+    .limit(1);
+  if (!product) throw new UserError("Marchandise inconnue.");
+  await db
+    .insert(schema.settings)
+    .values({ shopId, key: FEATURED_PRODUCT, value: productId })
+    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value: productId } });
+}
+
 export type MovementFilter = {
   /** Part of the merchandise's name. */
   q?: string;
