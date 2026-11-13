@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   // A shop's layout replaces it with the shop's name.
-  title: "Registre de Lomone",
+  title: "Codex enchanté",
   description: "Stock, achats et ventes des boutiques de Keizaal",
 };
 

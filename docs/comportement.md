@@ -20,11 +20,12 @@ fichier à jour dans le même commit.
 
 ## Partout
 
-- En haut du menu, le logo et « REGISTRE de Lomone » (Lomone est le
-  personnage du propriétaire dans Keizaal), sur toutes les boutiques.
+- L'app s'appelle Codex enchanté (adresse codexomancien.vercel.app). En haut
+  du menu et sur la connexion, le logo et « CODEX », « Enchanté par Lomone »
+  en dessous (Lomone est le personnage du
+  propriétaire dans Keizaal), sur toutes les boutiques.
 - L'onglet du navigateur porte le nom de la boutique sur toutes ses pages ;
-  hors d'une boutique (connexion, Mes boutiques, invitation), « Registre de
-  Lomone ».
+  hors d'une boutique (connexion, Mes boutiques, invitation), « Codex enchanté ».
 
 ### Téléphone et petites fenêtres
 

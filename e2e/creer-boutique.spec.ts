@@ -219,7 +219,7 @@ test("un gérant renomme sa boutique et change son adresse", async ({ browser })
   const renamed = uniqueName("Maison des Chants");
   await page.getByRole("link", { name: "Réglages" }).click();
   // The brand names the app, not a shop.
-  await expect(page.getByText("de Lomone", { exact: true })).toBeVisible();
+  await expect(page.getByText("Enchanté par Lomone", { exact: true })).toBeVisible();
   // The shop's link follows the address as it is typed.
   const link = page.getByTestId("shop-link");
   await expect(link).toHaveText(new RegExp(`^http://localhost:\\d+/${slug}$`));
