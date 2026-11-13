@@ -183,7 +183,8 @@ export async function deleteSupplier(shopId: number, id: number) {
 
 /**
  * The shop's contacts by name, for the name field of a purchase or a sale:
- * those who go `side` (suppliers for a purchase, customers for a sale) first.
+ * those who go `side` (suppliers for a purchase, customers for a sale) first,
+ * under their own heading, then the others.
  */
 export async function contactNames(shopId: number, side: OfferSide) {
   const { suppliers, supplierOffers } = schema;
@@ -198,5 +199,14 @@ export async function contactNames(shopId: number, side: OfferSide) {
     .where(eq(suppliers.shopId, shopId))
     .groupBy(suppliers.id)
     .orderBy(byName(suppliers.name), asc(suppliers.id));
-  return [...rows.filter((r) => r.first), ...rows.filter((r) => !r.first)];
+  // Headings only when someone goes this way.
+  const grouped = rows.some((r) => r.first);
+  const heading = side === "sells" ? "Fournisseurs" : "Clients";
+  const named = rows.map(({ id, name, first }) => ({
+    id,
+    name,
+    first,
+    group: grouped ? (first ? heading : "Autres contacts") : undefined,
+  }));
+  return [...named.filter((r) => r.first), ...named.filter((r) => !r.first)].map(({ first: _, ...c }) => c);
 }

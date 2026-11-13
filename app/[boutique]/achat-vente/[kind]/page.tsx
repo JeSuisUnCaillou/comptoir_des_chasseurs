@@ -26,9 +26,6 @@ export default async function NouvelleEcriture({
     activeProducts(member.shopId),
     contactNames(member.shopId, sale ? "buys" : "sells"),
   ]);
-  // Headings only when the contacts who go this way come first, before the others.
-  const grouped = contacts.some((c) => c.first);
-  const firstGroup = sale ? "Clients" : "Fournisseurs";
 
   return (
     <>
@@ -54,11 +51,7 @@ export default async function NouvelleEcriture({
           bulkQty: p.bulkQty,
           privileged: p.privileged,
         }))}
-        contacts={contacts.map((c) => ({
-          id: c.id,
-          name: c.name,
-          group: grouped ? (c.first ? firstGroup : "Autres contacts") : undefined,
-        }))}
+        contacts={contacts}
         draft={decodeDraft((await searchParams)[DRAFT_PARAM])}
       />
     </>

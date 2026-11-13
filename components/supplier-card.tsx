@@ -1,18 +1,9 @@
 import { MapPin } from "lucide-react";
 import Link from "next/link";
+import { contactKind } from "@/lib/contact-kind";
 import type { OfferSide } from "@/lib/db/schema";
 import type { SupplierOfferRow, SupplierWithOffers } from "@/lib/suppliers";
 import { formatNumber, plural, septims } from "@/lib/pricing";
-
-/** What a contact is to the shop, from the way their merchandise goes. */
-export function contactKind(offers: Pick<SupplierOfferRow, "side">[]) {
-  const sells = offers.some((o) => o.side === "sells");
-  const buys = offers.some((o) => o.side === "buys");
-  if (sells && buys) return "Fournisseur et client";
-  if (sells) return "Fournisseur";
-  if (buys) return "Client";
-  return "Contact";
-}
 
 export const SIDE_TITLES: Record<OfferSide, string> = { sells: "Il nous vend", buys: "Il nous achète" };
 
