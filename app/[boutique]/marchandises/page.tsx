@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
@@ -10,8 +9,6 @@ import { shopPath } from "@/lib/paths";
 import { CATEGORY_LABELS, rate, septims } from "@/lib/pricing";
 import { activeProducts, blacksmithLeatherPrice, featuredProduct, productPage } from "@/lib/products";
 import { saveBlacksmithPrice, saveFeaturedProduct } from "./actions";
-
-export const metadata: Metadata = { title: "Gérer les marchandises" };
 
 type Search = { q?: string | string[]; page?: string | string[] };
 

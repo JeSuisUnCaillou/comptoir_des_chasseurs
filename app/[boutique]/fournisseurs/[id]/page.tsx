@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
@@ -9,8 +8,6 @@ import { activeProducts } from "@/lib/products";
 import { formatNumber, plural, septims } from "@/lib/pricing";
 import { offersOf, supplierOf } from "@/lib/suppliers";
 import { removeOffer } from "../actions";
-
-export const metadata: Metadata = { title: "Fournisseur" };
 
 export default async function EditSupplier({ params }: { params: Promise<{ id: string }> }) {
   const member = await requireMember(["gerant"]);

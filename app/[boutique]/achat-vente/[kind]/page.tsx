@@ -1,15 +1,9 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
 import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
 import { activeProducts } from "@/lib/products";
 import { DRAFT_PARAM, decodeDraft } from "@/lib/transaction-draft";
-
-export async function generateMetadata({ params }: { params: Promise<{ kind: string }> }): Promise<Metadata> {
-  const { kind } = await params;
-  return { title: kind === "vente" ? "Nouvelle vente" : "Nouvel achat" };
-}
 
 /**
  * /achat-vente/vente and /achat-vente/achat: the entry form, on a page of its own.

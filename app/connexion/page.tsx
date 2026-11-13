@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { FirstGerantForm, LoginForm } from "@/components/auth-forms";
 import { BrandMark } from "@/components/brand";
 import { RETURN_PARAM, safeReturnPath } from "@/lib/auth/return-path";
 import { authConfigured, currentAccount } from "@/lib/auth/session";
 import { accountCount, canSignIn } from "@/lib/members";
-
-export const metadata: Metadata = { title: "Connexion" };
 
 export const dynamic = "force-dynamic";
 

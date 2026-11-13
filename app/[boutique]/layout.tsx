@@ -25,10 +25,10 @@ import { currentShop } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
 
-/** Browser tab: "<page> · <shop name>". */
+/** Browser tab: the shop's name, on every page of the shop. */
 export async function generateMetadata(): Promise<Metadata> {
   const shop = await currentShop();
-  return { title: { absolute: shop.name, template: `%s · ${shop.name}` } };
+  return { title: shop.name };
 }
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {

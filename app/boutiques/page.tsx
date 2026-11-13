@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { DoorOpen, LogOut, Settings, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand";
@@ -9,8 +8,6 @@ import { pendingInvitations } from "@/lib/invitations";
 import { invitationPath, shopPath } from "@/lib/paths";
 import { canOpenShop } from "@/lib/policies";
 import { accountShops } from "@/lib/shops";
-
-export const metadata: Metadata = { title: "Mes boutiques" };
 
 export const dynamic = "force-dynamic";
 

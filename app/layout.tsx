@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  // Outside a shop, "<page> · Registre de Lomone"; a shop's layout replaces
-  // the template with its own name.
-  title: { default: "Registre de Lomone", template: "%s · Registre de Lomone" },
+  // A shop's layout replaces it with the shop's name.
+  title: "Registre de Lomone",
   description: "Stock, achats et ventes des boutiques de Keizaal",
 };
 

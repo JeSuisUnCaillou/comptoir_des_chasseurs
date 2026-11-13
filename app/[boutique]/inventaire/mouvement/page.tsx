@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
@@ -6,8 +5,6 @@ import { StockMovementForm } from "@/components/stock-movement-form";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { activeProducts } from "@/lib/products";
-
-export const metadata: Metadata = { title: "Mouvement de stock" };
 
 /** /<slug>/inventaire/mouvement: several merchandises in or out of stock at once, with no septims. */
 export default async function MouvementDeStock() {

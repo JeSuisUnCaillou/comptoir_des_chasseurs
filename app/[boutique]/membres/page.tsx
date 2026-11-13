@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { ScrollText } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
@@ -10,8 +9,6 @@ import { shopPath } from "@/lib/paths";
 import { shopMemberPage } from "@/lib/members";
 import type { MemberRole } from "@/lib/db/schema";
 import { updateMember } from "./actions";
-
-export const metadata: Metadata = { title: "Membres" };
 
 const ROLES: { value: MemberRole; label: string }[] = [
   { value: "gerant", label: "Gérant" },

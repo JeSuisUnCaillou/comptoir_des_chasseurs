@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Plus, Truck } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
@@ -9,8 +8,6 @@ import { shopPath } from "@/lib/paths";
 import { pageParam, searchParam } from "@/lib/pagination";
 import { SUPPLIER_PAGE_SIZE, supplierPage } from "@/lib/suppliers";
 import { isGerant } from "@/lib/policies";
-
-export const metadata: Metadata = { title: "Fournisseurs" };
 
 type Search = { q?: string | string[]; page?: string | string[] };
 

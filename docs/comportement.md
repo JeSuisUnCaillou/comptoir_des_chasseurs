@@ -22,9 +22,9 @@ fichier à jour dans le même commit.
 
 - En haut du menu, le logo et « REGISTRE de Lomone » (Lomone est le
   personnage du propriétaire dans Keizaal), sur toutes les boutiques.
-- L'onglet du navigateur porte le nom de la page puis celui de la boutique
-  (« Inventaire · <nom de la boutique> ») ; hors d'une boutique
-  (connexion, Mes boutiques, invitation), « Registre de Lomone ».
+- L'onglet du navigateur porte le nom de la boutique sur toutes ses pages ;
+  hors d'une boutique (connexion, Mes boutiques, invitation), « Registre de
+  Lomone ».
 
 ### Téléphone et petites fenêtres
 

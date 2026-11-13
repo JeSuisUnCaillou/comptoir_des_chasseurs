@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -15,8 +14,6 @@ import { canActOn, isGerant } from "@/lib/policies";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { formatNumber, septims } from "@/lib/pricing";
 import { lastDays, parisDay, tillTotals } from "@/lib/register";
-
-export const metadata: Metadata = { title: "Activité" };
 
 type Search = Record<"du" | "au" | "page", string | string[] | undefined>;
 

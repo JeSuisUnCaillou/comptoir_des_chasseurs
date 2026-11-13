@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand";
 import { InvitationSignupForm, JoinShopForm } from "@/components/shop-forms";
@@ -7,8 +6,6 @@ import { RETURN_PARAM, loginUrl } from "@/lib/auth/return-path";
 import { currentAccount } from "@/lib/auth/session";
 import { SPENT, invitedShop } from "@/lib/invitations";
 import { invitationPath } from "@/lib/paths";
-
-export const metadata: Metadata = { title: "Invitation" };
 
 export const dynamic = "force-dynamic";
 
