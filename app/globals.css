@@ -326,17 +326,17 @@ h3 {
   margin-top: 6px;
 }
 
-/* The citizens of Estemarche's buyback price, on Tarifs */
-.stat-citizen {
+/* A privileged group's buyback price, on Tarifs */
+.stat-privileged {
   border-color: var(--border-gold);
   border-left: 3px solid var(--gold);
 }
 
-.citizen-price {
+.privileged-price {
   margin-top: 6px;
 }
 
-.citizen-price .badge {
+.privileged-price .badge {
   font-size: 12px;
   white-space: normal;
 }
@@ -1299,6 +1299,54 @@ tr.fresh td {
   resize: vertical;
 }
 
+/* The shop's privileged groups, on Gérer les marchandises */
+.privileged-groups {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.privileged-groups .inline-form input,
+.privileged-add input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.privileged-groups .btn,
+.privileged-add .btn {
+  white-space: nowrap;
+}
+
+.privileged-add {
+  margin-top: 10px;
+}
+
+/* The seller's privileged group, on a purchase */
+.privileged-choice {
+  border: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.privileged-choice legend {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.privileged-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+.privileged-options .check {
+  margin-top: 0;
+}
+
 .pin-choice {
   border: none;
   padding: 0;
@@ -2150,7 +2198,7 @@ tr.fresh td {
     flex: 1 1 120px;
   }
 
-  .stack-cards td[data-label] > .citizen-price {
+  .stack-cards td[data-label] > .privileged-price {
     flex-basis: 100%;
     margin-top: 2px;
   }
@@ -2229,7 +2277,7 @@ tr.fresh td {
   justify-content: space-between;
 }
 
-.featured-prices .stat-citizen {
+.featured-prices .stat-privileged {
   border-left: 2px solid var(--gold);
 }
 

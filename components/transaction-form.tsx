@@ -22,13 +22,15 @@ export type TransactionProduct = Pick<
   | "stock"
   | "buyPrice"
   | "buyQty"
-  | "citizenBuyPrice"
   | "sellPrice"
   | "sellQty"
   | "bulkMin"
   | "bulkPrice"
   | "bulkQty"
->;
+> & {
+  /** The buyback prices of the shop's privileged groups that have one, in the groups' order. */
+  privileged: { groupId: number; name: string; price: number }[];
+};
 
 const OTHER = "autre";
 
@@ -61,26 +63,26 @@ function draftLines(draft: TransactionDraft | null, products: TransactionProduct
 }
 
 /** What a line computes from the tariff, and what it adds to the total. */
-function evaluate(line: Line, kind: TransactionKind, products: TransactionProduct[], citizen: boolean) {
+function evaluate(line: Line, kind: TransactionKind, products: TransactionProduct[], group: number | null) {
   const product = products.find((p) => String(p.id) === line.productId);
   const qty = Number(line.quantity);
   const validQty = Number.isInteger(qty) && qty > 0;
-  // Only buybacks have a citizens' price, and only for the products that set one.
-  const citizenPrice = kind === "rachat" && product?.citizenBuyPrice != null;
+  // Only buybacks have privileged prices, and only for the products that set one for the seller's group.
+  const privileged = (kind === "rachat" && product?.privileged.find((p) => p.groupId === group)) || null;
   const tariff: (Total & { bulk?: boolean }) | null =
     product && validQty
       ? kind === "vente"
         ? sellTotal(product, qty)
-        : buyTotal(product, qty, { citizen: citizenPrice && citizen })
+        : buyTotal(product, qty, { privileged })
       : null;
-  const unitPrice = product ? appliedRate(product, kind === "vente" ? "vente" : "rachat", validQty ? qty : 1, { citizen: citizenPrice && citizen }) : null;
+  const unitPrice = product ? appliedRate(product, kind === "vente" ? "vente" : "rachat", validQty ? qty : 1, { privileged }) : null;
   const suggested = tariff ? Math.round(tariff.value) : null;
   const auto = suggested != null && !line.manual;
   const amount = auto ? suggested : Number(line.amount);
   return {
     product,
     qty: validQty ? qty : 0,
-    citizenPrice,
+    privileged,
     tariff,
     unitPrice,
     suggested,
@@ -107,18 +109,25 @@ export function TransactionForm({
   const submitLabel = sale ? "Confirmer la vente" : "Confirmer l'achat";
   const [lines, setLines] = useState<Line[]>(() => draftLines(draft, products));
   const nextKey = useRef(lines.length);
-  // One seller for the whole purchase: the box applies to every line that has a citizens' price.
-  const [citizen, setCitizen] = useState(draft?.citizen ?? false);
+  // One seller for the whole purchase: their group applies to every line that has a price for it.
+  const [group, setGroup] = useState<number | null>(draft?.privileged ?? null);
   const [counterparty, setCounterparty] = useState(draft?.counterparty ?? "");
   const [notes, setNotes] = useState(draft?.notes ?? "");
   const [tillPending, setTillPending] = useState(draft?.tillPending ?? false);
-  const evaluated = lines.map((line) => evaluate(line, kind, products, citizen));
+  const evaluated = lines.map((line) => evaluate(line, kind, products, group));
   const total = evaluated.reduce((sum, e) => sum + e.value, 0);
-  const citizenProducts = evaluated.flatMap((e) => (e.citizenPrice && e.product ? [e.product] : []));
-  const uniqueCitizenProducts = citizenProducts.filter((p, i) => citizenProducts.indexOf(p) === i);
-  // Once no line has a citizens' price, the box goes away unticked: it never comes back ticked on its own.
-  // A sale has no box: it keeps the choice for a switch back to the purchase.
-  if (!sale && citizen && uniqueCitizenProducts.length === 0) setCitizen(false);
+  // The purchase's products that have privileged prices, once each, and their groups in the groups' order.
+  const privilegedProducts = sale
+    ? []
+    : evaluated.flatMap((e) => (e.product && e.product.privileged.length > 0 ? [e.product] : []));
+  const uniquePrivileged = privilegedProducts.filter((p, i) => privilegedProducts.indexOf(p) === i);
+  const groups = uniquePrivileged
+    .flatMap((p) => p.privileged)
+    .filter((g, i, all) => all.findIndex((o) => o.groupId === g.groupId) === i)
+    .sort((a, b) => a.groupId - b.groupId);
+  // Once no line has a price for the chosen group, the choice goes back to the usual prices, for good.
+  // A sale has no choice: it keeps it for a switch back to the purchase.
+  if (!sale && group != null && !groups.some((g) => g.groupId === group)) setGroup(null);
 
   // A product sold on several lines is checked against its stock for all of them.
   // Selling more than the stock is allowed: the member is warned, the stock stops at zero.
@@ -150,7 +159,7 @@ export function TransactionForm({
       counterparty,
       notes,
       tillPending,
-      citizen,
+      privileged: group,
     };
     const params = new URLSearchParams({ [DRAFT_PARAM]: encodeDraft(carried) });
     router.push(at(`/achat-vente/${sale ? "achat" : "vente"}?${params}`));
@@ -206,7 +215,7 @@ export function TransactionForm({
                         <>
                           <strong className="tx-figure">{rate(e.unitPrice.price, e.unitPrice.qty)}</strong>
                           {e.unitPrice.bulk ? " (prix de gros)" : ""}
-                          {e.unitPrice.citizen ? " (prix citoyen d'Estemarche)" : ""}
+                          {e.unitPrice.privileged ? ` (prix privilégié : ${e.unitPrice.privileged})` : ""}
                         </>
                       ) : (
                         "aucun tarif"
@@ -261,7 +270,7 @@ export function TransactionForm({
                     <span className="small muted tariff-hint" data-testid="tarif">
                       {e.auto ? "Calculé avec le tarif" : `Tarif : ${septims(e.suggested)}`}
                       {e.tariff?.bulk ? " (prix de gros)" : ""}
-                      {e.citizenPrice && citizen ? " (prix citoyen d'Estemarche)" : ""}
+                      {e.privileged ? ` (prix privilégié : ${e.privileged.name})` : ""}
                       {e.tariff && !e.tariff.complete ? " (lot incomplet, arrondi)" : ""}
                       {!e.auto && (
                         <button
@@ -325,25 +334,41 @@ export function TransactionForm({
         </p>
       </div>
       <div className="tx-grid">
-        {uniqueCitizenProducts.length > 0 && (
-          <div className="field full">
-            <label className="check">
-              <input
-                type="checkbox"
-                name="citizen"
-                checked={citizen}
-                onChange={(ev) => setCitizen(ev.target.checked)}
-              />{" "}
-              Le vendeur est citoyen d&apos;Estemarche
-            </label>
-            {uniqueCitizenProducts.map((p) => (
+        {groups.length > 0 && (
+          <fieldset className="field full privileged-choice">
+            <legend>Prix privilégié du vendeur</legend>
+            <div className="privileged-options">
+              <label className="check">
+                <input
+                  type="radio"
+                  name="privilegedGroup"
+                  value=""
+                  checked={group == null}
+                  onChange={() => setGroup(null)}
+                />{" "}
+                Aucun
+              </label>
+              {groups.map((g) => (
+                <label key={g.groupId} className="check">
+                  <input
+                    type="radio"
+                    name="privilegedGroup"
+                    value={g.groupId}
+                    checked={group === g.groupId}
+                    onChange={() => setGroup(g.groupId)}
+                  />{" "}
+                  {g.name}
+                </label>
+              ))}
+            </div>
+            {uniquePrivileged.map((p) => (
               <span key={p.id} className="small muted">
-                {uniqueCitizenProducts.length > 1 && `${p.name} · `}
-                Citoyens : {rate(p.citizenBuyPrice!, p.buyQty)}
+                {uniquePrivileged.length > 1 && `${p.name} · `}
+                {p.privileged.map((g) => `${g.name} : ${rate(g.price, p.buyQty)}`).join(" · ")}
                 {p.buyPrice != null && ` · autres vendeurs : ${rate(p.buyPrice, p.buyQty)}`}
               </span>
             ))}
-          </div>
+          </fieldset>
         )}
         <div className="field full">
           <label htmlFor="t-counterparty">Nom du client / vendeur RP (facultatif)</label>

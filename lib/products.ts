@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gt, gte, ilike, isNotNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNotNull, lt, sql, type SQL } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
 import type { ProductCategory } from "@/lib/db/schema";
 import type { ShopMember } from "@/lib/auth/session";
@@ -7,15 +7,17 @@ import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 import { isGerant } from "@/lib/policies";
 import { lineMessage } from "@/lib/transaction-kinds";
+import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
 
 export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 
 export async function activeProducts(shopId: number) {
-  return getDb()
+  const products = await getDb()
     .select()
     .from(schema.products)
     .where(and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false)))
     .orderBy(byName(schema.products.name), asc(schema.products.id));
+  return withPrivilegedPrices(products);
 }
 
 /** A shop setting's value, undefined while it was never saved. */
@@ -166,7 +168,7 @@ export type MoveResult = { ok: true; stock: number; id: number } | { ok: false; 
  * given transaction.
  */
 export async function moveStock(
-  tx: Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0],
+  tx: Tx,
   shopId: number,
   productId: number,
   delta: number,
@@ -253,7 +255,7 @@ export async function recordMovements(
 export async function createStocked(
   member: Pick<ShopMember, "id" | "shopId" | "role">,
   identity: { name: string; category: ProductCategory; unit: string },
-  prices: ProductPrices | null,
+  prices: { prices: ProductPrices; privileged: PrivilegedInput } | null,
   quantity: number,
   reason: string,
 ) {
@@ -262,8 +264,9 @@ export async function createStocked(
     await getDb().transaction(async (tx) => {
       const [product] = await tx
         .insert(schema.products)
-        .values({ ...identity, ...prices, shopId: member.shopId })
+        .values({ ...identity, ...prices?.prices, shopId: member.shopId })
         .returning({ id: schema.products.id });
+      if (prices) await setPrivilegedPrices(tx, member.shopId, product.id, prices.privileged);
       const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
       if (!result.ok) throw new UserError(result.error);
     });
@@ -282,17 +285,24 @@ export type ProductValues = Omit<typeof schema.products.$inferInsert, "id" | "sh
 export type ProductPrices = Omit<ProductValues, "name" | "category" | "unit" | "archived">;
 
 /** Creates a merchandise of the shop, or updates it when `id` is given. */
-export async function saveProduct(shopId: number, id: number | null, values: ProductValues) {
-  const db = getDb();
+export async function saveProduct(
+  shopId: number,
+  id: number | null,
+  values: ProductValues,
+  privileged: PrivilegedInput = [],
+) {
   try {
-    if (id != null) {
-      await db
-        .update(schema.products)
-        .set(values)
-        .where(and(eq(schema.products.id, id), eq(schema.products.shopId, shopId)));
-    } else {
-      await db.insert(schema.products).values({ ...values, shopId });
-    }
+    await getDb().transaction(async (tx) => {
+      const [saved] =
+        id != null
+          ? await tx
+              .update(schema.products)
+              .set(values)
+              .where(and(eq(schema.products.id, id), eq(schema.products.shopId, shopId)))
+              .returning({ id: schema.products.id })
+          : await tx.insert(schema.products).values({ ...values, shopId }).returning({ id: schema.products.id });
+      if (saved) await setPrivilegedPrices(tx, shopId, saved.id, privileged);
+    });
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError(DUPLICATE_PRODUCT_NAME);
     throw error;
@@ -322,11 +332,11 @@ export async function productPage(shopId: number, q: string, page: number) {
 }
 
 /** A merchandise of the shop, archived or not, or undefined. */
-export async function productOf(shopId: number, id: number) {
+export async function productOf(shopId: number, id: number): Promise<ShopProduct | undefined> {
   const [product] = await getDb()
     .select()
     .from(schema.products)
     .where(and(eq(schema.products.id, id), eq(schema.products.shopId, shopId)))
     .limit(1);
-  return product;
+  return product && (await withPrivilegedPrices([product]))[0];
 }

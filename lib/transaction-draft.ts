@@ -10,7 +10,8 @@ export type TransactionDraft = {
   counterparty: string;
   notes: string;
   tillPending: boolean;
-  citizen: boolean;
+  /** The seller's privileged group, by id, or null for the usual prices. */
+  privileged: number | null;
 };
 
 export type DraftLine = {
@@ -59,6 +60,6 @@ export function decodeDraft(raw: string | string[] | undefined): TransactionDraf
     counterparty: text(d.counterparty, 100),
     notes: text(d.notes, 500),
     tillPending: d.tillPending === true,
-    citizen: d.citizen === true,
+    privileged: Number.isSafeInteger(d.privileged) && (d.privileged as number) > 0 ? (d.privileged as number) : null,
   };
 }

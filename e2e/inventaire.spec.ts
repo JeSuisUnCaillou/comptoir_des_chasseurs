@@ -234,7 +234,7 @@ test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async 
   const heading = (await form.getByRole("heading", { name: "Achat (on paie)" }).boundingBox())!;
   expect(heading.y - (box.y + box.height)).toBeGreaterThanOrEqual(16);
   await prices.first().fill("12");
-  await form.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" }).fill("15");
+  await form.getByRole("spinbutton", { name: "Prix pour : Citoyens d'Estemarche" }).fill("15");
   await prices.nth(1).fill("30");
 
   // A hide's leather batch needs both numbers, and the form keeps what was typed.
@@ -254,7 +254,7 @@ test("un gérant fixe les prix d'une nouvelle marchandise en la créant", async 
   await expect(row.getByRole("cell", { name: "—" })).toHaveCount(0);
   await row.getByRole("link", { name: `Modifier ${name}` }).click();
   await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).first()).toHaveValue("12");
-  await expect(page.getByRole("spinbutton", { name: "Prix pour les citoyens d'Estemarche" })).toHaveValue("15");
+  await expect(page.getByRole("spinbutton", { name: "Prix pour : Citoyens d'Estemarche" })).toHaveValue("15");
   await expect(page.getByRole("spinbutton", { name: "Prix en septims" }).nth(1)).toHaveValue("30");
   await expect(page.getByLabel("Peaux par lot")).toHaveValue("2");
   await expect(page.getByLabel("Cuirs obtenus")).toHaveValue("1");

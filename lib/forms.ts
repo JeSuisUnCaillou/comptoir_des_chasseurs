@@ -68,7 +68,6 @@ export function readProductPrices(formData: FormData, category: ProductCategory)
   const prices = {
     buyPrice: optionalInt(formData, "buyPrice"),
     buyQty: perQty(formData, "buyQty"),
-    citizenBuyPrice: optionalInt(formData, "citizenBuyPrice"),
     sellPrice: optionalInt(formData, "sellPrice"),
     sellQty: perQty(formData, "sellQty"),
     bulkMin: optionalInt(formData, "bulkMin"),
@@ -77,7 +76,11 @@ export function readProductPrices(formData: FormData, category: ProductCategory)
     hidesPerBatch: category === "peau" ? optionalInt(formData, "hidesPerBatch") : null,
     leatherPerBatch: category === "peau" ? optionalInt(formData, "leatherPerBatch") : null,
   };
-  const numbers = Object.values(prices).filter((v) => typeof v === "number");
+  // One field per privileged group, named after the group's id: empty, the group gets the usual price.
+  const privileged = [...formData.keys()]
+    .filter((key) => PRIVILEGED_FIELD.test(key))
+    .map((key) => ({ groupId: Number(key.slice(PRIVILEGED_PREFIX.length)), buyPrice: optionalInt(formData, key) }));
+  const numbers = [...Object.values(prices), ...privileged.map((p) => p.buyPrice)].filter((v) => typeof v === "number");
   const error = numbers.some((n) => Number.isNaN(n))
     ? "Les prix et quantités doivent être des nombres entiers positifs."
     : [prices.buyQty, prices.sellQty, prices.bulkQty].some((n) => n < 1)
@@ -85,5 +88,12 @@ export function readProductPrices(formData: FormData, category: ProductCategory)
       : (prices.hidesPerBatch == null) !== (prices.leatherPerBatch == null)
         ? "Remplis les peaux et les cuirs, ou laisse les deux vides."
         : undefined;
-  return { prices, error };
+  return { prices, privileged, error };
 }
+
+/** The longest name a privileged group may have. */
+export const GROUP_NAME_MAX = 60;
+
+/** The name of a merchandise's price field for a privileged group: "privileged-3". */
+export const PRIVILEGED_PREFIX = "privileged-";
+const PRIVILEGED_FIELD = /^privileged-[1-9][0-9]{0,8}$/;

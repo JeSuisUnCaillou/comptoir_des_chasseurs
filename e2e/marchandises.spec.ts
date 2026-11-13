@@ -84,6 +84,7 @@ test("le catalogue vient après l'ajout et le réglage du cuir", async ({ page }
   await expect(page.getByRole("heading", { level: 2 })).toHaveText([
     "Ajouter une marchandise",
     "Produits phares",
+    "Clients privilégiés",
     "Rachat du cuir par le forgeron",
     "Toutes les marchandises",
   ]);

@@ -153,11 +153,12 @@ page ; l'écriture enregistrée ramène au registre.
   calculateur des Tarifs) ; la liste garde ses catégories.
 - **Montant** : calculé avec le tarif ; le crayon permet de le changer. Sous
   le stock de la marchandise choisie, la ligne montre le prix par défaut qui
-  sert au calcul (rachat ou vente, gros ou citoyen selon le cas).
+  sert au calcul (rachat ou vente, gros ou privilégié selon le cas).
 - **Total** en septims, mis à jour pendant qu'on remplit.
 - **Client et notes** valent pour toutes les lignes.
-- **Citoyen d'Estemarche** (achat seulement) : une seule case par achat,
-  « Le vendeur est citoyen d'Estemarche ». Elle calcule au prix citoyen
+- **Prix privilégié du vendeur** (achat seulement) : un seul choix par achat,
+  « Aucun » ou l'un des clients privilégiés qui ont un prix sur au moins une
+  des marchandises. Il calcule à leur prix
   toutes les marchandises de l'achat qui en ont un.
 - **« C'est une vente » / « C'est un achat »**, à droite de « Retour au
   registre », ouvre l'autre formulaire avec tout ce qui est rempli
@@ -247,12 +248,18 @@ sortie d'argent) les septims :
 
 ## Tarifs et Gérer les marchandises
 
-### Prix citoyen
+### Clients privilégiés
 
-Une marchandise peut avoir un second prix de rachat, pour les citoyens
-d'Estemarche (le cuir : 4 septims pour eux, 3 pour les autres). Vide, tout le
-monde a le même prix. Les Tarifs le montrent en évidence : une tuile à lui
-pour un produit phare, une étiquette dorée dans les tableaux.
+Une boutique peut avoir des clients privilégiés : des groupes de vendeurs à
+qui elle rachète à leur propre prix. Le comptoir a les « Citoyens
+d'Estemarche » (le cuir : 4 septims pour eux, 3 pour les autres) ; une
+nouvelle boutique n'en a aucun. Un gérant les nomme, les renomme et les
+supprime dans Gérer les marchandises, cinq au plus ; supprimer un groupe
+efface ses prix, après une seconde confirmation.
+
+Chaque marchandise a un prix de rachat par groupe. Vide, le groupe a le prix
+habituel. Les Tarifs les montrent en évidence : une tuile par groupe pour un
+produit phare, une étiquette dorée par groupe dans les tableaux.
 
 ### Tarifs (tous les membres)
 
@@ -300,7 +307,10 @@ Dans la grille :
 - Choisir les produits phares des Tarifs, parmi les marchandises non
   archivées : en ajouter un (la marchandise se cherche en tapant ; il passe
   après les autres), changer l'ordre en le glissant par sa poignée (souris ou
-  doigt ; au clavier, flèches haut et bas sur la poignée), le retirer. Le cuir l'est tant qu'on ne l'a pas retiré.
+  doigt ; au clavier, flèches haut et bas sur la poignée), le retirer. Le comptoir
+  a gardé le cuir, son produit phare d'avant ; une nouvelle boutique n'en a
+  aucun.
+- Nommer les clients privilégiés de la boutique (§ Clients privilégiés).
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.
 - Même recherche par nom que les Tarifs et l'Inventaire.
@@ -342,7 +352,7 @@ registre.
   la crée sans prix ; un gérant règle ses prix ensuite dans Gérer les
   marchandises.
 - Un gérant a en plus la case « Ajouter des prix » : cochée, elle montre les
-  mêmes champs de prix que Gérer les marchandises (achat, prix citoyen,
+  mêmes champs de prix que Gérer les marchandises (achat, prix privilégiés,
   vente, gros, et transformation en cuir pour une peau), enregistrés avec la
   marchandise.
 - Quand la recherche du stock ne trouve rien, le formulaire reprend le nom
