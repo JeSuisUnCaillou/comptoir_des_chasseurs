@@ -17,6 +17,8 @@ export default async function globalSetup() {
     // Members and everything they recorded go; the seeded price grid stays.
     await sql`truncate members restart identity cascade`;
     await sql`update products set stock = 0`;
+    // The leather alone on top of the Tarifs, as the migration leaves a comptoir.
+    await sql`update products set featured_at = case when name = 'Cuir' then now() end`;
     // Shops other than the first are made by the tests: they go with what they sell.
     await sql`delete from suppliers where shop_id <> 1`;
     await sql`delete from products where shop_id <> 1`;

@@ -103,8 +103,15 @@
     {
       "idx": 14,
       "version": "7",
-      "when": 1794594444941,
-      "tag": "0014_categories-par-boutique",
+      "when": 1794594401719,
+      "tag": "0014_produits-phares",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794595204342,
+      "tag": "0015_categories-par-boutique",
       "breakpoints": true
     }
   ]
