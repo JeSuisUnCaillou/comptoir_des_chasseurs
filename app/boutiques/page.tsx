@@ -6,6 +6,7 @@ import { logout } from "@/app/connexion/actions";
 import { requireAccount } from "@/lib/auth/session";
 import { pendingInvitations } from "@/lib/invitations";
 import { invitationPath, shopPath } from "@/lib/paths";
+import { canOpenShop } from "@/lib/policies";
 import { accountShops } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ const ROLE_LABELS = { gerant: "Gérant", employe: "Employé", desactive: "Désac
 export default async function Boutiques() {
   const account = await requireAccount("/boutiques");
   const shops = await accountShops(account);
-  const invitations = account.superAdmin ? await pendingInvitations() : [];
+  const invitations = canOpenShop(account) ? await pendingInvitations() : [];
 
   return (
     <div className="hub">
@@ -95,7 +96,7 @@ export default async function Boutiques() {
           </nav>
         )}
 
-        {account.superAdmin ? (
+        {canOpenShop(account) ? (
           <div className="cols">
             <section className="panel" aria-labelledby="open-shop">
               <div className="eyebrow">Super admin</div>

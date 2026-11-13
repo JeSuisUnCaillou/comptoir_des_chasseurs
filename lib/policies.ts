@@ -17,3 +17,8 @@ export function isGerant(member: Actor) {
 export function canActOn(member: Actor, owned: { memberId: number }) {
   return isGerant(member) || owned.memberId === member.id;
 }
+
+/** Opening a shop, for oneself or for someone by an invitation: the super admin only. */
+export function canOpenShop(account: { superAdmin: boolean }) {
+  return account.superAdmin;
+}

@@ -5,6 +5,7 @@ import { getDb, schema, type Tx } from "@/lib/db";
 import type { Member, Shop } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
 import { insertAccount } from "@/lib/members";
+import { canOpenShop } from "@/lib/policies";
 import { insertShop } from "@/lib/shops";
 
 /**
@@ -16,7 +17,8 @@ import { insertShop } from "@/lib/shops";
 export const SPENT = "Cette invitation n'est plus valable : elle a déjà servi, ou le lien est incomplet.";
 
 /** Opens a shop named `name` with no member yet, and the token of the link that makes someone its gérant. */
-export async function createShopInvitation(superAdmin: Pick<Member, "id">, name: string) {
+export async function createShopInvitation(superAdmin: Pick<Member, "id" | "superAdmin">, name: string) {
+  if (!canOpenShop(superAdmin)) throw new UserError("Seul le super admin peut ouvrir une boutique.");
   return getDb().transaction(async (tx) => {
     const shop = await insertShop(tx, name);
     const token = randomBytes(24).toString("base64url");

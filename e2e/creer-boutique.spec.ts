@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { ALERT, COMPTOIR, createMember, loginAsGerant, newEmployeePage, setRole, uniqueName } from "./helpers";
+import { ALERT, COMPTOIR, createMember, loginAs, loginAsGerant, newEmployeePage, setRole, uniqueName } from "./helpers";
 
 /** The address a shop named `name` gets: what the page says, lower case, accents dropped, dashes. */
 function slugOf(name: string) {
@@ -55,6 +55,35 @@ test("un employé n'ouvre pas de boutique : il le demande au super admin", async
   await expect(page.getByText("Pour ouvrir une nouvelle boutique, demande au super admin.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Ouvrir une boutique", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Ouvrir une boutique pour quelqu'un" })).toHaveCount(0);
+});
+
+test("un compte qui n'est plus super admin ne peut plus ouvrir de boutique, même d'un onglet resté ouvert", async ({ browser }) => {
+  const username = uniqueName("tolfdir").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant");
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`update members set super_admin = true where username = ${username}`;
+    const page = await (await browser.newContext()).newPage();
+    await loginAs(page, username, "mot-de-passe");
+    await page.goto("/boutiques");
+    const opening = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
+    const inviting = page.getByRole("region", { name: "Ouvrir une boutique pour quelqu'un" });
+    await expect(opening).toBeVisible();
+
+    // The tab stays open while the account loses the role.
+    await sql`update members set super_admin = false where username = ${username}`;
+    const shop = uniqueName("Boutique refusée");
+    await opening.getByLabel("Nom de la boutique").fill(shop);
+    await opening.getByRole("button", { name: "Ouvrir la boutique" }).click();
+    await expect(opening.locator(ALERT)).toHaveText("Seul le super admin peut ouvrir une boutique.");
+    await inviting.getByLabel("Nom de sa boutique").fill(shop);
+    await inviting.getByRole("button", { name: "Créer le lien d'invitation" }).click();
+    await expect(inviting.locator(ALERT)).toHaveText("Seul le super admin peut ouvrir une boutique.");
+    const [{ count }] = await sql`select count(*)::int as count from shops where name = ${shop}`;
+    expect(count).toBe(0);
+  } finally {
+    await sql.end();
+  }
 });
 
 test("une boutique ne prend pas une adresse déjà prise ou réservée", async ({ page }) => {

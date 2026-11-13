@@ -14,7 +14,6 @@ export type ShopFormState = { ok: boolean; message: string; link?: string } | nu
 /** The super admin opens a shop, and enters it as its gérant. */
 export async function openShop(_prev: ShopFormState, formData: FormData): Promise<ShopFormState> {
   const account = await requireAccount("/boutiques");
-  if (!account.superAdmin) return { ok: false, message: "Seul le super admin peut ouvrir une boutique." };
   const name = text(formData, "name", 60);
   if (!name) return { ok: false, message: "Le nom de la boutique est obligatoire." };
   const result = await attempt(() => createShop(account, name));
@@ -25,7 +24,6 @@ export async function openShop(_prev: ShopFormState, formData: FormData): Promis
 /** The super admin opens a shop for someone else, and gets the link that makes them its gérant. */
 export async function inviteGerant(_prev: ShopFormState, formData: FormData): Promise<ShopFormState> {
   const account = await requireAccount("/boutiques");
-  if (!account.superAdmin) return { ok: false, message: "Seul le super admin peut inviter un gérant." };
   const name = text(formData, "name", 60);
   if (!name) return { ok: false, message: "Le nom de la boutique est obligatoire." };
   const result = await attempt(() => createShopInvitation(account, name));

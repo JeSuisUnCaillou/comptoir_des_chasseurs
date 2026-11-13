@@ -7,6 +7,7 @@ import { PATH_HEADER } from "@/lib/auth/return-path";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
+import { canOpenShop } from "@/lib/policies";
 import { RESERVED_SLUGS, isComptoir, slugOf, slugify } from "@/lib/paths";
 
 export async function shopBySlug(slug: string): Promise<Shop | undefined> {
@@ -94,8 +95,9 @@ export async function insertShop(tx: Tx, name: string): Promise<Shop> {
   });
 }
 
-/** Opens a shop named `name`, whose first gérant is the account that opens it. */
-export async function createShop(account: Pick<Member, "id">, name: string): Promise<Shop> {
+/** The super admin opens a shop named `name`, and is its first gérant. */
+export async function createShop(account: Pick<Member, "id" | "superAdmin">, name: string): Promise<Shop> {
+  if (!canOpenShop(account)) throw new UserError("Seul le super admin peut ouvrir une boutique.");
   return getDb().transaction(async (tx) => {
     const shop = await insertShop(tx, name);
     await tx.insert(schema.shopMembers).values({ shopId: shop.id, memberId: account.id, role: "gerant" });
