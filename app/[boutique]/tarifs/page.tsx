@@ -286,7 +286,7 @@ function FeaturedTiles({ product, blacksmith }: { product: Product; blacksmith: 
           <div className="stat-value">{tilePrice(product.buyPrice, product.buyQty)}</div>
         </div>
       </div>
-      {/* What the comptoir pays on the first line, what it resells for on the second. */}
+      {/* What the shop pays on the first line, what it resells for on the second. */}
       <div className="stats" style={{ marginTop: 12 }}>
         <div className="stat">
           <div className="stat-label">Vente</div>
@@ -357,9 +357,9 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
       </div>
 
       <section className="panel" aria-labelledby="chasse">
-        <div className="eyebrow">Produits de chasse</div>
+        <div className="eyebrow">Marchandises</div>
         <h2 id="chasse">
-          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Grille du comptoir
+          <Tag size={18} style={{ verticalAlign: "-2px" }} /> Grille des prix
         </h2>
         <p className="muted">Prix de rachat et de vente, tarifs de gros et rentabilité des transformations.</p>
         <LiveSearch />

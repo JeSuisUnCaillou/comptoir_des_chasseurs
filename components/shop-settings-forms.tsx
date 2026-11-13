@@ -37,7 +37,7 @@ export function ShopForm({ name, slug, fixedSlug }: { name: string; slug: string
           />
           <span id="shop-slug-hint" className="small muted">
             {fixedSlug
-              ? "L'adresse du comptoir ne change pas : ses anciens liens y mènent."
+              ? "Cette boutique garde son adresse : ses anciens liens y mènent."
               : "Changer l'adresse casse les liens déjà donnés vers la boutique."}
           </span>
         </div>

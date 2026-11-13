@@ -28,7 +28,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHead title="Gérer les marchandises">
-        La liste des marchandises du comptoir et leurs prix.
+        La liste des marchandises de la boutique et leurs prix.
       </PageHead>
 
       <div className="cols section-gap">

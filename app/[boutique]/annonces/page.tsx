@@ -23,7 +23,7 @@ export default async function Annonces({
 
   return (
     <>
-      <PageHead title="Annonces">Les annonces laissées par les membres du comptoir.</PageHead>
+      <PageHead title="Annonces">Les annonces laissées par les membres de la boutique.</PageHead>
       <section className="panel announcement-panel">
         <div className="eyebrow">Annonce publique</div>
         <h2>

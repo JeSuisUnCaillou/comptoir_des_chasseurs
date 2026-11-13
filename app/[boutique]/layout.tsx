@@ -23,7 +23,7 @@ import { isGerant } from "@/lib/policies";
 
 export const dynamic = "force-dynamic";
 
-export default async function ComptoirLayout({ children }: { children: ReactNode }) {
+export default async function ShopLayout({ children }: { children: ReactNode }) {
   const member = await requireMember();
   const gerant = isGerant(member);
   const at = (path: string) => shopPath(member.shop.slug, path);
@@ -34,8 +34,8 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
         <Link href={at("/")} className="brand">
           <BrandMark />
           <span>
-            <div className="brand-name">COMPTOIR</div>
-            <div className="brand-sub">de chasse · Keizaal</div>
+            <div className="brand-name">REGISTRE</div>
+            <div className="brand-sub">des marchands · Keizaal</div>
           </span>
         </Link>
         <div className="eyebrow nav-title">✦ Le registre ✦</div>
@@ -97,7 +97,7 @@ export default async function ComptoirLayout({ children }: { children: ReactNode
           </div>
         </header>
         <main className="content">{children}</main>
-        <footer className="footer">✦ Comptoir de chasse · Keizaal ✦</footer>
+        <footer className="footer">✦ Registre des marchands · Keizaal ✦</footer>
       </div>
     </div>
   );

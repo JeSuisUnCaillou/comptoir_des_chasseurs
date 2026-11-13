@@ -53,6 +53,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/fournisseurs", "Fournisseurs"],
     ["/annonces", "Annonces"],
     ["/membres", "Membres"],
+    ["/boutiques", "Mes boutiques"],
     ["/mot-de-passe", "Mot de passe"],
   ];
   for (const [path, title] of pages) {

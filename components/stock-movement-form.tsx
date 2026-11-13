@@ -11,7 +11,7 @@ import { MAX_LINES } from "@/lib/transaction-kinds";
 
 export type StockMovementProduct = Pick<Product, "id" | "name" | "category" | "unit" | "stock">;
 
-const REASONS = ["Chasse", "Transformation en cuir", "Perte", "Correction d'inventaire"];
+const REASONS = ["Arrivage", "Transformation", "Perte", "Correction d'inventaire"];
 
 /** One merchandise of the movement, as the member is filling it in. */
 type Line = { key: number; productId: string; quantity: string };
@@ -166,7 +166,7 @@ export function StockMovementForm({ products }: { products: StockMovementProduct
             required
             maxLength={200}
             list="m-reasons"
-            placeholder="Chasse, transformation en cuir, perte…"
+            placeholder="Arrivage, transformation, perte…"
           />
           <datalist id="m-reasons">
             {REASONS.map((r) => (

@@ -27,7 +27,7 @@ quelle taille : rien ne déborde sur le côté ni ne se colle.
 
 Sur un écran étroit :
 
-- le menu tient en une ligne qui défile de côté, sous le nom du comptoir et
+- le menu tient en une ligne qui défile de côté, sous le nom de l'app et
   du membre ;
 - les filtres (opération, employé, dates) passent à un par ligne, champs
   alignés ;
@@ -67,7 +67,8 @@ sont à l'heure de Paris.
 ## Boutiques
 
 L'app héberge plusieurs boutiques ; « Le Comptoir Des Chasseurs » est la
-première. Chacune a ses marchandises, son registre, son tableau, ses
+première. Ses textes sont génériques : ce qui est propre à une boutique (son
+nom, ses marchandises, ses annonces…) vient de sa base, jamais du code. Chacune a ses marchandises, son registre, son tableau, ses
 fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
 
 ### Adresses
@@ -84,14 +85,18 @@ fournisseurs, ses réglages et ses membres, et ne voit rien des autres.
 
 ### Mes boutiques
 
-- `/boutiques` : les boutiques du compte, avec son rôle dans chacune.
+- `/boutiques` : en haut, le compte connecté et « Se déconnecter » ; puis
+  une carte par boutique du compte : son nom, son adresse, son nombre de
+  membres actifs, le rôle du compte (badge Gérant ou Employé), un bouton
+  « Entrer » et, pour un gérant, un lien vers ses Réglages.
 - Tout compte y **ouvre une boutique** en lui donnant un nom : il en devient
   le gérant, et elle prend l'adresse tirée du nom (« Forge de Vendeaume » →
   `/forge-de-vendeaume`). Un nom dont l'adresse est déjà prise, ou réservée
   par l'app (`connexion`, `inventaire`…), est refusé.
 - Le super admin y **ouvre aussi une boutique pour quelqu'un** : il reçoit un
-  lien d'invitation (`/invitation/<jeton>`) à lui donner, et voit les liens
-  pas encore utilisés.
+  lien d'invitation (`/invitation/<jeton>`) à lui donner. Les liens pas
+  encore utilisés restent listés sous « Invitations en attente », avec
+  l'adresse de la boutique, la date de création et un bouton « Copier ».
 
 ### Réglages (gérants)
 
@@ -213,7 +218,7 @@ sortie d'argent) les septims :
 
 ## Annonces
 
-- Le tableau du comptoir : des parchemins épinglés sur du bois (titre,
+- Le tableau de la boutique : des parchemins épinglés sur du bois (titre,
   texte, auteur, date).
 - Chacun en accroche avec « Afficher un parchemin » et choisit ce qui le
   fixe : couteau, hache nordique ou morceau de viande.
@@ -225,7 +230,7 @@ sortie d'argent) les septims :
 ## Fournisseurs
 
 - Une carte par fournisseur : son lieu, une note (qui il représente…), et
-  les marchandises du comptoir qu'il vend, chacune à son prix (« 1 septim
+  les marchandises de la boutique qu'il vend, chacune à son prix (« 1 septim
   pour 6 pièces »).
 - Une recherche trouve un nom, un lieu ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
@@ -251,7 +256,7 @@ Dans l'ordre de la page :
    plus.
 2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
    cherche en tapant, parmi toutes celles qui ont un prix.
-3. La grille du comptoir (produits de chasse) : une seule recherche par nom,
+3. La grille des prix (« Marchandises ») : une seule recherche par nom,
    qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
    (transformation et bénéfice par lot), viandes et venaison, autres
    ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
@@ -387,7 +392,7 @@ Ne comptent pas :
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
 | **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
-| **Employé** | les pages du comptoir, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
+| **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.
@@ -404,7 +409,7 @@ Ne comptent pas :
 
 ### Connexion
 
-- Un visiteur non connecté qui ouvre une page du comptoir passe par la page
+- Un visiteur non connecté qui ouvre une page d'une boutique passe par la page
   de connexion, puis revient sur cette page, avec ses filtres (paramètre
   `suite` de `/connexion`).
 - Seul un chemin de l'app elle-même est suivi ; tout autre lien ramène à `/`.

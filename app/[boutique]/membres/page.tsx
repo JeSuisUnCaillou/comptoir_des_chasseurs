@@ -40,7 +40,7 @@ export default async function Membres({
   return (
     <>
       <PageHead title="Membres">
-        Les membres du comptoir.
+        Les membres de la boutique.
       </PageHead>
 
       <section className="panel" aria-labelledby="nouveau-membre">
@@ -54,7 +54,7 @@ export default async function Membres({
       </section>
 
       <section className="panel" aria-labelledby="personnel">
-        <div className="eyebrow">Personnel du comptoir</div>
+        <div className="eyebrow">Personnel de la boutique</div>
         <h2 id="personnel">Comptes</h2>
         <p className="muted">
           Le nom affiché est celui utilisé dans les registres. Un compte désactivé ne peut plus

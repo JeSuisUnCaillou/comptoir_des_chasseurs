@@ -27,7 +27,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
       <section className="panel">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">Réseau commercial du comptoir</div>
+            <div className="eyebrow">Réseau commercial de la boutique</div>
             <h2>
               <Truck size={18} style={{ verticalAlign: "-2px" }} /> Fournisseurs
             </h2>

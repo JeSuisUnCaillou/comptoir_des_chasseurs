@@ -125,7 +125,7 @@ test("le gérant d'une autre boutique entre dans la sienne, pas au comptoir", as
   await page.goto("/connexion");
   await page.getByLabel("Identifiant").fill(other.member.toLowerCase());
   await page.getByLabel("Mot de passe").fill("mot-de-passe");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
 
   // Their only shop opens at its own address, with its own data.
   await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
@@ -158,10 +158,22 @@ test("un membre de deux boutiques choisit la sienne, et en change", async ({ pag
   await page.goto("/connexion");
   await page.getByLabel("Identifiant").fill(username);
   await page.getByLabel("Mot de passe").fill("mot-de-passe");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
+  await expect(page.getByTestId("account-name")).toHaveText(username);
   const shops = page.getByRole("navigation", { name: "Mes boutiques" });
-  await expect(shops.getByRole("link", { name: /Le Comptoir Des Chasseurs · Employé/ })).toBeVisible();
-  await shops.getByRole("link", { name: new RegExp(`${other.shop} · Gérant`) }).click();
+  // Each shop is a card with their role there, and the settings for a gérant only.
+  const comptoir = shops.getByRole("article", { name: "Le Comptoir Des Chasseurs" });
+  const theirs = shops.getByRole("article", { name: other.shop });
+  await expect(comptoir).toContainText("Employé");
+  await expect(comptoir).toContainText("/le-comptoir-des-chasseurs");
+  await expect(comptoir.getByRole("link", { name: /Réglages/ })).toHaveCount(0);
+  await expect(theirs).toContainText("Gérant");
+  await expect(theirs).toContainText("2 membres");
+  await expect(theirs.getByRole("link", { name: `Réglages de ${other.shop}` })).toHaveAttribute(
+    "href",
+    `/${other.slug}/reglages`,
+  );
+  await theirs.getByRole("link", { name: `Entrer dans ${other.shop}` }).click();
 
   await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
   await expect(page.getByTestId("shop-name")).toHaveText(other.shop);
@@ -169,7 +181,7 @@ test("un membre de deux boutiques choisit la sienne, et en change", async ({ pag
   await expect(page.getByRole("link", { name: "Membres" })).toBeVisible();
 
   await page.getByRole("link", { name: "Changer de boutique" }).click();
-  await shops.getByRole("link", { name: /Le Comptoir Des Chasseurs/ }).click();
+  await comptoir.getByRole("link", { name: "Entrer dans Le Comptoir Des Chasseurs" }).click();
   await expect(page).toHaveURL(new RegExp(`${COMPTOIR}$`));
   await expect(page.getByTestId("shop-name")).toHaveText("Le Comptoir Des Chasseurs");
   // Employé here: no Membres page.
@@ -247,7 +259,7 @@ test("un membre désactivé au comptoir mais actif ailleurs est renvoyé vers sa
   await page.goto(`/connexion?suite=${encodeURIComponent(`${COMPTOIR}/inventaire`)}`);
   await page.getByLabel("Identifiant").fill(username);
   await page.getByLabel("Mot de passe").fill("mot-de-passe");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   // Deactivated at the comptoir, they land in the shop they still belong to.
   await expect(page).toHaveURL(new RegExp(`/${other.slug}$`));
   await expect(page.getByTestId("shop-name")).toHaveText(other.shop);

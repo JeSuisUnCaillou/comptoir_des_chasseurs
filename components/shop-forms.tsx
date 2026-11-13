@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useSyncExternalStore } from "react";
+import { Check, Copy } from "lucide-react";
+import { useActionState, useState, useSyncExternalStore } from "react";
 import { inviteGerant, openShop, type ShopFormState } from "@/app/boutiques/actions";
 import { joinShop, signUp, type InvitationState } from "@/app/invitation/[token]/actions";
 import { keepValues } from "@/components/keep-values";
@@ -42,14 +43,24 @@ const noOrigin = () => () => {};
 /** An invitation link in full, ready to copy. The address of the site is only known in the browser. */
 export function InvitationLink({ path, label = "Lien d'invitation" }: { path: string; label?: string }) {
   const origin = useSyncExternalStore(noOrigin, () => window.location.origin, () => "");
+  const [copied, setCopied] = useState(false);
+  const link = origin + path;
   return (
-    <input
-      className="invitation-link"
-      aria-label={label}
-      readOnly
-      value={origin + path}
-      onFocus={(event) => event.currentTarget.select()}
-    />
+    <div className="invitation-link">
+      <input aria-label={label} readOnly value={link} onFocus={(event) => event.currentTarget.select()} />
+      <button
+        className="btn btn-small"
+        type="button"
+        onClick={() =>
+          navigator.clipboard.writeText(link).then(
+            () => setCopied(true),
+            () => setCopied(false),
+          )
+        }
+      >
+        {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copié" : "Copier"}
+      </button>
+    </div>
   );
 }
 

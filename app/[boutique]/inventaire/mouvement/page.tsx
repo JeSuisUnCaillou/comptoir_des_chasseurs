@@ -14,7 +14,7 @@ export default async function MouvementDeStock() {
   return (
     <>
       <PageHead title="Mouvement de stock">
-        Des marchandises entrent ou sortent du stock sans septims : chasse, transformation en cuir, perte,
+        Des marchandises entrent ou sortent du stock sans septims : arrivage, transformation, perte,
         correction…
       </PageHead>
       <p>

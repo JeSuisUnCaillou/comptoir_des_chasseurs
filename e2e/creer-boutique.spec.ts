@@ -47,8 +47,8 @@ test("un employé ouvre sa propre boutique, dont il est le gérant", async ({ br
   await page.goto("/");
   await expect(page).toHaveURL(/\/boutiques$/);
   const shops = page.getByRole("navigation", { name: "Mes boutiques" });
-  await expect(shops.getByRole("link", { name: /Le Comptoir Des Chasseurs · Employé/ })).toBeVisible();
-  await expect(shops.getByRole("link", { name: `${shop} · Gérant` })).toBeVisible();
+  await expect(shops.getByRole("article", { name: "Le Comptoir Des Chasseurs" })).toContainText("Employé");
+  await expect(shops.getByRole("article", { name: shop })).toContainText("Gérant");
   // Only the super admin invites someone else.
   await expect(page.getByRole("region", { name: "Ouvrir une boutique pour quelqu'un" })).toHaveCount(0);
 });
@@ -79,8 +79,14 @@ test("une boutique ne prend pas une adresse déjà prise ou réservée", async (
 test("le super admin invite un nouveau gérant, qui crée son compte avec le lien", async ({ page, browser }) => {
   const shop = uniqueName("Taverne du Port");
   const link = await invite(page, shop);
-  const pending = page.getByRole("list", { name: "Invitations en attente" });
+  const pending = page.getByRole("region", { name: "Invitations en attente" });
   await expect(pending.getByLabel(`Lien d'invitation de ${shop}`)).toHaveValue(link);
+  // The link copies in one click.
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const row = pending.getByRole("listitem").filter({ hasText: shop });
+  await row.getByRole("button", { name: "Copier" }).click();
+  await expect(row.getByRole("button", { name: "Copié" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
 
   const username = uniqueName("hulda").toLowerCase();
   const guest = await (await browser.newContext()).newPage();
@@ -121,7 +127,7 @@ test("un compte existant prend une invitation en se connectant d'abord", async (
   await expect(guest).toHaveURL(/\/connexion\?suite=/);
   await guest.getByLabel("Identifiant").fill(username);
   await guest.getByLabel("Mot de passe").fill("mot-de-passe");
-  await guest.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await guest.getByRole("button", { name: "Se connecter" }).click();
 
   // Back on the invitation, signed in.
   await expect(guest).toHaveURL(new RegExp(`/invitation/`));
@@ -228,8 +234,8 @@ test("un gérant supprime sa boutique, avec tout ce qu'elle contient", async ({ 
   await danger.getByRole("button", { name: "Supprimer la boutique" }).click();
 
   await expect(page).toHaveURL(/\/boutiques$/);
-  await expect(page.getByRole("navigation", { name: "Mes boutiques" }).getByRole("link")).toHaveText([
-    /Le Comptoir Des Chasseurs · Employé/,
+  await expect(page.getByRole("navigation", { name: "Mes boutiques" }).getByRole("heading")).toHaveText([
+    "Le Comptoir Des Chasseurs",
   ]);
   await page.goto(`/${slug}`);
   await expect(page.getByText("This page could not be found.")).toBeVisible();

@@ -25,7 +25,7 @@ export default async function GrandLivre() {
       <section className="panel">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">La caisse du comptoir</div>
+            <div className="eyebrow">La caisse de la boutique</div>
             <h2>Bonjour, {member.name}</h2>
           </div>
           <div className="move-actions">
@@ -52,12 +52,12 @@ export default async function GrandLivre() {
       <section className="section-gap">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">Affichage du comptoir</div>
+            <div className="eyebrow">Affichage de la boutique</div>
             <h2>
               <Megaphone size={18} style={{ verticalAlign: "-2px" }} /> Tableau d&apos;annonces
             </h2>
             <p className="muted" style={{ margin: "4px 0 0" }}>
-              Les annonces laissées par les membres du comptoir.
+              Les annonces laissées par les membres de la boutique.
             </p>
           </div>
           <Link className="btn btn-small" href={at("/annonces")}>

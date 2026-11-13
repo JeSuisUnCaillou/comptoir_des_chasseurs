@@ -71,7 +71,7 @@ export function NewStockProductForm({
         </div>
         <div className="field span-2">
           <label htmlFor={`${id}-r`}>Motif</label>
-          <input id={`${id}-r`} name="reason" required maxLength={200} placeholder="ex. chasse du matin" />
+          <input id={`${id}-r`} name="reason" required maxLength={200} placeholder="ex. arrivage du matin" />
         </div>
       </div>
       {canSetPrices && (

@@ -42,7 +42,7 @@ export async function createFirstGerant(_prev: AuthState, formData: FormData): P
   const passwordHash = await hashPassword(password);
 
   const created = await createFirst((await firstShop()).id, { username, name, passwordHash });
-  if (!created) return { error: "Le comptoir a déjà un gérant. Connecte-toi." };
+  if (!created) return { error: "Le premier gérant existe déjà. Connecte-toi." };
   await startSession(created);
   redirect("/");
 }

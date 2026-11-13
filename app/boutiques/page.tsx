@@ -1,4 +1,4 @@
-import { LogOut, Store } from "lucide-react";
+import { DoorOpen, LogOut, Settings, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand";
 import { InvitationLink, InviteGerantForm, OpenShopForm } from "@/components/shop-forms";
@@ -10,11 +10,14 @@ import { accountShops } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
 
+const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" });
+
 const ROLE_LABELS = { gerant: "Gérant", employe: "Employé", desactive: "Désactivé" } as const;
 
 /**
- * /boutiques: the shops the signed-in account may enter, opening a shop of
- * its own and, for the super admin, inviting someone to run a new one.
+ * /boutiques: the shops the signed-in account may enter, as cards with its
+ * role in each; opening a shop of its own and, for the super admin, inviting
+ * someone to run a new one, with the links not used yet.
  */
 export default async function Boutiques() {
   const account = await requireAccount("/boutiques");
@@ -22,64 +25,120 @@ export default async function Boutiques() {
   const invitations = account.superAdmin ? await pendingInvitations() : [];
 
   return (
-    <main className="gate">
-      <div className="gate-card gate-card-wide">
-        <BrandMark />
-        <div className="eyebrow">Keizaal · Bordeciel</div>
-        <h1>Mes boutiques</h1>
-        <p className="muted">Bienvenue, {account.name}. Choisis la boutique où entrer.</p>
-        <div className="gate-divider" aria-hidden="true">
-          ◆ ━━━ ✦ ━━━ ◆
+    <div className="hub">
+      <header className="hub-bar">
+        <div className="hub-brand">
+          <BrandMark />
+          <span>
+            <div className="brand-name">REGISTRE</div>
+            <div className="brand-sub">des marchands · Keizaal</div>
+          </span>
         </div>
-        <nav aria-label="Mes boutiques">
-          <ul className="shop-list">
-            {shops.map((shop) => (
-              <li key={shop.id}>
-                <Link className="btn shop-link" href={shopPath(shop.slug)}>
-                  <Store size={16} /> {shop.name}
-                  <span className="small muted"> · {ROLE_LABELS[shop.role]}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="hub-account">
+          <span className="small muted">
+            Connecté : <strong data-testid="account-name">{account.name}</strong>
+          </span>
+          <form action={logout}>
+            <button className="btn btn-small btn-ghost" type="submit">
+              <LogOut size={14} /> Se déconnecter
+            </button>
+          </form>
+        </div>
+      </header>
 
-        <section className="gate-section" aria-labelledby="open-shop">
-          <h2 id="open-shop">Ouvrir une boutique</h2>
-          <p className="small muted">Tu en seras le gérant, et tu pourras y créer les comptes de tes employés.</p>
-          <OpenShopForm />
-        </section>
+      <main className="content hub-content">
+        <div className="page-head">
+          <div className="eyebrow">✦ Registre des marchands ✦</div>
+          <h1>Mes boutiques</h1>
+          <p className="muted">
+            {shops.length > 0 ? "Choisis la boutique où entrer, ou ouvres-en une nouvelle." : "Tu n'as encore aucune boutique : ouvres-en une."}
+          </p>
+        </div>
 
-        {account.superAdmin && (
-          <section className="gate-section" aria-labelledby="invite-gerant">
-            <h2 id="invite-gerant">Ouvrir une boutique pour quelqu&apos;un</h2>
-            <p className="small muted">
-              Tu reçois un lien à lui donner : en l&apos;ouvrant, il en devient le gérant, avec son compte ou un
-              nouveau. Chaque lien ne sert qu&apos;une fois.
-            </p>
-            <InviteGerantForm />
-            {invitations.length > 0 && (
-              <>
-                <h3>Invitations en attente</h3>
-                <ul className="shop-list" aria-label="Invitations en attente">
-                  {invitations.map((invitation) => (
-                    <li key={invitation.id}>
-                      <span className="small">{invitation.shopName}</span>
-                      <InvitationLink path={invitationPath(invitation.token)} label={`Lien d'invitation de ${invitation.shopName}`} />
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </section>
+        {shops.length > 0 && (
+          <nav aria-label="Mes boutiques" className="section-gap">
+            <ul className="shop-grid">
+              {shops.map((shop) => (
+                <li key={shop.id}>
+                  <article className="shop-card" aria-labelledby={`shop-${shop.id}`}>
+                    <div className="shop-card-head">
+                      <Store size={22} className="shop-card-icon" aria-hidden="true" />
+                      <span className={`badge ${shop.role === "gerant" ? "badge-gold" : "badge-blue"}`}>
+                        {ROLE_LABELS[shop.role]}
+                      </span>
+                    </div>
+                    <h2 id={`shop-${shop.id}`}>{shop.name}</h2>
+                    <p className="small muted shop-card-meta">
+                      <span>/{shop.slug}</span>
+                      <span>
+                        <Users size={12} aria-hidden="true" /> {shop.members} {shop.members > 1 ? "membres" : "membre"}
+                      </span>
+                    </p>
+                    <div className="shop-card-actions">
+                      <Link className="btn btn-small btn-enter" href={shopPath(shop.slug)} aria-label={`Entrer dans ${shop.name}`}>
+                        <DoorOpen size={14} /> Entrer
+                      </Link>
+                      {shop.role === "gerant" && (
+                        <Link
+                          className="btn btn-small btn-ghost"
+                          href={shopPath(shop.slug, "/reglages")}
+                          aria-label={`Réglages de ${shop.name}`}
+                        >
+                          <Settings size={14} /> Réglages
+                        </Link>
+                      )}
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
 
-        <form className="gate-logout" action={logout}>
-          <button className="btn btn-small btn-ghost" type="submit">
-            <LogOut size={14} /> Se déconnecter
-          </button>
-        </form>
-      </div>
-    </main>
+        <div className="cols">
+          <section className="panel" aria-labelledby="open-shop">
+            <div className="eyebrow">Nouvelle boutique</div>
+            <h2 id="open-shop">Ouvrir une boutique</h2>
+            <p className="small muted">
+              Tu en seras le gérant, et tu pourras y créer les comptes de tes employés. Son adresse vient de son nom.
+            </p>
+            <OpenShopForm />
+          </section>
+
+          {account.superAdmin && (
+            <section className="panel" aria-labelledby="invite-gerant">
+              <div className="eyebrow">Super admin</div>
+              <h2 id="invite-gerant">Ouvrir une boutique pour quelqu&apos;un</h2>
+              <p className="small muted">
+                Tu reçois un lien à lui donner : en l&apos;ouvrant, il en devient le gérant, avec son compte ou un
+                nouveau. Chaque lien ne sert qu&apos;une fois.
+              </p>
+              <InviteGerantForm />
+            </section>
+          )}
+        </div>
+
+        {invitations.length > 0 && (
+          <section className="panel" aria-labelledby="pending-invitations" style={{ marginTop: 22 }}>
+            <h2 id="pending-invitations">Invitations en attente</h2>
+            <p className="small muted">Ces boutiques attendent leur gérant : donne-lui le lien.</p>
+            <ul className="invitation-list">
+              {invitations.map((invitation) => (
+                <li key={invitation.id}>
+                  <div>
+                    <strong>{invitation.shopName}</strong>
+                    <div className="small muted">
+                      /{invitation.shopSlug} · créée le {longDate.format(invitation.createdAt)}
+                    </div>
+                  </div>
+                  <InvitationLink path={invitationPath(invitation.token)} label={`Lien d'invitation de ${invitation.shopName}`} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+      <footer className="footer">✦ Registre des marchands · Keizaal ✦</footer>
+    </div>
   );
 }

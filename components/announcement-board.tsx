@@ -81,7 +81,7 @@ export function AnnouncementBoard({
           ))}
         </ul>
       )}
-      <div className="board-banner board-banner-foot">⚔ Comptoir de chasse · Vendeaume ⚔</div>
+      <div className="board-banner board-banner-foot">⚔ {member.shop.name} ⚔</div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { and, asc, eq, ne, type AnyColumn } from "drizzle-orm";
+import { and, asc, count, eq, ne, sql, type AnyColumn } from "drizzle-orm";
 import { PATH_HEADER } from "@/lib/auth/return-path";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { Member, MemberRole, Shop } from "@/lib/db/schema";
@@ -34,26 +34,36 @@ export const currentShop = cache(async function currentShop(): Promise<Shop> {
   return shop;
 });
 
-export type AccountShop = Pick<Shop, "id" | "name" | "slug"> & { role: MemberRole };
+export type AccountShop = Pick<Shop, "id" | "name" | "slug"> & { role: MemberRole; members: number };
 
 /**
- * The shops an account may enter, by name, with its role in each: those where
- * it has a role other than deactivated, and every shop for the super admin.
+ * The shops an account may enter, by name, with its role in each and how many
+ * members work there: those where it has a role other than deactivated, and
+ * every shop for the super admin.
  */
 export async function accountShops(account: Pick<Member, "id" | "superAdmin">): Promise<AccountShop[]> {
   const s = schema.shops;
   const sm = schema.shopMembers;
+  const members = getDb()
+    .select({ shopId: sm.shopId, count: count().as("count") })
+    .from(sm)
+    .where(ne(sm.role, "desactive"))
+    .groupBy(sm.shopId)
+    .as("members");
+  const memberCount = sql<number>`coalesce(${members.count}, 0)::int`;
   if (account.superAdmin) {
     const shops = await getDb()
-      .select({ id: s.id, name: s.name, slug: s.slug })
+      .select({ id: s.id, name: s.name, slug: s.slug, members: memberCount })
       .from(s)
+      .leftJoin(members, eq(members.shopId, s.id))
       .orderBy(byName(s.name), asc(s.id));
     return shops.map((shop) => ({ ...shop, role: "gerant" }));
   }
   return getDb()
-    .select({ id: s.id, name: s.name, slug: s.slug, role: sm.role })
+    .select({ id: s.id, name: s.name, slug: s.slug, role: sm.role, members: memberCount })
     .from(s)
     .innerJoin(sm, eq(sm.shopId, s.id))
+    .leftJoin(members, eq(members.shopId, s.id))
     .where(and(eq(sm.memberId, account.id), ne(sm.role, "desactive")))
     .orderBy(byName(s.name), asc(s.id));
 }
@@ -118,7 +128,7 @@ export async function updateShop(shop: Shop, name: string, address: string): Pro
  * (the super admin always has the comptoir, which can't be deleted).
  */
 export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop: Shop, typedName: string) {
-  if (isComptoir(shop)) throw new UserError("Le comptoir ne peut pas être supprimé.");
+  if (isComptoir(shop)) throw new UserError("Cette boutique ne peut pas être supprimée.");
   if (typedName !== shop.name) throw new UserError("Écris exactement le nom de la boutique pour confirmer.");
   const others = (await accountShops(gerant)).filter(({ id }) => id !== shop.id);
   if (others.length === 0) {

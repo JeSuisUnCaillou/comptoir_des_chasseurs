@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Comptoir des chasseurs",
-  description: "Stock, achats et ventes du comptoir des chasseurs de Vendeaume",
+  title: "Registre des marchands",
+  description: "Stock, achats et ventes des boutiques de Keizaal",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

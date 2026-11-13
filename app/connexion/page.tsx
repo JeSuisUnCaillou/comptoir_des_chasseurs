@@ -25,9 +25,9 @@ export default async function Connexion({
         <BrandMark />
         <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
-          Comptoir <span>des chasseurs</span>
+          Registre <span>des marchands</span>
         </h1>
-        <p className="muted">Le registre des marchands et des chasseurs</p>
+        <p className="muted">Stock, achats et ventes de vos boutiques</p>
         <div className="gate-divider" aria-hidden="true">
           ◆ ━━━ ✦ ━━━ ◆
         </div>

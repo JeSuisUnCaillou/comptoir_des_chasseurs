@@ -15,7 +15,7 @@ export async function loginAs(page: Page, username: string, password: string) {
   await page.goto(`/connexion?suite=${encodeURIComponent(COMPTOIR)}`);
   await page.getByLabel("Identifiant").fill(username);
   await page.getByLabel("Mot de passe").fill(password);
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 }
 

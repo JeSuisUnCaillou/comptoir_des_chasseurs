@@ -42,7 +42,7 @@ export function LoginForm({ returnPath }: { returnPath: string }) {
       <Field name="password" label="Mot de passe" type="password" autoComplete="current-password" />
       <ErrorNotice state={state} />
       <button className="btn btn-primary" type="submit" disabled={pending}>
-        Entrer au comptoir
+        Se connecter
       </button>
     </form>
   );

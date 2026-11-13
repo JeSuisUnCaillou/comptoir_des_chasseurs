@@ -1567,47 +1567,165 @@ tr.fresh td {
 }
 
 /* The choice of shops, on / */
-.shop-list {
+.gate-logout {
+  margin-top: 24px;
+}
+
+/* Mes boutiques: a bar with the brand and the account, then the shops as cards. */
+.hub {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 14px 54px;
+  border-bottom: 1px solid var(--border);
+  background: rgb(20 27 24 / 0.85);
+}
+
+.hub-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hub-account {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.hub-account strong {
+  color: var(--text);
+}
+
+.hub-content {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.shop-grid {
   list-style: none;
+  margin: 0;
   padding: 0;
-  margin: 0 0 1rem;
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+  gap: 18px;
 }
 
-.shop-link {
-  width: 100%;
-  justify-content: flex-start;
+.shop-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgb(31 39 35 / 0.92);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border-gold);
+  border-radius: 4px;
+  padding: 18px 20px;
+  transition: border-color 0.15s;
 }
 
-.gate-card-wide {
-  max-width: 560px;
+.shop-card:hover {
+  border-color: var(--border-gold);
+  border-top-color: var(--gold);
 }
 
-.gate-section {
-  text-align: left;
+.shop-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shop-card-icon {
+  color: var(--gold);
+}
+
+.shop-card h2 {
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.shop-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.shop-card-meta svg {
+  vertical-align: -1px;
+}
+
+.shop-card-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-enter {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+}
+
+.btn-enter:hover {
+  background: var(--gold-strong);
+}
+
+.invitation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invitation-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  align-items: center;
+  gap: 8px 18px;
+  padding: 12px 0;
   border-top: 1px solid var(--border);
-  padding-top: 18px;
-  margin-top: 18px;
-}
-
-.gate-section h2 {
-  font-size: 20px;
-  margin: 0 0 6px;
-}
-
-.gate-section h3 {
-  font-size: 16px;
-  margin: 18px 0 8px;
 }
 
 .invitation-link {
-  width: 100%;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.invitation-link input {
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
 }
 
-.gate-logout {
-  margin-top: 24px;
+@media (max-width: 860px) {
+  .hub-bar {
+    padding: 10px 16px;
+  }
+
+  .hub .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hub .brand-name {
+    font-size: 18px;
+  }
+
+  .invitation-list li {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Phones. Built for 360 to 430 px wide: nothing may push the page sideways. */

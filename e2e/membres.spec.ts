@@ -46,7 +46,7 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
   await expect(employee).toHaveURL(/\/connexion$/);
   await employee.getByLabel("Identifiant").fill(username);
   await employee.getByLabel("Mot de passe").fill("mot-de-passe");
-  await employee.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await employee.getByRole("button", { name: "Se connecter" }).click();
   await expect(employee.locator(ALERT)).toHaveText("Identifiant ou mot de passe incorrect.");
 });
 

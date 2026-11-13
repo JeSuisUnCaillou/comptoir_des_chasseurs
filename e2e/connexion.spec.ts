@@ -6,8 +6,8 @@ test("un visiteur non connecté arrive sur la page de connexion", async ({ page 
 
   // The comptoir's old address leads to its page in the shop.
   await expect(page).toHaveURL(/\/connexion\?suite=%2Fle-comptoir-des-chasseurs%2Finventaire$/);
-  await expect(page.getByRole("heading", { name: /Comptoir\s*des chasseurs/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Entrer au comptoir" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Registre\s*des marchands/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible();
 });
 
 test("après connexion, le membre revient sur la page qu'il avait ouverte, avec ses filtres", async ({
@@ -18,7 +18,7 @@ test("après connexion, le membre revient sur la page qu'il avait ouverte, avec 
 
   await page.getByLabel("Identifiant").fill(GERANT.username);
   await page.getByLabel("Mot de passe").fill(GERANT.password);
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
 
   await expect(page).toHaveURL(/\/achat-vente\?type=vente$/);
   await expect(page.getByRole("heading", { name: "Achat / Vente" })).toBeVisible();
@@ -28,11 +28,11 @@ test("un mauvais mot de passe garde la page à rejoindre", async ({ page }) => {
   await page.goto("/inventaire");
   await page.getByLabel("Identifiant").fill(GERANT.username);
   await page.getByLabel("Mot de passe").fill("pas-le-bon");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.locator(ALERT)).toHaveText("Identifiant ou mot de passe incorrect.");
 
   await page.getByLabel("Mot de passe").fill(GERANT.password);
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page).toHaveURL(/\/inventaire$/);
 });
 
@@ -43,7 +43,7 @@ for (const suite of ["//example.com", "https://example.com/", "/\\example.com", 
     await page.goto(`/connexion?suite=${encodeURIComponent(suite)}`);
     await page.getByLabel("Identifiant").fill(GERANT.username);
     await page.getByLabel("Mot de passe").fill(GERANT.password);
-    await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+    await page.getByRole("button", { name: "Se connecter" }).click();
 
     // The super admin's own shops: the comptoir, or the choice of shops when tests made others.
     const home = /^http:\/\/localhost:\d+\/(le-comptoir-des-chasseurs|boutiques)$/;
@@ -59,7 +59,7 @@ test("un mauvais mot de passe est refusé", async ({ page }) => {
   await page.goto("/connexion");
   await page.getByLabel("Identifiant").fill(GERANT.username);
   await page.getByLabel("Mot de passe").fill("pas-le-bon");
-  await page.getByRole("button", { name: "Entrer au comptoir" }).click();
+  await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.locator(ALERT)).toHaveText("Identifiant ou mot de passe incorrect.");
 });
 

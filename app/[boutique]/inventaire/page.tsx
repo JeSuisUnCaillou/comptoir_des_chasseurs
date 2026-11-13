@@ -79,7 +79,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
       <section className="panel">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">Réserves du comptoir</div>
+            <div className="eyebrow">Réserves de la boutique</div>
             <h2>
               <Archive size={18} style={{ verticalAlign: "-2px" }} /> Inventaire des marchandises
             </h2>
