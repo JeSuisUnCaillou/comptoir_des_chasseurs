@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ALERT, loginAsGerant, uniqueName } from "./helpers";
+import { ALERT, dragAbove, loginAsGerant, uniqueName } from "./helpers";
 
 /** The super admin opens a shop from Mes boutiques and lands in it; its address is returned. */
 async function openShop(page: Page, name: string) {
@@ -113,12 +113,7 @@ test("un gérant réordonne ses catégories en les glissant, ou au clavier, et t
     }).toPass();
 
   // Dragged by its handle above the first one, the others making room.
-  const from = (await handle("Armures").boundingBox())!;
-  const to = (await row(page, "Autres marchandises").boundingBox())!;
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2, to.y + 2, { steps: 12 });
-  await page.mouse.up();
+  await dragAbove(page, handle("Armures"), row(page, "Autres marchandises"));
   await expect.poll(names).toEqual(["Armures", "Autres marchandises", "Armes"]);
   await saved(["Armures", "Autres marchandises", "Armes"]);
 

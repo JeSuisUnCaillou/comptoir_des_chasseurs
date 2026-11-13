@@ -210,3 +210,16 @@ export async function memberRow(page: Page, username: string) {
     if ((await next.count()) === 0) throw new Error(`Aucun compte « ${username} » dans Membres.`);
   }
 }
+
+/**
+ * Drags an item by its handle onto the top of another, moving the mouse in
+ * small steps as a hand would: the list only reorders while the pointer moves.
+ */
+export async function dragAbove(page: Page, handle: Locator, target: Locator) {
+  const from = (await handle.boundingBox())!;
+  const to = (await target.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, to.y + 2, { steps: 12 });
+  await page.mouse.up();
+}

@@ -8,6 +8,7 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
 import { MovementTable } from "@/components/movement-table";
+import { byCategoryOrder } from "@/lib/category-order";
 import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
@@ -30,7 +31,7 @@ function asDirection(value: string | undefined) {
 // by name and Array.prototype.sort is stable, so names stay in order inside
 // each group.
 const stockOrder = (a: CategorizedProduct, b: CategorizedProduct) =>
-  Number(b.leather) - Number(a.leather) || a.categoryPosition - b.categoryPosition || a.categoryId - b.categoryId;
+  Number(b.leather) - Number(a.leather) || byCategoryOrder(a, b);
 
 export default async function Inventaire({ searchParams }: { searchParams: Promise<Search> }) {
   const member = await requireMember();

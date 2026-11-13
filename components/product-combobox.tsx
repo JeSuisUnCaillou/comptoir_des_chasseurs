@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { byCategoryOrder } from "@/lib/category-order";
 
 type Choice<T> = { id: T; name: string; group?: string };
 
@@ -12,7 +13,7 @@ export function choicesByCategory(
   products: { id: number; name: string; categoryId: number; categoryName: string; categoryPosition: number }[],
 ) {
   return [...products]
-    .sort((a, b) => a.categoryPosition - b.categoryPosition || a.categoryId - b.categoryId)
+    .sort(byCategoryOrder)
     .map((p) => ({ id: String(p.id), name: p.name, group: p.categoryName }));
 }
 
