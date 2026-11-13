@@ -202,7 +202,8 @@ Dans l'ordre de la page :
 1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
    dans l'ordre où ils ont été ajoutés : une carte chacun, environ trois côte à
    côte, avec ses prix de rachat et de vente en petites tuiles ; pour le cuir,
-   le rachat par le forgeron en plus. Un produit phare archivé n'y est plus.
+   le rachat par le forgeron en plus. Un produit phare archivé n'y est plus
+   (il y revient si on le désarchive).
    Sans produit phare, le bloc le dit. Pour un gérant, un crayon sur le bloc
    ouvre le réglage.
 2. Le calculateur, réglé sur le premier produit phare à l'ouverture ; la
