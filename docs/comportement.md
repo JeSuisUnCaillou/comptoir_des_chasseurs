@@ -257,7 +257,8 @@ sortie d'argent) les septims :
 - Une recherche trouve un nom, un lieu ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
   (nom, lieu, note, marchandises et prix) ou les suppriment, par les boutons
-  de la page.
+  de la page. La marchandise d'un prix se cherche en tapant, comme dans
+  Achat / Vente.
 
 ## Tarifs et Gérer les marchandises
 
@@ -271,24 +272,27 @@ supprime dans Gérer les marchandises, cinq au plus ; supprimer un groupe
 efface ses prix, après une seconde confirmation.
 
 Chaque marchandise a un prix de rachat par groupe. Vide, le groupe a le prix
-habituel. Les Tarifs les montrent en évidence : une tuile par groupe pour le
+habituel. Les Tarifs les montrent en évidence : une tuile par groupe pour un
 produit phare, une étiquette dorée par groupe dans les tableaux.
 
 ### Tarifs (tous les membres)
 
 Dans l'ordre de la page :
 
-1. Le produit phare, choisi par un gérant dans Gérer les marchandises (le cuir tant
-   qu'aucun autre n'est choisi, ou si le choisi est archivé) : ses prix de
-   rachat et de vente en tuiles ; pour le cuir, le rachat par le forgeron en
-   plus.
-2. Le calculateur, réglé sur le produit phare à l'ouverture ; la marchandise se
-   cherche en tapant, parmi toutes celles qui ont un prix.
+1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
+   dans l'ordre qu'ils y ont réglé, à côté du calculateur : une ligne
+   chacun, son nom puis ses prix de rachat et de vente côte à côte (deux par
+   ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus. Un
+   produit phare archivé n'y est plus (il y revient si on le désarchive).
+   Sans produit phare, le bloc le dit. Pour un gérant, un crayon sur le bloc
+   ouvre le réglage.
+2. Le calculateur, réglé sur le premier produit phare à l'ouverture ; la
+   marchandise se cherche en tapant, parmi toutes celles qui ont un prix.
 3. La grille des prix (« Marchandises ») : une seule recherche par nom,
    qui filtre pendant qu'on tape, puis une grille par catégorie : peaux
    (transformation et bénéfice par lot), viandes et venaison, autres
-   ressources (où va aussi le cuir quand il n'est pas le produit phare). Le
-   produit phare n'y est pas : il a ses tuiles en haut.
+   ressources (où va aussi le cuir quand il n'est pas produit phare). Les
+   produits phares n'y sont pas : ils ont leurs lignes en haut.
 
 Dans la grille :
 
@@ -314,7 +318,12 @@ Dans la grille :
 
 - S'ouvre par le bouton du même nom sur la page Tarifs.
 - Créer et modifier les marchandises et leurs prix.
-- Choisir le produit phare des Tarifs, parmi les marchandises non archivées.
+- Choisir les produits phares des Tarifs, parmi les marchandises non
+  archivées : en ajouter un (la marchandise se cherche en tapant ; il passe
+  après les autres), changer l'ordre en le glissant par sa poignée (souris ou
+  doigt ; au clavier, flèches haut et bas sur la poignée), le retirer. Le comptoir
+  a gardé le cuir, son produit phare d'avant ; une nouvelle boutique n'en a
+  aucun.
 - Nommer les clients privilégiés de la boutique (§ Clients privilégiés).
 - Régler le prix de rachat du cuir par le forgeron, qui sert au bénéfice des
   peaux.

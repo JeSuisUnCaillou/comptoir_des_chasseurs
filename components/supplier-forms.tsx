@@ -9,6 +9,7 @@ import {
 } from "@/app/[boutique]/fournisseurs/actions";
 import type { Supplier } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
+import { ProductField } from "@/components/product-field";
 
 function Status({ state }: { state: SupplierFormState }) {
   if (!state) return null;
@@ -60,16 +61,12 @@ export function OfferForm({
       <div className="form-grid">
         <div className="field span-2">
           <label htmlFor="o-product">Marchandise</label>
-          <select id="o-product" name="productId" required defaultValue="">
-            <option value="" disabled>
-              Choisir…
-            </option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.unit})
-              </option>
-            ))}
-          </select>
+          <ProductField
+            id="o-product"
+            name="productId"
+            required
+            products={products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})` }))}
+          />
         </div>
         <div className="field">
           <label htmlFor="o-price">Prix en septims</label>

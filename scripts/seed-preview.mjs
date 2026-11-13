@@ -41,6 +41,10 @@ const STOCK = {
   "Kit débutant": 5,
 };
 
+// Products put forward on top of the Tarifs, after the leather the migration
+// keeps, to see several featured cards side by side.
+const FEATURED = ["Venaison", "Flèches d'acier"];
+
 // The comptoir's privileged groups and their price for a leather (the usual one is 4).
 const PRIVILEGED = [
   ["Citoyens d'Estemarche", 5],
@@ -284,6 +288,16 @@ try {
           values (1, ${kind}, null, ${label}, 1, ${amount}, ${counterparty}, ${CASH_NOTE}, true, ${memberId})`;
       }
       console.log("Mouvements de caisse pas encore en caisse ajoutés.");
+    }
+
+    // Back to three featured products whenever fewer than two are left.
+    const [{ featured }] = await tx`
+      select count(*)::int as featured from products where shop_id = 1 and featured_at is not null and not archived`;
+    if (featured < 2) {
+      await tx`
+        update products set featured_at = now() + (array_position(${FEATURED}::text[], name) || ' seconds')::interval
+        where shop_id = 1 and name in ${sql(FEATURED)} and featured_at is null and not archived`;
+      console.log("Produits phares d'exemple mis en avant.");
     }
   });
 } finally {

@@ -2241,6 +2241,117 @@ tr.fresh td {
   margin-left: 4px;
 }
 
+/* Tarifs: the featured products, one line each, their prices side by side. */
+.featured-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.featured-row {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 10px 14px 12px;
+  min-width: 0;
+}
+
+.featured-row h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.featured-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(70px, 100%), 1fr));
+  gap: 8px;
+}
+
+/* A price as a label over its value, set off by a thin rule rather than a box. */
+.featured-prices .stat {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 0 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.featured-prices .stat-privileged {
+  border-left: 2px solid var(--gold);
+}
+
+.featured-prices .stat-label {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.featured-prices .stat-value {
+  font-size: 16px;
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* On a phone, two prices per line, and a long price may wrap. */
+@media (max-width: 600px) {
+  .featured-prices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .featured-prices .stat-value {
+    white-space: normal;
+  }
+}
+
+/* Gérer les marchandises: the featured products, each with its button to take it back. */
+.featured-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.featured-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.featured-list .featured-name {
+  flex: 1;
+}
+
+/* Grabbed with a finger too: the page does not scroll from the handle. */
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+  color: var(--muted);
+}
+
+.featured-list li.dragging {
+  background: var(--panel-2);
+  outline: 1px solid var(--border-gold);
+}
+
+.featured-list li.dragging .drag-handle {
+  cursor: grabbing;
+}
+
+.featured-add label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.featured-add .combobox {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Discord's own colour, so members recognise the button */
 .btn-discord {
   width: 100%;
