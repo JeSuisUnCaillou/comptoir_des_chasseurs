@@ -943,6 +943,16 @@ tr.cancelled td {
   text-decoration: line-through;
 }
 
+/* An entry's total, under its client or seller; an inline-block is not struck out with a cancelled line. */
+.entry-total {
+  display: inline-block;
+  font-weight: 600;
+}
+
+.entry-total:not(.on-table) {
+  display: none;
+}
+
 tr.cancelled td:last-child {
   opacity: 1;
   text-decoration: none;
@@ -1952,6 +1962,15 @@ tr.fresh td {
    buttons under it, instead of a table cut at the edge. */
 @container table (max-width: 1199px) {
   .entry-cards thead {
+    display: none;
+  }
+
+  /* As a card, an entry's total sits on its last line, at the bottom. */
+  .entry-cards .entry-total.on-card {
+    display: inline-block;
+  }
+
+  .entry-cards .entry-total:not(.on-card) {
     display: none;
   }
 

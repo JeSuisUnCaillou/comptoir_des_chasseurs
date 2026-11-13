@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
 import { SettleButton } from "@/components/settle-button";
 import type { ActivityLine } from "@/lib/activity";
-import { entryClasses, entryPositions } from "@/lib/entry-groups";
+import { EntryTotal } from "@/components/entry-total";
+import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { formatNumber, septims } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 
@@ -29,6 +30,9 @@ export function ActivityTable({
   if (lines.length === 0) return <p className="muted">{empty}</p>;
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(lines, (l) => l.cancelledAt == null && l.tillPending);
+  const totals = entryTotals(lines, positions, (l) =>
+    l.cancelledAt == null && l.kind !== "stock" ? signedAmount(l.kind, l.amount) : null,
+  );
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="activite">
@@ -39,8 +43,8 @@ export function ActivityTable({
             <th>Article</th>
             <th className="num">Quantité</th>
             <th className="num">Caisse</th>
-            <th>Client / vendeur, ou motif</th>
-            <th>Notes</th>
+            <th>Client / vendeur</th>
+            <th>Notes / motif</th>
             <th />
           </tr>
         </thead>
@@ -58,6 +62,9 @@ export function ActivityTable({
                 : isCashKind(kind)
                   ? "—"
                   : formatNumber(l.quantity);
+            // A stock movement has no client or seller: its reason goes with the notes.
+            const party = kind === "stock" ? null : l.detail;
+            const notes = kind === "stock" ? l.detail : l.notes;
             const cancelled = l.cancelledAt != null;
             const waiting = !cancelled && l.tillPending;
             // On a phone each line is a card (see `.entry-cards` in globals.css).
@@ -81,10 +88,16 @@ export function ActivityTable({
                   )}
                 </td>
                 <td
-                  className={`cell-party${rep}${l.detail ? "" : " cell-none"}`}
-                  data-label={kind === "stock" ? "Motif" : counterpartyLabel(kind)}
-                >{shared(l.detail ?? "—")}</td>
-                <td className={`small cell-notes${rep}`}>{shared(l.notes ?? "")}</td>
+                  className={`cell-party${rep}${party || totals[i] != null ? "" : " cell-none"}`}
+                  data-label={kind === "stock" ? undefined : counterpartyLabel(kind)}
+                >
+                  {shared(party ?? "—")}
+                  <EntryTotal total={totals[i]} />
+                </td>
+                <td
+                  className={`small cell-notes${rep}`}
+                  data-label={kind === "stock" && notes ? "Motif" : undefined}
+                >{shared(notes ?? "")}</td>
                 <td className="cell-actions">
                   {cancelled ? (
                     <span className="small muted">Annulée{l.cancelledBy ? ` par ${l.cancelledBy}` : ""}</span>

@@ -192,7 +192,9 @@ page ; l'écriture enregistrée ramène au registre.
   stock s'affiche en orange avec un panneau d'avertissement (« la vente
   passera quand même, et le stock descendra à 0 »), et l'on peut confirmer.
 - **Enregistrement** : chaque marchandise devient sa propre ligne du
-  registre ; toutes sont inscrites ensemble, ou aucune.
+  registre ; toutes sont inscrites ensemble, ou aucune. Dans le registre et
+  l'activité d'un membre, une écriture de plusieurs lignes porte son total
+  (lignes annulées non comptées) sous le client ou le vendeur.
 
 ### Effet sur le stock
 
@@ -448,7 +450,9 @@ registre.
 Ce que le membre a fait sur une période, par défaut les 7 derniers jours,
 aujourd'hui compris (dates modifiables), dans une seule liste paginée : ses
 achats, ventes, mouvements de caisse et mouvements de stock faits à la main
-(ceux des achats et des ventes sont leur ligne).
+(ceux des achats et des ventes sont leur ligne). Les colonnes « Client /
+vendeur » et « Notes / motif » : un mouvement de stock n'a ni client ni
+vendeur, son motif est dans la seconde.
 
 En tête, quatre totaux :
 

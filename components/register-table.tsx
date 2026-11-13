@@ -3,7 +3,8 @@ import { CancelButton } from "@/components/cancel-button";
 import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
 import { SettleButton } from "@/components/settle-button";
 import type { Member } from "@/lib/db/schema";
-import { entryClasses, entryPositions } from "@/lib/entry-groups";
+import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
+import { EntryTotal } from "@/components/entry-total";
 import { formatNumber, septims } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
@@ -30,6 +31,7 @@ export function RegisterTable({
   if (entries.length === 0) return <p className="muted">Aucune écriture pour l&apos;instant.</p>;
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(entries, (e) => e.cancelledAt == null && e.tillPending);
+  const totals = entryTotals(entries, positions, (e) => (e.cancelledAt == null ? signedAmount(e.kind, e.amount) : null));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="registre">
@@ -87,8 +89,9 @@ export function RegisterTable({
                     </>
                   )}
                 </td>
-                <td className={`cell-party${rep}${e.counterparty ? "" : " cell-none"}`} data-label={counterpartyLabel(e.kind)}>
+                <td className={`cell-party${rep}${e.counterparty || totals[i] != null ? "" : " cell-none"}`} data-label={counterpartyLabel(e.kind)}>
                   {shared(e.counterparty ?? "—")}
+                  <EntryTotal total={totals[i]} />
                 </td>
                 <td className={`cell-member${rep}`} data-label="Employé">
                   {shared(e.member)}
