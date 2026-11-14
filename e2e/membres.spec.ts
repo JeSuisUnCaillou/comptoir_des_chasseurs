@@ -253,3 +253,19 @@ test("le serveur refuse de désactiver à qui n'est plus gérant, même par une 
   await loginAsGerant(gerant);
   await expect((await memberRow(gerant, target)).locator(".badge")).toHaveText("Employé");
 });
+
+test("le bouton « Activité » garde sa largeur à côté de « Désactiver »", async ({ page }) => {
+  const username = uniqueName("0-ralof").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe", `0 ${username}`);
+  await loginAsGerant(page);
+  for (const width of [320, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/membres");
+    const row = page.getByTestId(`member-${username}`);
+    const activity = await row.getByRole("link", { name: "Activité" }).boundingBox();
+    const deactivate = await row.getByRole("button", { name: /^Désactiver/ }).boundingBox();
+    // Side by side on one line, not a full-width button above the other.
+    expect(activity!.width).toBeLessThan(150);
+    expect(Math.abs(activity!.y - deactivate!.y)).toBeLessThan(4);
+  }
+});
