@@ -141,3 +141,10 @@ export function matchProduct<P extends { id: number; name: string }>(
     named.find((n) => similar(n.key, withoutHide(key)))?.p
   );
 }
+
+/** The count of each merchandise: the items tied to the same one add up. */
+export function sumByProduct<K>(lines: { productId: K; counted: number }[]) {
+  const totals = new Map<K, number>();
+  for (const { productId, counted } of lines) totals.set(productId, (totals.get(productId) ?? 0) + counted);
+  return totals;
+}

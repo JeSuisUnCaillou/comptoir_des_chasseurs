@@ -3,7 +3,7 @@
 import { Check, ImageUp, RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
-import { matchProduct, MAX_COUNT_LINES, parsePage, stitchPages, sumItems, type ReadItem } from "@/lib/game-count";
+import { matchProduct, MAX_COUNT_LINES, parsePage, stitchPages, sumByProduct, sumItems, type ReadItem } from "@/lib/game-count";
 import { formatNumber, plural } from "@/lib/pricing";
 
 export type CountProduct = { id: number; name: string; unit: string; stock: number };
@@ -114,11 +114,9 @@ export function GameCountForm({
     setRows((all) => all && all.map((r) => (r.key === key ? { ...r, ...change } : r)));
   }
 
-  // Items tied to the same merchandise add up.
-  const totals = new Map<string, number>();
-  for (const row of rows ?? []) {
-    if (row.productId) totals.set(row.productId, (totals.get(row.productId) ?? 0) + (Number(row.counted) || 0));
-  }
+  const totals = sumByProduct(
+    (rows ?? []).filter((r) => r.productId).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
+  );
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
 
   return (

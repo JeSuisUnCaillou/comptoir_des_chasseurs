@@ -85,6 +85,12 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise").locator("option:checked");
   await expect(chosen("Deer Pelt")).toHaveText("Biche");
   await expect(chosen("Leather")).toHaveText("Cuir");
+
+  // Without the deer pelts, read on this screenshot alone, the chest changes nothing: no movement is written.
+  await again.getByRole("group", { name: "Leather" }).getByLabel("Compté").fill("500");
+  await again.getByRole("group", { name: "Deer Pelt" }).getByLabel("Marchandise").selectOption({ label: "Ignorer" });
+  await again.getByRole("button", { name: "Mettre le stock à jour" }).click();
+  await expect(again.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
 });
 
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {

@@ -6,7 +6,7 @@ import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 import { isGerant } from "@/lib/policies";
-import { normalizeName } from "@/lib/game-count";
+import { normalizeName, sumByProduct } from "@/lib/game-count";
 import { lineMessage } from "@/lib/transaction-kinds";
 import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
 
@@ -384,8 +384,7 @@ export type CountLine = { productId: number; counted: number; readName: string }
  */
 export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, lines: CountLine[], reason: string) {
   if (!isGerant(member)) throw new UserError("Seul un gérant compte le stock depuis le jeu.");
-  const counted = new Map<number, number>();
-  for (const { productId, counted: n } of lines) counted.set(productId, (counted.get(productId) ?? 0) + n);
+  const counted = sumByProduct(lines);
   return getDb().transaction(async (tx) => {
     const ids = [...counted.keys()];
     const products = ids.length
