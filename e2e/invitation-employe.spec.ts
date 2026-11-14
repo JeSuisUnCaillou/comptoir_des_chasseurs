@@ -142,7 +142,8 @@ test("un compte lié à Discord et désactivé ne revient pas par un lien d'empl
   // A member a gérant deactivated stays deactivated: the link doesn't bring them back.
   await page.reload();
   const row = await memberRow(page, username);
-  await expect(row.getByLabel("Rôle")).toHaveValue("desactive");
+  await expect(row.locator(".badge")).toHaveText("Désactivé");
+  await expect(row.getByRole("button", { name: /^Réactiver/ })).toBeVisible();
 });
 
 test("le nom donné au lien remplit le formulaire de création de compte", async ({ page, browser }) => {

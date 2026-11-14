@@ -7,7 +7,7 @@ import { attempt } from "@/lib/errors";
 import { createEmployeeInvitation } from "@/lib/invitations";
 import { invitationPath } from "@/lib/paths";
 import { optionalText, readRole, text } from "@/lib/forms";
-import { createAccount, resetAccountPassword, updateAccount } from "@/lib/members";
+import { createAccount, resetAccountPassword, setAccountActive, updateAccount } from "@/lib/members";
 
 export type MemberFormState = { ok: boolean; message: string } | null;
 
@@ -32,9 +32,20 @@ export async function updateMember(formData: FormData) {
   const id = Number(formData.get("id"));
   const name = text(formData, "name", 60);
   const role = readRole(formData);
-  if (!Number.isInteger(id) || !name || !role) return;
+  if (!Number.isInteger(id) || !name) return;
   await updateAccount(me, id, name, role);
   revalidateShop();
+}
+
+/** A gérant deactivates an account of their shop, or reactivates it as an employé. */
+export async function setMemberActive(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {
+  const me = await requireMember(["gerant"]);
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Membre inconnu." };
+  const result = await attempt(() => setAccountActive(me, id, formData.get("active") === "true"));
+  if (!result.ok) return result;
+  revalidateShop();
+  return null;
 }
 
 export async function resetPassword(_prev: MemberFormState, formData: FormData): Promise<MemberFormState> {

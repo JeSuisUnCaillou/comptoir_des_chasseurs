@@ -165,23 +165,63 @@ function editableBy(me: Pick<ShopMember, "id" | "shopId">, id: number) {
 }
 
 /**
- * Renames an account of the gérant's shop and sets its role there. A gérant
- * cannot demote themself, so the shop always keeps a gérant, and the super
- * admin stays a gérant.
+ * Renames an account of the gérant's shop and sets its role there, unless it
+ * is deactivated there or the role is (or null): deactivating and
+ * reactivating have their own button (setAccountActive). A gérant cannot
+ * demote themself, so the shop always keeps a gérant, and the super admin
+ * stays a gérant.
  */
-export async function updateAccount(me: Pick<ShopMember, "id" | "shopId">, id: number, name: string, role: MemberRole) {
+export async function updateAccount(
+  me: Pick<ShopMember, "id" | "shopId">,
+  id: number,
+  name: string,
+  role: MemberRole | null,
+) {
   await getDb().transaction(async (tx) => {
     const [member] = await tx
       .update(schema.members)
       .set({ name })
       .where(editableBy(me, id))
       .returning({ id: schema.members.id, superAdmin: schema.members.superAdmin });
-    if (!member) return;
+    if (!member || !role || role === "desactive") return;
     await tx
       .update(schema.shopMembers)
       .set({ role: id === me.id || member.superAdmin ? "gerant" : role })
-      .where(and(eq(schema.shopMembers.shopId, me.shopId), eq(schema.shopMembers.memberId, id)));
+      .where(
+        and(
+          eq(schema.shopMembers.shopId, me.shopId),
+          eq(schema.shopMembers.memberId, id),
+          ne(schema.shopMembers.role, "desactive"),
+        ),
+      );
   });
+}
+
+/**
+ * A gérant deactivates an account of their shop, or reactivates it as an
+ * employé. Neither their own account nor the super admin's.
+ */
+export async function setAccountActive(me: Pick<ShopMember, "id" | "shopId">, id: number, active: boolean) {
+  const sm = schema.shopMembers;
+  if (id === me.id) throw new UserError("Tu ne peux pas désactiver ton propre compte.");
+  const changed = await getDb()
+    .update(sm)
+    .set({ role: active ? "employe" : "desactive" })
+    .where(
+      and(
+        eq(sm.shopId, me.shopId),
+        eq(sm.memberId, id),
+        active ? eq(sm.role, "desactive") : ne(sm.role, "desactive"),
+        exists(
+          getDb()
+            .select({ one: sql`1` })
+            .from(schema.members)
+            .where(and(eq(schema.members.id, id), eq(schema.members.superAdmin, false))),
+        ),
+      ),
+    )
+    .returning({ id: sm.memberId });
+  if (changed.length === 0) throw new UserError("Tu ne peux pas modifier ce compte.");
 }
 
 /** A gérant gives an account of their shop a new password. */
@@ -199,7 +239,7 @@ export async function setOwnPassword(memberId: number, passwordHash: string) {
   await getDb().update(schema.members).set({ passwordHash }).where(eq(schema.members.id, memberId));
 }
 
-/** One page of the shop's accounts, by name, with their role there. */
+/** One page of the shop's accounts, by name, deactivated ones last, with their role there. */
 export async function shopMemberPage(shopId: number, page: number) {
   const m = schema.members;
   const sm = schema.shopMembers;
@@ -210,7 +250,7 @@ export async function shopMemberPage(shopId: number, page: number) {
       .from(m)
       .innerJoin(sm, eq(sm.memberId, m.id))
       .where(inShop)
-      .orderBy(byName(m.name), asc(m.id))
+      .orderBy(sql`${sm.role} = 'desactive'`, byName(m.name), asc(m.id))
       .limit(PAGE_SIZE)
       .offset(offsetOf(page)),
     getDb().select({ total: count() }).from(sm).where(inShop),

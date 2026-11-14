@@ -63,13 +63,13 @@ test("Gérer les marchandises range les marchandises par nom", async ({ page }) 
   ]);
 });
 
-test("les membres sont rangés par nom, quel que soit leur rôle", async ({ page }) => {
+test("les membres sont rangés par nom, gérants et employés mêlés", async ({ page }) => {
   // A leading digit keeps them on the first page, ahead of the other tests' members.
   const tag = uniqueName("0 tri");
   const usernames = ["elan", "loup", "zebre"].map((n) => uniqueName(n).toLowerCase());
   await createMember(usernames[2], "mot-de-passe", "gerant", `${tag} zèbre`);
-  await createMember(usernames[0], "mot-de-passe", "desactive", `${tag} Élan`);
-  await createMember(usernames[1], "mot-de-passe", "employe", `${tag} loup`);
+  await createMember(usernames[0], "mot-de-passe", "employe", `${tag} Élan`);
+  await createMember(usernames[1], "mot-de-passe", "gerant", `${tag} loup`);
   await loginAsGerant(page);
 
   await page.goto("/membres");
