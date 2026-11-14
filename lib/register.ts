@@ -58,6 +58,19 @@ export function pendingEntryColumns() {
   };
 }
 
+/**
+ * For a line of an entry of several lines, the septims of the whole entry, its
+ * cancelled lines left out, whatever page its lines fall on; null for a line
+ * alone, or when every line is cancelled. Unsigned, like `amount`.
+ */
+export function entrySumColumn() {
+  const t = schema.transactions;
+  const s = sameEntry;
+  return sql<number | null>`(select case when count(*) > 1 and count(*) filter (where ${s.cancelledAt} is null) > 0
+      then (sum(${s.amount}) filter (where ${s.cancelledAt} is null))::int end
+    from ${schema.transactions} ${s} where ${entryOf(s)} = ${entryOf(t)})`;
+}
+
 /** The shop's lines matching the filter. */
 function conditions(shopId: number, filter: RegisterFilter) {
   const t = schema.transactions;
@@ -94,6 +107,7 @@ export async function registerEntries(
       memberId: t.memberId,
       cancelledBy: canceller.name,
       entryKey: entryKeyColumn(),
+      entrySum: entrySumColumn(),
       ...pendingEntryColumns(),
     })
     .from(t)

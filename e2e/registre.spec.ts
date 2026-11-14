@@ -670,6 +670,81 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(await stockOf(page, meat)).toHaveText("7");
 });
 
+test("une écriture de plusieurs lignes montre son total sous le client, sans les lignes annulées", async ({ browser }) => {
+  const hide = uniqueName("Peau de renard");
+  const meat = uniqueName("Viande de renard");
+  await createProduct(hide, { buyPrice: 2, stock: 10 });
+  await createProduct(meat, { buyPrice: 5, stock: 10, category: "Viandes et venaison", unit: "pièce" });
+  const claw = uniqueName("Griffe de renard");
+  await createProduct(claw, { buyPrice: 1, stock: 10 });
+  const { page, username } = await newEmployeePage(browser, "ixchelor");
+  await page.goto("/achat-vente/achat");
+  const form = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(line(form, 1), hide);
+  await line(form, 1).getByLabel("Quantité").fill("3");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), meat);
+  await line(form, 2).getByLabel("Quantité").fill("2");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 3), claw);
+  await line(form, 3).getByLabel("Quantité").fill("1");
+  await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Ixchelor");
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: hide })).toContainText("17 septims au total");
+
+  // Only this member's lines, as a table: one entry, one total, under the seller's name.
+  await page.setViewportSize({ width: 2100, height: 900 });
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const table = page.getByTestId("registre");
+  const total = table.getByTestId("total-ecriture").filter({ visible: true });
+  await expect(total).toHaveCount(1);
+  await expect(total).toHaveText("Total : −17 septims");
+  const name = (await table.getByText("Ixchelor", { exact: true }).first().boundingBox())!;
+  const sum = (await total.boundingBox())!;
+  expect(sum.y).toBeGreaterThan(name.y + name.height - 1);
+  // In the same column (the name's cell, padding included).
+  expect(sum.x).toBeGreaterThanOrEqual(name.x);
+  expect(sum.x).toBeLessThan(name.x + name.width / 2);
+
+  // A cancelled line no longer counts.
+  const meatRow = table.locator("tbody tr").filter({ hasText: meat });
+  page.once("dialog", (dialog) => dialog.accept());
+  await meatRow.getByRole("button", { name: /Annuler/ }).click();
+  await expect(meatRow).toContainText("Annulée par");
+  await expect(total).toHaveText("Total : −7 septims");
+  // The cancelled line carries it, and it still counts: not dimmed.
+  await expect(meatRow.getByTestId("total-ecriture")).toBeVisible();
+  await expect(total.locator("xpath=..")).toHaveCSS("opacity", "1");
+
+  // The member's activity shows it too; as a card, at the bottom, under every line.
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.getByTestId("member-name").click();
+  const cardTotal = page.getByTestId("activite").getByTestId("total-ecriture").filter({ visible: true });
+  await expect(cardTotal).toHaveText("Total : −7 septims");
+  const last = page.getByTestId("activite").locator("tbody tr").nth(2);
+  await expect(last.getByTestId("total-ecriture").filter({ visible: true })).toHaveCount(1);
+  const lastLabel = (await last.locator(".cell-label").boundingBox())!;
+  expect((await cardTotal.boundingBox())!.y).toBeGreaterThan(lastLabel.y + lastLabel.height - 1);
+});
+
+test("une écriture coupée par la pagination montre son total entier sur chaque page", async ({ browser }) => {
+  const { page, username } = await newEmployeePage(browser, "brelyna");
+  // 27 lines written at one instant: one entry, cut after the 25th.
+  await createTransactions(username, 27, { amount: 2 });
+  await page.goto("/achat-vente");
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const total = page.getByTestId("registre").getByTestId("total-ecriture").filter({ visible: true });
+  await expect(total).toHaveText("Total : +54 septims");
+  await page.getByRole("navigation", { name: "Pages du registre" }).getByRole("link", { name: "Suivant" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByTestId("registre").locator("tbody tr")).toHaveCount(2);
+  await expect(total).toHaveText("Total : +54 septims");
+});
+
 test("une marchandise vendue sur deux lignes est comparée au stock pour les deux", async ({ browser }) => {
   const product = uniqueName("Peau de sabrecat");
   await createProduct(product, { stock: 3 });

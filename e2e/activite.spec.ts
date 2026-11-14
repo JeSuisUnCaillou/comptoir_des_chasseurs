@@ -78,6 +78,13 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   const lines = page.getByTestId("activite").locator("tbody tr");
   await expect(lines).toHaveCount(5);
   await expect(lines.filter({ hasText: "chasse" })).toContainText(/Stock.*\+10.*—/);
+  // A stock movement has no client or seller: its reason sits with the notes.
+  const headers = page.getByTestId("activite").locator("thead th");
+  await expect(headers.nth(5)).toHaveText("Client / vendeur");
+  await expect(headers.nth(6)).toHaveText("Notes / motif");
+  const hunt = lines.filter({ hasText: "chasse" }).locator("td");
+  await expect(hunt.nth(5)).toHaveText("—");
+  await expect(hunt.nth(6)).toHaveText("chasse");
   await expect(lines.filter({ hasText: reason })).toContainText(/Caisse.*\+20 septims/);
   await expect(lines.filter({ hasText: "Achat" })).toContainText(/5.*−10 septims/);
   await expect(lines.filter({ hasText: "Annulée par" })).toHaveCount(1);
