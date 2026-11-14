@@ -144,7 +144,7 @@ export default async function Membres({
                   <td>{m.id !== me.id && !m.superAdmin && <ResetPasswordForm id={m.id} />}</td>
                   <td>
                     <div className="row-actions">
-                      <Link className="btn btn-small btn-ghost" href={at(`/membres/${m.id}`)}>
+                      <Link className="btn btn-small btn-primary" href={at(`/membres/${m.id}`)}>
                         <ScrollText size={14} /> Activité
                       </Link>
                       {m.id !== me.id && !m.superAdmin && (
