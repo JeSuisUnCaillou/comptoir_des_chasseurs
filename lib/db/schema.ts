@@ -262,6 +262,24 @@ export const stockMovements = pgTable("stock_movements", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * A name the game shows for a merchandise, such as "Deer Pelt" for "Biche",
+ * remembered when a gérant ties it to the merchandise while counting a chest
+ * from screenshots. `name` is normalized (lib/game-count.ts, normalizeName).
+ */
+export const productAliases = pgTable(
+  "product_aliases",
+  {
+    shopId: shopColumn(),
+    name: text("name").notNull(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.shopId, t.name] }), index("product_aliases_product_idx").on(t.productId)],
+);
+
 /** A shop's numbers, such as the price the blacksmith pays for a leather. */
 export const settings = pgTable(
   "settings",

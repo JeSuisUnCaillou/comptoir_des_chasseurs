@@ -134,6 +134,13 @@
       "when": 1794607462846,
       "tag": "0018_ordre-des-categories",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794646544464,
+      "tag": "0019_noms-du-jeu",
+      "breakpoints": true
     }
   ]
 }
