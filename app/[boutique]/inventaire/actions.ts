@@ -6,7 +6,8 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
 import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
-import { createStocked, recordMovement as moveByHand, recordMovements } from "@/lib/products";
+import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
+import { MAX_COUNT_LINES } from "@/lib/game-count";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 
 export type MoveState = { ok: boolean; message: string } | null;
@@ -98,5 +99,43 @@ export async function recordStockMovement(_prev: MoveState, formData: FormData):
   if (!result.ok) return result;
   revalidateShop();
   // Back to the Inventaire, whose history shows the new movements.
+  redirect(shopPath(member.shop.slug, `/inventaire?inscrit=${result.value.join(",")}`));
+}
+
+/**
+ * A chest counted from screenshots of the game: each counted merchandise's
+ * stock becomes its count, through stock movements with one reason.
+ */
+export async function recordGameCount(_prev: MoveState, formData: FormData): Promise<MoveState> {
+  const member = await requireMember(["gerant"]);
+  const reason = text(formData, "reason", 200);
+  const productIds = formData.getAll("productId").map(String);
+  const counts = formData.getAll("counted").map(Number);
+  const readNames = formData.getAll("readName").map(String);
+  const count = productIds.length;
+  if (count > MAX_COUNT_LINES) return { ok: false, message: `Pas plus de ${MAX_COUNT_LINES} lignes à la fois.` };
+  if (counts.length !== count || readNames.length !== count) {
+    return { ok: false, message: "Formulaire incomplet, recharge la page." };
+  }
+
+  const lines: CountLine[] = [];
+  for (let i = 0; i < count; i++) {
+    // An item left on « Ignorer » changes nothing.
+    if (productIds[i] === "") continue;
+    const productId = Number(productIds[i]);
+    const counted = counts[i];
+    if (!Number.isInteger(productId)) return { ok: false, message: "Marchandise invalide." };
+    if (!Number.isInteger(counted) || counted < 0) {
+      return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier, 0 ou plus.` };
+    }
+    lines.push({ productId, counted, readName: readNames[i].slice(0, 100) });
+  }
+  if (lines.length === 0) return { ok: false, message: "Rattache au moins un objet du coffre à une marchandise." };
+  if (!reason) return { ok: false, message: "Précise la raison." };
+
+  const result = await attempt(() => recordCount(member, lines, reason));
+  if (!result.ok) return result;
+  revalidateShop();
+  if (result.value.length === 0) return { ok: true, message: "Rien à changer : le stock correspond déjà au coffre." };
   redirect(shopPath(member.shop.slug, `/inventaire?inscrit=${result.value.join(",")}`));
 }

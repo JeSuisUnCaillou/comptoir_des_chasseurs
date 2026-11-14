@@ -861,6 +861,7 @@ th.num {
 
 .move-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -2476,4 +2477,20 @@ tr.fresh td {
 /* A list right under its form's button keeps the panel's breathing room. */
 .panel form + .invitation-list {
   margin-top: 18px;
+}
+
+/* An item of a chest counted from the game: what was read, then its merchandise and count. */
+.count-read {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.count-line-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 0 10px;
+}
+
+.count-gap {
+  margin: 0 0 10px;
 }
