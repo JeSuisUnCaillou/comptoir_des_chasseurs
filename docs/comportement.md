@@ -428,13 +428,17 @@ bas de la liste :
 - Les lignes vues en bas d'une capture et en haut de la suivante ne comptent
   qu'une fois. Les lignes d'un même objet s'additionnent, volées ou non :
   « (13) » compte 13, une ligne sans nombre compte 1.
-- La relecture montre chaque objet lu, ses lignes (« lu : 255 + 1 »), la
-  marchandise qu'il est, son compte (modifiable) et l'écart avec le stock.
+- La relecture montre une ligne par objet lu, en colonnes : son nom et ses
+  lignes (« 255 + 1 »), la marchandise qu'il est, son stock, son compte
+  (modifiable) et l'écart entre les deux (« +70 » en vert, « −16 » en
+  rouge, « = » sans écart ; une « * » quand d'autres objets comptent pour la
+  même marchandise).
   La marchandise est trouvée par un nom du jeu déjà rattaché, puis par son
   nom, puis par l'animal d'une peau (« Peau de loup » est Loup). Sinon,
-  l'objet est sur « Ignorer » et le gérant choisit : ces objets « Non
-  reconnus » sont montrés à part, en premier, avant les « Reconnus ». Un
-  objet reste dans sa partie quand le gérant change sa marchandise.
+  l'objet est sur « Ignorer » et le gérant choisit.
+- Les « Reconnus » sont à gauche, les « Non reconnus » à droite (l'un sous
+  l'autre sur un écran étroit, les reconnus d'abord). Un objet reste dans sa
+  partie quand le gérant change sa marchandise.
 - Un nom du jeu rattaché à une marchandise d'un autre nom (« Deer Pelt » à
   Biche) est retenu par la boutique pour les comptages suivants.
 - Plusieurs objets rattachés à la même marchandise s'additionnent.

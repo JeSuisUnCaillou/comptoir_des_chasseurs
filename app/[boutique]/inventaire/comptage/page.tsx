@@ -22,7 +22,7 @@ export default async function ComptageDuJeu() {
           <ArrowLeft size={14} /> Retour à l&apos;inventaire
         </Link>
       </p>
-      <section className="panel" style={{ maxWidth: 760 }} aria-label="Compter un coffre">
+      <section className="panel" aria-label="Compter un coffre">
         <div className="eyebrow">Comptage</div>
         <h2>Compter un coffre</h2>
         <GameCountForm

@@ -49,14 +49,14 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
 
   // The lines of an item add up, and those seen on two screenshots count once.
   const biche = review.getByRole("group", { name: "Peau de biche" });
-  await expect(biche).toContainText("lu : 255 + 1");
+  await expect(biche).toContainText("255 + 1");
   await expect(biche.getByLabel("Marchandise")).toHaveValue(/\d+/);
   await expect(biche.getByLabel("Compté")).toHaveValue("256");
   const loup = review.getByRole("group", { name: "Peau de loup", exact: true });
-  await expect(loup).toContainText("lu : 186 + 1 + 1");
-  await expect(loup.getByTestId("ecart")).toContainText("aucun écart");
+  await expect(loup).toContainText("186 + 1 + 1");
+  await expect(loup.getByTestId("ecart")).toHaveText("=");
   await expect(review.getByRole("group", { name: "Peau d'ours", exact: true }).getByLabel("Compté")).toHaveValue("54");
-  await expect(review.getByRole("group", { name: "Peau d'ours troglodyte" })).toContainText("lu : 72 + 1 + 1");
+  await expect(review.getByRole("group", { name: "Peau d'ours troglodyte" })).toContainText("72 + 1 + 1");
 
   // A name of the game the shop does not know yet is shown apart, ignored until tied to a merchandise.
   const unknown = review.getByRole("region", { name: "Objets non reconnus" });
@@ -68,8 +68,17 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   const deer = unknown.getByRole("group", { name: "Deer Pelt" });
   await expect(deer.getByLabel("Marchandise")).toHaveValue("");
   await deer.getByLabel("Marchandise").selectOption({ label: "Biche" });
-  await expect(deer.getByTestId("ecart")).toContainText("En stock : 200 → compté : 270");
-  await expect(deer.getByTestId("ecart")).toContainText("+70 peaux");
+  await expect(deer.getByTestId("stock")).toHaveText("200");
+  // Counted with the 256 Peau de biche: 270, so 70 more than in stock.
+  await expect(deer.getByTestId("ecart")).toHaveText("+70*");
+  // On a wide screen, the recognized items on the left and the others on their right, apart.
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await expect(async () => {
+    const left = (await known.boundingBox())!;
+    const right = (await unknown.boundingBox())!;
+    expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(16);
+    expect(Math.abs(right.y - left.y)).toBeLessThan(2);
+  }).toPass();
   const leather = review.getByRole("group", { name: "Leather" });
   await leather.getByLabel("Marchandise").selectOption({ label: "Cuir" });
   // A count can be corrected before it is written.

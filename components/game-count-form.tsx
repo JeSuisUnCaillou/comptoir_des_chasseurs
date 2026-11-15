@@ -122,6 +122,7 @@ export function GameCountForm({
   );
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
 
+  /** One item on one row: what was read, its merchandise, its stock, its count, and the gap between them. */
   function itemLine(row: Row, index: number) {
     const product = productOf(row);
     const total = product ? totals.get(row.productId)! : 0;
@@ -129,58 +130,65 @@ export function GameCountForm({
     const shared = product && (rows ?? []).filter((r) => r.productId === row.productId).length > 1;
     const id = `c-${index}`;
     return (
-      <fieldset key={row.key} className="tx-line count-line" aria-label={row.name}>
+      <fieldset key={row.key} className="count-line" aria-label={row.name}>
         <input type="hidden" name="readName" value={row.name} />
         <div className="count-read">
-          <strong>{row.name}</strong>{" "}
-          <span className="small muted">
-            lu : {row.counts.map(formatNumber).join(" + ")}
-          </span>
+          <strong>{row.name}</strong> <span className="small muted">{row.counts.map(formatNumber).join(" + ")}</span>
         </div>
-        <div className="count-line-row">
-          <div className="field">
-            <label htmlFor={`${id}-product`}>Marchandise</label>
-            <select
-              id={`${id}-product`}
-              name="productId"
-              value={row.productId}
-              onChange={(ev) => update(row.key, { productId: ev.target.value })}
-            >
-              <option value="">Ignorer</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-counted`}>Compté</label>
-            <input
-              id={`${id}-counted`}
-              name="counted"
-              type="number"
-              min={0}
-              step={1}
-              required
-              value={row.counted}
-              onChange={(ev) => update(row.key, { counted: ev.target.value })}
-            />
-          </div>
-        </div>
-        {product && (
-          <p className="small muted count-gap" data-testid="ecart">
-            En stock : <strong className="tx-figure">{formatNumber(product.stock)}</strong> → compté :{" "}
-            <strong className="tx-figure">{formatNumber(total)}</strong>
-            {shared && " (avec les autres objets de cette marchandise)"} ·{" "}
-            <strong className={gap < 0 ? "minus" : undefined}>
-              {gap === 0 ? "aucun écart" : `${gap > 0 ? "+" : "−"}${formatNumber(Math.abs(gap))} ${plural(product.unit, Math.abs(gap))}`}
+        <select
+          id={`${id}-product`}
+          name="productId"
+          aria-label="Marchandise"
+          value={row.productId}
+          onChange={(ev) => update(row.key, { productId: ev.target.value })}
+        >
+          <option value="">Ignorer</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span className="count-stock" data-testid="stock">
+          {product ? formatNumber(product.stock) : ""}
+        </span>
+        <input
+          id={`${id}-counted`}
+          name="counted"
+          aria-label="Compté"
+          type="number"
+          min={0}
+          step={1}
+          required
+          value={row.counted}
+          onChange={(ev) => update(row.key, { counted: ev.target.value })}
+        />
+        <span
+          className="count-gap"
+          data-testid="ecart"
+          title={shared ? "Compté avec les autres objets de cette marchandise" : undefined}
+        >
+          {product && (
+            <strong className={gap > 0 ? "plus" : gap < 0 ? "minus" : "muted"}>
+              {gap === 0 ? "=" : `${gap > 0 ? "+" : "−"}${formatNumber(Math.abs(gap))}`}
+              {shared && "*"}
             </strong>
-          </p>
-        )}
+          )}
+        </span>
       </fieldset>
     );
   }
+
+  /** The column titles of a section, for sighted readers: each field carries its own label. */
+  const head = (
+    <div className="count-head small muted" aria-hidden="true">
+      <span>Lu dans le jeu</span>
+      <span>Marchandise</span>
+      <span className="count-num">En stock</span>
+      <span>Compté</span>
+      <span className="count-num">Écart</span>
+    </div>
+  );
 
   const unknown = (rows ?? []).filter((r) => !r.recognized);
   const known = (rows ?? []).filter((r) => r.recognized);
@@ -216,26 +224,27 @@ export function GameCountForm({
       )}
       {rows && (
         <form action={action} aria-label="Relire le comptage">
-          <p className="muted">
-            Vérifie chaque objet lu : la marchandise qu&apos;il est et son compte. Un objet laissé sur « Ignorer » ne change
-            rien, et une marchandise absente du coffre garde son stock.
+          <p className="small muted">
+            Un objet sur « Ignorer » ne change rien ; une marchandise absente du coffre garde son stock.
           </p>
-          {unknown.length > 0 && (
-            <section className="count-section" aria-label="Objets non reconnus">
-              <h3>Non reconnus ({unknown.length})</h3>
-              <p className="small muted">
-                L&apos;app n&apos;a pas trouvé leur marchandise : choisis-la, ou laisse « Ignorer ». Ton choix est retenu
-                pour les prochains comptages.
-              </p>
-              <div className="count-lines">{unknown.map((row) => itemLine(row, indexOf(row)))}</div>
-            </section>
-          )}
-          {known.length > 0 && (
-            <section className="count-section" aria-label="Objets reconnus">
-              <h3>Reconnus ({known.length})</h3>
-              <div className="count-lines">{known.map((row) => itemLine(row, indexOf(row)))}</div>
-            </section>
-          )}
+          <div className="count-columns">
+            {known.length > 0 && (
+              <section className="count-section" aria-label="Objets reconnus">
+                <h3>Reconnus ({known.length})</h3>
+                <p className="small muted">Vérifie leur compte et l&apos;écart avec le stock.</p>
+                {head}
+                <div className="count-lines">{known.map((row) => itemLine(row, indexOf(row)))}</div>
+              </section>
+            )}
+            {unknown.length > 0 && (
+              <section className="count-section" aria-label="Objets non reconnus">
+                <h3>Non reconnus ({unknown.length})</h3>
+                <p className="small muted">Choisis leur marchandise, ou laisse « Ignorer ». Ton choix est retenu.</p>
+                {head}
+                <div className="count-lines">{unknown.map((row) => itemLine(row, indexOf(row)))}</div>
+              </section>
+            )}
+          </div>
           <div className="field">
             <label htmlFor="c-reason">Motif</label>
             <input id="c-reason" name="reason" required maxLength={200} defaultValue="Comptage du coffre" />
