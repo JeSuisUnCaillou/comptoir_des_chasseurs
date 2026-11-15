@@ -12,7 +12,7 @@ const SCREENSHOTS = ["ScreenShot139.jpg", "ScreenShot138.jpg", "ScreenShot140.jp
  * A shop of its own, so that its merchandises can bear the game's names
  * without other tests touching their stock. Returns its address.
  */
-async function shopWithStock(stock: Record<string, number>) {
+async function shopWithStock(stock: Record<string, number>, aliases: Record<string, string> = {}) {
   const name = uniqueName("Coffre");
   const slug = name.toLowerCase();
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
@@ -27,6 +27,12 @@ async function shopWithStock(stock: Record<string, number>) {
       await sql`
         insert into products (shop_id, name, category_id, unit, stock)
         values (${shop.id}, ${product}, ${category.id}, 'peau', ${units})`;
+    }
+    // Names of the game the shop retained before, as the app writes them: normalized.
+    for (const [name, product] of Object.entries(aliases)) {
+      await sql`
+        insert into product_aliases (shop_id, name, product_id)
+        select ${shop.id}, ${name}, id from products where shop_id = ${shop.id} and name = ${product}`;
     }
   } finally {
     await sql.end();
@@ -109,6 +115,34 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await pickProduct(again.getByRole("group", { name: "Deer Pelt" }), "Ignorer");
   await again.getByRole("button", { name: "Mettre le stock à jour" }).click();
   await expect(again.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
+});
+
+test("les mots longs de la colonne Type ne se collent pas aux objets sans nombre", async ({ page }) => {
+  test.slow();
+  // Tabs Nourriture and Ingrédients, whose Type column comes close to the names, then Divers.
+  const shop = await shopWithStock(
+    { "Chair de saumon": 500, Givreboise: 0, Lavande: 0, Loup: 0 },
+    { "timber wolf peli": "Loup" },
+  );
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  await page
+    .getByLabel("Captures du coffre")
+    .setInputFiles(["ScreenShot149.jpg", "ScreenShot150.jpg", "ScreenShot153.jpg"].map((name) => `${__dirname}/fixtures/coffre/${name}`));
+  const review = page.getByRole("form", { name: "Relire le comptage" });
+  await expect(review).toBeVisible({ timeout: 90_000 });
+
+  // The single item and its stack are one item, with nothing of "Nourriture" or "Ingrédient" in its name.
+  const saumon = review.getByRole("group", { name: /^Chair de saumon/ });
+  await expect(saumon).toHaveCount(1);
+  await expect(saumon).toHaveAccessibleName("Chair de saumon");
+  await expect(saumon).toContainText("1 + 521");
+  await expect(saumon.getByTestId("ecart")).toHaveText("+22");
+  await expect(review.getByRole("group", { name: /^Givreboises/ })).toContainText("3 + 1");
+  await expect(review.getByRole("group", { name: /^lavande/i }).getByLabel("Compté")).toHaveValue("2");
+  await expect(review).not.toContainText(/\b(Nou|Ingr)/);
+  // A name retained when it was read with a letter wrong is still known, read right.
+  await expect(review.getByRole("group", { name: "Timber Wolf Pelt" }).getByLabel("Marchandise")).toHaveValue("Loup");
 });
 
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
