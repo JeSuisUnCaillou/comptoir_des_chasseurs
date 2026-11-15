@@ -33,17 +33,6 @@ type Typed<T> = Common<T> & {
   onChange: (text: string) => void;
 };
 
-/**
- * A field you can type into, with a list below it that the text filters as
- * you type: a click, or the arrows then Enter, picks a choice. Choices that
- * carry a `group` are listed under its heading.
- *
- * Two kinds. By default the value must be one of the choices: Escape or
- * leaving the field keeps the one already chosen, and `required` refuses the
- * form while nothing is chosen. With `free`, any text is a value: the
- * choices are suggestions, nothing is highlighted until the arrows move, so
- * Enter on a new name submits the form like a plain field.
- */
 // Set by focusCombobox for the focus it gives: the list stays closed until the member types.
 let quietFocus = false;
 
@@ -57,6 +46,17 @@ export function focusCombobox(id: string) {
   quietFocus = false;
 }
 
+/**
+ * A field you can type into, with a list below it that the text filters as
+ * you type: a click, or the arrows then Enter, picks a choice. Choices that
+ * carry a `group` are listed under its heading.
+ *
+ * Two kinds. By default the value must be one of the choices: Escape or
+ * leaving the field keeps the one already chosen, and `required` refuses the
+ * form while nothing is chosen. With `free`, any text is a value: the
+ * choices are suggestions, nothing is highlighted until the arrows move, so
+ * Enter on a new name submits the form like a plain field.
+ */
 export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>) {
   const { id, choices, listLabel, name, required, placeholder, maxLength } = props;
   const extras = props.free ? [] : (props.extras ?? []);
