@@ -136,7 +136,7 @@ const CUSTOMER = {
 };
 
 // A contact as a sale under an unknown name creates it.
-const FROM_SALE = { name: "Ulfgar", notes: "Chasseur de Morthal, passe chaque semaine" };
+const FROM_SALE = { name: "Ulfgar", notes: "Chasseur de Morthal, passe chaque semaine", buys: ["Venaison", 2, 1] };
 
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
@@ -218,6 +218,14 @@ try {
       on conflict (shop_id, name) do nothing
       returning id`;
     if (fromSale) console.log("Contact d'exemple Ulfgar, créé lors d'une transaction, ajouté.");
+    // With what the sale gave him, unless he already has a merchandise.
+    const [venison, price, qty] = FROM_SALE.buys;
+    await tx`
+      insert into supplier_offers (supplier_id, product_id, price, qty, side)
+      select s.id, p.id, ${price}, ${qty}, 'buys'
+      from suppliers s join products p on p.shop_id = s.shop_id and p.name = ${venison}
+      where s.shop_id = 1 and s.name = ${FROM_SALE.name} and s.from_transaction
+        and not exists (select 1 from supplier_offers o where o.supplier_id = s.id)`;
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;
     if (moved === 0) {

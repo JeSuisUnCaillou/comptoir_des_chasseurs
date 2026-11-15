@@ -180,8 +180,13 @@ page ; l'écriture enregistrée ramène au registre.
   achat) ; Entrée envoie le formulaire tant qu'aucune proposition n'est
   choisie aux flèches. Un nom qu'aucun contact ne porte (majuscules mises à
   part) devient un contact à l'enregistrement, avec les notes de l'écriture
-  pour note et l'étiquette « Créé lors d'une transaction » ; un nom connu
-  s'inscrit tel que le contact l'écrit. Annuler l'écriture ne supprime pas
+  pour note, l'étiquette « Créé lors d'une transaction », et chaque
+  marchandise du stock de l'écriture au prix payé, dans « Il nous vend »
+  pour un achat, « Il nous achète » pour une vente (plusieurs lignes d'une
+  même marchandise additionnées, le prix réduit : 6 septims pour 2 peaux
+  donnent « 3 septims pour 1 peau ») ; un article hors stock n'y va pas.
+  Un nom connu s'inscrit tel que le contact l'écrit, et ses marchandises
+  ne changent pas. Annuler l'écriture ne supprime pas
   le contact.
 - **Prix privilégié du vendeur** (achat seulement) : un seul choix par achat,
   « Aucun » ou l'un des clients privilégiés qui ont un prix sur au moins une

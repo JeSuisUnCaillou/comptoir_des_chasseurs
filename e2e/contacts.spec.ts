@@ -218,7 +218,7 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await expect(contact.getByText("Fournisseur", { exact: true })).toHaveCSS("color", "rgb(207, 174, 110)");
 });
 
-test("un nom inconnu dans une vente devient un contact « Créé lors d'une transaction », avec la note de la vente", async ({
+test("un nom inconnu dans une vente devient un contact « Créé lors d'une transaction », avec la note et les prix de la vente", async ({
   browser,
 }) => {
   const product = uniqueName("Andouiller");
@@ -228,19 +228,20 @@ test("un nom inconnu dans une vente devient un contact « Créé lors d'une tran
   await createSuppliers([known]);
   const { page } = await newEmployeePage(browser, "employe-contact-volee");
 
-  async function record(kind: "vente" | "achat", counterparty: string, notes?: string) {
+  async function record(kind: "vente" | "achat", counterparty: string, notes?: string, quantity = 1) {
     await page.goto(`/achat-vente/${kind}`);
     const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
     await pickProduct(form, product);
-    await form.getByLabel("Quantité").fill("1");
-    await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
+    await form.getByLabel("Quantité").fill(String(quantity));
+    await expect(form.getByLabel("Montant (septims)")).toHaveValue(String(quantity * (kind === "vente" ? 3 : 2)));
     await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
     if (notes) await form.getByLabel("Notes (facultatif)").fill(notes);
     await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
     await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   }
 
-  await record("vente", name, "Chasseur de Morthal, revient chaque semaine");
+  // Two at 3 septims: the contact buys it at 3 septims for 1.
+  await record("vente", name, "Chasseur de Morthal, revient chaque semaine", 2);
   // The same name, written otherwise, is the same contact: written as the contact spells it.
   await record("achat", name.toUpperCase(), "Autre note");
   await expect(page.getByRole("cell", { name: name.toUpperCase(), exact: true })).toHaveCount(0);
@@ -255,6 +256,12 @@ test("un nom inconnu dans une vente devient un contact « Créé lors d'une tran
   await expect(created.getByText("Créé lors d'une transaction")).toBeVisible();
   await expect(created).toContainText("Chasseur de Morthal, revient chaque semaine");
   await expect(created).not.toContainText("Autre note");
+  await expect(created.getByRole("list", { name: "Il nous achète" }).getByRole("listitem")).toHaveText([
+    new RegExp(`${product}3 septimspour 1 peau`),
+  ]);
+  // The purchase under a known name changed nothing.
+  await expect(created.getByRole("list", { name: "Il nous vend" })).toHaveCount(0);
+  await expect(created.getByText("Client", { exact: true })).toBeVisible();
 
   await search(page, known);
   await expect(card(page, known)).toBeVisible();

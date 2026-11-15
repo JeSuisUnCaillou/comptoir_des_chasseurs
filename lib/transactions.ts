@@ -6,7 +6,7 @@ import { UserError } from "@/lib/errors";
 import { canActOn } from "@/lib/policies";
 import { moveStock } from "@/lib/products";
 import { settleEntry } from "@/lib/register";
-import { contactForTransaction } from "@/lib/suppliers";
+import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
 /** Writing the register: sales, buybacks, cash movements, and undoing them. */
@@ -46,8 +46,9 @@ export async function recordLines(
 ) {
   const at = (i: number, message: string) => lineMessage(lines.length, i, message);
   return getDb().transaction(async (tx) => {
-    // An unknown name becomes a contact; a known one is written as the contact spells it.
-    const counterparty = typedName && (await contactForTransaction(tx, member.shopId, typedName, notes));
+    // A known contact is written as they spell their name; an unknown name becomes a contact, below.
+    const known = typedName && (await contactNamed(tx, member.shopId, typedName));
+    const counterparty = known || typedName;
     const written: number[] = [];
     for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
       let label = typed;
@@ -95,6 +96,10 @@ export async function recordLines(
         if (!moved.ok) throw new UserError(at(i, moved.error));
       }
       written.push(line.id);
+    }
+    if (typedName && !known) {
+      const side = kind === "vente" ? "buys" : "sells";
+      await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side, lines });
     }
     return written;
   });

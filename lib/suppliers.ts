@@ -4,6 +4,7 @@ import { byName, containing, getDb, isUniqueViolation, schema, type Tx } from "@
 import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
 import type { OfferSide } from "@/lib/db/schema";
+import { offerPrices } from "@/lib/offer-prices";
 
 export const SUPPLIER_PAGE_SIZE = 12;
 
@@ -184,26 +185,48 @@ export async function deleteSupplier(shopId: number, id: number) {
 /** The longest note a contact keeps, as in its form. */
 export const CONTACT_NOTES_MAX = 300;
 
-/**
- * The name a purchase or a sale is written under: a known contact's own name
- * when `name` is theirs (case aside), or else `name` itself, which becomes a
- * new contact of the shop, marked as created by a transaction, with the
- * entry's notes as its note.
- */
-export async function contactForTransaction(tx: Tx, shopId: number, name: string, notes: string | null) {
+/** The contact of the shop that bears `name`, case aside: their own spelling, or undefined. */
+export async function contactNamed(tx: Tx, shopId: number, name: string) {
   const { suppliers } = schema;
   const [known] = await tx
     .select({ name: suppliers.name })
     .from(suppliers)
     .where(and(eq(suppliers.shopId, shopId), sql`lower(${suppliers.name}) = lower(${name})`))
     .limit(1);
-  if (known) return known.name;
-  await tx
-    .insert(suppliers)
+  return known?.name;
+}
+
+/**
+ * A new contact of the shop, made by a purchase or a sale under a name no
+ * contact had: marked as such, with the entry's notes as its note, and each
+ * stocked merchandise of the entry at the entry's price, going the entry's
+ * way (`sells` for a purchase, `buys` for a sale).
+ */
+export async function createContactFromTransaction(
+  tx: Tx,
+  shopId: number,
+  {
+    name,
+    notes,
+    side,
+    lines,
+  }: {
+    name: string;
+    notes: string | null;
+    side: OfferSide;
+    lines: { productId: number | null; quantity: number; amount: number }[];
+  },
+) {
+  const [created] = await tx
+    .insert(schema.suppliers)
     .values({ shopId, name, notes: (notes ?? "").slice(0, CONTACT_NOTES_MAX), fromTransaction: true })
-    // Someone else wrote it meanwhile: theirs stays.
-    .onConflictDoNothing();
-  return name;
+    // Someone else wrote it meanwhile: theirs stays, as it is.
+    .onConflictDoNothing()
+    .returning({ id: schema.suppliers.id });
+  if (!created) return;
+  for (const [productId, { price, qty }] of offerPrices(lines)) {
+    await tx.insert(schema.supplierOffers).values({ supplierId: created.id, productId, price, qty, side });
+  }
 }
 
 /**
