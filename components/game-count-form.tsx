@@ -123,12 +123,11 @@ export function GameCountForm({
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
 
   /** One item on one row: what was read, its merchandise, its stock, its count, and the gap between them. */
-  function itemLine(row: Row, index: number) {
+  function itemLine(row: Row) {
     const product = productOf(row);
     const total = product ? totals.get(row.productId)! : 0;
     const gap = product ? total - product.stock : 0;
     const shared = product && (rows ?? []).filter((r) => r.productId === row.productId).length > 1;
-    const id = `c-${index}`;
     return (
       <fieldset key={row.key} className="count-line" aria-label={row.name}>
         <input type="hidden" name="readName" value={row.name} />
@@ -136,7 +135,6 @@ export function GameCountForm({
           <strong>{row.name}</strong> <span className="small muted">{row.counts.map(formatNumber).join(" + ")}</span>
         </div>
         <select
-          id={`${id}-product`}
           name="productId"
           aria-label="Marchandise"
           value={row.productId}
@@ -153,7 +151,6 @@ export function GameCountForm({
           {product ? formatNumber(product.stock) : ""}
         </span>
         <input
-          id={`${id}-counted`}
           name="counted"
           aria-label="Compté"
           type="number"
@@ -192,8 +189,6 @@ export function GameCountForm({
 
   const unknown = (rows ?? []).filter((r) => !r.recognized);
   const known = (rows ?? []).filter((r) => r.recognized);
-  // Ids stay unique across both sections.
-  const indexOf = (row: Row) => rows!.indexOf(row);
 
   return (
     <>
@@ -233,7 +228,7 @@ export function GameCountForm({
                 <h3>Reconnus ({known.length})</h3>
                 <p className="small muted">Vérifie leur compte et l&apos;écart avec le stock.</p>
                 {head}
-                <div className="count-lines">{known.map((row) => itemLine(row, indexOf(row)))}</div>
+                <div className="count-lines">{known.map((row) => itemLine(row))}</div>
               </section>
             )}
             {unknown.length > 0 && (
@@ -241,7 +236,7 @@ export function GameCountForm({
                 <h3>Non reconnus ({unknown.length})</h3>
                 <p className="small muted">Choisis leur marchandise, ou laisse « Ignorer ». Ton choix est retenu.</p>
                 {head}
-                <div className="count-lines">{unknown.map((row) => itemLine(row, indexOf(row)))}</div>
+                <div className="count-lines">{unknown.map((row) => itemLine(row))}</div>
               </section>
             )}
           </div>
