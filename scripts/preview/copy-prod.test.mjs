@@ -84,6 +84,18 @@ test("refuse une preview en retard sur les migrations de la prod", async () => {
   }
 });
 
+test("accepte une migration renumérotée, déjà passée sur la preview sous une autre date", async () => {
+  const [last] = await preview`
+    update drizzle.__drizzle_migrations set created_at = created_at - 1000
+    where created_at = (select max(created_at) from drizzle.__drizzle_migrations) returning id`;
+  try {
+    const { code, output } = await run(["scripts/preview/copy-prod.mjs", "--essai"], `${prodUrl}\n${previewUrl}\n`);
+    assert.equal(code, 0, output);
+  } finally {
+    await preview`update drizzle.__drizzle_migrations set created_at = created_at + 1000 where id = ${last.id}`;
+  }
+});
+
 test("l'essai et un refus ne changent rien", async () => {
   const before = await snapshot(preview);
   const trial = await run(["scripts/preview/copy-prod.mjs", "--essai"], `${prodUrl}\n${previewUrl}\n`);

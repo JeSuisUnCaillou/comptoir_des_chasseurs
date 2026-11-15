@@ -176,13 +176,15 @@ async function holdsLomone(sql) {
 }
 
 /** How many migrations applied to the source the target lacks. Drizzle tells
- * them apart by date (created_at), not by content: a renumbered migration was
- * applied twice on the preview, under two dates. */
+ * them apart by date (created_at); a migration renumbered on a branch was
+ * applied to the shared preview under another date but the same SQL (hash),
+ * so either one counts. */
 async function missingMigrations(source, target) {
-  const dates = async (sql) =>
-    (await sql`select created_at::text as at from drizzle.__drizzle_migrations`).map((r) => r.at);
-  const have = new Set(await dates(target));
-  return (await dates(source)).filter((d) => !have.has(d)).length;
+  const applied = (sql) => sql`select created_at::text as at, hash from drizzle.__drizzle_migrations`;
+  const have = await applied(target);
+  const dates = new Set(have.map((r) => r.at));
+  const hashes = new Set(have.map((r) => r.hash));
+  return (await applied(source)).filter((m) => !dates.has(m.at) && !hashes.has(m.hash)).length;
 }
 
 /** Where a database is, refused outside Europe when Supabase's pooler names its region. */
