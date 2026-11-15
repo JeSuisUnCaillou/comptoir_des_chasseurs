@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { ALERT, createMember, loginAs, loginAsGerant, makeSuperAdmin, memberRow, newEmployeePage, uniqueName } from "./helpers";
+import {
+  ALERT,
+  createMember,
+  loginAs,
+  loginAsGerant,
+  makeSuperAdmin,
+  memberRow,
+  newEmployeePage,
+  setRole,
+  uniqueName,
+} from "./helpers";
 
 test("un gérant crée un compte employé, qui peut entrer", async ({ page, browser }) => {
   const username = uniqueName("einar").toLowerCase();
@@ -38,9 +48,14 @@ test("un compte désactivé est déconnecté et ne peut plus entrer", async ({ p
 
   await loginAsGerant(page);
   const row = await memberRow(page, username);
-  await row.getByLabel("Rôle").selectOption("desactive");
-  await row.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(row.locator(".badge")).toHaveText("Désactivé");
+  // The role selector no longer deactivates: it has its own button.
+  await expect(row.getByLabel("Rôle").locator("option")).toHaveText(["Gérant", "Employé"]);
+  await row.getByRole("button", { name: /^Désactiver/ }).click();
+  // Its row moves to the end of the list, maybe to another page.
+  await expect(row.getByRole("button", { name: /^Désactiver/ })).toHaveCount(0);
+  const moved = await memberRow(page, username);
+  await expect(moved.locator(".badge")).toHaveText("Désactivé");
+  await expect(moved.getByLabel("Rôle")).toHaveCount(0);
 
   await employee.goto("/");
   await expect(employee).toHaveURL(/\/connexion$/);
@@ -176,7 +191,9 @@ test("le serveur refuse de modifier le super admin, même par un formulaire ouve
   await row.getByRole("button", { name: "Changer" }).click();
   await expect(row.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
 
-  await row.getByLabel("Rôle").selectOption("desactive");
+  await row.getByRole("button", { name: /^Désactiver/ }).click();
+  await expect(row.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
+  await row.getByLabel("Rôle").selectOption("employe");
   await row.getByRole("button", { name: "Enregistrer" }).click();
   await expect(row.getByText("Super admin")).toBeVisible();
   await expect(row.getByLabel("Rôle")).toHaveCount(0);
@@ -186,4 +203,69 @@ test("le serveur refuse de modifier le super admin, même par un formulaire ouve
   const owner = await (await browser.newContext()).newPage();
   await loginAs(owner, boss, "mot-de-passe");
   await expect(owner.getByRole("link", { name: "Membres" })).toBeVisible();
+});
+
+test("un compte désactivé passe en fin de liste, et « Réactiver » le rend employé", async ({ page, browser }) => {
+  // "0" sorts the account first while it is active.
+  const username = uniqueName("0-ulfric").toLowerCase();
+  await createMember(username, "mot-de-passe", "gerant", `0 ${username}`);
+  await loginAsGerant(page);
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${username}`);
+  await row.getByRole("button", { name: /^Désactiver/ }).click();
+  await expect(row.getByRole("button", { name: /^Désactiver/ })).toHaveCount(0);
+
+  // On its page, only deactivated accounts come after it.
+  const moved = await memberRow(page, username);
+  const badges = await page.locator("tbody tr").evaluateAll((rows, id) => {
+    const statuses = rows.map((tr) => tr.querySelector(".badge")?.textContent ?? "");
+    const at = rows.findIndex((tr) => tr.getAttribute("data-testid") === id);
+    return statuses.slice(at);
+  }, `member-${username}`);
+  expect(badges.every((b) => b === "Désactivé")).toBe(true);
+
+  await moved.getByRole("button", { name: /^Réactiver/ }).click();
+  await expect(moved.getByRole("button", { name: /^Réactiver/ })).toHaveCount(0);
+  await page.goto("/membres");
+  await expect(row.locator(".badge")).toHaveText("Employé");
+
+  const back = await (await browser.newContext()).newPage();
+  await loginAs(back, username, "mot-de-passe");
+  await expect(back.getByTestId("member-name")).toHaveText(`0 ${username}`);
+  await expect(back.getByRole("link", { name: "Membres" })).toHaveCount(0);
+});
+
+test("le serveur refuse de désactiver à qui n'est plus gérant, même par une page ouverte avant", async ({ page }) => {
+  const boss = uniqueName("0-brunwulf").toLowerCase();
+  const target = uniqueName("0-irileth").toLowerCase();
+  await createMember(boss, "mot-de-passe", "gerant", `0 ${boss}`);
+  await createMember(target, "mot-de-passe", "employe", `0 ${target}`);
+
+  await loginAs(page, boss, "mot-de-passe");
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${target}`);
+  await expect(row.getByRole("button", { name: /^Désactiver/ })).toBeVisible();
+  await setRole(boss, "employe");
+  await row.getByRole("button", { name: /^Désactiver/ }).click();
+  await expect(page).not.toHaveURL(/\/membres/);
+
+  const gerant = await (await page.context().browser()!.newContext()).newPage();
+  await loginAsGerant(gerant);
+  await expect((await memberRow(gerant, target)).locator(".badge")).toHaveText("Employé");
+});
+
+test("le bouton « Activité » garde sa largeur à côté de « Désactiver »", async ({ page }) => {
+  const username = uniqueName("0-ralof").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe", `0 ${username}`);
+  await loginAsGerant(page);
+  for (const width of [320, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/membres");
+    const row = page.getByTestId(`member-${username}`);
+    const activity = await row.getByRole("link", { name: "Activité" }).boundingBox();
+    const deactivate = await row.getByRole("button", { name: /^Désactiver/ }).boundingBox();
+    // Side by side on one line, not a full-width button above the other.
+    expect(activity!.width).toBeLessThan(150);
+    expect(Math.abs(activity!.y - deactivate!.y)).toBeLessThan(4);
+  }
 });

@@ -3,9 +3,11 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
+import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { moveStock } from "@/lib/products";
 import { settleEntry } from "@/lib/register";
+import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
 /** Writing the register: sales, buybacks, cash movements, and undoing them. */
@@ -30,7 +32,7 @@ export async function recordLines(
   member: Actor,
   {
     kind,
-    counterparty,
+    counterparty: typedName,
     notes,
     tillPending,
     lines,
@@ -45,6 +47,9 @@ export async function recordLines(
 ) {
   const at = (i: number, message: string) => lineMessage(lines.length, i, message);
   return getDb().transaction(async (tx) => {
+    // A known contact is written as they spell their name; an unknown name becomes a contact, below.
+    const known = typedName && (await contactNamed(tx, member.shopId, typedName));
+    const counterparty = known || typedName;
     const written: number[] = [];
     for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
       let label = typed;
@@ -92,6 +97,9 @@ export async function recordLines(
         if (!moved.ok) throw new UserError(at(i, moved.error));
       }
       written.push(line.id);
+    }
+    if (typedName && !known) {
+      await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side: contactSide(kind), lines });
     }
     return written;
   });

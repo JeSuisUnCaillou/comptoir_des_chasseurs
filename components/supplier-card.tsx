@@ -5,6 +5,9 @@ import type { OfferSide } from "@/lib/db/schema";
 import type { SupplierOfferRow, SupplierWithOffers } from "@/lib/suppliers";
 import { formatNumber, plural, septims } from "@/lib/pricing";
 
+/** The tag of a contact that a purchase or a sale created. */
+export const FROM_TRANSACTION = "Créé lors d'une transaction";
+
 export const SIDE_TITLES: Record<OfferSide, string> = { sells: "Il nous vend", buys: "Il nous achète" };
 
 function Offers({ side, offers }: { side: OfferSide; offers: SupplierOfferRow[] }) {
@@ -46,6 +49,11 @@ export function SupplierCard({ supplier, editHref }: { supplier: SupplierWithOff
         )}
       </div>
       <h3>{supplier.name}</h3>
+      {supplier.fromTransaction && (
+        <p className="supplier-origin">
+          <span className="badge">{FROM_TRANSACTION}</span>
+        </p>
+      )}
       {supplier.place && (
         <p className="supplier-place">
           <MapPin size={15} aria-hidden /> {supplier.place}

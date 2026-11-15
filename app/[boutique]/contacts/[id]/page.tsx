@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
-import { SIDE_TITLES } from "@/components/supplier-card";
+import { FROM_TRANSACTION, SIDE_TITLES } from "@/components/supplier-card";
 import { DeleteSupplierButton, OfferForm, SupplierForm } from "@/components/supplier-forms";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
@@ -32,6 +32,11 @@ export default async function EditSupplier({ params }: { params: Promise<{ id: s
       <section className="panel" style={{ maxWidth: 760 }}>
         <div className="eyebrow">Fiche</div>
         <h2>Le contact</h2>
+        {supplier.fromTransaction && (
+          <p className="supplier-origin">
+            <span className="badge">{FROM_TRANSACTION}</span>
+          </p>
+        )}
         <SupplierForm supplier={supplier} />
       </section>
 

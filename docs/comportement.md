@@ -64,7 +64,7 @@ sur une page du registre.
 
 | Liste | Ordre |
 | --- | --- |
-| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées en dernier |
+| Marchandises (Gérer les marchandises, sections des Tarifs avant un tri par en-tête, choix d'Achat/Vente), membres, contacts | par nom, de A à Z, sans tenir compte des majuscules ni des accents ; marchandises archivées et membres désactivés en dernier |
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
 | Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
@@ -177,8 +177,17 @@ page ; l'écriture enregistrée ramène au registre.
 - **Client et notes** valent pour toutes les lignes. Le nom du client ou du
   vendeur propose les [contacts](#contacts) pendant qu'on tape, ceux qui vont
   dans ce sens d'abord (les clients pour une vente, les fournisseurs pour un
-  achat) ; un nom inconnu reste tel quel, et Entrée envoie le formulaire tant
-  qu'aucune proposition n'est choisie aux flèches.
+  achat) ; Entrée envoie le formulaire tant qu'aucune proposition n'est
+  choisie aux flèches. Un nom qu'aucun contact ne porte (majuscules mises à
+  part) devient un contact à l'enregistrement, avec les notes de l'écriture
+  pour note, l'étiquette « Créé lors d'une transaction », et chaque
+  marchandise du stock de l'écriture au prix payé, dans « Il nous vend »
+  pour un achat, « Il nous achète » pour une vente (plusieurs lignes d'une
+  même marchandise additionnées, le prix réduit : 6 septims pour 2 peaux
+  donnent « 3 septims pour 1 peau ») ; un article hors stock n'y va pas.
+  Un nom connu s'inscrit tel que le contact l'écrit, et ses marchandises
+  ne changent pas. Annuler l'écriture ne supprime pas
+  le contact.
 - **Prix privilégié du vendeur** (achat seulement) : un seul choix par achat,
   « Aucun » ou l'un des clients privilégiés qui ont un prix sur au moins une
   des marchandises. Il calcule à leur prix
@@ -275,6 +284,9 @@ tous), à l'adresse `/<boutique>/contacts`.
   Couleurs : un fournisseur a la carte dorée de l'app, un client une carte
   bleue ; fournisseur et client, la carte dorée avec un bord bleu à gauche.
   Ce qu'un contact nous achète a son titre et ses prix en bleu.
+- Un contact créé par un achat ou une vente (§ [Le formulaire d'achat ou de
+  vente](#le-formulaire-dachat-ou-de-vente)) porte, sur sa carte et sa fiche,
+  l'étiquette « Créé lors d'une transaction ».
 - Une marchandise va dans un seul sens par contact : l'enregistrer dans
   l'autre sens la déplace, avec son nouveau prix.
 - Une recherche trouve un nom, un lieu, une note ou une marchandise.
@@ -305,7 +317,8 @@ Dans l'ordre de la page :
 1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
    dans l'ordre qu'ils y ont réglé, à côté du calculateur : une ligne
    chacun, son nom puis ses prix de rachat et de vente côte à côte (deux par
-   ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus. Un
+   ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus ;
+   son stock en dernier. Un
    produit phare archivé n'y est plus (il y revient si on le désarchive).
    Sans produit phare, le bloc le dit. Pour un gérant, un crayon sur le bloc
    ouvre le réglage.
@@ -315,9 +328,9 @@ Dans l'ordre de la page :
    qui filtre pendant qu'on tape, puis une grille par catégorie de la
    boutique, à son nom (§ Catégories) ; celle des peaux montre la
    transformation et le bénéfice par lot. Au comptoir : Peaux, Viandes et
-   venaison, Autres ressources (où va aussi le cuir quand il n'est pas
-   produit phare), Composants alchimiques. Les produits phares n'y sont pas :
-   ils ont leurs lignes en haut.
+   venaison, Autres ressources (où va aussi le cuir), Composants
+   alchimiques. Les produits phares y restent aussi, à leur place : leurs
+   lignes en haut ne font que les mettre en avant.
 
 Dans la grille :
 
@@ -530,6 +543,14 @@ Ne comptent pas :
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.
+- Le sélecteur de rôle d'une ligne de Membres passe de Gérant à Employé et
+  retour ; il n'est pas sur la ligne d'un compte désactivé. Désactiver se
+  fait par le bouton « Désactiver » de la ligne, et « Réactiver » rend le
+  compte employé de la boutique. Ces boutons ne sont ni sur la ligne du
+  gérant connecté ni sur celle du super admin, et le serveur refuse le geste
+  à qui n'est pas gérant de la boutique.
+- Les comptes désactivés sont en fin de liste, et ne comptent pas dans le
+  nombre de membres de Mes boutiques.
 - Chacun change son mot de passe avec la clé, en haut à droite.
 
 ### Le super admin

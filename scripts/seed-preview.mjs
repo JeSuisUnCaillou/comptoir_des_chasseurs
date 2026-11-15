@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy) and
+// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy), a contact created by a sale (Ulfgar) and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -135,6 +135,9 @@ const CUSTOMER = {
   buys: [["Cuir", 5, 1], ["Venaison", 2, 1]],
 };
 
+// A contact as a sale under an unknown name creates it.
+const FROM_SALE = { name: "Ulfgar", notes: "Chasseur de Morthal, passe chaque semaine", buys: ["Venaison", 2, 1] };
+
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 try {
@@ -207,6 +210,22 @@ try {
       }
       console.log("Client d'exemple Roy ajouté.");
     }
+
+    // Back when deleted, so the tag can always be seen.
+    const [fromSale] = await tx`
+      insert into suppliers (shop_id, name, notes, from_transaction)
+      values (1, ${FROM_SALE.name}, ${FROM_SALE.notes}, true)
+      on conflict (shop_id, name) do nothing
+      returning id`;
+    if (fromSale) console.log("Contact d'exemple Ulfgar, créé lors d'une transaction, ajouté.");
+    // With what the sale gave him, unless he already has a merchandise.
+    const [venison, price, qty] = FROM_SALE.buys;
+    await tx`
+      insert into supplier_offers (supplier_id, product_id, price, qty, side)
+      select s.id, p.id, ${price}, ${qty}, 'buys'
+      from suppliers s join products p on p.shop_id = s.shop_id and p.name = ${venison}
+      where s.shop_id = 1 and s.name = ${FROM_SALE.name} and s.from_transaction
+        and not exists (select 1 from supplier_offers o where o.supplier_id = s.id)`;
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;
     if (moved === 0) {
@@ -304,6 +323,23 @@ try {
         insert into announcements (shop_id, title, body, pin, member_id)
         values (${tavern.id}, ${TAVERN.announcement.title}, ${TAVERN.announcement.body}, 'viande', ${aela})`;
       console.log("Boutique d'exemple « La Taverne du Port » créée.");
+    }
+
+    // An employé and a deactivated account in the comptoir's Membres, to try
+    // « Désactiver » and « Réactiver » (both reversible, so kept as they are).
+    for (const [username, name, role] of [
+      ["faendal", "Faendal", "employe"],
+      ["sven", "Sven", "desactive"],
+    ]) {
+      const [added] = await tx`
+        insert into members (username, name, password_hash, role)
+        values (${username}, ${name}, ${GERANT.passwordHash}, ${role})
+        on conflict (username) do nothing
+        returning id`;
+      if (added) {
+        await tx`insert into shop_members (shop_id, member_id, role) values (1, ${added.id}, ${role})`;
+        console.log(`Compte ${name} ajouté au comptoir.`);
+      }
     }
 
     // An employé invitation link of the comptoir waiting in Membres, to try

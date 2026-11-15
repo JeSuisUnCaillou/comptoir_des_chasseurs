@@ -67,13 +67,21 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
     const venison = page.getByRole("region", { name: "Venaison", exact: true });
     await expect(venison.locator(".stat").filter({ hasText: "Rachat" })).toHaveCount(1);
     await expect(venison.locator(".stat").filter({ hasText: "Vente" })).toHaveCount(1);
+    // Its stock, last.
+    await expect(venison.locator(".stat").last()).toHaveText(/^Stock\s*\d+ pièces?$/);
     // The blacksmith's price is only the leather's.
     await expect(venison).not.toContainText("forgeron");
     await expect(page.getByRole("region", { name: "Cuir", exact: true })).toContainText("Rachat par le forgeron");
-    // The calculator starts on the first; the grids leave them all out.
+    // The calculator starts on the first; the grids keep them all, with their prices.
     await expect(calculatorProduct(page)).toHaveValue("Cuir");
-    await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row", { name: /Flèches d'acier/ })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row", { name: /Flèches d'acier/ })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Autres ressources" }).getByRole("row").filter({ has: page.getByText("Cuir", { exact: true }) })).toBeVisible();
+    // A search finds a featured product in its grid too.
+    await page.getByRole("searchbox", { name: "Chercher une marchandise" }).fill("venai");
+    await expect(page).toHaveURL(/q=venai/);
+    await expect(page.getByRole("region", { name: "Viandes et venaison" }).getByRole("row", { name: /^Venaison/ })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Grille des prix" })).not.toContainText("Aucune marchandise ne correspond.");
 
     // Reordered in Gérer les marchandises by dragging a product by its handle, then with the keyboard.
     await page.goto("/marchandises");
@@ -101,7 +109,7 @@ test("un gérant met plusieurs produits phares en haut des Tarifs, une ligne cha
     await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Flèches d'acier", "Cuir", "Venaison"]);
     await expect(calculatorProduct(page)).toHaveValue("Flèches d'acier");
 
-    // Taken back, the leather returns to its grid, and the others keep their order.
+    // Taken back, the leather stays in its grid, and the others keep their order.
     await remove(page, "Cuir");
     await page.goto("/tarifs");
     await expect(featuredPanel(page).getByRole("heading", { level: 3 })).toHaveText(["Flèches d'acier", "Venaison"]);

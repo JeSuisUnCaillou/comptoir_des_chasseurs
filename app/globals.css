@@ -352,6 +352,11 @@ h3 {
   white-space: nowrap;
 }
 
+/* A primary button among others in a row keeps its own width. */
+.row-actions .btn-primary {
+  width: auto;
+}
+
 /* The four tiles of the till on the Grand livre */
 .till-overview .stat {
   border-left-width: 3px;
@@ -1527,6 +1532,14 @@ tr.fresh td {
   font-size: 20px;
   font-weight: 700;
   margin: 6px 0 8px;
+}
+
+.supplier-origin {
+  margin: 0 0 8px;
+}
+
+.supplier-origin .badge {
+  white-space: normal;
 }
 
 .supplier-place {

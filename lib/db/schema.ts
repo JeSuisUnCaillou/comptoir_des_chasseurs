@@ -372,6 +372,8 @@ export const suppliers = pgTable(
     place: text("place").notNull().default(""),
     // Free note, such as who they represent.
     notes: text("notes").notNull().default(""),
+    // Created by a purchase or a sale under a name no contact had.
+    fromTransaction: boolean("from_transaction").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("suppliers_shop_name_idx").on(t.shopId, t.name)],

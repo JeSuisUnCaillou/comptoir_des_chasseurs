@@ -269,7 +269,7 @@ function tilePrice(price: number | null, qty: number) {
 /**
  * A featured product's line: its name, then its prices side by side, its
  * privileged groups' buybacks first; for leather, what the blacksmith pays for
- * it after the sale. What the shop pays is red, what it gets green, as in the
+ * it after the sale; its stock last. What the shop pays is red, what it gets green, as in the
  * calculator.
  */
 function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: number }) {
@@ -298,6 +298,12 @@ function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: nu
             <div className="stat-value plus">{septims(blacksmith)}</div>
           </div>
         )}
+        <div className="stat">
+          <div className="stat-label">Stock</div>
+          <div className="stat-value">
+            {formatNumber(product.stock)} {plural(product.unit, product.stock)}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -321,8 +327,8 @@ export default async function Tarifs({ searchParams }: { searchParams: Promise<S
   const edit = isGerant(member) ? member.shop.slug : null;
   const query = searchParam(search.q);
   const featured = featuredProducts(products);
-  // The featured products have their own cards above; every other one is in a grid.
-  const hunted = matching(products, search.q).filter((p) => p.featuredAt == null);
+  // Every product is in its grid, the featured ones too: their cards above only put them forward.
+  const hunted = matching(products, search.q);
   // One grid per category, in their order; the hides' one shows their batches.
   const grids = categories
     .map((category) => ({ category, products: hunted.filter((p) => p.categoryId === category.id && priced(p)) }))

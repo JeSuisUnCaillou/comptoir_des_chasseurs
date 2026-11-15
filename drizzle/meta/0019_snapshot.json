@@ -1,5 +1,5 @@
 {
-  "id": "190c8ca5-fdb2-4a2d-834f-957daaea13d5",
+  "id": "7d791ac7-d0f8-4d5e-a826-19634da9a85e",
   "prevId": "dea9d1c8-42dc-421d-be9a-932945b62279",
   "version": "7",
   "dialect": "postgresql",
@@ -366,95 +366,6 @@
           "columns": [
             "product_id",
             "group_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.product_aliases": {
-      "name": "product_aliases",
-      "schema": "",
-      "columns": {
-        "shop_id": {
-          "name": "shop_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "product_id": {
-          "name": "product_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "product_aliases_product_idx": {
-          "name": "product_aliases_product_idx",
-          "columns": [
-            {
-              "expression": "product_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "product_aliases_shop_id_shops_id_fk": {
-          "name": "product_aliases_shop_id_shops_id_fk",
-          "tableFrom": "product_aliases",
-          "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "product_aliases_product_id_products_id_fk": {
-          "name": "product_aliases_product_id_products_id_fk",
-          "tableFrom": "product_aliases",
-          "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "product_aliases_shop_id_name_pk": {
-          "name": "product_aliases_shop_id_name_pk",
-          "columns": [
-            "shop_id",
-            "name"
           ]
         }
       },
@@ -1348,6 +1259,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "''"
+        },
+        "from_transaction": {
+          "name": "from_transaction",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",

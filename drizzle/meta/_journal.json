@@ -138,8 +138,15 @@
     {
       "idx": 19,
       "version": "7",
-      "when": 1794646544464,
-      "tag": "0019_noms-du-jeu",
+      "when": 1794762165184,
+      "tag": "0019_contacts-crees-par-une-transaction",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794781924482,
+      "tag": "0020_noms-du-jeu",
       "breakpoints": true
     }
   ]
