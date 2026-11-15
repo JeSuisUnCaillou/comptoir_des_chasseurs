@@ -153,8 +153,8 @@ Donne **toujours le lien de la page précise à essayer**
 écrire dans la base des previews, donc si la fonctionnalité demande des
 données que le seed n'apporte pas, étends `scripts/seed-preview.mjs` dans la
 même PR, sans rien écraser, avec une condition qui remet l'exemple une fois
-consommé (tant que la base des previews porte une copie de la prod, README,
-le seed n'ajoute aucun exemple : dis-le). Dis quelles données regarder (« l'achat de Faendal, trois
+consommé ; tant que la base des previews porte une copie de la prod (voir
+README), le seed n'ajoute aucun exemple : dis-le. Dis quelles données regarder (« l'achat de Faendal, trois
 lignes ») ; « met moi de la data pour tester ta feature », 2026-11-11.
 
 ## Ouvrir une pull request pour chaque branche

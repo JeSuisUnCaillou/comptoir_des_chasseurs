@@ -79,7 +79,8 @@ dans l'environnement ; sous Windows dans Git Bash, lancer
 - Refusé si la cible n'a pas le gérant Lomone des previews ou si la source
   l'a (adresses inversées), si la preview n'a pas toutes les migrations de la
   prod (construire d'abord une preview à jour de `main`), ou si une adresse
-  Supabase est hors d'Europe.
+  de pooler Supabase (`aws-0-<région>.pooler.supabase.com`, celle à donner)
+  est hors d'Europe.
 - La preview garde son schéma et ses migrations ; Lomone et Aela y sont remis
   (Lomone n'est pas super admin : celui de la prod le reste). Les comptes de
   la prod gardent leur mot de passe.
