@@ -165,7 +165,9 @@ page ; l'écriture enregistrée ramène au registre.
 ### Le formulaire d'achat ou de vente
 
 - **Plusieurs marchandises** par écriture, 25 au plus (§ Pagination) : « Ajouter une marchandise », la corbeille pour en
-  retirer une.
+  retirer une. La ligne ajoutée reçoit le curseur dans son choix de
+  marchandise, prête à taper ; la liste s'ouvre dès qu'on tape (ou avec ↓),
+  pas avant, pour ne pas cacher le bouton.
 - Une ligne par marchandise : article, quantité, montant. Une ligne porte sur
   une marchandise du stock ou sur un article libre hors stock.
 - La marchandise se choisit dans un champ où l'on tape son nom (comme dans le
@@ -419,8 +421,8 @@ sans septims :
 
 - le sens ;
 - une marchandise par ligne, avec sa quantité et son stock après le
-  mouvement (« Ajouter une marchandise », la corbeille, 25 au plus comme pour
-  un achat) ;
+  mouvement (« Ajouter une marchandise », qui met le curseur dans la nouvelle ligne
+  comme pour un achat, la corbeille, 25 au plus) ;
 - un motif commun.
 
 Tout est inscrit ensemble ou rien, jamais sous zéro. L'enregistrement ramène

@@ -44,6 +44,19 @@ type Typed<T> = Common<T> & {
  * choices are suggestions, nothing is highlighted until the arrows move, so
  * Enter on a new name submits the form like a plain field.
  */
+// Set by focusCombobox for the focus it gives: the list stays closed until the member types.
+let quietFocus = false;
+
+/**
+ * Puts the cursor in a combobox without opening its list, which would cover
+ * what is below it (e.g. the button that has just added the line).
+ */
+export function focusCombobox(id: string) {
+  quietFocus = true;
+  document.getElementById(id)?.focus();
+  quietFocus = false;
+}
+
 export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>) {
   const { id, choices, listLabel, name, required, placeholder, maxLength } = props;
   const extras = props.free ? [] : (props.extras ?? []);
@@ -106,7 +119,7 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
         onFocus={(e) => {
           e.target.select();
           setActive(props.free ? -1 : Math.max(0, shown.findIndex((c) => c.id === props.value)));
-          setOpen(true);
+          if (!quietFocus) setOpen(true);
         }}
         onBlur={close}
         onChange={(e) => {
