@@ -22,10 +22,11 @@ const IGNORE = [{ id: "", name: "Ignorer" }];
 type Row = ReadItem & { n: number; productId: string; counted: string; recognized: boolean };
 
 // Where the item names are on a 16:9 screenshot of a chest (SkyUI), as
-// fractions of its width and height: below the headers, left of the Type column.
-const NAMES = { left: 0.039, top: 0.165, width: 0.292, height: 0.662 };
+// fractions of its width and height: below the headers, and short of the Type
+// column, whose long words ("Nourriture", "Ingrédient") start at 0.317.
+const NAMES = { left: 0.039, top: 0.165, width: 0.261, height: 0.662 };
 
-/** The names column of a screenshot, twice as big, in black on white: what the OCR reads best. */
+/** The names column of a screenshot, three times as big, in black on white: what the OCR reads best. */
 async function namesColumn(file: File) {
   const bitmap = await createImageBitmap(file);
   const sx = Math.round(bitmap.width * NAMES.left);
@@ -33,16 +34,19 @@ async function namesColumn(file: File) {
   const sw = Math.round(bitmap.width * NAMES.width);
   const sh = Math.round(bitmap.height * NAMES.height);
   const canvas = document.createElement("canvas");
-  canvas.width = sw * 2;
-  canvas.height = sh * 2;
+  canvas.width = sw * 3;
+  canvas.height = sh * 3;
   const context = canvas.getContext("2d")!;
+  // Thin letters, enlarged three times and kept thick by a low threshold: at
+  // twice the size, "a" reads as "o" ("Chair de ssumon").
+  context.imageSmoothingQuality = "high";
   context.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const image = context.getImageData(0, 0, canvas.width, canvas.height);
   const px = image.data;
   for (let i = 0; i < px.length; i += 4) {
     const light = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-    px[i] = px[i + 1] = px[i + 2] = light > 140 ? 0 : 255;
+    px[i] = px[i + 1] = px[i + 2] = light > 120 ? 0 : 255;
     px[i + 3] = 255;
   }
   context.putImageData(image, 0, 0);

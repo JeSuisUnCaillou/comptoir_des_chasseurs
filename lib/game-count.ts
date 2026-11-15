@@ -39,7 +39,8 @@ function withoutHide(normalized: string) {
  * What the stolen-hand icon reads as ("#", "4", "Ÿ") is dropped.
  */
 export function parseLine(raw: string): ReadLine | null {
-  const line = raw.replace(/\s+/g, " ").trim();
+  // "_" and "|" are the edge of a letter or of the icon, never part of a name.
+  const line = raw.replace(/[_|]/g, " ").replace(/\s+/g, " ").trim();
   const counted = line.match(/^(.*?)\s*[({\[]\s*(\d[\d\s]*)\s*[)}\]]/);
   let name: string;
   let count = 1;
@@ -131,7 +132,8 @@ export function matchProduct<P extends { id: number; name: string }>(
   aliases: { name: string; productId: number }[],
 ): P | undefined {
   const key = normalizeName(itemName);
-  const alias = aliases.find((a) => a.name === key);
+  // The OCR may read a retained name with a letter wrong ("Wolf Peli").
+  const alias = aliases.find((a) => a.name === key) ?? aliases.find((a) => similar(a.name, key));
   const aliased = alias && products.find((p) => p.id === alias.productId);
   if (aliased) return aliased;
   const named = products.map((p) => ({ p, key: normalizeName(p.name) }));

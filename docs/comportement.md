@@ -443,7 +443,8 @@ d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
 bas de la liste :
 
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
-  l'ordinateur. Elles se suivent dans l'ordre de leurs noms de fichier
+  l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
+  coffre (Nourriture, Ingrédients, Divers…). Elles se suivent dans l'ordre de leurs noms de fichier
   (`ScreenShot138`, `ScreenShot139`…).
 - Les lignes vues en bas d'une capture et en haut de la suivante ne comptent
   qu'une fois. Les lignes d'un même objet s'additionnent, volées ou non :
@@ -460,7 +461,8 @@ bas de la liste :
   l'autre sur un écran étroit, les reconnus d'abord). Un objet reste dans sa
   partie quand le gérant change sa marchandise.
 - Un nom du jeu rattaché à une marchandise d'un autre nom (« Deer Pelt » à
-  Biche) est retenu par la boutique pour les comptages suivants.
+  Biche) est retenu par la boutique pour les comptages suivants, même lu
+  avec une lettre de travers (« Wolf Peli »).
 - Plusieurs objets rattachés à la même marchandise s'additionnent.
 - « Mettre le stock à jour » donne à chaque marchandise comptée le stock
   compté, par des mouvements d'entrée ou de sortie avec le motif (« Régularisation
