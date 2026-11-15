@@ -34,6 +34,12 @@ export function ProductCombobox<T extends number | string>({
   placeholder?: string;
 }) {
   return (
-    <Combobox {...props} choices={products} listLabel="Marchandises" emptyText="Aucune marchandise ne correspond." />
+    <Combobox
+      {...props}
+      choices={products}
+      listLabel="Marchandises"
+      emptyText="Aucune marchandise ne correspond."
+      strayText="Choisis une marchandise de la liste."
+    />
   );
 }
