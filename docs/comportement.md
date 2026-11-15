@@ -305,7 +305,8 @@ Dans l'ordre de la page :
 1. Les produits phares, choisis par les gérants dans Gérer les marchandises,
    dans l'ordre qu'ils y ont réglé, à côté du calculateur : une ligne
    chacun, son nom puis ses prix de rachat et de vente côte à côte (deux par
-   ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus. Un
+   ligne au téléphone) ; pour le cuir, le rachat par le forgeron en plus ;
+   son stock en dernier. Un
    produit phare archivé n'y est plus (il y revient si on le désarchive).
    Sans produit phare, le bloc le dit. Pour un gérant, un crayon sur le bloc
    ouvre le réglage.
@@ -315,9 +316,9 @@ Dans l'ordre de la page :
    qui filtre pendant qu'on tape, puis une grille par catégorie de la
    boutique, à son nom (§ Catégories) ; celle des peaux montre la
    transformation et le bénéfice par lot. Au comptoir : Peaux, Viandes et
-   venaison, Autres ressources (où va aussi le cuir quand il n'est pas
-   produit phare), Composants alchimiques. Les produits phares n'y sont pas :
-   ils ont leurs lignes en haut.
+   venaison, Autres ressources (où va aussi le cuir), Composants
+   alchimiques. Les produits phares y restent aussi, à leur place : leurs
+   lignes en haut ne font que les mettre en avant.
 
 Dans la grille :
 
