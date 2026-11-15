@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import postgres from "postgres";
-import { GERANT, COMPTOIR, newEmployeePage, loginAsGerant, uniqueName } from "./helpers";
+import { GERANT, COMPTOIR, newEmployeePage, loginAsGerant, pickProduct, uniqueName } from "./helpers";
 
 // Three screenshots of a chest in the game, taken while scrolling down: their
 // lines overlap, and most items show on several lines (stolen or not).
@@ -50,7 +50,7 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   // The lines of an item add up, and those seen on two screenshots count once.
   const biche = review.getByRole("group", { name: "Peau de biche" });
   await expect(biche).toContainText("255 + 1");
-  await expect(biche.getByLabel("Marchandise")).toHaveValue(/\d+/);
+  await expect(biche.getByLabel("Marchandise")).toHaveValue("Biche");
   await expect(biche.getByLabel("Compté")).toHaveValue("256");
   const loup = review.getByRole("group", { name: "Peau de loup", exact: true });
   await expect(loup).toContainText("186 + 1 + 1");
@@ -66,8 +66,9 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await expect(known.getByRole("group", { name: "Peau de biche" })).toBeVisible();
   await expect(unknown.getByRole("group", { name: "Peau de biche" })).toHaveCount(0);
   const deer = unknown.getByRole("group", { name: "Deer Pelt" });
-  await expect(deer.getByLabel("Marchandise")).toHaveValue("");
-  await deer.getByLabel("Marchandise").selectOption({ label: "Biche" });
+  await expect(deer.getByLabel("Marchandise")).toHaveValue("Ignorer");
+  // Picked in the same merchandise picker as everywhere else.
+  await pickProduct(deer, "Biche");
   await expect(deer.getByTestId("stock")).toHaveText("200");
   // Counted with the 256 Peau de biche: 270, so 70 more than in stock.
   await expect(deer.getByTestId("ecart")).toHaveText("+70*");
@@ -80,7 +81,7 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
     expect(Math.abs(right.y - left.y)).toBeLessThan(2);
   }).toPass();
   const leather = review.getByRole("group", { name: "Leather" });
-  await leather.getByLabel("Marchandise").selectOption({ label: "Cuir" });
+  await pickProduct(leather, "Cuir");
   // A count can be corrected before it is written.
   await leather.getByLabel("Compté").fill("500");
   await review.getByRole("button", { name: "Mettre le stock à jour" }).click();
@@ -97,15 +98,15 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS.slice(1, 2));
   const again = page.getByRole("form", { name: "Relire le comptage" });
   await expect(again).toBeVisible({ timeout: 60_000 });
-  const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise").locator("option:checked");
-  await expect(chosen("Deer Pelt")).toHaveText("Biche");
-  await expect(chosen("Leather")).toHaveText("Cuir");
+  const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise");
+  await expect(chosen("Deer Pelt")).toHaveValue("Biche");
+  await expect(chosen("Leather")).toHaveValue("Cuir");
   // Now known, they join the recognized items.
   await expect(again.getByRole("region", { name: "Objets reconnus" }).getByRole("group", { name: "Deer Pelt" })).toBeVisible();
 
   // Without the deer pelts, read on this screenshot alone, the chest changes nothing: no movement is written.
   await again.getByRole("group", { name: "Leather" }).getByLabel("Compté").fill("500");
-  await again.getByRole("group", { name: "Deer Pelt" }).getByLabel("Marchandise").selectOption({ label: "Ignorer" });
+  await pickProduct(again.getByRole("group", { name: "Deer Pelt" }), "Ignorer");
   await again.getByRole("button", { name: "Mettre le stock à jour" }).click();
   await expect(again.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
 });

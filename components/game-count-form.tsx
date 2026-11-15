@@ -3,17 +3,23 @@
 import { Check, ImageUp, RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
+import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
+import type { CategorizedProduct } from "@/lib/products";
 import { matchProduct, MAX_COUNT_LINES, parsePage, stitchPages, sumByProduct, sumItems, type ReadItem } from "@/lib/game-count";
 import { formatNumber, plural } from "@/lib/pricing";
 
-export type CountProduct = { id: number; name: string; unit: string; stock: number };
+export type CountProduct = Pick<CategorizedProduct, "id" | "name" | "unit" | "stock" | "categoryId" | "categoryName" | "categoryPosition">;
+
+/** The choice that leaves an item out of the count. */
+const IGNORE = [{ id: "", name: "Ignorer" }];
 
 /**
  * An item of the chest under review: the merchandise it is ("" to ignore it)
  * and its count. `recognized`: the app found its merchandise when reading;
- * it keeps the item in its section while the gérant changes it.
+ * it keeps the item in its section while the gérant changes it. `n`: its
+ * place in the reading, for the ids of its fields.
  */
-type Row = ReadItem & { productId: string; counted: string; recognized: boolean };
+type Row = ReadItem & { n: number; productId: string; counted: string; recognized: boolean };
 
 // Where the item names are on a 16:9 screenshot of a chest (SkyUI), as
 // fractions of its width and height: below the headers, left of the Type column.
@@ -100,9 +106,9 @@ export function GameCountForm({
         setError("Aucun objet lu sur ces captures. Prends-les en plein écran, sur la liste d'un coffre.");
       } else {
         setRows(
-          items.map((item) => {
+          items.map((item, n) => {
             const product = matchProduct(item.name, products, aliases);
-            return { ...item, productId: String(product?.id ?? ""), counted: String(item.total), recognized: Boolean(product) };
+            return { ...item, n, productId: String(product?.id ?? ""), counted: String(item.total), recognized: Boolean(product) };
           }),
         );
       }
@@ -120,6 +126,7 @@ export function GameCountForm({
   const totals = sumByProduct(
     (rows ?? []).filter((r) => r.productId).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
   );
+  const choices = choicesByCategory(products);
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
 
   /** One item on one row: what was read, its merchandise, its stock, its count, and the gap between them. */
@@ -134,19 +141,19 @@ export function GameCountForm({
         <div className="count-read">
           <strong>{row.name}</strong> <span className="small muted">{row.counts.map(formatNumber).join(" + ")}</span>
         </div>
-        <select
-          name="productId"
-          aria-label="Marchandise"
-          value={row.productId}
-          onChange={(ev) => update(row.key, { productId: ev.target.value })}
-        >
-          <option value="">Ignorer</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <div className="count-product">
+          <label className="sr-only" htmlFor={`c-${row.n}`}>
+            Marchandise
+          </label>
+          <ProductCombobox
+            id={`c-${row.n}`}
+            name="productId"
+            products={choices}
+            extras={IGNORE}
+            value={row.productId}
+            onChange={(productId) => update(row.key, { productId })}
+          />
+        </div>
         <span className="count-stock" data-testid="stock">
           {product ? formatNumber(product.stock) : ""}
         </span>
