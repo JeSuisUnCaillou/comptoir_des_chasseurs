@@ -4,12 +4,17 @@ import { GameCountForm } from "@/components/game-count-form";
 import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
+import { shopCategories } from "@/lib/categories";
 import { activeProducts, productAliases } from "@/lib/products";
 
 /** /<slug>/inventaire/regularisation (Régulariser le stock): a gérant counts a chest of the game from screenshots of its inventory. */
 export default async function RegulariserLeStock() {
   const member = await requireMember(["gerant"]);
-  const [products, aliases] = await Promise.all([activeProducts(member.shopId), productAliases(member.shopId)]);
+  const [products, aliases, categories] = await Promise.all([
+    activeProducts(member.shopId),
+    productAliases(member.shopId),
+    shopCategories(member.shopId),
+  ]);
 
   return (
     <>
@@ -28,6 +33,7 @@ export default async function RegulariserLeStock() {
         <GameCountForm
           products={products.map(({ id, name, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, stock, categoryId, categoryName, categoryPosition }))}
           aliases={aliases}
+          categories={categories.map(({ id, name }) => ({ id, name }))}
         />
       </section>
     </>

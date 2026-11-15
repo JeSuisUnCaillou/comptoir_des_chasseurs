@@ -7,7 +7,7 @@ import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
 import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
-import { MAX_COUNT_LINES } from "@/lib/game-count";
+import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 
 export type MoveState = { ok: boolean; message: string } | null;
@@ -112,9 +112,11 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
   const productIds = formData.getAll("productId").map(String);
   const counts = formData.getAll("counted").map(Number);
   const readNames = formData.getAll("readName").map(String);
+  const newNames = formData.getAll("newName").map((v) => String(v).trim().slice(0, 100));
+  const categoryIds = formData.getAll("categoryId").map(Number);
   const count = productIds.length;
   if (count > MAX_COUNT_LINES) return { ok: false, message: `Pas plus de ${MAX_COUNT_LINES} lignes à la fois.` };
-  if (counts.length !== count || readNames.length !== count) {
+  if ([counts, readNames, newNames, categoryIds].some((field) => field.length !== count)) {
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
   }
 
@@ -122,13 +124,20 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
   for (let i = 0; i < count; i++) {
     // An item left on « Ignorer » changes nothing.
     if (productIds[i] === "") continue;
-    const productId = Number(productIds[i]);
     const counted = counts[i];
-    if (!Number.isInteger(productId)) return { ok: false, message: "Marchandise invalide." };
+    const readName = readNames[i].slice(0, 100);
     if (!Number.isInteger(counted) || counted < 0) {
       return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier, 0 ou plus.` };
     }
-    lines.push({ productId, counted, readName: readNames[i].slice(0, 100) });
+    if (productIds[i] === NEW_PRODUCT) {
+      if (!newNames[i]) return { ok: false, message: `${readNames[i]} : donne un nom à la nouvelle marchandise.` };
+      if (!Number.isInteger(categoryIds[i])) return { ok: false, message: `${readNames[i]} : choisis sa catégorie.` };
+      lines.push({ newName: newNames[i], categoryId: categoryIds[i], counted, readName });
+      continue;
+    }
+    const productId = Number(productIds[i]);
+    if (!Number.isInteger(productId)) return { ok: false, message: "Marchandise invalide." };
+    lines.push({ productId, counted, readName });
   }
   if (lines.length === 0) return { ok: false, message: "Rattache au moins un objet du coffre à une marchandise." };
   if (!reason) return { ok: false, message: "Précise la raison." };
@@ -136,6 +145,14 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
   const result = await attempt(() => recordCount(member, lines, reason));
   if (!result.ok) return result;
   revalidateShop();
-  if (result.value.length === 0) return { ok: true, message: "Rien à changer : le stock correspond déjà au coffre." };
-  redirect(shopPath(member.shop.slug, `/inventaire?inscrit=${result.value.join(",")}`));
+  const { written, created } = result.value;
+  if (written.length === 0) {
+    return {
+      ok: true,
+      message: created
+        ? `${created} marchandise${created > 1 ? "s créées" : " créée"}, sans stock : rien d'autre à changer.`
+        : "Rien à changer : le stock correspond déjà au coffre.",
+    };
+  }
+  redirect(shopPath(member.shop.slug, `/inventaire?inscrit=${written.join(",")}`));
 }

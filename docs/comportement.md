@@ -444,11 +444,19 @@ bas de la liste :
 
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
   l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
-  coffre (Nourriture, Ingrédients, Divers…). Elles se suivent dans l'ordre de leurs noms de fichier
-  (`ScreenShot138`, `ScreenShot139`…).
-- Les lignes vues en bas d'une capture et en haut de la suivante ne comptent
-  qu'une fois. Les lignes d'un même objet s'additionnent, volées ou non :
-  « (13) » compte 13, une ligne sans nombre compte 1.
+  coffre (Tous, Nourriture, Ingrédients, Divers…) : l'icône « volé » et ce
+  qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre de
+  leurs noms de fichier (`ScreenShot138`, `ScreenShot139`…).
+- Une capture qui reprend des lignes déjà lues (le bas de la précédente, ou
+  plus haut quand la liste a été remontée) n'ajoute que ce qui les suit ;
+  une ligne sur quatre peut y être lue un peu différemment. Les lignes d'un
+  même objet s'additionnent, volées ou non : « (13) » compte 13, une ligne
+  sans nombre compte 1. Les lettres que l'OCR confond (« a » et « o »,
+  « i », « l » et « t ») ne séparent pas deux lignes.
+- Au-dessus de la relecture, « À propos des captures » prévient d'une
+  capture qui n'est pas en 16:9, d'une capture sans aucun objet lu, et de
+  deux captures qui n'ont aucune ligne en commun alors que la seconde
+  continue la liste dans l'ordre des noms (une page manque peut-être).
 - La relecture montre une ligne par objet lu, en colonnes : son nom et ses
   lignes (« 255 + 1 »), la marchandise qu'il est, son stock, son compte
   (modifiable) et l'écart entre les deux (« +70 » en vert, « −16 » en
@@ -457,9 +465,30 @@ bas de la liste :
   La marchandise est trouvée par un nom du jeu déjà rattaché, puis par son
   nom, puis par l'animal d'une peau (« Peau de loup » est Loup). Sinon,
   l'objet est sur « Ignorer » et le gérant choisit.
+- Toucher le nom d'un objet montre, sous sa ligne, les lignes des captures
+  d'où il a été lu, découpées dans les captures.
+- Garde-fous, en orange :
+  - un objet non reconnu d'au moins 6 reçoit la marchandise au nom le plus
+    proche (une lettre sur six d'écart au plus, jamais une marchandise
+    qu'un autre objet est déjà), « Proposée : confirmer » jusqu'à ce que
+    le gérant la confirme ou en change ;
+  - un compte dont l'OCR n'est pas sûr est entouré, jusqu'à ce que le
+    gérant le change ou regarde ses lignes de capture ;
+  - un écart de plus de 100, ou d'au moins 10 et de plus de la moitié du
+    stock, porte un ⚠.
+  « Mettre le stock à jour » montre d'abord « À vérifier avant
+  d'inscrire » s'il en reste : chaque point mène à sa ligne, puis
+  « Inscrire quand même » ou « Revenir à la relecture ».
 - Les « Reconnus » sont à gauche, les « Non reconnus » à droite (l'un sous
   l'autre sur un écran étroit, les reconnus d'abord). Un objet reste dans sa
   partie quand le gérant change sa marchandise.
+- Un objet non reconnu peut devenir une « Nouvelle marchandise » : son nom
+  (le nom lu d'office) et sa catégorie se règlent sous sa ligne. Pour une
+  boutique qui commence son inventaire, « Créer les N ignorés dans cette
+  catégorie » le fait d'un coup pour tous les objets encore sur « Ignorer »,
+  et « Ne plus créer les N nouvelles » le défait. Elles sont créées sans
+  prix (à régler dans Gérer les marchandises) avec le reste du comptage,
+  tout ou rien ; un nom déjà pris, même archivé, est refusé.
 - Un nom du jeu rattaché à une marchandise d'un autre nom (« Deer Pelt » à
   Biche) est retenu par la boutique pour les comptages suivants, même lu
   avec une lettre de travers (« Wolf Peli »).

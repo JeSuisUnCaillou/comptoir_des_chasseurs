@@ -76,6 +76,13 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   // Tab left the field on a text that matches no choice: the text stays, and
   // the form is refused until a choice is picked.
   const [stray, setStray] = useState(false);
+  // A choice made from outside (a button that sets several fields at once) shows at once.
+  const [shownValue, setShownValue] = useState(props.value);
+  if (!props.free && props.value !== shownValue) {
+    setShownValue(props.value);
+    setPickedText(selected?.name ?? "");
+    setStray(false);
+  }
   const field = useRef<HTMLInputElement>(null);
   // The blur that follows Tab must not undo what Tab did.
   const tabbed = useRef(false);

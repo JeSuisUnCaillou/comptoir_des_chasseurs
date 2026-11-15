@@ -372,20 +372,57 @@ export async function productAliases(shopId: number) {
     .where(eq(schema.productAliases.shopId, shopId));
 }
 
-/** An item of a chest counted from the game, tied to a merchandise by the gérant. */
-export type CountLine = { productId: number; counted: number; readName: string };
+/**
+ * An item of a chest counted from the game, tied by the gérant to a
+ * merchandise of the shop, or to a new one to create (`newName`).
+ */
+export type CountLine = { counted: number; readName: string } & (
+  | { productId: number }
+  | { newName: string; categoryId: number }
+);
 
 /**
  * Sets the stock of the counted merchandises to what the chest holds, as
- * stock movements with one reason, all together or not at all. Items tied to
- * the same merchandise add up. A merchandise already at its count gets no
- * movement. Each game name tied to a merchandise other than its own is
- * remembered for the next count. Gérants only. Returns the movements' ids.
+ * stock movements with one reason, all together or not at all. The new
+ * merchandises are created first, without prices; items tied to the same
+ * new name make one. Items tied to the same merchandise add up. A
+ * merchandise already at its count gets no movement. Each game name tied to
+ * a merchandise other than its own is remembered for the next count.
+ * Gérants only. Returns the movements' ids and how many merchandises were created.
  */
-export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, lines: CountLine[], reason: string) {
+export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, given: CountLine[], reason: string) {
   if (!isGerant(member)) throw new UserError("Seul un gérant compte le stock depuis le jeu.");
-  const counted = sumByProduct(lines);
   return getDb().transaction(async (tx) => {
+    const created = new Map<string, number>();
+    const lines: { productId: number; counted: number; readName: string }[] = [];
+    for (const line of given) {
+      if ("productId" in line) {
+        lines.push(line);
+        continue;
+      }
+      const key = normalizeName(line.newName);
+      if (!created.has(key)) {
+        await categoryOf(tx, member.shopId, line.categoryId);
+        const [taken] = await tx
+          .select({ archived: schema.products.archived })
+          .from(schema.products)
+          .where(and(eq(schema.products.shopId, member.shopId), sql`lower(${schema.products.name}) = lower(${line.newName})`))
+          .limit(1);
+        if (taken) {
+          throw new UserError(
+            `« ${line.newName} » existe déjà${taken.archived ? ", archivée : regarde dans « Gérer les marchandises »" : " : choisis-la dans la liste"}.`,
+          );
+        }
+        const [product] = await tx
+          .insert(schema.products)
+          .values({ shopId: member.shopId, name: line.newName, categoryId: line.categoryId })
+          .returning({ id: schema.products.id });
+        created.set(key, product.id);
+      }
+      lines.push({ productId: created.get(key)!, counted: line.counted, readName: line.readName });
+    }
+
+    const counted = sumByProduct(lines);
     const ids = [...counted.keys()];
     const products = ids.length
       ? await tx
@@ -421,6 +458,6 @@ export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "ro
       if (!moved.ok) throw new UserError(`${product.name} : ${moved.error}`);
       written.push(moved.id);
     }
-    return written;
+    return { written, created: created.size };
   });
 }

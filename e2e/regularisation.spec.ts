@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { GERANT, COMPTOIR, newEmployeePage, loginAsGerant, pickProduct, uniqueName } from "./helpers";
 
@@ -40,8 +40,25 @@ async function shopWithStock(stock: Record<string, number>, aliases: Record<stri
   return `/${slug}`;
 }
 
+/** Writes the count, through the checks when the OCR was unsure of a number. */
+async function inscribe(review: Locator) {
+  await review.getByRole("button", { name: "Mettre le stock à jour" }).click();
+  const checks = review.getByRole("alert", { name: "À vérifier avant d'inscrire" });
+  await expect(checks.or(review.getByRole("status")).or(review.page().getByText(/^Mouvement de stock inscrit/))).toBeVisible();
+  if (await checks.isVisible()) await checks.getByRole("button", { name: "Inscrire quand même" }).click();
+}
+
+/** Gives the screenshots, once the page is ready to read them. */
+async function upload(page: Page, files: string[]) {
+  const field = page.getByLabel("Captures du coffre");
+  await expect(field).toBeEnabled();
+  await field.setInputFiles(files);
+}
+
+const fixtures = (...names: string[]) => names.map((name) => `${__dirname}/fixtures/coffre/ScreenShot${name}.jpg`);
+
 test("un gérant compte un coffre depuis des captures du jeu, et l'app retient les noms du jeu", async ({ page }) => {
-  test.slow(); // The screenshots are read in the browser.
+  test.setTimeout(240_000); // The screenshots are read in the browser.
   const shop = await shopWithStock({ Biche: 200, Loup: 188, Ours: 0, Cuir: 10, Renard: 34, Lapin: 7 });
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire`);
@@ -49,9 +66,9 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toBeVisible();
 
   // Given out of order: their names put them back in order.
-  await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS);
+  await upload(page, SCREENSHOTS);
   const review = page.getByRole("form", { name: "Relire le comptage" });
-  await expect(review).toBeVisible({ timeout: 90_000 });
+  await expect(review).toBeVisible({ timeout: 180_000 });
 
   // The lines of an item add up, and those seen on two screenshots count once.
   const biche = review.getByRole("group", { name: "Peau de biche" });
@@ -91,6 +108,14 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   // A count can be corrected before it is written.
   await leather.getByLabel("Compté").fill("500");
   await review.getByRole("button", { name: "Mettre le stock à jour" }).click();
+  // Big gaps are shown before anything is written.
+  const checks = review.getByRole("alert", { name: "À vérifier avant d'inscrire" });
+  await expect(checks).toContainText("Cuir : 10 en stock, 500 comptés.");
+  await expect(checks).toContainText("Ours : 0 en stock, 54 comptés.");
+  // A count the OCR was unsure of: "(53)".
+  await expect(checks).toContainText("Peau d'ours : un nombre peut-être mal lu.");
+  await expect(page).toHaveURL(new RegExp(`${shop}/inventaire/regularisation$`));
+  await checks.getByRole("button", { name: "Inscrire quand même" }).click();
 
   // Stock movements, never a silent overwrite; Loup and Renard were right, and Lapin was not in the chest.
   await expect(page).toHaveURL(new RegExp(`${shop}/inventaire\\?inscrit=`));
@@ -101,7 +126,7 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
 
   // The next count remembers Deer Pelt and Leather.
   await page.getByRole("link", { name: "Régulariser le stock" }).click();
-  await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS.slice(1, 2));
+  await upload(page, SCREENSHOTS.slice(1, 2));
   const again = page.getByRole("form", { name: "Relire le comptage" });
   await expect(again).toBeVisible({ timeout: 60_000 });
   const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise");
@@ -113,12 +138,12 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   // Without the deer pelts, read on this screenshot alone, the chest changes nothing: no movement is written.
   await again.getByRole("group", { name: "Leather" }).getByLabel("Compté").fill("500");
   await pickProduct(again.getByRole("group", { name: "Deer Pelt" }), "Ignorer");
-  await again.getByRole("button", { name: "Mettre le stock à jour" }).click();
+  await inscribe(again);
   await expect(again.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
 });
 
 test("les mots longs de la colonne Type ne se collent pas aux objets sans nombre", async ({ page }) => {
-  test.slow();
+  test.setTimeout(240_000); // Three screenshots read in the browser, beside other tests.
   // Tabs Nourriture and Ingrédients, whose Type column comes close to the names, then Divers.
   const shop = await shopWithStock(
     { "Chair de saumon": 500, Givreboise: 0, Lavande: 0, Loup: 0 },
@@ -126,11 +151,9 @@ test("les mots longs de la colonne Type ne se collent pas aux objets sans nombre
   );
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire/regularisation`);
-  await page
-    .getByLabel("Captures du coffre")
-    .setInputFiles(["ScreenShot149.jpg", "ScreenShot150.jpg", "ScreenShot153.jpg"].map((name) => `${__dirname}/fixtures/coffre/${name}`));
+  await upload(page, ["ScreenShot149.jpg", "ScreenShot150.jpg", "ScreenShot153.jpg"].map((name) => `${__dirname}/fixtures/coffre/${name}`));
   const review = page.getByRole("form", { name: "Relire le comptage" });
-  await expect(review).toBeVisible({ timeout: 90_000 });
+  await expect(review).toBeVisible({ timeout: 180_000 });
 
   // The single item and its stack are one item, with nothing of "Nourriture" or "Ingrédient" in its name.
   const saumon = review.getByRole("group", { name: /^Chair de saumon/ });
@@ -143,6 +166,60 @@ test("les mots longs de la colonne Type ne se collent pas aux objets sans nombre
   await expect(review).not.toContainText(/\b(Nou|Ingr)/);
   // A name retained when it was read with a letter wrong is still known, read right.
   await expect(review.getByRole("group", { name: "Timber Wolf Pelt" }).getByLabel("Marchandise")).toHaveValue("Loup");
+});
+
+test("la relecture montre les lignes des captures, propose les noms approchants et crée les marchandises manquantes", async ({ page }) => {
+  test.setTimeout(240_000);
+  // A shop just opened: one merchandise of the chest, under a name close to the game's.
+  const shop = await shopWithStock({ "Montain Lyon Pelt": 0 });
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  // The « Tous » tab: 161 is missing, and 164 was taken after scrolling back up.
+  await upload(page, fixtures("160", "162", "163", "164"));
+  const review = page.getByRole("form", { name: "Relire le comptage" });
+  await expect(review).toBeVisible({ timeout: 180_000 });
+
+  // A page missing between two screenshots of the same tab is pointed out.
+  await expect(page.getByRole("status", { name: "À propos des captures" })).toContainText(
+    "ScreenShot160.jpg et ScreenShot162.jpg n'ont aucune ligne en commun : une page manque peut-être",
+  );
+  // Lines seen again after scrolling back up count once; close names stay apart.
+  const ours = review.getByRole("group", { name: "Peau d'ours", exact: true });
+  await expect(ours).toContainText("66 + 1 + 1");
+  await expect(review.getByRole("group", { name: "Lys des cimes jaune" })).toContainText("39 + 1");
+  await expect(review.getByRole("group", { name: "Lys des cimes rouge" })).toContainText("1 + 1");
+
+  // The lines an item was read from, cut from the screenshots; seeing them checks a doubtful count.
+  await expect(ours.getByLabel("Compté")).toHaveAttribute("title", /mal lu/);
+  await ours.getByRole("button", { name: /^Peau d'ours/ }).click();
+  await expect(ours.getByLabel("Compté")).not.toHaveAttribute("title", /mal lu/);
+  await expect(ours.getByRole("img", { name: /^Sur ScreenShot163\.jpg : Peau d'ours/ })).toHaveCount(3);
+
+  // Many of an item nothing recognized: the closest name is proposed, to confirm.
+  const lion = review.getByRole("region", { name: "Objets non reconnus" }).getByRole("group", { name: "Mountain Lion Pelt" });
+  await expect(lion.getByLabel("Marchandise")).toHaveValue("Montain Lyon Pelt");
+  await review.getByRole("button", { name: "Mettre le stock à jour" }).click();
+  const checks = review.getByRole("alert", { name: "À vérifier avant d'inscrire" });
+  await expect(checks).toContainText("Mountain Lion Pelt : rattaché à Montain Lyon Pelt par un nom approchant.");
+  await checks.getByRole("button", { name: "Revenir à la relecture" }).click();
+  await lion.getByRole("button", { name: "Proposée : confirmer" }).click();
+  await expect(lion.getByRole("button", { name: "Proposée : confirmer" })).toHaveCount(0);
+
+  // The others are created all at once, in one category; one is renamed, one left out.
+  const unknown = review.getByRole("region", { name: "Objets non reconnus" });
+  await unknown.getByRole("button", { name: /^Créer les \d+ ignorés dans cette catégorie$/ }).click();
+  const eye = unknown.getByRole("group", { name: "Oeil de smilodon" });
+  await expect(eye.getByLabel("Marchandise")).toHaveValue("Nouvelle marchandise");
+  await eye.getByLabel("Nom").fill("Œil de smilodon");
+  await pickProduct(unknown.getByRole("group", { name: "Leg of Gout" }), "Ignorer");
+  await inscribe(review);
+
+  await expect(page).toHaveURL(new RegExp(`${shop}/inventaire\\?inscrit=`));
+  const written = page.getByText(/^Mouvement de stock inscrit/);
+  await expect(written).toContainText("+30 Montain Lyon Pelt");
+  await expect(written).toContainText("+2 Œil de smilodon");
+  await expect(written).toContainText("+705 Leather");
+  await expect(written).not.toContainText("Leg of");
 });
 
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
@@ -165,9 +242,9 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire`);
   await page.getByRole("link", { name: "Régulariser le stock" }).click();
-  await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS.slice(0, 1));
+  await upload(page, SCREENSHOTS.slice(0, 1));
   const review = page.getByRole("form", { name: "Relire le comptage" });
-  await expect(review).toBeVisible({ timeout: 90_000 });
+  await expect(review).toBeVisible({ timeout: 180_000 });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   // The merchandise and its count side by side, apart.
   const item = review.getByRole("group", { name: "Peau de biche" });
