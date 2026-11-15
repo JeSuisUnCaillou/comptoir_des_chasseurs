@@ -1533,6 +1533,14 @@ tr.fresh td {
   margin: 6px 0 8px;
 }
 
+.supplier-origin {
+  margin: 0 0 8px;
+}
+
+.supplier-origin .badge {
+  white-space: normal;
+}
+
 .supplier-place {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, count, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
-import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
+import { byName, containing, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
 import type { OfferSide } from "@/lib/db/schema";
@@ -179,6 +179,31 @@ export async function deleteSupplier(shopId: number, id: number) {
   await getDb()
     .delete(schema.suppliers)
     .where(and(eq(schema.suppliers.id, id), eq(schema.suppliers.shopId, shopId)));
+}
+
+/** The longest note a contact keeps, as in its form. */
+export const CONTACT_NOTES_MAX = 300;
+
+/**
+ * The name a purchase or a sale is written under: a known contact's own name
+ * when `name` is theirs (case aside), or else `name` itself, which becomes a
+ * new contact of the shop, marked as created by a transaction, with the
+ * entry's notes as its note.
+ */
+export async function contactForTransaction(tx: Tx, shopId: number, name: string, notes: string | null) {
+  const { suppliers } = schema;
+  const [known] = await tx
+    .select({ name: suppliers.name })
+    .from(suppliers)
+    .where(and(eq(suppliers.shopId, shopId), sql`lower(${suppliers.name}) = lower(${name})`))
+    .limit(1);
+  if (known) return known.name;
+  await tx
+    .insert(suppliers)
+    .values({ shopId, name, notes: (notes ?? "").slice(0, CONTACT_NOTES_MAX), fromTransaction: true })
+    // Someone else wrote it meanwhile: theirs stays.
+    .onConflictDoNothing();
+  return name;
 }
 
 /**

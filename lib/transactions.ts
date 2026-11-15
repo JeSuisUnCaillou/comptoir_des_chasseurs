@@ -6,6 +6,7 @@ import { UserError } from "@/lib/errors";
 import { canActOn } from "@/lib/policies";
 import { moveStock } from "@/lib/products";
 import { settleEntry } from "@/lib/register";
+import { contactForTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
 /** Writing the register: sales, buybacks, cash movements, and undoing them. */
@@ -30,7 +31,7 @@ export async function recordLines(
   member: Actor,
   {
     kind,
-    counterparty,
+    counterparty: typedName,
     notes,
     tillPending,
     lines,
@@ -45,6 +46,8 @@ export async function recordLines(
 ) {
   const at = (i: number, message: string) => lineMessage(lines.length, i, message);
   return getDb().transaction(async (tx) => {
+    // An unknown name becomes a contact; a known one is written as the contact spells it.
+    const counterparty = typedName && (await contactForTransaction(tx, member.shopId, typedName, notes));
     const written: number[] = [];
     for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
       let label = typed;

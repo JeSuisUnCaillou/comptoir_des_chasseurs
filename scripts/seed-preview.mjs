@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy) and
+// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy), a contact created by a sale (Ulfgar) and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -135,6 +135,9 @@ const CUSTOMER = {
   buys: [["Cuir", 5, 1], ["Venaison", 2, 1]],
 };
 
+// A contact as a sale under an unknown name creates it.
+const FROM_SALE = { name: "Ulfgar", notes: "Chasseur de Morthal, passe chaque semaine" };
+
 const { url, ssl } = connectionOptions(migrationUrl());
 const sql = postgres(url, { ssl, max: 1, prepare: false, onnotice: () => {} });
 try {
@@ -207,6 +210,14 @@ try {
       }
       console.log("Client d'exemple Roy ajouté.");
     }
+
+    // Back when deleted, so the tag can always be seen.
+    const [fromSale] = await tx`
+      insert into suppliers (shop_id, name, notes, from_transaction)
+      values (1, ${FROM_SALE.name}, ${FROM_SALE.notes}, true)
+      on conflict (shop_id, name) do nothing
+      returning id`;
+    if (fromSale) console.log("Contact d'exemple Ulfgar, créé lors d'une transaction, ajouté.");
 
     const [{ moved }] = await tx`select count(*)::int as moved from stock_movements`;
     if (moved === 0) {

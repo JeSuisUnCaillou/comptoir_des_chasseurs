@@ -177,8 +177,12 @@ page ; l'écriture enregistrée ramène au registre.
 - **Client et notes** valent pour toutes les lignes. Le nom du client ou du
   vendeur propose les [contacts](#contacts) pendant qu'on tape, ceux qui vont
   dans ce sens d'abord (les clients pour une vente, les fournisseurs pour un
-  achat) ; un nom inconnu reste tel quel, et Entrée envoie le formulaire tant
-  qu'aucune proposition n'est choisie aux flèches.
+  achat) ; Entrée envoie le formulaire tant qu'aucune proposition n'est
+  choisie aux flèches. Un nom qu'aucun contact ne porte (majuscules mises à
+  part) devient un contact à l'enregistrement, avec les notes de l'écriture
+  pour note et l'étiquette « Créé lors d'une transaction » ; un nom connu
+  s'inscrit tel que le contact l'écrit. Annuler l'écriture ne supprime pas
+  le contact.
 - **Prix privilégié du vendeur** (achat seulement) : un seul choix par achat,
   « Aucun » ou l'un des clients privilégiés qui ont un prix sur au moins une
   des marchandises. Il calcule à leur prix
@@ -275,6 +279,9 @@ tous), à l'adresse `/<boutique>/contacts`.
   Couleurs : un fournisseur a la carte dorée de l'app, un client une carte
   bleue ; fournisseur et client, la carte dorée avec un bord bleu à gauche.
   Ce qu'un contact nous achète a son titre et ses prix en bleu.
+- Un contact créé par un achat ou une vente (§ [Le formulaire d'achat ou de
+  vente](#le-formulaire-dachat-ou-de-vente)) porte, sur sa carte et sa fiche,
+  l'étiquette « Créé lors d'une transaction ».
 - Une marchandise va dans un seul sens par contact : l'enregistrer dans
   l'autre sens la déplace, avec son nouveau prix.
 - Une recherche trouve un nom, un lieu, une note ou une marchandise.

@@ -6,7 +6,13 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { optionalId, text } from "@/lib/forms";
-import { deleteSupplier as remove, removeOffer as unoffer, saveOffer as offer, saveSupplier as save } from "@/lib/suppliers";
+import {
+  CONTACT_NOTES_MAX,
+  deleteSupplier as remove,
+  removeOffer as unoffer,
+  saveOffer as offer,
+  saveSupplier as save,
+} from "@/lib/suppliers";
 
 // `at` changes on every success, so a form can clear itself by key.
 export type SupplierFormState = { ok: boolean; message: string; at?: number } | null;
@@ -18,7 +24,7 @@ export async function saveSupplier(_prev: SupplierFormState, formData: FormData)
   const values = {
     name: text(formData, "name", 100),
     place: text(formData, "place", 100),
-    notes: text(formData, "notes", 300),
+    notes: text(formData, "notes", CONTACT_NOTES_MAX),
   };
   if (Number.isNaN(supplierId)) return { ok: false, message: "Contact inconnu." };
   if (!values.name) return { ok: false, message: "Le nom est obligatoire." };

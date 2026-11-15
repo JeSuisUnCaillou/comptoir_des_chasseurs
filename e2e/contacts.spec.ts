@@ -217,3 +217,46 @@ test("un client : ce qu'il nous achète, à part de ce qu'il nous vend, et l'ét
   await expect(contact.getByText("Fournisseur", { exact: true })).toBeVisible();
   await expect(contact.getByText("Fournisseur", { exact: true })).toHaveCSS("color", "rgb(207, 174, 110)");
 });
+
+test("un nom inconnu dans une vente devient un contact « Créé lors d'une transaction », avec la note de la vente", async ({
+  browser,
+}) => {
+  const product = uniqueName("Andouiller");
+  const name = uniqueName("Ulfgar");
+  const known = uniqueName("Markir");
+  await createProduct(product, { buyPrice: 2, sellPrice: 3 });
+  await createSuppliers([known]);
+  const { page } = await newEmployeePage(browser, "employe-contact-volee");
+
+  async function record(kind: "vente" | "achat", counterparty: string, notes?: string) {
+    await page.goto(`/achat-vente/${kind}`);
+    const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
+    await pickProduct(form, product);
+    await form.getByLabel("Quantité").fill("1");
+    await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
+    await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
+    if (notes) await form.getByLabel("Notes (facultatif)").fill(notes);
+    await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
+    await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
+  }
+
+  await record("vente", name, "Chasseur de Morthal, revient chaque semaine");
+  // The same name, written otherwise, is the same contact: written as the contact spells it.
+  await record("achat", name.toUpperCase(), "Autre note");
+  await expect(page.getByRole("cell", { name: name.toUpperCase(), exact: true })).toHaveCount(0);
+  await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+  // A known contact gets no tag.
+  await record("vente", known);
+
+  await page.goto("/contacts");
+  await search(page, name);
+  await expect(page.getByRole("article")).toHaveCount(1);
+  const created = card(page, name);
+  await expect(created.getByText("Créé lors d'une transaction")).toBeVisible();
+  await expect(created).toContainText("Chasseur de Morthal, revient chaque semaine");
+  await expect(created).not.toContainText("Autre note");
+
+  await search(page, known);
+  await expect(card(page, known)).toBeVisible();
+  await expect(card(page, known).getByText("Créé lors d'une transaction")).toHaveCount(0);
+});
