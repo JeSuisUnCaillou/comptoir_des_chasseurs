@@ -209,8 +209,14 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
 
   // The others are created all at once, in one category; one is renamed, one left out.
   const unknown = review.getByRole("region", { name: "Objets non reconnus" });
-  await unknown.getByRole("button", { name: /^Créer les \d+ ignorés dans cette catégorie$/ }).click();
+  const createAll = unknown.getByRole("button", { name: /^Créer les \d+ ignorés dans cette catégorie$/ });
+  await createAll.click();
   const eye = unknown.getByRole("group", { name: "Oeil de smilodon" });
+  await expect(eye.getByLabel("Marchandise")).toHaveValue("Nouvelle marchandise");
+  // Undone as fast, then done again.
+  await unknown.getByRole("button", { name: /^Ne plus créer les \d+ nouvelles$/ }).click();
+  await expect(eye.getByLabel("Marchandise")).toHaveValue("Ignorer");
+  await createAll.click();
   await expect(eye.getByLabel("Marchandise")).toHaveValue("Nouvelle marchandise");
   await eye.getByLabel("Nom").fill("Œil de smilodon");
   await pickProduct(unknown.getByRole("group", { name: "Leg of Gout" }), "Ignorer");
@@ -241,6 +247,17 @@ test("une nouvelle marchandise au nom d'une archivée est refusée, et rien n'es
     "Il y a déjà une marchandise à ce nom. Elle est peut-être archivée : regarde dans « Gérer les marchandises ».",
   );
   await expect(page).toHaveURL(new RegExp(`${shop}/inventaire/regularisation$`));
+
+  // Created at 0, a merchandise has no movement; written again, it is not created twice.
+  await pickProduct(review.getByRole("group", { name: "Leather" }), "Ignorer");
+  const deer = review.getByRole("group", { name: "Deer Pelt" });
+  await pickProduct(deer, "Nouvelle marchandise");
+  await deer.getByLabel("Compté").fill("0");
+  await inscribe(review);
+  await expect(review.getByRole("status")).toHaveText("1 marchandise créée, sans stock : rien d'autre à changer.");
+  await expect(deer.getByLabel("Marchandise")).toHaveValue("Deer Pelt");
+  await inscribe(review);
+  await expect(review.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
 });
 
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
