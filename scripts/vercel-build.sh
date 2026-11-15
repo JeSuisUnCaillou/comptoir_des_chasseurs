@@ -9,4 +9,5 @@ if [ -n "${VERCEL_ENV:-}" ] && [ "${VERCEL_ENV}" != "development" ]; then
   node scripts/migrate.mjs
   node scripts/seed-preview.mjs
 fi
+node scripts/copy-ocr-assets.mjs
 npx next build

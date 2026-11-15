@@ -430,6 +430,39 @@ Tout est inscrit ensemble ou rien, jamais sous zéro. L'enregistrement ramène
 les mouvements inscrits ensemble forment une carte, comme une écriture du
 registre.
 
+### Régulariser le stock
+
+Le bouton « Régulariser le stock », pour les gérants seulement, ouvre sa
+page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
+d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
+bas de la liste :
+
+- Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
+  l'ordinateur. Elles se suivent dans l'ordre de leurs noms de fichier
+  (`ScreenShot138`, `ScreenShot139`…).
+- Les lignes vues en bas d'une capture et en haut de la suivante ne comptent
+  qu'une fois. Les lignes d'un même objet s'additionnent, volées ou non :
+  « (13) » compte 13, une ligne sans nombre compte 1.
+- La relecture montre une ligne par objet lu, en colonnes : son nom et ses
+  lignes (« 255 + 1 »), la marchandise qu'il est, son stock, son compte
+  (modifiable) et l'écart entre les deux (« +70 » en vert, « −16 » en
+  rouge, « = » sans écart ; une « * » quand d'autres objets comptent pour la
+  même marchandise).
+  La marchandise est trouvée par un nom du jeu déjà rattaché, puis par son
+  nom, puis par l'animal d'une peau (« Peau de loup » est Loup). Sinon,
+  l'objet est sur « Ignorer » et le gérant choisit.
+- Les « Reconnus » sont à gauche, les « Non reconnus » à droite (l'un sous
+  l'autre sur un écran étroit, les reconnus d'abord). Un objet reste dans sa
+  partie quand le gérant change sa marchandise.
+- Un nom du jeu rattaché à une marchandise d'un autre nom (« Deer Pelt » à
+  Biche) est retenu par la boutique pour les comptages suivants.
+- Plusieurs objets rattachés à la même marchandise s'additionnent.
+- « Mettre le stock à jour » donne à chaque marchandise comptée le stock
+  compté, par des mouvements d'entrée ou de sortie avec le motif (« Régularisation
+  du stock » d'office), inscrits ensemble comme un Mouvement de stock, et
+  ramène à l'Inventaire qui les confirme. Une marchandise déjà juste n'a pas
+  de mouvement ; une marchandise absente des captures garde son stock.
+
 ### Nouvelle marchandise
 
 - Le bouton « Nouvelle marchandise » fait entrer en stock une marchandise
@@ -507,8 +540,8 @@ Ne comptent pas :
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
-| **Employé** | les pages de sa boutique, sauf Membres et Gérer les marchandises, et sauf les gestes que les sections ci-dessus réservent aux gérants |
+| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; régulariser le stock ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Employé** | les pages de sa boutique, sauf Membres, Gérer les marchandises et Régulariser le stock, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
   boutique.

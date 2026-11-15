@@ -14,3 +14,4 @@ next-env.d.ts
 
 # Review notes live in .git/revue-en-boucle/, never in the repository.
 .claude/reviews/
+/public/ocr/
