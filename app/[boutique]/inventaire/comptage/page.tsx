@@ -26,7 +26,7 @@ export default async function ComptageDuJeu() {
         <div className="eyebrow">Comptage</div>
         <h2>Compter un coffre</h2>
         <GameCountForm
-          products={products.map(({ id, name, unit, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, unit, stock, categoryId, categoryName, categoryPosition }))}
+          products={products.map(({ id, name, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, stock, categoryId, categoryName, categoryPosition }))}
           aliases={aliases}
         />
       </section>

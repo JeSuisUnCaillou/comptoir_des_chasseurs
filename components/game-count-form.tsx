@@ -6,9 +6,9 @@ import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/act
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import type { CategorizedProduct } from "@/lib/products";
 import { matchProduct, MAX_COUNT_LINES, parsePage, stitchPages, sumByProduct, sumItems, type ReadItem } from "@/lib/game-count";
-import { formatNumber, plural } from "@/lib/pricing";
+import { formatNumber } from "@/lib/pricing";
 
-export type CountProduct = Pick<CategorizedProduct, "id" | "name" | "unit" | "stock" | "categoryId" | "categoryName" | "categoryPosition">;
+export type CountProduct = Pick<CategorizedProduct, "id" | "name" | "stock" | "categoryId" | "categoryName" | "categoryPosition">;
 
 /** The choice that leaves an item out of the count. */
 const IGNORE = [{ id: "", name: "Ignorer" }];
