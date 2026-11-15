@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 export type Choice<T> = { id: T; name: string; group?: string };
 
@@ -39,7 +39,9 @@ type Typed<T> = Common<T> & {
  * carry a `group` are listed under its heading.
  *
  * Two kinds. By default the value must be one of the choices: Escape or
- * leaving the field keeps the one already chosen, and `required` refuses the
+ * leaving the field keeps the one already chosen; after typing, Tab picks the
+ * highlighted match and moves on, or keeps a text that matches nothing (the
+ * form is then refused until a choice is picked), and `required` refuses the
  * form while nothing is chosen. With `free`, any text is a value: the
  * choices are suggestions, nothing is highlighted until the arrows move, so
  * Enter on a new name submits the form like a plain field.
@@ -55,6 +57,13 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   const [open, setOpen] = useState(false);
   // -1: nothing highlighted (free fields start there).
   const [active, setActive] = useState(-1);
+  // Tab left the field on a text that matches no choice: the text stays, and
+  // the form is refused until a choice is picked.
+  const [stray, setStray] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
+  // The blur that follows Tab must not undo what Tab did.
+  const tabbed = useRef(false);
+  useEffect(() => field.current?.setCustomValidity(stray ? "Choisis une marchandise de la liste." : ""), [stray]);
   const query = text.trim().toLocaleLowerCase("fr");
   const matches =
     editing && query ? choices.filter((c) => c.name.toLocaleLowerCase("fr").includes(query)) : choices;
@@ -76,13 +85,19 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
     else {
       props.onChange(c.id);
       setPickedText(c.name);
+      setStray(false);
     }
     setEditing(false);
     setOpen(false);
   }
 
   function close() {
+    if (tabbed.current) {
+      tabbed.current = false;
+      return;
+    }
     if (!props.free) setPickedText(selected?.name ?? "");
+    setStray(false);
     setEditing(false);
     setOpen(false);
   }
@@ -91,6 +106,7 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
     <div className="combobox">
       {name && !props.free && <input type="hidden" name={name} value={props.value ?? ""} />}
       <input
+        ref={field}
         id={id}
         name={props.free ? name : undefined}
         role="combobox"
@@ -129,6 +145,17 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
             e.preventDefault();
             // A name that matches nothing does not fall through to the extras.
             if (shown[active] && (matches.length > 0 || !(editing && query))) choose(shown[active]);
+          } else if (e.key === "Tab" && !props.free && editing && query) {
+            // Tab moves on with the highlighted match (the first one unless the
+            // arrows moved), or keeps the typed text when nothing matches.
+            tabbed.current = true;
+            const match = matches.length > 0 ? (shown[active] ?? matches[0]) : undefined;
+            if (match) choose(match);
+            else {
+              setStray(true);
+              setEditing(false);
+              setOpen(false);
+            }
           } else if (e.key === "Escape") {
             close();
           }

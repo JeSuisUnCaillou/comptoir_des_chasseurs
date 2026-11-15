@@ -125,3 +125,34 @@ test("les mouvements d'une vente de plusieurs lignes restent une ligne chacun da
     await expect(row.locator(".sr-only")).toHaveCount(0);
   }
 });
+
+test("dans le choix d'une marchandise, Tab prend le premier résultat, ou garde ce qui a été tapé", async ({ browser }) => {
+  const hide = uniqueName("Peau de lynx");
+  await createProduct(hide, { stock: 6 });
+  const { page } = await newEmployeePage(browser, "tabeur");
+  await page.getByRole("link", { name: "Mouvement de stock" }).click();
+  const form = page.getByRole("region", { name: "Inscrire un mouvement de stock" });
+  const line = form.getByRole("group", { name: "Marchandise 1" });
+  const box = line.getByRole("combobox", { name: "Marchandise" });
+
+  // Click, type a word, Tab: the first result is chosen and the next field has the focus.
+  await box.click();
+  await box.pressSequentially(hide.slice(-5));
+  await box.press("Tab");
+  await expect(box).toHaveValue(hide);
+  await expect(line.getByLabel("Quantité")).toBeFocused();
+  await expect(line.getByTestId("stock-dispo")).toContainText("En stock : 6 peaux");
+
+  // Nothing matches: the typed text stays, and the form is not sent until a merchandise is chosen.
+  await box.click();
+  await box.pressSequentially("zzzz introuvable");
+  await box.press("Tab");
+  await expect(box).toHaveValue("zzzz introuvable");
+  expect(await box.evaluate((el: HTMLInputElement) => el.validationMessage)).toBe("Choisis une marchandise de la liste.");
+  await form.getByRole("radio", { name: "Entrée en stock" }).check();
+  await form.getByLabel("Motif").fill("Essai");
+  await form.getByRole("button", { name: "Inscrire le mouvement" }).click();
+  await expect(page).toHaveURL(/\/inventaire\/mouvement$/);
+  await pickProduct(line, hide);
+  expect(await box.evaluate((el: HTMLInputElement) => el.validationMessage)).toBe("");
+});
