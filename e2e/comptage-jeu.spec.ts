@@ -58,8 +58,14 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await expect(review.getByRole("group", { name: "Peau d'ours", exact: true }).getByLabel("Compté")).toHaveValue("54");
   await expect(review.getByRole("group", { name: "Peau d'ours troglodyte" })).toContainText("lu : 72 + 1 + 1");
 
-  // A name of the game the shop does not know yet is ignored until tied to a merchandise.
-  const deer = review.getByRole("group", { name: "Deer Pelt" });
+  // A name of the game the shop does not know yet is shown apart, ignored until tied to a merchandise.
+  const unknown = review.getByRole("region", { name: "Objets non reconnus" });
+  const known = review.getByRole("region", { name: "Objets reconnus" });
+  await expect(unknown.getByRole("group", { name: "Deer Pelt" })).toBeVisible();
+  await expect(unknown.getByRole("group", { name: "Leather" })).toBeVisible();
+  await expect(known.getByRole("group", { name: "Peau de biche" })).toBeVisible();
+  await expect(unknown.getByRole("group", { name: "Peau de biche" })).toHaveCount(0);
+  const deer = unknown.getByRole("group", { name: "Deer Pelt" });
   await expect(deer.getByLabel("Marchandise")).toHaveValue("");
   await deer.getByLabel("Marchandise").selectOption({ label: "Biche" });
   await expect(deer.getByTestId("ecart")).toContainText("En stock : 200 → compté : 270");
@@ -85,6 +91,8 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise").locator("option:checked");
   await expect(chosen("Deer Pelt")).toHaveText("Biche");
   await expect(chosen("Leather")).toHaveText("Cuir");
+  // Now known, they join the recognized items.
+  await expect(again.getByRole("region", { name: "Objets reconnus" }).getByRole("group", { name: "Deer Pelt" })).toBeVisible();
 
   // Without the deer pelts, read on this screenshot alone, the chest changes nothing: no movement is written.
   await again.getByRole("group", { name: "Leather" }).getByLabel("Compté").fill("500");

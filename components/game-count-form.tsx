@@ -8,8 +8,12 @@ import { formatNumber, plural } from "@/lib/pricing";
 
 export type CountProduct = { id: number; name: string; unit: string; stock: number };
 
-/** An item of the chest under review: the merchandise it is ("" to ignore it) and its count. */
-type Row = ReadItem & { productId: string; counted: string };
+/**
+ * An item of the chest under review: the merchandise it is ("" to ignore it)
+ * and its count. `recognized`: the app found its merchandise when reading;
+ * it keeps the item in its section while the gérant changes it.
+ */
+type Row = ReadItem & { productId: string; counted: string; recognized: boolean };
 
 // Where the item names are on a 16:9 screenshot of a chest (SkyUI), as
 // fractions of its width and height: below the headers, left of the Type column.
@@ -96,11 +100,10 @@ export function GameCountForm({
         setError("Aucun objet lu sur ces captures. Prends-les en plein écran, sur la liste d'un coffre.");
       } else {
         setRows(
-          items.map((item) => ({
-            ...item,
-            productId: String(matchProduct(item.name, products, aliases)?.id ?? ""),
-            counted: String(item.total),
-          })),
+          items.map((item) => {
+            const product = matchProduct(item.name, products, aliases);
+            return { ...item, productId: String(product?.id ?? ""), counted: String(item.total), recognized: Boolean(product) };
+          }),
         );
       }
     } catch {
@@ -118,6 +121,71 @@ export function GameCountForm({
     (rows ?? []).filter((r) => r.productId).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
   );
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
+
+  function itemLine(row: Row, index: number) {
+    const product = productOf(row);
+    const total = product ? totals.get(row.productId)! : 0;
+    const gap = product ? total - product.stock : 0;
+    const shared = product && (rows ?? []).filter((r) => r.productId === row.productId).length > 1;
+    const id = `c-${index}`;
+    return (
+      <fieldset key={row.key} className="tx-line count-line" aria-label={row.name}>
+        <input type="hidden" name="readName" value={row.name} />
+        <div className="count-read">
+          <strong>{row.name}</strong>{" "}
+          <span className="small muted">
+            lu : {row.counts.map(formatNumber).join(" + ")}
+          </span>
+        </div>
+        <div className="count-line-row">
+          <div className="field">
+            <label htmlFor={`${id}-product`}>Marchandise</label>
+            <select
+              id={`${id}-product`}
+              name="productId"
+              value={row.productId}
+              onChange={(ev) => update(row.key, { productId: ev.target.value })}
+            >
+              <option value="">Ignorer</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-counted`}>Compté</label>
+            <input
+              id={`${id}-counted`}
+              name="counted"
+              type="number"
+              min={0}
+              step={1}
+              required
+              value={row.counted}
+              onChange={(ev) => update(row.key, { counted: ev.target.value })}
+            />
+          </div>
+        </div>
+        {product && (
+          <p className="small muted count-gap" data-testid="ecart">
+            En stock : <strong className="tx-figure">{formatNumber(product.stock)}</strong> → compté :{" "}
+            <strong className="tx-figure">{formatNumber(total)}</strong>
+            {shared && " (avec les autres objets de cette marchandise)"} ·{" "}
+            <strong className={gap < 0 ? "minus" : undefined}>
+              {gap === 0 ? "aucun écart" : `${gap > 0 ? "+" : "−"}${formatNumber(Math.abs(gap))} ${plural(product.unit, Math.abs(gap))}`}
+            </strong>
+          </p>
+        )}
+      </fieldset>
+    );
+  }
+
+  const unknown = (rows ?? []).filter((r) => !r.recognized);
+  const known = (rows ?? []).filter((r) => r.recognized);
+  // Ids stay unique across both sections.
+  const indexOf = (row: Row) => rows!.indexOf(row);
 
   return (
     <>
@@ -152,67 +220,22 @@ export function GameCountForm({
             Vérifie chaque objet lu : la marchandise qu&apos;il est et son compte. Un objet laissé sur « Ignorer » ne change
             rien, et une marchandise absente du coffre garde son stock.
           </p>
-          <div className="count-lines">
-            {rows.map((row, index) => {
-              const product = productOf(row);
-              const total = product ? totals.get(row.productId)! : 0;
-              const gap = product ? total - product.stock : 0;
-              const shared = product && rows.filter((r) => r.productId === row.productId).length > 1;
-              const id = `c-${index}`;
-              return (
-                <fieldset key={row.key} className="tx-line count-line" aria-label={row.name}>
-                  <input type="hidden" name="readName" value={row.name} />
-                  <div className="count-read">
-                    <strong>{row.name}</strong>{" "}
-                    <span className="small muted">
-                      lu : {row.counts.map(formatNumber).join(" + ")}
-                    </span>
-                  </div>
-                  <div className="count-line-row">
-                    <div className="field">
-                      <label htmlFor={`${id}-product`}>Marchandise</label>
-                      <select
-                        id={`${id}-product`}
-                        name="productId"
-                        value={row.productId}
-                        onChange={(ev) => update(row.key, { productId: ev.target.value })}
-                      >
-                        <option value="">Ignorer</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label htmlFor={`${id}-counted`}>Compté</label>
-                      <input
-                        id={`${id}-counted`}
-                        name="counted"
-                        type="number"
-                        min={0}
-                        step={1}
-                        required
-                        value={row.counted}
-                        onChange={(ev) => update(row.key, { counted: ev.target.value })}
-                      />
-                    </div>
-                  </div>
-                  {product && (
-                    <p className="small muted count-gap" data-testid="ecart">
-                      En stock : <strong className="tx-figure">{formatNumber(product.stock)}</strong> → compté :{" "}
-                      <strong className="tx-figure">{formatNumber(total)}</strong>
-                      {shared && " (avec les autres objets de cette marchandise)"} ·{" "}
-                      <strong className={gap < 0 ? "minus" : undefined}>
-                        {gap === 0 ? "aucun écart" : `${gap > 0 ? "+" : "−"}${formatNumber(Math.abs(gap))} ${plural(product.unit, Math.abs(gap))}`}
-                      </strong>
-                    </p>
-                  )}
-                </fieldset>
-              );
-            })}
-          </div>
+          {unknown.length > 0 && (
+            <section className="count-section" aria-label="Objets non reconnus">
+              <h3>Non reconnus ({unknown.length})</h3>
+              <p className="small muted">
+                L&apos;app n&apos;a pas trouvé leur marchandise : choisis-la, ou laisse « Ignorer ». Ton choix est retenu
+                pour les prochains comptages.
+              </p>
+              <div className="count-lines">{unknown.map((row) => itemLine(row, indexOf(row)))}</div>
+            </section>
+          )}
+          {known.length > 0 && (
+            <section className="count-section" aria-label="Objets reconnus">
+              <h3>Reconnus ({known.length})</h3>
+              <div className="count-lines">{known.map((row) => itemLine(row, indexOf(row)))}</div>
+            </section>
+          )}
           <div className="field">
             <label htmlFor="c-reason">Motif</label>
             <input id="c-reason" name="reason" required maxLength={200} defaultValue="Comptage du coffre" />
