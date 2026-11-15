@@ -4,7 +4,8 @@ import { ArrowLeft, ArrowLeftRight, Pencil, Plus, Trash2, TriangleAlert } from "
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
-import { Combobox, type Choice } from "@/components/combobox";
+import { flushSync } from "react-dom";
+import { Combobox, focusCombobox, type Choice } from "@/components/combobox";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import type { TransactionKind } from "@/lib/db/schema";
@@ -143,6 +144,13 @@ export function TransactionForm({
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
 
   const choices = choicesByCategory(products);
+
+  /** Adds an empty line and puts the cursor in its merchandise picker, ready to type. */
+  function addLine() {
+    const key = nextKey.current++;
+    flushSync(() => setLines((all) => [...all, newLine(key)]));
+    focusCombobox(`t-${key}-product`);
+  }
 
   function update(key: number, change: Partial<Line>) {
     setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));
@@ -327,7 +335,7 @@ export function TransactionForm({
           className="btn btn-small"
           disabled={lines.length >= MAX_LINES}
           title={lines.length >= MAX_LINES ? `${MAX_LINES} marchandises au plus` : undefined}
-          onClick={() => setLines((all) => [...all, newLine(nextKey.current++)])}
+          onClick={addLine}
         >
           <Plus size={14} /> Ajouter une marchandise
         </button>
