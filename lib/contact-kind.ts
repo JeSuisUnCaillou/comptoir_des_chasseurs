@@ -1,5 +1,10 @@
 import type { OfferSide } from "@/lib/db/schema";
 
+/** The way a contact goes for an entry: a sale's buys from us, a purchase's sells to us. Pure. */
+export function contactSide(kind: "vente" | "rachat"): OfferSide {
+  return kind === "vente" ? "buys" : "sells";
+}
+
 export type ContactKind = "fournisseur" | "client" | "les-deux" | "contact";
 
 export const CONTACT_KIND_LABELS: Record<ContactKind, string> = {

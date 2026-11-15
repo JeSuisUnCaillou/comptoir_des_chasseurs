@@ -134,6 +134,13 @@
       "when": 1794607462846,
       "tag": "0018_ordre-des-categories",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794762165184,
+      "tag": "0019_contacts-crees-par-une-transaction",
+      "breakpoints": true
     }
   ]
 }
