@@ -40,11 +40,13 @@ async function shopWithStock(stock: Record<string, number>, aliases: Record<stri
   return `/${slug}`;
 }
 
-/** Writes the count, through the checks when the OCR was unsure of a number. */
+/** Writes the count, through the checks when the OCR was unsure of a number; then the answer shows. */
 async function inscribe(review: Locator) {
   await review.getByRole("button", { name: "Mettre le stock à jour" }).click();
   const checks = review.getByRole("alert", { name: "À vérifier avant d'inscrire" });
-  await expect(checks.or(review.getByRole("status")).or(review.page().getByText(/^Mouvement de stock inscrit/))).toBeVisible();
+  await expect(
+    review.getByRole("alert").or(review.getByRole("status")).or(review.page().getByText(/^Mouvement de stock inscrit/)).first(),
+  ).toBeVisible();
   if (await checks.isVisible()) await checks.getByRole("button", { name: "Inscrire quand même" }).click();
 }
 
@@ -220,6 +222,25 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
   await expect(written).toContainText("+2 Œil de smilodon");
   await expect(written).toContainText("+705 Leather");
   await expect(written).not.toContainText("Leg of");
+});
+
+test("une nouvelle marchandise au nom d'une archivée est refusée, et rien n'est inscrit", async ({ page }) => {
+  test.setTimeout(240_000);
+  const shop = await shopWithStock({ Leather: 0, Biche: 0 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  await sql`update products set archived = true where name = 'Leather' and shop_id = (select id from shops where slug = ${shop.slice(1)})`;
+  await sql.end();
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  await upload(page, SCREENSHOTS.slice(1, 2));
+  const review = page.getByRole("form", { name: "Relire le comptage" });
+  await expect(review).toBeVisible({ timeout: 180_000 });
+  await pickProduct(review.getByRole("group", { name: "Leather" }), "Nouvelle marchandise");
+  await inscribe(review);
+  await expect(review.getByRole("alert").last()).toHaveText(
+    "Il y a déjà une marchandise à ce nom. Elle est peut-être archivée : regarde dans « Gérer les marchandises ».",
+  );
+  await expect(page).toHaveURL(new RegExp(`${shop}/inventaire/regularisation$`));
 });
 
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
