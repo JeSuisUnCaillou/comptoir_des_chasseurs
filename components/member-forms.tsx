@@ -5,6 +5,7 @@ import {
   inviteEmployee,
   createMember,
   resetPassword,
+  setMemberActive,
   type MemberFormState,
 } from "@/app/[boutique]/membres/actions";
 import { keepValues } from "@/components/keep-values";
@@ -70,6 +71,26 @@ export function ResetPasswordForm({ id }: { id: number }) {
           Changer
         </button>
       </div>
+      <Status state={state} />
+    </form>
+  );
+}
+
+/** Deactivates an account of the shop, or reactivates it as an employé. */
+export function ActiveToggleForm({ id, active, name }: { id: number; active: boolean; name: string }) {
+  const [state, action, pending] = useActionState(setMemberActive, null);
+  return (
+    <form action={action}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="active" value={active ? "false" : "true"} />
+      <button
+        className={active ? "btn btn-small btn-ghost" : "btn btn-small"}
+        type="submit"
+        disabled={pending}
+        aria-label={`${active ? "Désactiver" : "Réactiver"} ${name}`}
+      >
+        {active ? "Désactiver" : "Réactiver"}
+      </button>
       <Status state={state} />
     </form>
   );

@@ -306,6 +306,23 @@ try {
       console.log("Boutique d'exemple « La Taverne du Port » créée.");
     }
 
+    // An employé and a deactivated account in the comptoir's Membres, to try
+    // « Désactiver » and « Réactiver » (both reversible, so kept as they are).
+    for (const [username, name, role] of [
+      ["faendal", "Faendal", "employe"],
+      ["sven", "Sven", "desactive"],
+    ]) {
+      const [added] = await tx`
+        insert into members (username, name, password_hash, role)
+        values (${username}, ${name}, ${GERANT.passwordHash}, ${role})
+        on conflict (username) do nothing
+        returning id`;
+      if (added) {
+        await tx`insert into shop_members (shop_id, member_id, role) values (1, ${added.id}, ${role})`;
+        console.log(`Compte ${name} ajouté au comptoir.`);
+      }
+    }
+
     // An employé invitation link of the comptoir waiting in Membres, to try
     // « Entrer avec Discord ». Again on each build once it has been taken.
     const [{ invitations }] = await tx`
