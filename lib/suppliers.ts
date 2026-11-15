@@ -4,7 +4,7 @@ import { byName, containing, getDb, isUniqueViolation, schema, type Tx } from "@
 import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
 import type { OfferSide } from "@/lib/db/schema";
-import { offerPrices } from "@/lib/offer-prices";
+import { offerPrices } from "@/lib/pricing";
 
 export const SUPPLIER_PAGE_SIZE = 12;
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
 import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
+import { contactSide } from "@/lib/contact-kind";
 import { activeProducts } from "@/lib/products";
 import { contactNames } from "@/lib/suppliers";
 import { DRAFT_PARAM, decodeDraft } from "@/lib/transaction-draft";
@@ -24,7 +25,7 @@ export default async function NouvelleEcriture({
   const sale = kind === "vente";
   const [products, contacts] = await Promise.all([
     activeProducts(member.shopId),
-    contactNames(member.shopId, sale ? "buys" : "sells"),
+    contactNames(member.shopId, contactSide(kind)),
   ]);
 
   return (

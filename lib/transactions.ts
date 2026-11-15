@@ -3,6 +3,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
+import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { moveStock } from "@/lib/products";
 import { settleEntry } from "@/lib/register";
@@ -98,8 +99,7 @@ export async function recordLines(
       written.push(line.id);
     }
     if (typedName && !known) {
-      const side = kind === "vente" ? "buys" : "sells";
-      await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side, lines });
+      await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side: contactSide(kind), lines });
     }
     return written;
   });
