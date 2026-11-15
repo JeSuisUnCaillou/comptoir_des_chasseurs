@@ -103,8 +103,8 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
               <ArrowLeftRight size={16} /> Mouvement de stock
             </Link>
             {isGerant(member) && (
-              <Link className="btn" href={at("/inventaire/comptage")}>
-                <ScanText size={16} /> Compter depuis le jeu
+              <Link className="btn" href={at("/inventaire/regularisation")}>
+                <ScanText size={16} /> Régulariser le stock
               </Link>
             )}
           </div>

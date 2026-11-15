@@ -48,7 +48,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/achat-vente/caisse", "Mouvement de caisse"],
     ["/inventaire", "Inventaire"],
     ["/inventaire/mouvement", "Mouvement de stock"],
-    ["/inventaire/comptage", "Compter depuis le jeu"],
+    ["/inventaire/regularisation", "Régulariser le stock"],
     ["/tarifs", "Tarifs"],
     ["/marchandises", "Gérer les marchandises"],
     ["/contacts", "Contacts"],

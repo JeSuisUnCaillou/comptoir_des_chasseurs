@@ -39,8 +39,8 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   const shop = await shopWithStock({ Biche: 200, Loup: 188, Ours: 0, Cuir: 10, Renard: 34, Lapin: 7 });
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire`);
-  await page.getByRole("link", { name: "Compter depuis le jeu" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Compter depuis le jeu" })).toBeVisible();
+  await page.getByRole("link", { name: "Régulariser le stock" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toBeVisible();
 
   // Given out of order: their names put them back in order.
   await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS);
@@ -91,10 +91,10 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await expect(page.getByText(/^Mouvement de stock inscrit/)).toHaveText(
     "Mouvement de stock inscrit : +70 Biche, +490 Cuir, +54 Ours.",
   );
-  await expect(page.getByText("Comptage du coffre").first()).toBeVisible();
+  await expect(page.getByText("Régularisation du stock").first()).toBeVisible();
 
   // The next count remembers Deer Pelt and Leather.
-  await page.getByRole("link", { name: "Compter depuis le jeu" }).click();
+  await page.getByRole("link", { name: "Régulariser le stock" }).click();
   await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS.slice(1, 2));
   const again = page.getByRole("form", { name: "Relire le comptage" });
   await expect(again).toBeVisible({ timeout: 60_000 });
@@ -115,9 +115,9 @@ test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => 
   const { page } = await newEmployeePage(browser, "frida");
   await page.goto(`${COMPTOIR}/inventaire`);
   await expect(page.getByRole("link", { name: "Mouvement de stock" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Compter depuis le jeu" })).toHaveCount(0);
-  await page.goto(`${COMPTOIR}/inventaire/comptage`);
-  await expect(page.getByRole("heading", { level: 1, name: "Compter depuis le jeu" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Régulariser le stock" })).toHaveCount(0);
+  await page.goto(`${COMPTOIR}/inventaire/regularisation`);
+  await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toHaveCount(0);
 });
 
 test("au téléphone, la relecture du comptage tient dans l'écran", async ({ browser }) => {
@@ -130,7 +130,7 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   );
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire`);
-  await page.getByRole("link", { name: "Compter depuis le jeu" }).click();
+  await page.getByRole("link", { name: "Régulariser le stock" }).click();
   await page.getByLabel("Captures du coffre").setInputFiles(SCREENSHOTS.slice(0, 1));
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 90_000 });

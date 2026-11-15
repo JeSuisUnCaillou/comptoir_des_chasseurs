@@ -249,7 +249,7 @@ export function GameCountForm({
           </div>
           <div className="field">
             <label htmlFor="c-reason">Motif</label>
-            <input id="c-reason" name="reason" required maxLength={200} defaultValue="Comptage du coffre" />
+            <input id="c-reason" name="reason" required maxLength={200} defaultValue="Régularisation du stock" />
           </div>
           {state && (
             <p className={`notice ${state.ok ? "" : "error"}`} role={state.ok ? "status" : "alert"}>
