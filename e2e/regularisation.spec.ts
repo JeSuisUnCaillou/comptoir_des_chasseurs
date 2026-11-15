@@ -140,5 +140,5 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   const product = await item.getByLabel("Marchandise").boundingBox();
   const counted = await item.getByLabel("Compté").boundingBox();
   expect(counted!.x - (product!.x + product!.width)).toBeGreaterThanOrEqual(8);
-  await page.screenshot({ path: "test-results/comptage-320.png", fullPage: true });
+  await page.screenshot({ path: "test-results/regularisation-320.png", fullPage: true });
 });

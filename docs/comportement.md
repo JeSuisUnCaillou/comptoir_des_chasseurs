@@ -525,7 +525,7 @@ Ne comptent pas :
 | Rôle | Peut |
 | --- | --- |
 | **Super admin** | tout ce que fait un gérant, dans toutes les boutiques ; seul à ouvrir une boutique ; seul à pouvoir modifier son propre compte (nom, rôle, mot de passe) |
-| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; compter le stock depuis le jeu ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
+| **Gérant** | ouvrir la page Membres et Gérer les marchandises ; régulariser le stock ; créer les comptes des employés de sa boutique (identifiant + mot de passe provisoire) depuis Membres, ou un lien d'invitation d'employé (« Inviter un employé », avec un nom facultatif) ; voir les liens pas encore utilisés, avec « Copier » ; réinitialiser un mot de passe ; désactiver un compte dans sa boutique |
 | **Employé** | les pages de sa boutique, sauf Membres, Gérer les marchandises et Régulariser le stock, et sauf les gestes que les sections ci-dessus réservent aux gérants |
 
 - La page Membres, réservée aux gérants, ne montre que les membres de la
