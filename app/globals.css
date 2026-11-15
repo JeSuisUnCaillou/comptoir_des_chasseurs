@@ -866,6 +866,7 @@ th.num {
 
 .move-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -2489,4 +2490,88 @@ tr.fresh td {
 /* A list right under its form's button keeps the panel's breathing room. */
 .panel form + .invitation-list {
   margin-top: 18px;
+}
+
+/* An item of a chest counted from the game, on one row: read name, merchandise, count, gap. */
+.count-head,
+.count-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 64px 76px 64px;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.count-head {
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--border-gold);
+}
+
+.count-line {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.count-line select,
+.count-line input {
+  padding: 4px 6px;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.count-read {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.count-stock,
+.count-gap,
+.count-head .count-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Recognized items on the left, the others on the right, when there is room for both. */
+.count-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 0 32px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.count-section {
+  /* Its rows fold onto two lines when the section is narrow. */
+  container: count / inline-size;
+  min-width: 0;
+}
+
+@container count (max-width: 420px) {
+  .count-head {
+    display: none;
+  }
+  /* Name on top, then merchandise, stock, count and gap. */
+  .count-line {
+    grid-template-columns: minmax(0, 1fr) auto 64px auto;
+  }
+  .count-read {
+    grid-column: 1 / -1;
+  }
+  /* No column titles here: the stock says what it is. */
+  .count-stock:not(:empty)::before {
+    content: "stock ";
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
+
+/* Items the app did not recognize, apart from those it did. */
+.count-section h3 {
+  margin: 16px 0 2px;
+}
+
+.count-section > p {
+  margin: 0 0 6px;
 }

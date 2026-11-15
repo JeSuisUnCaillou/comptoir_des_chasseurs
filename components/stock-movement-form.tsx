@@ -2,8 +2,10 @@
 
 import { ArrowDownToLine, ArrowUpFromLine, Plus, Trash2 } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { recordStockMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { keepValues } from "@/components/keep-values";
+import { focusCombobox } from "@/components/combobox";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import type { CategorizedProduct } from "@/lib/products";
 import { plural } from "@/lib/pricing";
@@ -46,6 +48,13 @@ export function StockMovementForm({ products }: { products: StockMovementProduct
   const short = [...wanted].filter(([p, qty]) => qty > p.stock).map(([p]) => p);
 
   const choices = choicesByCategory(products);
+
+  /** Adds an empty line and puts the cursor in its merchandise picker, ready to type. */
+  function addLine() {
+    const key = nextKey.current++;
+    flushSync(() => setLines((all) => [...all, newLine(key)]));
+    focusCombobox(`m-${key}-product`);
+  }
 
   function update(key: number, change: Partial<Line>) {
     setLines((all) => all.map((l) => (l.key === key ? { ...l, ...change } : l)));
@@ -147,7 +156,7 @@ export function StockMovementForm({ products }: { products: StockMovementProduct
           className="btn btn-small"
           disabled={lines.length >= MAX_LINES}
           title={lines.length >= MAX_LINES ? `${MAX_LINES} marchandises au plus` : undefined}
-          onClick={() => setLines((all) => [...all, newLine(nextKey.current++)])}
+          onClick={addLine}
         >
           <Plus size={14} /> Ajouter une marchandise
         </button>

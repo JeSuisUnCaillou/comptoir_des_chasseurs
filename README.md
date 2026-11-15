@@ -11,6 +11,10 @@ de Vendeaume, pour le serveur Skyrim RP Keizaal.
   via [Drizzle ORM](https://orm.drizzle.team)
 - Connexion : identifiant + mot de passe (scrypt), ou Discord (OAuth2, voir
   [Connexion avec Discord](#connexion-avec-discord)), session signée dans un cookie
+- Lecture des captures du jeu : [tesseract.js](https://github.com/naptha/tesseract.js)
+  (OCR dans le navigateur, gratuit). `scripts/copy-ocr-assets.mjs` copie son
+  worker, son cœur WebAssembly et le français dans `public/ocr/` (non commité)
+  avant `next dev` et chaque build : l'app les sert elle-même, sans CDN.
 - Tests e2e : [Playwright](https://playwright.dev)
 
 Où vit le code (pages, Server Actions, services de `lib/`, domaine pur) :

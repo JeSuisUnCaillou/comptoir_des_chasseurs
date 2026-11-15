@@ -1,4 +1,4 @@
-import { Archive, ArrowLeftRight } from "lucide-react";
+import { Archive, ArrowLeftRight, ScanText } from "lucide-react";
 import Link from "next/link";
 import { LiveSearch } from "@/components/live-search";
 import { ManageProductsLink } from "@/components/manage-products-link";
@@ -102,6 +102,11 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             <Link className="btn btn-primary" href={at("/inventaire/mouvement")}>
               <ArrowLeftRight size={16} /> Mouvement de stock
             </Link>
+            {isGerant(member) && (
+              <Link className="btn" href={at("/inventaire/regularisation")}>
+                <ScanText size={16} /> Régulariser le stock
+              </Link>
+            )}
           </div>
         </div>
         <div className="stats">
