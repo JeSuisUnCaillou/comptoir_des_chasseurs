@@ -12,7 +12,9 @@
     "db:migrate": "node scripts/migrate.mjs",
     "legacy:export": "node scripts/legacy/export.mjs",
     "legacy:import": "node scripts/legacy/import.mjs",
-    "test:legacy": "node --test scripts/legacy/legacy.test.mjs"
+    "test:legacy": "node --test scripts/legacy/legacy.test.mjs",
+    "preview:copie-prod": "node scripts/preview/copy-prod.mjs",
+    "test:copie-prod": "node --test scripts/preview/copy-prod.test.mjs"
   },
   "engines": {
     "node": ">=22"

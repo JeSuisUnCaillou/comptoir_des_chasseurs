@@ -60,6 +60,40 @@ connectée au seul environnement Preview avec le préfixe `PREVIEW`
 (`PREVIEW_POSTGRES_URL`…), et ne touchent jamais la prod.
 Sur une preview, `scripts/seed-preview.mjs` ajoute ensuite le gérant Lomone, super admin si personne ne l'est, une seconde gérante, Aela (même mot de passe, jamais super admin),
 un peu de stock, quelques annonces et les fournisseurs de l'ancienne app si la base est neuve, un client, Roy, s'il manque, une seconde boutique, « La Taverne du Port » (`/taverne-du-port`, Aela gérante, quelques marchandises et une annonce) si elle manque, puis des achats et des ventes de plusieurs lignes, dont trois en attente de la caisse, chaque fois qu'aucun de ces exemples n'attend plus la caisse (sans jamais rien écraser).
+Quand la base des previews porte une copie de la prod (ci-dessous), le seed
+n'ajoute que Lomone et Aela, jamais d'exemples par-dessus les vraies données.
+
+### Copier la prod dans la base des previews
+
+Pour essayer une fonctionnalité sur les vraies données du comptoir,
+`npm run preview:copie-prod` remplace **tout** le contenu de la base des
+previews par une copie de la prod. Il se lance à la main depuis un poste en
+Europe (le cloud de Claude ne joint pas Supabase), avec Node 22, le dépôt
+cloné et `npm install`. Les deux URL Postgres (celles de Supabase, pooler de
+session, port 5432) sont demandées au lancement sans s'afficher, jamais lues
+dans l'environnement ; sous Windows dans Git Bash, lancer
+`winpty node scripts/preview/copy-prod.mjs`.
+
+- La prod n'est que lue, dans une transaction en lecture seule ; la preview
+  s'écrit en une transaction : en cas d'erreur, elle ne bouge pas.
+- Refusé si la cible n'a pas le gérant Lomone des previews ou si la source
+  l'a (adresses inversées), si la preview n'a pas toutes les migrations de la
+  prod (construire d'abord une preview à jour de `main`), ou si une adresse
+  de pooler Supabase (`aws-0-<région>.pooler.supabase.com`, celle à donner)
+  est hors d'Europe.
+- La preview garde son schéma et ses migrations ; Lomone et Aela y sont remis
+  (Lomone n'est pas super admin : celui de la prod le reste). Les comptes de
+  la prod gardent leur mot de passe.
+- `--essai` montre ce qui serait copié sans rien écrire ; on tape
+  « écraser la preview » pour confirmer (`--oui` saute la question,
+  `--source=<url>` et `--cible=<url>` évitent les questions, mais restent dans
+  l'historique du terminal).
+- La copie reste jusqu'à la suivante ; toutes les PR la voient, puisque la
+  base des previews est commune. Une table `copie_de_la_prod` la signale au
+  seed ; la supprimer lui fait de nouveau ajouter ses exemples.
+
+`npm run test:copie-prod` (lancé par la CI) joue le script entre deux bases
+jetables.
 
 ## Reprendre les données de l'ancienne app
 

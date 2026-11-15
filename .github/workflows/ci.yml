@@ -40,6 +40,8 @@ jobs:
       - run: npm run db:migrate
       - name: Scripts de reprise de l'ancienne app
         run: npm run test:legacy
+      - name: Copie de la prod dans la preview
+        run: npm run test:copie-prod
       - run: npm run build
       # The system packages come from the Ubuntu mirrors, which GitHub sometimes
       # can't reach (2026-11-11): the runner image already has what Chromium
