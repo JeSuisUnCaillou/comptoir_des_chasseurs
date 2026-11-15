@@ -141,6 +141,15 @@ test("le calculateur a le cuir choisi par défaut", async ({ page }) => {
   await expect(calc.getByRole("combobox", { name: "Marchandise" })).toHaveValue("Cuir");
 });
 
+test("dans le calculateur, Tab sur un nom qui ne correspond à rien garde la marchandise choisie", async ({ page }) => {
+  const box = page.getByTestId("calculateur").getByRole("combobox", { name: "Marchandise" });
+  await box.click();
+  await box.pressSequentially("zzzz introuvable");
+  await box.press("Tab");
+  // The calculator sends nothing: it shows again the merchandise it computes.
+  await expect(box).toHaveValue("Cuir");
+});
+
 test("les produits phares et le calculateur sont côte à côte et finissent à la même hauteur", async ({ page }) => {
   await page.setViewportSize({ width: 1300, height: 900 });
   const featured = page.getByRole("region", { name: "Produits phares" });

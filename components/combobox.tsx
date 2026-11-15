@@ -24,6 +24,8 @@ type Picked<T> = Common<T> & {
   onChange: (id: T) => void;
   /** Shown when the typed text matches nothing. */
   emptyText: string;
+  /** Why the form is refused when Tab left a text that matches nothing. */
+  strayText?: string;
 };
 
 /** The field's value is the text itself; the choices only suggest names. */
@@ -40,8 +42,9 @@ type Typed<T> = Common<T> & {
  *
  * Two kinds. By default the value must be one of the choices: Escape or
  * leaving the field keeps the one already chosen; after typing, Tab picks the
- * highlighted match and moves on, or keeps a text that matches nothing (the
- * form is then refused until a choice is picked), and `required` refuses the
+ * highlighted match and moves on, or, in a field sent with a form, keeps a
+ * text that matches nothing (the form is then refused until a choice is
+ * picked), and `required` refuses the
  * form while nothing is chosen. With `free`, any text is a value: the
  * choices are suggestions, nothing is highlighted until the arrows move, so
  * Enter on a new name submits the form like a plain field.
@@ -63,7 +66,8 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   const field = useRef<HTMLInputElement>(null);
   // The blur that follows Tab must not undo what Tab did.
   const tabbed = useRef(false);
-  useEffect(() => field.current?.setCustomValidity(stray ? "Choisis une marchandise de la liste." : ""), [stray]);
+  const strayText = props.free ? "" : (props.strayText ?? "Choisis dans la liste.");
+  useEffect(() => field.current?.setCustomValidity(stray ? strayText : ""), [stray, strayText]);
   const query = text.trim().toLocaleLowerCase("fr");
   const matches =
     editing && query ? choices.filter((c) => c.name.toLocaleLowerCase("fr").includes(query)) : choices;
@@ -151,10 +155,15 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
             tabbed.current = true;
             const match = matches.length > 0 ? (shown[active] ?? matches[0]) : undefined;
             if (match) choose(match);
-            else {
+            // Only a field sent with a form keeps the text, which the form then refuses;
+            // elsewhere (the Tarifs calculator) the field shows its choice again.
+            else if (name) {
               setStray(true);
               setEditing(false);
               setOpen(false);
+            } else {
+              tabbed.current = false;
+              close();
             }
           } else if (e.key === "Escape") {
             close();

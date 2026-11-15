@@ -143,6 +143,18 @@ test("dans le choix d'une marchandise, Tab prend le premier résultat, ou garde 
   await expect(line.getByLabel("Quantité")).toBeFocused();
   await expect(line.getByTestId("stock-dispo")).toContainText("En stock : 6 peaux");
 
+  // With the arrows, Tab takes the highlighted result instead of the first.
+  const other = uniqueName("Peau de lynx");
+  await createProduct(other, { stock: 2 });
+  await page.reload();
+  await box.click();
+  await box.pressSequentially("Peau de lynx-");
+  await expect(page.getByRole("option", { name: hide, exact: true })).toBeVisible();
+  const second = await page.getByRole("option").nth(1).textContent();
+  await box.press("ArrowDown");
+  await box.press("Tab");
+  await expect(box).toHaveValue(second!);
+
   // Nothing matches: the typed text stays, and the form is not sent until a merchandise is chosen.
   await box.click();
   await box.pressSequentially("zzzz introuvable");

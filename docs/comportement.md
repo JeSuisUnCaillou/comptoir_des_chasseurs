@@ -171,9 +171,10 @@ page ; l'écriture enregistrée ramène au registre.
 - La marchandise se choisit dans un champ où l'on tape son nom (comme dans le
   calculateur des Tarifs) ; la liste garde ses catégories. Partout où l'on
   choisit ainsi une marchandise, Tab après avoir tapé prend le premier
-  résultat (ou celui choisi aux flèches) et passe au champ suivant ; si rien
+  résultat (ou celui choisi aux flèches) et passe au champ suivant. Si rien
   ne correspond, le texte tapé reste et le formulaire refuse l'envoi tant
-  qu'aucune marchandise de la liste n'est choisie.
+  qu'aucune marchandise de la liste n'est choisie ; dans le calculateur des
+  Tarifs, qui n'envoie rien, le champ reprend la marchandise choisie.
 - **Montant** : calculé avec le tarif ; le crayon permet de le changer. Sous
   le stock de la marchandise choisie, la ligne montre le prix par défaut qui
   sert au calcul (rachat ou vente, gros ou privilégié selon le cas).
