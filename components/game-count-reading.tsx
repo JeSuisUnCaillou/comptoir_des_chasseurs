@@ -12,8 +12,8 @@ import { normalizeName, parseOcrPage, type OcrLine, type ReadLine } from "@/lib/
 /**
  * A screen of the game the app reads, and how: where its lines are on a
  * screenshot, how to make them readable, in which language. Fractions are of
- * the screenshot's width and height. Another screen of the game is another
- * layout; the reading itself does not change.
+ * the screenshot's width and height. The OCR and the loop take a layout:
+ * the chest's is the only one so far (#225).
  */
 type ScreenLayout = {
   /** The width / height of a full-screen screenshot of it, and how far from it one may be. */
@@ -37,7 +37,7 @@ type ScreenLayout = {
  * kept thick by a low threshold: at twice the size, "a" reads as "o"
  * ("Chair de ssumon").
  */
-export const CHEST: ScreenLayout = {
+const CHEST: ScreenLayout = {
   ratio: 16 / 9,
   ratioTolerance: 0.05,
   names: { left: 0.039, top: 0.165, width: 0.261, height: 0.662 },
@@ -76,9 +76,14 @@ async function startOcr(layout: ScreenLayout) {
   const { createWorker } = await import("tesseract.js");
   const base = `${window.location.origin}/ocr`;
   const worker = await createWorker(layout.language, 1, { workerPath: `${base}/worker.min.js`, corePath: base, langPath: base });
-  // One block of uniform lines: the list.
-  await worker.setParameters({ tessedit_pageseg_mode: "6" as never });
-  return worker;
+  try {
+    // One block of uniform lines: the list.
+    await worker.setParameters({ tessedit_pageseg_mode: "6" as never });
+    return worker;
+  } catch (error) {
+    await worker.terminate();
+    throw error;
+  }
 }
 
 type Ocr = Awaited<ReturnType<typeof startOcr>>;
@@ -104,7 +109,8 @@ async function recognize(ocr: Ocr, bitmap: ImageBitmap, layout: ScreenLayout): P
 export type Page = { file: File; ratio: number; lines: ReadLine[] };
 
 /** Reads each screenshot of a chest in the browser, in their order. */
-export async function readScreenshots(files: File[], onProgress: (done: number) => void, layout = CHEST): Promise<Page[]> {
+export async function readScreenshots(files: File[], onProgress: (done: number) => void): Promise<Page[]> {
+  const layout = CHEST;
   const ocr = await startOcr(layout);
   try {
     const pages: Page[] = [];
@@ -131,11 +137,11 @@ export async function readScreenshots(files: File[], onProgress: (done: number) 
  * order is likely the same list, with a page skipped; one that starts over
  * is another tab.
  */
-export function screenshotWarnings(pages: Page[], overlaps: number[], layout = CHEST) {
+export function screenshotWarnings(pages: Page[], overlaps: number[]) {
   const warnings: string[] = [];
   pages.forEach((page, i) => {
     const name = page.file.name;
-    if (Math.abs(page.ratio - layout.ratio) > layout.ratioTolerance) {
+    if (Math.abs(page.ratio - CHEST.ratio) > CHEST.ratioTolerance) {
       warnings.push(`${name} n'est pas une capture plein écran en 16:9 : ses lignes peuvent être mal lues.`);
     }
     if (page.lines.length === 0) {
@@ -151,7 +157,7 @@ export function screenshotWarnings(pages: Page[], overlaps: number[], layout = C
 }
 
 /** A line of a screenshot as the game shows it, drawn from the screenshot itself. */
-export function LineStrip({ file, line, layout = CHEST }: { file: File; line: ReadLine; layout?: ScreenLayout }) {
+export function LineStrip({ file, line }: { file: File; line: ReadLine }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let live = true;
@@ -159,8 +165,8 @@ export function LineStrip({ file, line, layout = CHEST }: { file: File; line: Re
       const canvas = ref.current;
       if (!live || !canvas) return bitmap.close();
       const pad = 0.004 * bitmap.height;
-      const sx = bitmap.width * layout.strip.left;
-      const sw = bitmap.width * layout.strip.width;
+      const sx = bitmap.width * CHEST.strip.left;
+      const sw = bitmap.width * CHEST.strip.width;
       const sy = Math.max(0, line.top! * bitmap.height - pad);
       const sh = Math.min(bitmap.height - sy, (line.bottom! - line.top!) * bitmap.height + 2 * pad);
       canvas.width = Math.round(sw);
@@ -171,7 +177,7 @@ export function LineStrip({ file, line, layout = CHEST }: { file: File; line: Re
     return () => {
       live = false;
     };
-  }, [file, line, layout]);
+  }, [file, line]);
   return <canvas ref={ref} className="count-strip" role="img" aria-label={`Sur ${file.name} : ${line.name}${line.count > 1 ? ` (${line.count})` : ""}`} />;
 }
 
