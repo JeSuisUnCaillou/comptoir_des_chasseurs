@@ -442,7 +442,7 @@ bouton principal de l'Inventaire, avant « Mouvement de stock » (qui reste le
 principal pour un employé). Il ouvre sa
 page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
 d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
-bas de la liste. La page dit comment les prendre : une capture, défiler en
+bas de la liste, triée par nom. La page dit comment les prendre : une capture, défiler en
 gardant au moins 3 lignes de la précédente, une capture, et ainsi de suite
 jusqu'au bas du coffre. Elle prévient que personne ne doit vendre ni acheter
 pendant la régularisation : le stock prend les comptes du coffre au moment
