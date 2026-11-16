@@ -351,7 +351,7 @@ export type CountCheck =
 /**
  * What the gérant should look at before writing: a merchandise only guessed,
  * a count the OCR was unsure of, and a big gap, once per merchandise (on its
- * first item). Items ignored or to create have none.
+ * first item). An item ignored has none; one to create only its doubtful count.
  */
 export function countChecks<P extends { id: number; name: string; stock: number }>(rows: ReviewedItem[], products: P[]): CountCheck[] {
   const counted = countedProducts(rows, products);

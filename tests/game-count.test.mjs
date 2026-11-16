@@ -154,11 +154,13 @@ test("avant d'inscrire : une supposition, un nombre douteux, un gros écart une 
     row(2, "Bichette", "2", 200, { guessed: true }),
     row(3, "Cuir", "3", 10, { doubtful: true }),
     row(4, "Bidule", "", 4, { doubtful: true }),
+    row(5, "Neuf", NEW_PRODUCT, 3, { doubtful: true }),
   ];
   assert.deepEqual(countChecks(rows, SHOP), [
     { n: 0, kind: "gap", product: "Loup", stock: 188, counted: 410 },
     { n: 2, kind: "guessed", item: "Bichette", product: "Biche" },
     { n: 3, kind: "doubtful", item: "Cuir" },
+    { n: 5, kind: "doubtful", item: "Neuf" },
   ]);
   assert.deepEqual(countChecks([row(0, "Cuir", "3", 10)], SHOP), []);
 });
