@@ -11,6 +11,7 @@ import {
   bigGap,
   countChecks,
   countedProducts,
+  inListOrder,
   leftWarning,
   matchProduct,
   MAX_COUNT_LINES,
@@ -52,6 +53,15 @@ test("les huit captures de l'armoire : chaque ligne vue sur deux captures ne com
   assertCounts(ARMOIRE);
 });
 
+test("les captures se remettent dans l'ordre de la liste, quel que soit l'ordre des fichiers", () => {
+  const shuffled = [3, 7, 0, 5, 2, 6, 1, 4].map((i) => ARMOIRE[i]);
+  assertCounts(inListOrder(shuffled, (page) => page));
+  // Two neighbours swapped, as Caillou's files were (#231): without the list order, counted twice.
+  const swapped = [0, 1, 3, 2, 4, 5, 6, 7].map((i) => ARMOIRE[i]);
+  assert.equal(counts(swapped)["Mountain Lion Pelt"], "29 + 1 + 29");
+  assertCounts(inListOrder(swapped, (page) => page));
+});
+
 test("une capture dont la première ligne est coupée se recolle quand même", () => {
   assertCounts(ARMOIRE.map((page, i) => (i === 0 ? page : page.slice(1))));
 });
@@ -67,6 +77,19 @@ test("une ligne manquée ou lue autrement dans le chevauchement ne double pas le
     return changed;
   });
   assertCounts(pages);
+});
+
+test("une ligne que la capture d'avant a manquée est reprise de la suivante", () => {
+  // The first screenshot missed Gauntlets; the second, further down, read it.
+  const first = parsePage("Leather (703)\nMiel\nNorthern Hide Armor (3)\nNorthern Hide Boots (3)\nNorthern Hide Helmet (3)\nOeil de smilodon");
+  const second = parsePage(
+    "Northern Hide Armor (3)\nNorthern Hide Boots (3)\nNorthern Hide Gauntlets (3)\nNorthern Hide Helmet (3)\nOeil de smilodon\nPatte de lapin crue (232)",
+  );
+  const { lines } = stitchPages([first, second]);
+  assert.deepEqual(
+    lines.map((l) => l.name),
+    ["Leather", "Miel", "Northern Hide Armor", "Northern Hide Boots", "Northern Hide Gauntlets", "Northern Hide Helmet", "Oeil de smilodon", "Patte de lapin crue"],
+  );
 });
 
 test("deux captures sans lignes communes ne se recollent pas sur une ligne égale par hasard", () => {

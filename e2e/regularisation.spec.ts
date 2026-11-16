@@ -1,10 +1,13 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { copyFileSync, mkdtempSync, utimesSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
 import postgres from "postgres";
 import { GERANT, COMPTOIR, newEmployeePage, loginAsGerant, pickProduct, uniqueName } from "./helpers";
 
 // Three screenshots of a chest in the game, taken while scrolling down: their
 // lines overlap, and most items show on several lines (stolen or not).
-const SCREENSHOTS = ["ScreenShot139.jpg", "ScreenShot138.jpg", "ScreenShot140.jpg"].map(
+const SCREENSHOTS = ["ScreenShot138.jpg", "ScreenShot139.jpg", "ScreenShot140.jpg"].map(
   (name) => `${__dirname}/fixtures/coffre/${name}`,
 );
 
@@ -50,11 +53,19 @@ async function inscribe(review: Locator) {
   if (await checks.isVisible()) await checks.getByRole("button", { name: "Inscrire quand même" }).click();
 }
 
-/** Gives the screenshots, once the page is ready to read them. */
-async function upload(page: Page, files: string[]) {
+/** Gives the screenshots, saved a minute apart in the order given, as the game would; `names` renames them. */
+async function upload(page: Page, files: string[], names?: string[]) {
+  const dir = mkdtempSync(join(tmpdir(), "coffre-"));
+  const start = Date.now() / 1000 - files.length * 60;
+  const copies = files.map((file, i) => {
+    const copy = join(dir, names?.[i] ?? basename(file));
+    copyFileSync(file, copy);
+    utimesSync(copy, start + i * 60, start + i * 60);
+    return copy;
+  });
   const field = page.getByLabel("Captures du coffre");
   await expect(field).toBeEnabled();
-  await field.setInputFiles(files);
+  await field.setInputFiles(copies);
 }
 
 const fixtures = (...names: string[]) => names.map((name) => `${__dirname}/fixtures/coffre/ScreenShot${name}.jpg`);
@@ -130,7 +141,7 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
 
   // The next count remembers Deer Pelt and Leather.
   await page.getByRole("link", { name: "Régulariser le stock" }).click();
-  await upload(page, SCREENSHOTS.slice(1, 2));
+  await upload(page, SCREENSHOTS.slice(0, 1));
   const again = page.getByRole("form", { name: "Relire le comptage" });
   await expect(again).toBeVisible({ timeout: 60_000 });
   const chosen = (item: string) => again.getByRole("group", { name: item }).getByLabel("Marchandise");
@@ -195,9 +206,23 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
 
   // The lines an item was read from, cut from the screenshots; seeing them checks a doubtful count.
   await expect(ours.getByLabel("Compté")).toHaveAttribute("title", /mal lu/);
-  await ours.getByRole("button", { name: /^Peau d'ours/ }).click();
+  // A small arrow says the name unfolds: it points right, then down once the lines show.
+  const unfold = ours.getByRole("button", { name: /^Peau d'ours/ });
+  const arrow = unfold.locator(".count-chevron");
+  const turn = () => arrow.evaluate((el) => getComputedStyle(el).transform);
+  await expect(arrow).toBeVisible();
+  // The arrow alone: no other icon weighs the line down.
+  await expect(unfold.locator("svg")).toHaveCount(1);
+  expect(await turn()).toBe("none");
+  await unfold.click();
+  await expect(unfold).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(turn).toMatch(/^matrix\(0, 1, -1, 0|^matrix\([-\de.]+, 1, -1, [-\de.]+/);
   await expect(ours.getByLabel("Compté")).not.toHaveAttribute("title", /mal lu/);
-  await expect(ours.getByRole("img", { name: /^Sur ScreenShot163\.jpg : Peau d'ours/ })).toHaveCount(3);
+  // From the screenshot higher in the list, 163 or 164 (scrolled back up), whichever reads it first.
+  await expect(ours.getByRole("img", { name: /^Sur ScreenShot16[34]\.jpg : Peau d'ours/ })).toHaveCount(3);
+  await unfold.click();
+  await expect.poll(turn).toBe("none");
+  await unfold.click();
 
   // Many of an item nothing recognized: the closest name is proposed, to confirm.
   const lion = review.getByRole("region", { name: "Objets non reconnus" }).getByRole("group", { name: "Mountain Lion Pelt" });
@@ -240,7 +265,7 @@ test("une nouvelle marchandise au nom d'une archivée est refusée, et rien n'es
   await sql.end();
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire/regularisation`);
-  await upload(page, SCREENSHOTS.slice(1, 2));
+  await upload(page, SCREENSHOTS.slice(0, 1));
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 180_000 });
   await pickProduct(review.getByRole("group", { name: "Leather" }), "Nouvelle marchandise");
@@ -272,7 +297,8 @@ test("une capture reprise après avoir remonté la liste, avec une ligne coupée
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 180_000 });
   const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
-  await expect(counted("Patte de lapin crue")).toHaveValue("233");
+  // 164b reads its "(1)" line "Patte de lapin que", an item of its own: never 232 twice.
+  await expect(counted("Patte de lapin crue")).toHaveValue("232");
   await expect(counted("Pattes de vasard")).toHaveValue("466");
   await expect(counted("Peau d'ours")).toHaveValue("68");
   await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
@@ -282,7 +308,8 @@ test("une capture reprise après avoir remonté la liste, avec une ligne coupée
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "frida");
   await page.goto(`${COMPTOIR}/inventaire`);
-  await expect(page.getByRole("link", { name: "Mouvement de stock" })).toBeVisible();
+  // Without the count, the movement is the main button.
+  await expect(page.getByRole("link", { name: "Mouvement de stock" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Régulariser le stock" })).toHaveCount(0);
   await page.goto(`${COMPTOIR}/inventaire/regularisation`);
   await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toHaveCount(0);
@@ -299,7 +326,7 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   await loginAsGerant(page);
   await page.goto(`${shop}/inventaire`);
   await page.getByRole("link", { name: "Régulariser le stock" }).click();
-  await upload(page, SCREENSHOTS.slice(0, 1));
+  await upload(page, SCREENSHOTS.slice(1, 2));
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 180_000 });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -320,4 +347,37 @@ test("sur grand écran, le champ des captures ne s'étire pas sur toute la large
   await expect(field).toBeVisible();
   const box = await field.boundingBox();
   expect(box!.width).toBeLessThanOrEqual(420);
+});
+
+test("les captures se recollent dans l'ordre de la liste, quels que soient l'ordre de leurs noms et leurs dates", async ({ page }) => {
+  test.setTimeout(240_000);
+  const shop = await shopWithStock({ Biche: 0 });
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  // The page says how to take them: one, scroll keeping 3 lines, one more, down to the bottom.
+  const steps = page.getByRole("list").filter({ hasText: "plein écran" });
+  await expect(steps.getByRole("listitem")).toHaveText([
+    /^Ouvre le coffre en plein écran/,
+    /gardant au moins 3 lignes/,
+    /jusqu'au bas du coffre/,
+  ]);
+  await expect(page.getByText("Les lignes vues sur deux captures, là où elles se chevauchent, ne comptent qu'une fois.")).toBeVisible();
+  // 162, 163 then 164b down the list, but saved 164b, 162, 163 and named the other way round.
+  await upload(page, fixtures("164b", "162", "163"), ["ScreenShot1.jpg", "ScreenShot3.jpg", "ScreenShot2.jpg"]);
+  const review = page.getByRole("form", { name: "Relire le comptage" });
+  await expect(review).toBeVisible({ timeout: 180_000 });
+  const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
+  // 164b reads its "(1)" line "Patte de lapin que", an item of its own: never 232 twice.
+  await expect(counted("Patte de lapin crue")).toHaveValue("232");
+  await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
+});
+
+test("pour un gérant, Régulariser le stock est le bouton principal de l'Inventaire, Mouvement de stock le second", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto(`${COMPTOIR}/inventaire`);
+  const count = page.getByRole("link", { name: "Régulariser le stock" });
+  const move = page.getByRole("link", { name: "Mouvement de stock" });
+  await expect(count).toHaveClass(/btn-primary/);
+  await expect(move).not.toHaveClass(/btn-primary/);
+  expect((await count.boundingBox())!.x).toBeLessThan((await move.boundingBox())!.x);
 });
