@@ -67,7 +67,7 @@ test("un gérant compte un coffre depuis des captures du jeu, et l'app retient l
   await page.getByRole("link", { name: "Régulariser le stock" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toBeVisible();
   // The stock takes the chest's counts when written: a sale made meanwhile would be lost.
-  await expect(page.getByRole("note")).toContainText("que personne ne vende ni n'achète");
+  await expect(page.getByText(/que personne ne vende ni n'achète/)).toBeVisible();
 
   // Given out of order: their names put them back in order.
   await upload(page, SCREENSHOTS);
