@@ -9,10 +9,11 @@ import {
   bigGap,
   GUESS_FROM,
   guessProduct,
+  leftWarning,
   matchProduct,
-  MAX_COUNT_LINES,
   NEW_PRODUCT,
   normalizeName,
+  splitForCount,
   stitchPages,
   sumByProduct,
   sumItems,
@@ -106,8 +107,9 @@ export function GameCountForm({
     try {
       const pages = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
       const { lines, overlaps } = stitchPages(pages.map((p) => p.lines));
-      setWarnings(screenshotWarnings(pages, overlaps));
-      const items = sumItems(lines).slice(0, MAX_COUNT_LINES);
+      const { kept: items, left } = splitForCount(sumItems(lines));
+      const tooMany = leftWarning(left);
+      setWarnings([...screenshotWarnings(pages, overlaps), ...(tooMany ? [tooMany] : [])]);
       if (items.length === 0) {
         setError("Aucun objet lu sur ces captures. Prends-les en plein écran, sur la liste d'un coffre.");
         return;

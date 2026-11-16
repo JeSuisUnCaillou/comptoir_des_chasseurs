@@ -251,3 +251,21 @@ export function sumByProduct<K>(lines: { productId: K; counted: number }[]) {
 
 /** The choice, in place of a merchandise, of creating one for the item. */
 export const NEW_PRODUCT = "new";
+
+/**
+ * The items one count holds, at most MAX_COUNT_LINES, in the order they were
+ * read; and those past it, left for another count with the next screenshots.
+ */
+export function splitForCount(items: ReadItem[]) {
+  return { kept: items.slice(0, MAX_COUNT_LINES), left: items.slice(MAX_COUNT_LINES) };
+}
+
+/** What to tell the gérant of the items left for another count, or null when none is. */
+export function leftWarning(left: ReadItem[]) {
+  if (left.length === 0) return null;
+  const range = left.length === 1 ? `« ${left[0].name} »` : `de « ${left[0].name} » à « ${left.at(-1)!.name} »`;
+  return (
+    `Plus de ${MAX_COUNT_LINES} objets sur ces captures : ${left.length === 1 ? "le dernier" : `les ${left.length} derniers`}, ` +
+    `${range}, ne sont pas comptés. Fais l'import en plusieurs fois : inscris celui-ci, puis donne les captures suivantes.`
+  );
+}

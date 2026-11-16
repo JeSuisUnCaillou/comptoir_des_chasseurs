@@ -440,7 +440,9 @@ registre.
 Le bouton « Régulariser le stock », pour les gérants seulement, ouvre sa
 page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
 d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
-bas de la liste :
+bas de la liste. La page prévient que personne ne doit vendre ni acheter
+pendant la régularisation : le stock prend les comptes du coffre au moment
+d'inscrire, et une vente faite entre-temps serait effacée. Ensuite :
 
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
   l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
@@ -460,6 +462,9 @@ bas de la liste :
   capture qui n'est pas en 16:9, d'une capture sans aucun objet lu, et de
   deux captures qui n'ont aucune ligne en commun alors que la seconde
   continue la liste dans l'ordre des noms (une page manque peut-être).
+- Un comptage relit au plus 300 objets, les premiers lus. Au-delà, « À
+  propos des captures » nomme ceux qui ne sont pas comptés et dit de faire
+  l'import en plusieurs fois.
 - La relecture montre une ligne par objet lu, en colonnes : son nom et ses
   lignes (« 255 + 1 »), la marchandise qu'il est, son stock, son compte
   (modifiable) et l'écart entre les deux (« +70 » en vert, « −16 » en
