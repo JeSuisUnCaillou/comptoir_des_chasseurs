@@ -336,7 +336,7 @@ export function GameCountForm({
         <div className="small muted capture-steps">
           <p>Comment prendre les captures :</p>
           <ol>
-            <li>Ouvre le coffre en plein écran, la liste triée par nom (comme le jeu la montre) et tout en haut, et fais une capture.</li>
+            <li>Ouvre le coffre en plein écran, la liste triée par nom, et fais une capture.</li>
             <li>Fais défiler la liste vers le bas en gardant au moins 3 lignes de la capture d&apos;avant, puis refais une capture.</li>
             <li>Recommence jusqu&apos;au bas du coffre, puis donne toutes les captures ici d&apos;un coup.</li>
           </ol>
