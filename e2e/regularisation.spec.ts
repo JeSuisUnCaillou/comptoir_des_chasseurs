@@ -260,6 +260,23 @@ test("une nouvelle marchandise au nom d'une archivée est refusée, et rien n'es
   await expect(review.getByRole("status")).toHaveText("Rien à changer : le stock correspond déjà au coffre.");
 });
 
+test("une capture reprise après avoir remonté la liste, avec une ligne coupée et une ligne manquée, ne compte rien deux fois", async ({ page }) => {
+  test.setTimeout(240_000);
+  const shop = await shopWithStock({ Biche: 0 });
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  // 164b: 164 taken after scrolling back up, its first line cut in half and one line (Gauntlets) hidden.
+  await upload(page, fixtures("162", "163", "164b"));
+  const review = page.getByRole("form", { name: "Relire le comptage" });
+  await expect(review).toBeVisible({ timeout: 180_000 });
+  const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
+  await expect(counted("Patte de lapin crue")).toHaveValue("233");
+  await expect(counted("Pattes de vasard")).toHaveValue("466");
+  await expect(counted("Peau d'ours")).toHaveValue("68");
+  await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
+  await expect(review.getByRole("group", { name: /^Northern Hide Gauntlets/ }).getByLabel("Compté")).toHaveValue("3");
+});
+
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "frida");
   await page.goto(`${COMPTOIR}/inventaire`);
@@ -290,4 +307,15 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   const counted = await item.getByLabel("Compté").boundingBox();
   expect(counted!.x - (product!.x + product!.width)).toBeGreaterThanOrEqual(8);
   await page.screenshot({ path: "test-results/regularisation-320.png", fullPage: true });
+});
+
+test("sur grand écran, le champ des captures ne s'étire pas sur toute la largeur", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  const shop = await shopWithStock({ Biche: 3 });
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  const field = page.getByLabel("Captures du coffre");
+  await expect(field).toBeVisible();
+  const box = await field.boundingBox();
+  expect(box!.width).toBeLessThanOrEqual(420);
 });

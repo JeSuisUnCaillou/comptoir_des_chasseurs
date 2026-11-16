@@ -448,8 +448,11 @@ bas de la liste :
   qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre de
   leurs noms de fichier (`ScreenShot138`, `ScreenShot139`…).
 - Une capture qui reprend des lignes déjà lues (le bas de la précédente, ou
-  plus haut quand la liste a été remontée) n'ajoute que ce qui les suit ;
-  une ligne sur quatre peut y être lue un peu différemment. Les lignes d'un
+  plus haut quand la liste a été remontée) n'ajoute que ce qui les suit.
+  Les deux captures sont alignées ligne à ligne en tolérant les accrocs de
+  l'OCR : une ligne lue autrement, coupée en haut de la capture ou manquée
+  sur l'une des deux. Il faut au moins deux lignes communes, et deux fois
+  plus de lignes communes que d'accrocs. Les lignes d'un
   même objet s'additionnent, volées ou non : « (13) » compte 13, une ligne
   sans nombre compte 1. Les lettres que l'OCR confond (« a » et « o »,
   « i », « l » et « t ») ne séparent pas deux lignes.
