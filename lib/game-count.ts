@@ -120,11 +120,12 @@ function similar(a: string, b: string) {
 }
 
 /**
- * How many lines at the start of `page` were already read at the end of
- * `lines`, or 0. The two are aligned as the OCR may have read them: a line
- * read otherwise, missed or half cut on one screenshot costs one, a line
- * read alike gains one. The page may start anywhere in what was read, and
- * end before its end when the list was scrolled back up. Two lines alike at
+ * How many lines at the start of `page` were already read in `lines`, or 0,
+ * and the lines among them that only `page` read, each with where it goes in
+ * `lines`. The two are aligned as the OCR may have read them: a line read
+ * otherwise, missed or half cut on one screenshot costs one, a line read
+ * alike gains one. The page may start anywhere in what was read, and end
+ * before its end when the list was scrolled back up. Two lines alike at
  * least, and twice as many as costs: a single equal line may be chance.
  */
 function overlapOf(lines: ReadLine[], page: ReadLine[]) {
@@ -132,47 +133,95 @@ function overlapOf(lines: ReadLine[], page: ReadLine[]) {
   const m = page.length;
   const [a, b] = [lines.map((l) => normalizeName(l.name)), page.map((l) => normalizeName(l.name))];
   const same = (i: number, j: number) => lines[i].count === page[j].count && similar(a[i], b[j]);
-  // score[i][j]: the best alignment of page[0, j) ending with lines[i - 1], and its lines alike.
-  type Cell = { score: number; alike: number };
+  // score[i][j]: the best alignment of page[0, j) ending with lines[i - 1], its lines alike, and its last move.
+  type Move = "start" | "both" | "lines" | "page";
+  type Cell = { score: number; alike: number; move: Move };
   const score: Cell[][] = Array.from({ length: n + 1 }, (_, i) =>
-    Array.from({ length: m + 1 }, (_, j) => ({ score: i === 0 ? -j : j === 0 ? 0 : -Infinity, alike: 0 })),
+    Array.from({ length: m + 1 }, (_, j): Cell => ({
+      score: i === 0 ? -j : j === 0 ? 0 : -Infinity,
+      alike: 0,
+      move: i === 0 && j > 0 ? "page" : "start",
+    })),
   );
   const better = (x: Cell, y: Cell) => (x.score > y.score || (x.score === y.score && x.alike > y.alike) ? x : y);
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
       const diagonal = score[i - 1][j - 1];
       const alike = same(i - 1, j - 1);
-      let cell = { score: diagonal.score + (alike ? 1 : -1), alike: diagonal.alike + (alike ? 1 : 0) };
-      cell = better(cell, { score: score[i - 1][j].score - 1, alike: score[i - 1][j].alike });
-      cell = better(cell, { score: score[i][j - 1].score - 1, alike: score[i][j - 1].alike });
+      let cell: Cell = { score: diagonal.score + (alike ? 1 : -1), alike: diagonal.alike + (alike ? 1 : 0), move: "both" };
+      cell = better(cell, { score: score[i - 1][j].score - 1, alike: score[i - 1][j].alike, move: "lines" });
+      cell = better(cell, { score: score[i][j - 1].score - 1, alike: score[i][j - 1].alike, move: "page" });
       score[i][j] = cell;
     }
   }
-  let best = { score: 0, alike: 0, overlap: 0 };
-  const consider = (cell: Cell, overlap: number) => {
+  let best = { score: 0, alike: 0, i: 0, j: 0 };
+  const consider = (i: number, j: number) => {
+    const cell = score[i][j];
     if (cell.alike >= 2 && cell.score * 2 >= cell.alike && (cell.score > best.score || (cell.score === best.score && cell.alike > best.alike))) {
-      best = { ...cell, overlap };
+      best = { ...cell, i, j };
     }
   };
   // Up to the end of what was read, the rest of the page following; or the whole page inside it.
-  for (let j = 1; j <= m; j++) consider(score[n][j], j);
-  for (let i = 1; i <= n; i++) consider(score[i][m], m);
-  return best.overlap;
+  for (let j = 1; j <= m; j++) consider(n, j);
+  for (let i = 1; i <= n; i++) consider(i, m);
+  if (best.j === 0) return { overlap: 0, missed: [] };
+  // Walk the alignment back: a page line facing nothing, between two lines alike, was missed before.
+  const missed: { at: number; line: ReadLine }[] = [];
+  let [i, j] = [best.i, best.j];
+  let matched = false;
+  const pending: { at: number; line: ReadLine }[] = [];
+  while (i > 0 && j > 0) {
+    const move = score[i][j].move;
+    if (move === "both") {
+      if (same(i - 1, j - 1)) {
+        if (matched) missed.push(...pending);
+        matched = true;
+        pending.length = 0;
+      }
+      i--;
+      j--;
+    } else if (move === "lines") i--;
+    else if (move === "page") {
+      if (matched) pending.push({ at: i, line: page[j - 1] });
+      j--;
+    } else break;
+  }
+  return { overlap: best.j, missed };
+}
+
+/**
+ * The screenshots in the order of the chest's list, whatever order they were
+ * taken, saved or named in: the game lists a chest by name, so a screenshot
+ * further down the list starts with a name further on. Its second line
+ * decides, the first may be cut; a screenshot with no line goes last.
+ */
+export function inListOrder<T>(pages: T[], linesOf: (page: T) => ReadLine[]) {
+  const key = (page: T) => {
+    const lines = linesOf(page);
+    const line = lines[1] ?? lines[0];
+    return line ? normalizeName(line.name) : "\uffff";
+  };
+  return pages
+    .map((page) => ({ page, key: key(page) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(({ page }) => page);
 }
 
 /**
  * The lines of screenshots of a chest, in order, each line once: a
  * screenshot that starts with lines already read (the bottom of the
  * previous one, or further up when the list was scrolled back) adds only
- * what follows them. `overlaps[i]`: how many lines of screenshot i were
+ * what follows them, and the lines among them that only it read. `overlaps[i]`: how many lines of screenshot i were
  * already read, 0 when it shares none with what came before.
  */
 export function stitchPages(pages: ReadLine[][]) {
   const lines: ReadLine[] = [];
   const overlaps: number[] = [];
   for (const page of pages) {
-    const overlap = lines.length ? overlapOf(lines, page) : 0;
+    const { overlap, missed } = lines.length ? overlapOf(lines, page) : { overlap: 0, missed: [] };
     overlaps.push(overlap);
+    // From the end, so that each place is still right; then what follows the overlap.
+    for (const { at, line } of missed) lines.splice(at, 0, line);
     lines.push(...page.slice(overlap));
   }
   return { lines, overlaps };

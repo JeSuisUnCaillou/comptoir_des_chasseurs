@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, ImageUp, RotateCcw, ScanSearch } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, ImageUp, RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
@@ -13,6 +13,7 @@ import {
   matchProduct,
   NEW_PRODUCT,
   normalizeName,
+  inListOrder,
   splitForCount,
   stitchPages,
   sumByProduct,
@@ -94,8 +95,12 @@ export function GameCountForm({
   }, [state, products]);
 
   async function read(list: FileList | null) {
-    // Screenshots are taken while scrolling down: their names keep that order (ScreenShot138, 139…).
-    const sorted = [...(list ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    // Shown in the order they were saved; they are stitched in the order of the list (inListOrder).
+    const sorted = [...(list ?? [])].sort(
+      (a, b) =>
+        Math.floor(a.lastModified / 1000) - Math.floor(b.lastModified / 1000) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
     if (sorted.length === 0) return;
     setError(null);
     setRows(null);
@@ -105,7 +110,8 @@ export function GameCountForm({
     setFiles(sorted);
     setReading({ done: 0, of: sorted.length });
     try {
-      const pages = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const taken = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const pages = inListOrder(taken, (p) => p.lines);
       const { lines, overlaps } = stitchPages(pages.map((p) => p.lines));
       const { kept: items, left } = splitForCount(sumItems(lines));
       const tooMany = leftWarning(left);
@@ -209,9 +215,12 @@ export function GameCountForm({
           title="Voir les lignes lues sur les captures"
           onClick={() => toggleLines(row)}
         >
-          <strong>{row.name}</strong>{" "}
-          <span className="small muted nowrap">
-            {row.lines.map((l) => formatNumber(l.count)).join(" + ")} <ScanSearch size={14} aria-label="Voir sur les captures" />
+          <ChevronRight size={14} className="count-chevron" aria-hidden />
+          <span>
+            <strong>{row.name}</strong>{" "}
+            <span className="small muted nowrap">
+              {row.lines.map((l) => formatNumber(l.count)).join(" + ")}
+            </span>
           </span>
         </button>
         <div className="count-product">
@@ -324,9 +333,15 @@ export function GameCountForm({
           disabled={!ready || reading != null || pending}
           onChange={(ev) => read(ev.target.files)}
         />
-        <span className="small muted">
-          En plein écran, de haut en bas de la liste : les lignes vues sur deux captures ne comptent qu&apos;une fois.
-        </span>
+        <div className="small muted capture-steps">
+          <p>Comment prendre les captures :</p>
+          <ol>
+            <li>Ouvre le coffre en plein écran, la liste triée par nom (comme le jeu la montre) et tout en haut, et fais une capture.</li>
+            <li>Fais défiler la liste vers le bas en gardant au moins 3 lignes de la capture d&apos;avant, puis refais une capture.</li>
+            <li>Recommence jusqu&apos;au bas du coffre, puis donne toutes les captures ici d&apos;un coup.</li>
+          </ol>
+          <p>Les lignes vues sur deux captures, là où elles se chevauchent, ne comptent qu&apos;une fois.</p>
+        </div>
       </div>
       {reading && (
         <p className="notice" role="status">
