@@ -1,25 +1,26 @@
 "use client";
 
-import { AlertTriangle, Check, ImageUp, RotateCcw, ScanSearch } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, ImageUp, RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import type { CategorizedProduct } from "@/lib/products";
 import {
-  bigGap,
-  GUESS_FROM,
-  guessProduct,
-  leftWarning,
-  matchProduct,
+  countChecks,
+  countedProducts,
   NEW_PRODUCT,
   normalizeName,
+  inListOrder,
+  proposeProducts,
+  readingWarnings,
   splitForCount,
   stitchPages,
-  sumByProduct,
   sumItems,
+  type CountCheck,
   type ReadItem,
+  type ReviewedItem,
 } from "@/lib/game-count";
-import { LineStrip, readScreenshots, screenshotWarnings } from "@/components/game-count-reading";
+import { LineStrip, readScreenshots } from "@/components/game-count-reading";
 import { formatNumber } from "@/lib/pricing";
 
 export type CountProduct = Pick<CategorizedProduct, "id" | "name" | "stock" | "categoryId" | "categoryName" | "categoryPosition">;
@@ -39,16 +40,24 @@ const EXTRAS = [
  * OCR was not sure of a count, until the gérant checks it. `n`: its place in
  * the reading, for the ids of its fields.
  */
-type Row = ReadItem & {
-  n: number;
-  productId: string;
-  counted: string;
-  recognized: boolean;
-  guessed: boolean;
-  doubtful: boolean;
-  newName: string;
-  categoryId: string;
-};
+type Row = ReadItem &
+  ReviewedItem & {
+    recognized: boolean;
+    newName: string;
+    categoryId: string;
+  };
+
+/** A check before writing, in words. */
+function checkText(check: CountCheck) {
+  switch (check.kind) {
+    case "guessed":
+      return `${check.item} : rattaché à ${check.product} par un nom approchant.`;
+    case "doubtful":
+      return `${check.item} : un nombre peut-être mal lu.`;
+    case "gap":
+      return `${check.product} : ${formatNumber(check.stock)} en stock, ${formatNumber(check.counted)} comptés.`;
+  }
+}
 
 /**
  * Counts a chest of the game from screenshots of its inventory: reads them,
@@ -94,8 +103,12 @@ export function GameCountForm({
   }, [state, products]);
 
   async function read(list: FileList | null) {
-    // Screenshots are taken while scrolling down: their names keep that order (ScreenShot138, 139…).
-    const sorted = [...(list ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    // Shown in the order they were saved; they are stitched in the order of the list (inListOrder).
+    const sorted = [...(list ?? [])].sort(
+      (a, b) =>
+        Math.floor(a.lastModified / 1000) - Math.floor(b.lastModified / 1000) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
     if (sorted.length === 0) return;
     setError(null);
     setRows(null);
@@ -105,22 +118,19 @@ export function GameCountForm({
     setFiles(sorted);
     setReading({ done: 0, of: sorted.length });
     try {
-      const pages = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const taken = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const pages = inListOrder(taken, (p) => p.lines);
       const { lines, overlaps } = stitchPages(pages.map((p) => p.lines));
       const { kept: items, left } = splitForCount(sumItems(lines));
-      const tooMany = leftWarning(left);
-      setWarnings([...screenshotWarnings(pages, overlaps), ...(tooMany ? [tooMany] : [])]);
+      setWarnings(readingWarnings(pages, overlaps, left));
       if (items.length === 0) {
         setError("Aucun objet lu sur ces captures. Prends-les en plein écran, sur la liste d'un coffre.");
         return;
       }
-      const matched = items.map((item) => matchProduct(item.name, products, aliases));
-      // A guess is never a merchandise another item already is.
-      const free = products.filter((p) => !matched.includes(p));
+      const proposed = proposeProducts(items, products, aliases);
       setRows(
         items.map((item, n) => {
-          const product = matched[n];
-          const guess = !product && item.total >= GUESS_FROM ? guessProduct(item.name, free) : undefined;
+          const { product, guess } = proposed[n];
           return {
             ...item,
             n,
@@ -158,27 +168,11 @@ export function GameCountForm({
   }
 
   const all = rows ?? [];
-  const totals = sumByProduct(
-    all.filter((r) => r.productId && r.productId !== NEW_PRODUCT).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
-  );
+  const counted = countedProducts(all, products);
   const choices = choicesByCategory(products);
-  const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
-  const gapOf = (row: Row) => {
-    const product = productOf(row);
-    return product && { product, total: totals.get(row.productId)!, big: bigGap(product.stock, totals.get(row.productId)!) };
-  };
-
+  const gapOf = (row: Row) => counted.get(row.productId);
   // What the gérant should look at before writing.
-  const checks = all.flatMap((row) => {
-    const found: { n: number; text: string }[] = [];
-    if (row.guessed && row.productId) found.push({ n: row.n, text: `${row.name} : rattaché à ${productOf(row)?.name} par un nom approchant.` });
-    if (row.doubtful && row.productId) found.push({ n: row.n, text: `${row.name} : un nombre peut-être mal lu.` });
-    const gap = gapOf(row);
-    if (gap?.big && all.find((r) => r.productId === row.productId) === row) {
-      found.push({ n: row.n, text: `${gap.product.name} : ${formatNumber(gap.product.stock)} en stock, ${formatNumber(gap.total)} comptés.` });
-    }
-    return found;
-  });
+  const checks = countChecks(all, products).map((check) => ({ n: check.n, text: checkText(check) }));
 
   function submit(ev: FormEvent<HTMLFormElement>) {
     if (checks.length > 0 && !confirmed.current) {
@@ -209,9 +203,12 @@ export function GameCountForm({
           title="Voir les lignes lues sur les captures"
           onClick={() => toggleLines(row)}
         >
-          <strong>{row.name}</strong>{" "}
-          <span className="small muted nowrap">
-            {row.lines.map((l) => formatNumber(l.count)).join(" + ")} <ScanSearch size={14} aria-label="Voir sur les captures" />
+          <ChevronRight size={14} className="count-chevron" aria-hidden />
+          <span>
+            <strong>{row.name}</strong>{" "}
+            <span className="small muted nowrap">
+              {row.lines.map((l) => formatNumber(l.count)).join(" + ")}
+            </span>
           </span>
         </button>
         <div className="count-product">
@@ -324,9 +321,15 @@ export function GameCountForm({
           disabled={!ready || reading != null || pending}
           onChange={(ev) => read(ev.target.files)}
         />
-        <span className="small muted">
-          En plein écran, de haut en bas de la liste : les lignes vues sur deux captures ne comptent qu&apos;une fois.
-        </span>
+        <div className="small muted capture-steps">
+          <p>Comment prendre les captures :</p>
+          <ol>
+            <li>Ouvre le coffre en plein écran, la liste triée par nom, et fais une capture.</li>
+            <li>Fais défiler la liste vers le bas en gardant au moins 3 lignes de la capture d&apos;avant, puis refais une capture.</li>
+            <li>Recommence jusqu&apos;au bas du coffre, puis donne toutes les captures ici d&apos;un coup.</li>
+          </ol>
+          <p>Les lignes vues sur deux captures, là où elles se chevauchent, ne comptent qu&apos;une fois.</p>
+        </div>
       </div>
       {reading && (
         <p className="notice" role="status">

@@ -2,12 +2,12 @@
 
 // Reading screenshots of a chest in the browser, in three parts: the layout
 // of the game's screen (where its lines are), the OCR engine (tesseract.js,
-// which gives OcrLine), and the loop over the screenshots. Then what to check
-// about the screenshots, and a line cut from one. What is read is parsed by
-// lib/game-count.ts, which knows nothing of the OCR engine.
+// which gives OcrLine), and the loop over the screenshots; then a line cut
+// from one. What is read is parsed, and checked, by lib/game-count.ts, which
+// knows nothing of the OCR engine.
 
 import { useEffect, useRef } from "react";
-import { normalizeName, parseOcrPage, type OcrLine, type ReadLine } from "@/lib/game-count";
+import { parseOcrPage, type OcrLine, type ReadLine, type ReadPage } from "@/lib/game-count";
 
 /**
  * A screen of the game the app reads, and how: where its lines are on a
@@ -106,7 +106,7 @@ async function recognize(ocr: Ocr, bitmap: ImageBitmap, layout: ScreenLayout): P
 }
 
 /** What was read on one screenshot. */
-export type Page = { file: File; ratio: number; lines: ReadLine[] };
+export type Page = ReadPage & { file: File };
 
 /** Reads each screenshot of a chest in the browser, in their order. */
 export async function readScreenshots(files: File[], onProgress: (done: number) => void): Promise<Page[]> {
@@ -118,7 +118,8 @@ export async function readScreenshots(files: File[], onProgress: (done: number) 
       const bitmap = await createImageBitmap(file);
       try {
         const lines = await recognize(ocr, bitmap, layout);
-        pages.push({ file, ratio: bitmap.width / bitmap.height, lines: parseOcrPage(lines, page) });
+        const fullScreen = Math.abs(bitmap.width / bitmap.height - layout.ratio) <= layout.ratioTolerance;
+        pages.push({ file, name: file.name, fullScreen, lines: parseOcrPage(lines, page) });
       } finally {
         bitmap.close();
       }
@@ -128,32 +129,6 @@ export async function readScreenshots(files: File[], onProgress: (done: number) 
   } finally {
     await ocr.terminate();
   }
-}
-
-/**
- * What to check about the screenshots themselves: none read, not full
- * screen, or a page missing between two. The game sorts a list by name: a
- * screenshot that shares no line with the one before yet goes on in that
- * order is likely the same list, with a page skipped; one that starts over
- * is another tab.
- */
-export function screenshotWarnings(pages: Page[], overlaps: number[]) {
-  const warnings: string[] = [];
-  pages.forEach((page, i) => {
-    const name = page.file.name;
-    if (Math.abs(page.ratio - CHEST.ratio) > CHEST.ratioTolerance) {
-      warnings.push(`${name} n'est pas une capture plein écran en 16:9 : ses lignes peuvent être mal lues.`);
-    }
-    if (page.lines.length === 0) {
-      warnings.push(`${name} : aucun objet lu. Est-ce bien la liste d'un coffre, en plein écran ?`);
-    }
-    const last = pages[i - 1]?.lines.at(-1);
-    const first = page.lines[0];
-    if (last && first && overlaps[i] === 0 && normalizeName(first.name) > normalizeName(last.name)) {
-      warnings.push(`${pages[i - 1].file.name} et ${name} n'ont aucune ligne en commun : une page manque peut-être entre les deux.`);
-    }
-  });
-  return warnings;
 }
 
 /** A line of a screenshot as the game shows it, drawn from the screenshot itself. */

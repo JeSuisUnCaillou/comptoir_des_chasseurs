@@ -120,11 +120,12 @@ function similar(a: string, b: string) {
 }
 
 /**
- * How many lines at the start of `page` were already read at the end of
- * `lines`, or 0. The two are aligned as the OCR may have read them: a line
- * read otherwise, missed or half cut on one screenshot costs one, a line
- * read alike gains one. The page may start anywhere in what was read, and
- * end before its end when the list was scrolled back up. Two lines alike at
+ * How many lines at the start of `page` were already read in `lines`, or 0,
+ * and the lines among them that only `page` read, each with where it goes in
+ * `lines`. The two are aligned as the OCR may have read them: a line read
+ * otherwise, missed or half cut on one screenshot costs one, a line read
+ * alike gains one. The page may start anywhere in what was read, and end
+ * before its end when the list was scrolled back up. Two lines alike at
  * least, and twice as many as costs: a single equal line may be chance.
  */
 function overlapOf(lines: ReadLine[], page: ReadLine[]) {
@@ -132,47 +133,95 @@ function overlapOf(lines: ReadLine[], page: ReadLine[]) {
   const m = page.length;
   const [a, b] = [lines.map((l) => normalizeName(l.name)), page.map((l) => normalizeName(l.name))];
   const same = (i: number, j: number) => lines[i].count === page[j].count && similar(a[i], b[j]);
-  // score[i][j]: the best alignment of page[0, j) ending with lines[i - 1], and its lines alike.
-  type Cell = { score: number; alike: number };
+  // score[i][j]: the best alignment of page[0, j) ending with lines[i - 1], its lines alike, and its last move.
+  type Move = "start" | "both" | "lines" | "page";
+  type Cell = { score: number; alike: number; move: Move };
   const score: Cell[][] = Array.from({ length: n + 1 }, (_, i) =>
-    Array.from({ length: m + 1 }, (_, j) => ({ score: i === 0 ? -j : j === 0 ? 0 : -Infinity, alike: 0 })),
+    Array.from({ length: m + 1 }, (_, j): Cell => ({
+      score: i === 0 ? -j : j === 0 ? 0 : -Infinity,
+      alike: 0,
+      move: i === 0 && j > 0 ? "page" : "start",
+    })),
   );
   const better = (x: Cell, y: Cell) => (x.score > y.score || (x.score === y.score && x.alike > y.alike) ? x : y);
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
       const diagonal = score[i - 1][j - 1];
       const alike = same(i - 1, j - 1);
-      let cell = { score: diagonal.score + (alike ? 1 : -1), alike: diagonal.alike + (alike ? 1 : 0) };
-      cell = better(cell, { score: score[i - 1][j].score - 1, alike: score[i - 1][j].alike });
-      cell = better(cell, { score: score[i][j - 1].score - 1, alike: score[i][j - 1].alike });
+      let cell: Cell = { score: diagonal.score + (alike ? 1 : -1), alike: diagonal.alike + (alike ? 1 : 0), move: "both" };
+      cell = better(cell, { score: score[i - 1][j].score - 1, alike: score[i - 1][j].alike, move: "lines" });
+      cell = better(cell, { score: score[i][j - 1].score - 1, alike: score[i][j - 1].alike, move: "page" });
       score[i][j] = cell;
     }
   }
-  let best = { score: 0, alike: 0, overlap: 0 };
-  const consider = (cell: Cell, overlap: number) => {
+  let best = { score: 0, alike: 0, i: 0, j: 0 };
+  const consider = (i: number, j: number) => {
+    const cell = score[i][j];
     if (cell.alike >= 2 && cell.score * 2 >= cell.alike && (cell.score > best.score || (cell.score === best.score && cell.alike > best.alike))) {
-      best = { ...cell, overlap };
+      best = { ...cell, i, j };
     }
   };
   // Up to the end of what was read, the rest of the page following; or the whole page inside it.
-  for (let j = 1; j <= m; j++) consider(score[n][j], j);
-  for (let i = 1; i <= n; i++) consider(score[i][m], m);
-  return best.overlap;
+  for (let j = 1; j <= m; j++) consider(n, j);
+  for (let i = 1; i <= n; i++) consider(i, m);
+  if (best.j === 0) return { overlap: 0, missed: [] };
+  // Walk the alignment back: a page line facing nothing, between two lines alike, was missed before.
+  const missed: { at: number; line: ReadLine }[] = [];
+  let [i, j] = [best.i, best.j];
+  let matched = false;
+  const pending: { at: number; line: ReadLine }[] = [];
+  while (i > 0 && j > 0) {
+    const move = score[i][j].move;
+    if (move === "both") {
+      if (same(i - 1, j - 1)) {
+        if (matched) missed.push(...pending);
+        matched = true;
+        pending.length = 0;
+      }
+      i--;
+      j--;
+    } else if (move === "lines") i--;
+    else if (move === "page") {
+      if (matched) pending.push({ at: i, line: page[j - 1] });
+      j--;
+    } else break;
+  }
+  return { overlap: best.j, missed };
+}
+
+/**
+ * The screenshots in the order of the chest's list, whatever order they were
+ * taken, saved or named in: the game lists a chest by name, so a screenshot
+ * further down the list starts with a name further on. Its second line
+ * decides, the first may be cut; a screenshot with no line goes last.
+ */
+export function inListOrder<T>(pages: T[], linesOf: (page: T) => ReadLine[]) {
+  const key = (page: T) => {
+    const lines = linesOf(page);
+    const line = lines[1] ?? lines[0];
+    return line ? normalizeName(line.name) : "\uffff";
+  };
+  return pages
+    .map((page) => ({ page, key: key(page) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(({ page }) => page);
 }
 
 /**
  * The lines of screenshots of a chest, in order, each line once: a
  * screenshot that starts with lines already read (the bottom of the
  * previous one, or further up when the list was scrolled back) adds only
- * what follows them. `overlaps[i]`: how many lines of screenshot i were
+ * what follows them, and the lines among them that only it read. `overlaps[i]`: how many lines of screenshot i were
  * already read, 0 when it shares none with what came before.
  */
 export function stitchPages(pages: ReadLine[][]) {
   const lines: ReadLine[] = [];
   const overlaps: number[] = [];
   for (const page of pages) {
-    const overlap = lines.length ? overlapOf(lines, page) : 0;
+    const { overlap, missed } = lines.length ? overlapOf(lines, page) : { overlap: 0, missed: [] };
     overlaps.push(overlap);
+    // From the end, so that each place is still right; then what follows the overlap.
+    for (const { at, line } of missed) lines.splice(at, 0, line);
     lines.push(...page.slice(overlap));
   }
   return { lines, overlaps };
@@ -266,6 +315,103 @@ export function leftWarning(left: ReadItem[]) {
   const range = left.length === 1 ? `« ${left[0].name} »` : `de « ${left[0].name} » à « ${left.at(-1)!.name} »`;
   return (
     `Plus de ${MAX_COUNT_LINES} objets sur ces captures : ${left.length === 1 ? "le dernier" : `les ${left.length} derniers`}, ` +
-    `${range}, ne sont pas comptés. Fais l'import en plusieurs fois : inscris celui-ci, puis donne les captures suivantes.`
+    `${range}, ${left.length === 1 ? "n'est pas compté" : "ne sont pas comptés"}. Fais l'import en plusieurs fois : inscris celui-ci, puis donne les captures suivantes.`
   );
+}
+
+/** A screenshot as read: its file's name, whether it is full screen in the screen's ratio, and its item lines. */
+export type ReadPage = { name: string; fullScreen: boolean; lines: ReadLine[] };
+
+/**
+ * What to tell the gérant about the screenshots themselves: not full screen,
+ * none read, a page missing between two, or items left for another count.
+ * The game sorts a list by name: a screenshot that shares no line with the
+ * one before yet goes on in that order is likely the same list, with a page
+ * skipped; one that starts over is another tab.
+ */
+export function readingWarnings(pages: ReadPage[], overlaps: number[], left: ReadItem[] = []) {
+  const warnings: string[] = [];
+  pages.forEach((page, i) => {
+    const name = page.name;
+    if (!page.fullScreen) {
+      warnings.push(`${name} n'est pas une capture plein écran en 16:9 : ses lignes peuvent être mal lues.`);
+    }
+    if (page.lines.length === 0) {
+      warnings.push(`${name} : aucun objet lu. Est-ce bien la liste d'un coffre, en plein écran ?`);
+    }
+    const last = pages[i - 1]?.lines.at(-1);
+    const first = page.lines[0];
+    if (last && first && overlaps[i] === 0 && normalizeName(first.name) > normalizeName(last.name)) {
+      warnings.push(`${pages[i - 1].name} et ${name} n'ont aucune ligne en commun : une page manque peut-être entre les deux.`);
+    }
+  });
+  const tooMany = leftWarning(left);
+  if (tooMany) warnings.push(tooMany);
+  return warnings;
+}
+
+/**
+ * What the app proposes for each item of a chest: the merchandise it
+ * recognized (`product`), or else, from GUESS_FROM, the one with the closest
+ * name (`guess`), never a merchandise another item already is.
+ */
+export function proposeProducts<P extends { id: number; name: string }>(
+  items: ReadItem[],
+  products: P[],
+  aliases: { name: string; productId: number }[],
+): { product?: P; guess?: P }[] {
+  const matched = items.map((item) => matchProduct(item.name, products, aliases));
+  const free = products.filter((p) => !matched.includes(p));
+  return items.map((item, n) => {
+    const product = matched[n];
+    if (product) return { product };
+    return { guess: item.total >= GUESS_FROM ? guessProduct(item.name, free) : undefined };
+  });
+}
+
+/**
+ * An item of the chest under review: its place `n`, the merchandise it is
+ * (`productId`: "" to ignore it, NEW_PRODUCT to create it) and its count as
+ * typed. `guessed` and `doubtful` stay until the gérant confirms them.
+ */
+export type ReviewedItem = { n: number; name: string; productId: string; counted: string; guessed: boolean; doubtful: boolean };
+
+/** A merchandise counted: its stock, its count (all its items added up), and whether the gap is big. */
+export type CountedProduct<P> = { product: P; total: number; big: boolean };
+
+/** Each merchandise the items are tied to, by its id as the review holds it. */
+export function countedProducts<P extends { id: number; stock: number }>(rows: ReviewedItem[], products: P[]) {
+  const tied = rows.filter((r) => r.productId && r.productId !== NEW_PRODUCT);
+  const totals = sumByProduct(tied.map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })));
+  const counted = new Map<string, CountedProduct<P>>();
+  for (const [id, total] of totals) {
+    const product = products.find((p) => String(p.id) === id);
+    if (product) counted.set(id, { product, total, big: bigGap(product.stock, total) });
+  }
+  return counted;
+}
+
+/** One thing the gérant should look at before writing, on the review's item `n`. */
+export type CountCheck =
+  | { n: number; kind: "guessed"; item: string; product: string }
+  | { n: number; kind: "doubtful"; item: string }
+  | { n: number; kind: "gap"; product: string; stock: number; counted: number };
+
+/**
+ * What the gérant should look at before writing: a merchandise only guessed,
+ * a count the OCR was unsure of, and a big gap, once per merchandise (on its
+ * first item). An item ignored has none; one to create only its doubtful count.
+ */
+export function countChecks<P extends { id: number; name: string; stock: number }>(rows: ReviewedItem[], products: P[]): CountCheck[] {
+  const counted = countedProducts(rows, products);
+  return rows.flatMap((row) => {
+    const found: CountCheck[] = [];
+    const merchandise = counted.get(row.productId);
+    if (row.guessed && merchandise) found.push({ n: row.n, kind: "guessed", item: row.name, product: merchandise.product.name });
+    if (row.doubtful && row.productId) found.push({ n: row.n, kind: "doubtful", item: row.name });
+    if (merchandise?.big && rows.find((r) => r.productId === row.productId) === row) {
+      found.push({ n: row.n, kind: "gap", product: merchandise.product.name, stock: merchandise.product.stock, counted: merchandise.total });
+    }
+    return found;
+  });
 }

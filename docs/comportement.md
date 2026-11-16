@@ -448,31 +448,41 @@ registre.
 
 ### Régulariser le stock
 
-Le bouton « Régulariser le stock », pour les gérants seulement, ouvre sa
+Le bouton « Régulariser le stock », pour les gérants seulement, est le
+bouton principal de l'Inventaire, avant « Mouvement de stock » (qui reste le
+principal pour un employé). Il ouvre sa
 page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
 d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
-bas de la liste. La page prévient que personne ne doit vendre ni acheter
+bas de la liste, triée par nom. La page dit comment les prendre : une capture, défiler en
+gardant au moins 3 lignes de la précédente, une capture, et ainsi de suite
+jusqu'au bas du coffre. Elle prévient que personne ne doit vendre ni acheter
 pendant la régularisation : le stock prend les comptes du coffre au moment
 d'inscrire, et une vente faite entre-temps serait effacée. Ensuite :
 
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
   l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
   coffre (Tous, Nourriture, Ingrédients, Divers…) : l'icône « volé » et ce
-  qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre de
-  leurs noms de fichier (`ScreenShot138`, `ScreenShot139`…).
+  qui la suit ne font pas partie du nom. Elles se recollent dans l'ordre de
+  la liste du coffre, que le jeu trie par nom, quels que soient leurs noms
+  de fichier ou leurs dates : chacune prend sa place d'après le nom de sa
+  deuxième ligne (la première peut être coupée).
 - Une capture qui reprend des lignes déjà lues (le bas de la précédente, ou
   plus haut quand la liste a été remontée) n'ajoute que ce qui les suit.
   Les deux captures sont alignées ligne à ligne en tolérant les accrocs de
   l'OCR : une ligne lue autrement, coupée en haut de la capture ou manquée
   sur l'une des deux. Il faut au moins deux lignes communes, et deux fois
-  plus de lignes communes que d'accrocs. Les lignes d'un
+  plus de lignes communes que d'accrocs. Une ligne que seule la seconde a
+  lue, entre deux lignes communes, prend sa place dans la liste ; quand une
+  ligne est lue sur les deux, c'est la lecture de la capture la plus haute
+  dans la liste qui reste. Les lignes d'un
   même objet s'additionnent, volées ou non : « (13) » compte 13, une ligne
   sans nombre compte 1. Les lettres que l'OCR confond (« a » et « o »,
   « i », « l » et « t ») ne séparent pas deux lignes.
 - Au-dessus de la relecture, « À propos des captures » prévient d'une
   capture qui n'est pas en 16:9, d'une capture sans aucun objet lu, et de
   deux captures qui n'ont aucune ligne en commun alors que la seconde
-  continue la liste dans l'ordre des noms (une page manque peut-être).
+  continue la liste dans l'ordre alphabétique des objets (une page manque
+  peut-être).
 - Un comptage relit au plus 300 objets, les premiers lus. Au-delà, « À
   propos des captures » nomme ceux qui ne sont pas comptés et dit de faire
   l'import en plusieurs fois.
@@ -485,7 +495,8 @@ d'inscrire, et une vente faite entre-temps serait effacée. Ensuite :
   nom, puis par l'animal d'une peau (« Peau de loup » est Loup). Sinon,
   l'objet est sur « Ignorer » et le gérant choisit.
 - Toucher le nom d'un objet montre, sous sa ligne, les lignes des captures
-  d'où il a été lu, découpées dans les captures.
+  d'où il a été lu, découpées dans les captures. Une petite flèche devant le
+  nom le signale : elle pointe à droite, puis vers le bas une fois déplié.
 - Garde-fous, en orange :
   - un objet non reconnu d'au moins 6 reçoit la marchandise au nom le plus
     proche (une lettre sur six d'écart au plus, jamais une marchandise
