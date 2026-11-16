@@ -394,7 +394,7 @@ export async function productOf(shopId: number, id: number): Promise<ShopProduct
 }
 
 /** The game's names the shop tied to its merchandises, normalized. */
-export async function productAliases(shopId: number) {
+async function productAliases(shopId: number) {
   return getDb()
     .select({ name: schema.productAliases.name, productId: schema.productAliases.productId })
     .from(schema.productAliases)
