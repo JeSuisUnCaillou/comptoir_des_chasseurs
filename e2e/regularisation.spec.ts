@@ -308,3 +308,14 @@ test("au téléphone, la relecture du comptage tient dans l'écran", async ({ br
   expect(counted!.x - (product!.x + product!.width)).toBeGreaterThanOrEqual(8);
   await page.screenshot({ path: "test-results/regularisation-320.png", fullPage: true });
 });
+
+test("sur grand écran, le champ des captures ne s'étire pas sur toute la largeur", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  const shop = await shopWithStock({ Biche: 3 });
+  await loginAsGerant(page);
+  await page.goto(`${shop}/inventaire/regularisation`);
+  const field = page.getByLabel("Captures du coffre");
+  await expect(field).toBeVisible();
+  const box = await field.boundingBox();
+  expect(box!.width).toBeLessThanOrEqual(420);
+});

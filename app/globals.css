@@ -439,6 +439,11 @@ select {
   background: var(--panel);
 }
 
+/* Only the button and the file count need room: a full-width box looks like a text field. */
+input[type="file"] {
+  max-width: 420px;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
