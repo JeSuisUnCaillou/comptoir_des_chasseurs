@@ -10,12 +10,14 @@ const require = createRequire(import.meta.url);
 const target = "public/ocr";
 mkdirSync(target, { recursive: true });
 
-const packageDir = (name) => dirname(require.resolve(`${name}/package.json`));
+const packageDir = (name, from = require) => dirname(from.resolve(`${name}/package.json`));
+// The core is tesseract.js's own dependency, not ours: found from where it is.
+const fromTesseract = createRequire(require.resolve("tesseract.js/package.json"));
 const files = [
   [join(packageDir("tesseract.js"), "dist", "worker.min.js"), "worker.min.js"],
   // The worker picks the fastest core the browser runs.
   ...["lstm", "simd-lstm", "relaxedsimd-lstm"].map((v) => [
-    join(packageDir("tesseract.js-core"), `tesseract-core-${v}.wasm.js`),
+    join(packageDir("tesseract.js-core", fromTesseract), `tesseract-core-${v}.wasm.js`),
     `tesseract-core-${v}.wasm.js`,
   ]),
   [join(packageDir("@tesseract.js-data/fra"), "4.0.0_best_int", "fra.traineddata.gz"), "fra.traineddata.gz"],
