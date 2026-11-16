@@ -437,7 +437,9 @@ registre.
 
 ### Régulariser le stock
 
-Le bouton « Régulariser le stock », pour les gérants seulement, ouvre sa
+Le bouton « Régulariser le stock », pour les gérants seulement, est le
+bouton principal de l'Inventaire, avant « Mouvement de stock » (qui reste le
+principal pour un employé). Il ouvre sa
 page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
 d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
 bas de la liste. La page dit comment les prendre : une capture, défiler en

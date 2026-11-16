@@ -302,7 +302,8 @@ test("une capture reprise après avoir remonté la liste, avec une ligne coupée
 test("un employé ne compte pas le stock depuis le jeu", async ({ browser }) => {
   const { page } = await newEmployeePage(browser, "frida");
   await page.goto(`${COMPTOIR}/inventaire`);
-  await expect(page.getByRole("link", { name: "Mouvement de stock" })).toBeVisible();
+  // Without the count, the movement is the main button.
+  await expect(page.getByRole("link", { name: "Mouvement de stock" })).toHaveClass(/btn-primary/);
   await expect(page.getByRole("link", { name: "Régulariser le stock" })).toHaveCount(0);
   await page.goto(`${COMPTOIR}/inventaire/regularisation`);
   await expect(page.getByRole("heading", { level: 1, name: "Régulariser le stock" })).toHaveCount(0);
@@ -362,4 +363,14 @@ test("les captures se lisent dans l'ordre où elles ont été prises, même si l
   const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
   await expect(counted("Patte de lapin crue")).toHaveValue("233");
   await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
+});
+
+test("pour un gérant, Régulariser le stock est le bouton principal de l'Inventaire, Mouvement de stock le second", async ({ page }) => {
+  await loginAsGerant(page);
+  await page.goto(`${COMPTOIR}/inventaire`);
+  const count = page.getByRole("link", { name: "Régulariser le stock" });
+  const move = page.getByRole("link", { name: "Mouvement de stock" });
+  await expect(count).toHaveClass(/btn-primary/);
+  await expect(move).not.toHaveClass(/btn-primary/);
+  expect((await count.boundingBox())!.x).toBeLessThan((await move.boundingBox())!.x);
 });
