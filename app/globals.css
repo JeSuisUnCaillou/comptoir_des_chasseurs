@@ -2576,6 +2576,15 @@ tr.fresh td {
 }
 
 /* The read name opens the lines of the screenshots it was read from. */
+.capture-steps p,
+.capture-steps ol {
+  margin: 0;
+}
+
+.capture-steps ol {
+  padding-left: 20px;
+}
+
 button.count-read {
   display: flex;
   align-items: baseline;

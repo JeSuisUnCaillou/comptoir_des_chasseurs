@@ -440,13 +440,16 @@ registre.
 Le bouton « Régulariser le stock », pour les gérants seulement, ouvre sa
 page (`/<slug>/inventaire/regularisation`). Le gérant y donne les captures d'écran
 d'un coffre du jeu (la liste de SkyUI en plein écran, 16:9), prises de haut en
-bas de la liste :
+bas de la liste. La page dit comment les prendre : une capture, défiler en
+gardant au moins 3 lignes de la précédente, une capture, et ainsi de suite
+jusqu'au bas du coffre.
 
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
   l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
   coffre (Tous, Nourriture, Ingrédients, Divers…) : l'icône « volé » et ce
-  qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre de
-  leurs noms de fichier (`ScreenShot138`, `ScreenShot139`…).
+  qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre où
+  elles ont été prises (la date du fichier) ; deux captures de la même
+  seconde, dans l'ordre de leurs noms (`ScreenShot138`, `ScreenShot139`…).
 - Une capture qui reprend des lignes déjà lues (le bas de la précédente, ou
   plus haut quand la liste a été remontée) n'ajoute que ce qui les suit.
   Les deux captures sont alignées ligne à ligne en tolérant les accrocs de

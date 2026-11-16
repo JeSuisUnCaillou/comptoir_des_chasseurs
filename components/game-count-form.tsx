@@ -93,8 +93,13 @@ export function GameCountForm({
   }, [state, products]);
 
   async function read(list: FileList | null) {
-    // Screenshots are taken while scrolling down: their names keep that order (ScreenShot138, 139…).
-    const sorted = [...(list ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    // Screenshots are taken while scrolling down: in the order they were saved, which their
+    // names may not keep; the name only breaks a tie (ScreenShot138, 139… within one second).
+    const sorted = [...(list ?? [])].sort(
+      (a, b) =>
+        Math.floor(a.lastModified / 1000) - Math.floor(b.lastModified / 1000) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
     if (sorted.length === 0) return;
     setError(null);
     setRows(null);
@@ -325,9 +330,15 @@ export function GameCountForm({
           disabled={!ready || reading != null || pending}
           onChange={(ev) => read(ev.target.files)}
         />
-        <span className="small muted">
-          En plein écran, de haut en bas de la liste : les lignes vues sur deux captures ne comptent qu&apos;une fois.
-        </span>
+        <div className="small muted capture-steps">
+          <p>Comment prendre les captures :</p>
+          <ol>
+            <li>Ouvre le coffre en plein écran, la liste tout en haut, et fais une capture.</li>
+            <li>Fais défiler la liste vers le bas en gardant au moins 3 lignes de la capture d&apos;avant, puis refais une capture.</li>
+            <li>Recommence jusqu&apos;au bas du coffre, puis donne toutes les captures ici d&apos;un coup.</li>
+          </ol>
+          <p>Les lignes vues sur deux captures, là où elles se chevauchent, ne comptent qu&apos;une fois.</p>
+        </div>
       </div>
       {reading && (
         <p className="notice" role="status">
