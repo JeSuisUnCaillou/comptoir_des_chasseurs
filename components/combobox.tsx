@@ -24,7 +24,8 @@ type Picked<T> = Common<T> & {
   /** Stay at the end of the list whatever is typed (e.g. "Autre article"). */
   extras?: Choice<T>[];
   value: T | null;
-  onChange: (id: T) => void;
+  /** `typed`: the text the member had typed to find the choice, empty when they typed nothing. */
+  onChange: (id: T, typed: string) => void;
   /** Shown when the typed text matches nothing. */
   emptyText: string;
   /** Why the form is refused when Tab left a text that matches nothing. */
@@ -110,7 +111,9 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   function choose(c: Choice<T>) {
     if (props.free) props.onChange(c.name);
     else {
-      props.onChange(c.id);
+      // The choice's own name, typed in full, is not a name of its own.
+      const typed = editing ? pickedText.trim() : "";
+      props.onChange(c.id, typed.toLocaleLowerCase("fr") === c.name.toLocaleLowerCase("fr") ? "" : typed);
       setPickedText(c.name);
       setStray(false);
     }

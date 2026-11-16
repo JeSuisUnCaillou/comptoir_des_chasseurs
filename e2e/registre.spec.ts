@@ -129,6 +129,23 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   ).toContainText("+500 septims");
 });
 
+test("l'article hors stock reprend le nom tapé dans le champ Marchandise", async ({ browser }) => {
+  const label = uniqueName("Pomme");
+  const { page } = await newEmployeePage(browser, "j-ysolda");
+  await page.goto("/achat-vente/achat");
+  const form = page.getByRole("region", { name: "Inscrire un achat" });
+  const box = form.getByRole("combobox", { name: "Marchandise", exact: true });
+  await box.fill(label);
+  await form.getByRole("option", { name: "Autre article (hors stock)…" }).click();
+  await expect(box).toHaveValue("Autre article (hors stock)…");
+  await expect(form.getByLabel("Nom de l'article")).toHaveValue(label);
+  await form.getByLabel("Montant (septims)").fill("7");
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
+    `Achat inscrit : 1 × ${label}, 7 septims.`,
+  );
+});
+
 test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ browser }) => {
   const product = uniqueName("Peau de mammouth");
   await createProduct(product, { stock: 3 });
