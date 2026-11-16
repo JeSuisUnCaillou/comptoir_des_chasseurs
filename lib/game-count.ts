@@ -266,6 +266,103 @@ export function leftWarning(left: ReadItem[]) {
   const range = left.length === 1 ? `« ${left[0].name} »` : `de « ${left[0].name} » à « ${left.at(-1)!.name} »`;
   return (
     `Plus de ${MAX_COUNT_LINES} objets sur ces captures : ${left.length === 1 ? "le dernier" : `les ${left.length} derniers`}, ` +
-    `${range}, ne sont pas comptés. Fais l'import en plusieurs fois : inscris celui-ci, puis donne les captures suivantes.`
+    `${range}, ${left.length === 1 ? "n'est pas compté" : "ne sont pas comptés"}. Fais l'import en plusieurs fois : inscris celui-ci, puis donne les captures suivantes.`
   );
+}
+
+/** A screenshot as read: its file's name, whether it is full screen in the screen's ratio, and its item lines. */
+export type ReadPage = { name: string; fullScreen: boolean; lines: ReadLine[] };
+
+/**
+ * What to tell the gérant about the screenshots themselves: not full screen,
+ * none read, a page missing between two, or items left for another count.
+ * The game sorts a list by name: a screenshot that shares no line with the
+ * one before yet goes on in that order is likely the same list, with a page
+ * skipped; one that starts over is another tab.
+ */
+export function readingWarnings(pages: ReadPage[], overlaps: number[], left: ReadItem[] = []) {
+  const warnings: string[] = [];
+  pages.forEach((page, i) => {
+    const name = page.name;
+    if (!page.fullScreen) {
+      warnings.push(`${name} n'est pas une capture plein écran en 16:9 : ses lignes peuvent être mal lues.`);
+    }
+    if (page.lines.length === 0) {
+      warnings.push(`${name} : aucun objet lu. Est-ce bien la liste d'un coffre, en plein écran ?`);
+    }
+    const last = pages[i - 1]?.lines.at(-1);
+    const first = page.lines[0];
+    if (last && first && overlaps[i] === 0 && normalizeName(first.name) > normalizeName(last.name)) {
+      warnings.push(`${pages[i - 1].name} et ${name} n'ont aucune ligne en commun : une page manque peut-être entre les deux.`);
+    }
+  });
+  const tooMany = leftWarning(left);
+  if (tooMany) warnings.push(tooMany);
+  return warnings;
+}
+
+/**
+ * What the app proposes for each item of a chest: the merchandise it
+ * recognized (`product`), or else, from GUESS_FROM, the one with the closest
+ * name (`guess`), never a merchandise another item already is.
+ */
+export function proposeProducts<P extends { id: number; name: string }>(
+  items: ReadItem[],
+  products: P[],
+  aliases: { name: string; productId: number }[],
+): { product?: P; guess?: P }[] {
+  const matched = items.map((item) => matchProduct(item.name, products, aliases));
+  const free = products.filter((p) => !matched.includes(p));
+  return items.map((item, n) => {
+    const product = matched[n];
+    if (product) return { product };
+    return { guess: item.total >= GUESS_FROM ? guessProduct(item.name, free) : undefined };
+  });
+}
+
+/**
+ * An item of the chest under review: its place `n`, the merchandise it is
+ * (`productId`: "" to ignore it, NEW_PRODUCT to create it) and its count as
+ * typed. `guessed` and `doubtful` stay until the gérant confirms them.
+ */
+export type ReviewedItem = { n: number; name: string; productId: string; counted: string; guessed: boolean; doubtful: boolean };
+
+/** A merchandise counted: its stock, its count (all its items added up), and whether the gap is big. */
+export type CountedProduct<P> = { product: P; total: number; big: boolean };
+
+/** Each merchandise the items are tied to, by its id as the review holds it. */
+export function countedProducts<P extends { id: number; stock: number }>(rows: ReviewedItem[], products: P[]) {
+  const tied = rows.filter((r) => r.productId && r.productId !== NEW_PRODUCT);
+  const totals = sumByProduct(tied.map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })));
+  const counted = new Map<string, CountedProduct<P>>();
+  for (const [id, total] of totals) {
+    const product = products.find((p) => String(p.id) === id);
+    if (product) counted.set(id, { product, total, big: bigGap(product.stock, total) });
+  }
+  return counted;
+}
+
+/** One thing the gérant should look at before writing, on the review's item `n`. */
+export type CountCheck =
+  | { n: number; kind: "guessed"; item: string; product: string }
+  | { n: number; kind: "doubtful"; item: string }
+  | { n: number; kind: "gap"; product: string; stock: number; counted: number };
+
+/**
+ * What the gérant should look at before writing: a merchandise only guessed,
+ * a count the OCR was unsure of, and a big gap, once per merchandise (on its
+ * first item). Items ignored or to create have none.
+ */
+export function countChecks<P extends { id: number; name: string; stock: number }>(rows: ReviewedItem[], products: P[]): CountCheck[] {
+  const counted = countedProducts(rows, products);
+  return rows.flatMap((row) => {
+    const found: CountCheck[] = [];
+    const merchandise = counted.get(row.productId);
+    if (row.guessed && merchandise) found.push({ n: row.n, kind: "guessed", item: row.name, product: merchandise.product.name });
+    if (row.doubtful && row.productId) found.push({ n: row.n, kind: "doubtful", item: row.name });
+    if (merchandise?.big && rows.find((r) => r.productId === row.productId) === row) {
+      found.push({ n: row.n, kind: "gap", product: merchandise.product.name, stock: merchandise.product.stock, counted: merchandise.total });
+    }
+    return found;
+  });
 }

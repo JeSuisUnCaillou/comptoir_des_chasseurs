@@ -112,9 +112,10 @@ npm run test:e2e                  # vide la base de test, lance l'app et la test
 `npm run test:parser` (lancé par la CI, sans base ni navigateur) teste
 l'analyseur de coffre seul (`lib/game-count.ts`) sur des lignes déjà lues :
 celles des huit captures de l'armoire de Lomone (`tests/armoire-8-captures.json`),
-et les mêmes abîmées comme l'OCR d'un autre navigateur peut les lire. Un
-défaut de lecture remonté devient un cas de plus dans
-`tests/game-count.test.mjs`.
+et les mêmes abîmées comme l'OCR d'un autre navigateur peut les lire ; puis
+les règles de la relecture (marchandise reconnue ou supposée, écarts,
+points à vérifier, avertissements sur les captures). Un défaut de lecture
+remonté devient un cas de plus dans `tests/game-count.test.mjs`.
 
 Les tests vident la base : ils refusent de tourner si le nom de la base
 (dans `DATABASE_URL`) ne contient pas `test`. Playwright lance aussi un faux
