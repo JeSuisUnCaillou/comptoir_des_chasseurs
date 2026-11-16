@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { inListOrder, parseLine, parsePage, stitchPages, sumItems } from "../lib/game-count.ts";
+import { inListOrder, leftWarning, MAX_COUNT_LINES, parseLine, parsePage, splitForCount, stitchPages, sumItems } from "../lib/game-count.ts";
 
 const ARMOIRE = JSON.parse(readFileSync(new URL("armoire-8-captures.json", import.meta.url), "utf8")).map((lines) =>
   parsePage(lines.join("\n")),
@@ -93,4 +93,13 @@ test("deux objets qui ne diffèrent que d'un mot restent séparés", () => {
   const read = counts([parsePage("Lys des cimes jaune (4)\nLys des cimes rouge (2)")]);
   assert.equal(read["Lys des cimes jaune"], "4");
   assert.equal(read["Lys des cimes rouge"], "2");
+});
+
+test("au-delà de 300 objets, les derniers sont laissés pour un autre comptage, et le gérant le sait", () => {
+  const items = Array.from({ length: MAX_COUNT_LINES + 2 }, (_, i) => ({ name: `Objet numero ${i}`, key: "", lines: [], total: 1 }));
+  const { kept, left } = splitForCount(items);
+  assert.equal(kept.length, MAX_COUNT_LINES);
+  assert.deepEqual(left.map((item) => item.name), [`Objet numero ${MAX_COUNT_LINES}`, `Objet numero ${MAX_COUNT_LINES + 1}`]);
+  assert.match(leftWarning(left), /les 2 derniers, de « Objet numero 300 » à « Objet numero 301 », ne sont pas comptés\. Fais l'import en plusieurs fois/);
+  assert.equal(leftWarning(splitForCount(items.slice(0, 3)).left), null);
 });
