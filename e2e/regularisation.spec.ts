@@ -372,12 +372,12 @@ test("les captures se recollent dans l'ordre de la liste, quels que soient l'ord
   await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
 });
 
-test("pour un gérant, Régulariser le stock est le bouton principal de l'Inventaire, Mouvement de stock le second", async ({ page }) => {
+test("pour un gérant, Régulariser le stock est le bouton principal de l'Inventaire, à droite de Mouvement de stock", async ({ page }) => {
   await loginAsGerant(page);
   await page.goto(`${COMPTOIR}/inventaire`);
   const count = page.getByRole("link", { name: "Régulariser le stock" });
   const move = page.getByRole("link", { name: "Mouvement de stock" });
   await expect(count).toHaveClass(/btn-primary/);
   await expect(move).not.toHaveClass(/btn-primary/);
-  expect((await count.boundingBox())!.x).toBeLessThan((await move.boundingBox())!.x);
+  expect((await move.boundingBox())!.x).toBeLessThan((await count.boundingBox())!.x);
 });
