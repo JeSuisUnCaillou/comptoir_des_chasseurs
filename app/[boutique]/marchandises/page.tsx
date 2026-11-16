@@ -70,7 +70,7 @@ export default async function Marchandises({ searchParams }: { searchParams: Pro
                     id="phare-ajout"
                     name="productId"
                     required
-                    products={others.map((p) => ({ id: p.id, name: p.name }))}
+                    products={others.map((p) => ({ id: p.id, name: p.name, aliases: p.aliases }))}
                   />
                   <button className="btn btn-small" type="submit">
                     Ajouter

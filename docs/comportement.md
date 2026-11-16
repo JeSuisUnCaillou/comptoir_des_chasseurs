@@ -521,7 +521,10 @@ d'inscrire, et une vente faite entre-temps serait effacée. Ensuite :
   tout ou rien ; un nom déjà pris, même archivé, est refusé.
 - Un nom du jeu rattaché à une marchandise d'un autre nom (« Deer Pelt » à
   Biche) est retenu par la boutique pour les comptages suivants, même lu
-  avec une lettre de travers (« Wolf Peli »).
+  avec une lettre de travers (« Wolf Peli »). C'est aussi un nom alternatif :
+  partout où l'on cherche ou choisit une marchandise (Tarifs, Inventaire,
+  Gérer les marchandises, Contacts, les listes des formulaires), taper
+  « deer » trouve Biche.
 - Plusieurs objets rattachés à la même marchandise s'additionnent.
 - « Mettre le stock à jour » donne à chaque marchandise comptée le stock
   compté, par des mouvements d'entrée ou de sortie avec le motif (« Régularisation

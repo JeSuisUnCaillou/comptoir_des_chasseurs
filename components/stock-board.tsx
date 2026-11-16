@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Minus, PackagePlus, Plus } from "lucide-reac
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { recordMovement, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { formatNumber, plural } from "@/lib/pricing";
+import { matchesSearch } from "@/lib/product-search";
 import type { CategoryChoice } from "@/components/category-select";
 import { keepValues } from "@/components/keep-values";
 import { NewStockProductForm } from "@/components/new-stock-product-form";
@@ -12,6 +13,8 @@ import type { GroupChoice } from "@/components/product-price-fields";
 export type StockItem = {
   id: number;
   name: string;
+  /** The game names tied to it, which the search finds it by too. */
+  aliases: readonly string[];
   categoryId: number;
   categoryName: string;
   unit: string;
@@ -126,11 +129,8 @@ export function StockBoard({
     setQuery(name);
     setPage(1);
   }, []);
-  const normalized = query.trim().toLocaleLowerCase("fr");
   const visible = items.filter(
-    (i) =>
-      (category == null || i.categoryId === category) &&
-      (!normalized || i.name.toLocaleLowerCase("fr").includes(normalized)),
+    (i) => (category == null || i.categoryId === category) && matchesSearch(query, i.name, i.aliases),
   );
   const pages = Math.max(1, Math.ceil(visible.length / CARDS_PER_PAGE));
   const current = Math.min(page, pages);

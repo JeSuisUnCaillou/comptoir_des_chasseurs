@@ -19,7 +19,7 @@ type CalcProduct = Pick<
   | "bulkQty"
   | "hidesPerBatch"
   | "leatherPerBatch"
->;
+> & { aliases?: readonly string[] };
 
 function show(total: Total | null) {
   if (!total) return "—";

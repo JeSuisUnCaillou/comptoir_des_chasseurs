@@ -149,7 +149,7 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
           categories={categories}
           items={[...products]
             .sort(stockOrder)
-            .map(({ id, name, categoryId, categoryName, unit, stock }) => ({ id, name, categoryId, categoryName, unit, stock }))}
+            .map(({ id, name, aliases, categoryId, categoryName, unit, stock }) => ({ id, name, aliases, categoryId, categoryName, unit, stock }))}
         />
       </section>
 

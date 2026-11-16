@@ -40,6 +40,7 @@ export default async function NouvelleEcriture({
         products={products.map((p) => ({
           id: p.id,
           name: p.name,
+          aliases: p.aliases,
           categoryId: p.categoryId,
           categoryName: p.categoryName,
           categoryPosition: p.categoryPosition,

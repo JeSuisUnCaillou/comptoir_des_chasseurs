@@ -26,6 +26,7 @@ import type { ShopProduct as Product } from "@/lib/privileged-groups";
 import { activeProducts, blacksmithLeatherPrice, featuredProducts, type CategorizedProduct } from "@/lib/products";
 import { shopCategories } from "@/lib/categories";
 import { isGerant } from "@/lib/policies";
+import { matchesSearch } from "@/lib/product-search";
 
 function priced(p: Product) {
   return p.buyPrice != null || p.sellPrice != null;
@@ -310,9 +311,9 @@ function FeaturedRow({ product, blacksmith }: { product: Product; blacksmith: nu
 }
 
 /** Products whose name holds the search, ignoring case. */
-function matching<P extends Product>(products: P[], search: string | string[] | undefined) {
-  const q = searchParam(search).toLocaleLowerCase("fr");
-  return q ? products.filter((p) => p.name.toLocaleLowerCase("fr").includes(q)) : products;
+function matching<P extends Product & { aliases: readonly string[] }>(products: P[], search: string | string[] | undefined) {
+  const q = searchParam(search);
+  return q ? products.filter((p) => matchesSearch(q, p.name, p.aliases)) : products;
 }
 
 export default async function Tarifs({ searchParams }: { searchParams: Promise<Search> }) {

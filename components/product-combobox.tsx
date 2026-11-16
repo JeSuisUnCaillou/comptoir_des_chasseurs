@@ -8,11 +8,18 @@ import { byCategoryOrder } from "@/lib/category-order";
  * order; names keep their order inside each group.
  */
 export function choicesByCategory(
-  products: { id: number; name: string; categoryId: number; categoryName: string; categoryPosition: number }[],
+  products: {
+    id: number;
+    name: string;
+    aliases?: readonly string[];
+    categoryId: number;
+    categoryName: string;
+    categoryPosition: number;
+  }[],
 ) {
   return [...products]
     .sort(byCategoryOrder)
-    .map((p) => ({ id: String(p.id), name: p.name, group: p.categoryName }));
+    .map((p) => ({ id: String(p.id), name: p.name, group: p.categoryName, aliases: p.aliases }));
 }
 
 /**

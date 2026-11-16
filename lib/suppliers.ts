@@ -5,6 +5,7 @@ import { UserError } from "@/lib/errors";
 import { offsetOf } from "@/lib/pagination";
 import type { OfferSide } from "@/lib/db/schema";
 import { offerPrices } from "@/lib/pricing";
+import { productNameMatches } from "@/lib/products";
 
 export const SUPPLIER_PAGE_SIZE = 12;
 
@@ -37,7 +38,7 @@ function searchWhere(shopId: number, q: string) {
           .select({ one: supplierOffers.id })
           .from(supplierOffers)
           .innerJoin(products, eq(products.id, supplierOffers.productId))
-          .where(and(eq(supplierOffers.supplierId, suppliers.id), ilike(products.name, pattern))),
+          .where(and(eq(supplierOffers.supplierId, suppliers.id), productNameMatches(q))),
       ),
     ),
   );

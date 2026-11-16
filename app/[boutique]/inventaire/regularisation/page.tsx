@@ -35,7 +35,7 @@ export default async function RegulariserLeStock() {
         <div className="eyebrow">Régularisation</div>
         <h2>Compter un coffre du jeu</h2>
         <GameCountForm
-          products={products.map(({ id, name, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, stock, categoryId, categoryName, categoryPosition }))}
+          products={products.map(({ id, name, aliases, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, aliases, stock, categoryId, categoryName, categoryPosition }))}
           aliases={aliases}
           categories={categories.map(({ id, name }) => ({ id, name }))}
         />

@@ -17,7 +17,7 @@ export function ProductField<T extends number | string>({
 }: {
   id: string;
   name: string;
-  products: { id: T; name: string }[];
+  products: { id: T; name: string; aliases?: readonly string[] }[];
   required?: boolean;
   placeholder?: string;
 }) {
