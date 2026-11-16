@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, ChevronRight, ImageUp, RotateCcw, ScanSearch } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, ImageUp, RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
@@ -216,7 +216,7 @@ export function GameCountForm({
           <span>
             <strong>{row.name}</strong>{" "}
             <span className="small muted nowrap">
-              {row.lines.map((l) => formatNumber(l.count)).join(" + ")} <ScanSearch size={14} aria-label="Voir sur les captures" />
+              {row.lines.map((l) => formatNumber(l.count)).join(" + ")}
             </span>
           </span>
         </button>

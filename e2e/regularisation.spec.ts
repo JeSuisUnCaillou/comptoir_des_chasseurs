@@ -209,6 +209,8 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
   const arrow = unfold.locator(".count-chevron");
   const turn = () => arrow.evaluate((el) => getComputedStyle(el).transform);
   await expect(arrow).toBeVisible();
+  // The arrow alone: no other icon weighs the line down.
+  await expect(unfold.locator("svg")).toHaveCount(1);
   expect(await turn()).toBe("none");
   await unfold.click();
   await expect(unfold).toHaveAttribute("aria-expanded", "true");
