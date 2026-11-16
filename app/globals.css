@@ -368,6 +368,29 @@ h3 {
   font-size: 30px;
 }
 
+/* Since the opening, below the figure since the end of the week */
+.stat-total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Which end of the week the tiles count from, and the gérant's button */
+.week-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
+
+.week-end p {
+  margin: 0;
+}
+
 .stat-accent-gold {
   border-left-color: var(--gold);
 }

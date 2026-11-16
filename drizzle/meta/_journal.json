@@ -155,6 +155,13 @@
       "when": 1794838472385,
       "tag": "0021_logo-des-boutiques",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794862185867,
+      "tag": "0022_fin-de-semaine",
+      "breakpoints": true
     }
   ]
 }

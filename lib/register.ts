@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gte, inArray, isNull, lt, sql, type AnyColum
 import { alias } from "drizzle-orm/pg-core";
 import { byName, getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
+import { lastWeekEnd } from "@/lib/week-ends";
 
 export type RegisterFilter = {
   kinds?: TransactionKind[];
@@ -233,19 +234,19 @@ async function totalsOf(shopId: number, filter: RegisterFilter, pending: boolean
   return tillFrom(row, "all");
 }
 
-/** The shop's till today, over the last 7 days and since the opening, in one query. */
-export async function tillSummary(shopId: number, now = new Date()) {
+/**
+ * The shop's till since the latest declared end of the week (`week`, the
+ * whole register before the first) and since the opening (`all`), with that
+ * end of the week.
+ */
+export async function tillSummary(shopId: number) {
   const t = schema.transactions;
-  const today = parisToday(now);
+  const weekEnd = await lastWeekEnd(shopId);
   const [row] = await getDb()
-    .select({
-      ...tillColumns("day", parisDay(today)!),
-      ...tillColumns("week", parisDay(today, -6)!),
-      ...tillColumns("all"),
-    })
+    .select({ ...tillColumns("week", weekEnd?.declaredAt), ...tillColumns("all") })
     .from(t)
     .where(and(eq(t.shopId, shopId), ...live()));
-  return { day: tillFrom(row, "day"), week: tillFrom(row, "week"), all: tillFrom(row, "all") };
+  return { week: tillFrom(row, "week"), all: tillFrom(row, "all"), weekEnd };
 }
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {

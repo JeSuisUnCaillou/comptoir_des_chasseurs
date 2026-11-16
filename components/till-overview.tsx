@@ -1,30 +1,42 @@
 import { septims } from "@/lib/pricing";
 import type { Till } from "@/lib/register";
 
-/** The four tiles of the till since the opening, as in the old app. */
-export function TillOverview({ till }: { till: Till }) {
-  const movements = till.inflows - till.outflows;
+/**
+ * The four tiles of the till: in large, since the latest declared end of the
+ * week; below, discreet, since the opening.
+ */
+export function TillOverview({ week, all }: { week: Till; all: Till }) {
+  const movements = week.inflows - week.outflows;
   return (
     <div className="stats till-overview">
       <div className="stat stat-accent-gold" data-testid="caisse-totale">
-        <div className="stat-label">Trésorerie actuelle</div>
-        <div className={`stat-value ${till.balance < 0 ? "minus" : ""}`}>{septims(till.balance)}</div>
-        <div className="small muted">
-          {movements !== 0 &&
-            `Dont ${septims(movements, { signed: true })} d'entrées et sorties d'argent hors achats et ventes`}
+        <div className="stat-label">Trésorerie</div>
+        <div className={`stat-value ${week.balance < 0 ? "minus" : week.balance > 0 ? "plus" : ""}`}>
+          {septims(week.balance, { signed: true })}
+        </div>
+        {movements !== 0 && (
+          <div className="small muted">
+            Dont {septims(movements, { signed: true })} d&apos;entrées et sorties d&apos;argent hors achats et ventes
+          </div>
+        )}
+        <div className="stat-total" data-testid="tresorerie-actuelle">
+          En caisse : {septims(all.balance)}
         </div>
       </div>
       <div className="stat stat-accent-green" data-testid="total-ventes">
-        <div className="stat-label">Total des ventes</div>
-        <div className="stat-value plus">{septims(till.sales)}</div>
+        <div className="stat-label">Ventes</div>
+        <div className="stat-value plus">{septims(week.sales)}</div>
+        <div className="stat-total">Total : {septims(all.sales)}</div>
       </div>
       <div className="stat stat-accent-red" data-testid="total-rachats">
-        <div className="stat-label">Total des rachats</div>
-        <div className="stat-value minus">{septims(till.buybacks)}</div>
+        <div className="stat-label">Rachats</div>
+        <div className="stat-value minus">{septims(week.buybacks)}</div>
+        <div className="stat-total">Total : {septims(all.buybacks)}</div>
       </div>
       <div className="stat stat-accent-gold" data-testid="solde-ventes-rachats">
         <div className="stat-label">Solde ventes − rachats</div>
-        <div className={`stat-value ${till.margin < 0 ? "minus" : ""}`}>{septims(till.margin)}</div>
+        <div className={`stat-value ${week.margin < 0 ? "minus" : ""}`}>{septims(week.margin)}</div>
+        <div className="stat-total">Total : {septims(all.margin)}</div>
       </div>
     </div>
   );

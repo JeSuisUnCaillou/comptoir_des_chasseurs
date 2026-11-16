@@ -202,7 +202,7 @@ test("le grand livre et la page Mouvement de caisse ne comptent une vente en att
     return Number(((await locator(employee).textContent()) ?? "").replace(/\D/g, ""));
   };
   const till = async () => ({
-    all: await read("/", (p) => p.getByTestId("caisse-totale").locator(".stat-value")),
+    all: await read("/", (p) => p.getByTestId("tresorerie-actuelle")),
     page: await read("/achat-vente/caisse", (p) => p.getByTestId("apercu-caisse")),
   });
   const before = await till();

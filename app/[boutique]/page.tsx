@@ -4,11 +4,18 @@ import { AnnouncementBoard } from "@/components/announcement-board";
 import { PageHead } from "@/components/page-head";
 import { RegisterTable } from "@/components/register-table";
 import { TillOverview } from "@/components/till-overview";
-import { TillStat } from "@/components/till-stat";
+import { WeekEndButton } from "@/components/week-end-button";
 import { requireMember } from "@/lib/auth/session";
+import { isGerant } from "@/lib/policies";
 import { shopPath } from "@/lib/paths";
 import { announcementList } from "@/lib/announcements";
 import { registerEntries, tillSummary } from "@/lib/register";
+
+const weekEndDate = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "full",
+  timeStyle: "short",
+  timeZone: "Europe/Paris",
+});
 
 export default async function GrandLivre() {
   const member = await requireMember();
@@ -43,10 +50,14 @@ export default async function GrandLivre() {
             </Link>
           </div>
         </div>
-        <TillOverview till={till.all} />
-        <div className="stats" style={{ marginTop: 12 }}>
-          <TillStat title="Aujourd'hui" till={till.day} testId="caisse-jour" />
-          <TillStat title="7 derniers jours" till={till.week} testId="caisse-semaine" />
+        <TillOverview week={till.week} all={till.all} />
+        <div className="week-end">
+          <p className="small muted" data-testid="fin-de-semaine">
+            {till.weekEnd
+              ? `Depuis la fin de semaine déclarée par ${till.weekEnd.by} le ${weekEndDate.format(till.weekEnd.declaredAt)}.`
+              : "Depuis l'ouverture : aucune fin de semaine n'a encore été déclarée."}
+          </p>
+          {isGerant(member) && <WeekEndButton />}
         </div>
       </section>
       <section className="section-gap">
