@@ -5,6 +5,7 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { text } from "@/lib/forms";
 import { shopPath } from "@/lib/paths";
+import { removeShopLogo, saveShopLogo } from "@/lib/shop-logos";
 import { deleteShop, updateShop } from "@/lib/shops";
 import { revalidateShop } from "../revalidate";
 
@@ -29,4 +30,23 @@ export async function removeShop(_prev: ShopSettingsState, formData: FormData): 
   const result = await attempt(() => deleteShop(me, me.shop, text(formData, "confirm", 60)));
   if (!result.ok) return result;
   redirect("/boutiques");
+}
+
+/** A gérant uploads the shop's logo, already shrunk to a small PNG by the page. */
+export async function saveLogo(_prev: ShopSettingsState, formData: FormData): Promise<ShopSettingsState> {
+  const me = await requireMember(["gerant"]);
+  const file = formData.get("logo");
+  const bytes = file instanceof Blob ? new Uint8Array(await file.arrayBuffer()) : new Uint8Array();
+  const result = await attempt(() => saveShopLogo(me.shopId, bytes));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "Logo enregistré." };
+}
+
+/** A gérant removes the shop's logo: the app's comes back. */
+export async function removeLogo(_prev: ShopSettingsState): Promise<ShopSettingsState> {
+  const me = await requireMember(["gerant"]);
+  await removeShopLogo(me.shopId);
+  revalidateShop();
+  return { ok: true, message: "Logo retiré." };
 }
