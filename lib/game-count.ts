@@ -119,30 +119,59 @@ function similar(a: string, b: string) {
   return Math.min(a.length, b.length) >= 8 && distance(fa, fb) <= 1;
 }
 
-function sameLine(a: ReadLine, b: ReadLine) {
-  return a.count === b.count && similar(normalizeName(a.name), normalizeName(b.name));
+/**
+ * How many lines at the start of `page` were already read at the end of
+ * `lines`, or 0. The two are aligned as the OCR may have read them: a line
+ * read otherwise, missed or half cut on one screenshot costs one, a line
+ * read alike gains one. The page may start anywhere in what was read, and
+ * end before its end when the list was scrolled back up. Two lines alike at
+ * least, and twice as many as costs: a single equal line may be chance.
+ */
+function overlapOf(lines: ReadLine[], page: ReadLine[]) {
+  const n = lines.length;
+  const m = page.length;
+  const [a, b] = [lines.map((l) => normalizeName(l.name)), page.map((l) => normalizeName(l.name))];
+  const same = (i: number, j: number) => lines[i].count === page[j].count && similar(a[i], b[j]);
+  // score[i][j]: the best alignment of page[0, j) ending with lines[i - 1], and its lines alike.
+  type Cell = { score: number; alike: number };
+  const score: Cell[][] = Array.from({ length: n + 1 }, (_, i) =>
+    Array.from({ length: m + 1 }, (_, j) => ({ score: i === 0 ? -j : j === 0 ? 0 : -Infinity, alike: 0 })),
+  );
+  const better = (x: Cell, y: Cell) => (x.score > y.score || (x.score === y.score && x.alike > y.alike) ? x : y);
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const diagonal = score[i - 1][j - 1];
+      const alike = same(i - 1, j - 1);
+      let cell = { score: diagonal.score + (alike ? 1 : -1), alike: diagonal.alike + (alike ? 1 : 0) };
+      cell = better(cell, { score: score[i - 1][j].score - 1, alike: score[i - 1][j].alike });
+      cell = better(cell, { score: score[i][j - 1].score - 1, alike: score[i][j - 1].alike });
+      score[i][j] = cell;
+    }
+  }
+  let best = { score: 0, alike: 0, overlap: 0 };
+  const consider = (cell: Cell, overlap: number) => {
+    if (cell.alike >= 2 && cell.score * 2 >= cell.alike && (cell.score > best.score || (cell.score === best.score && cell.alike > best.alike))) {
+      best = { ...cell, overlap };
+    }
+  };
+  // Up to the end of what was read, the rest of the page following; or the whole page inside it.
+  for (let j = 1; j <= m; j++) consider(score[n][j], j);
+  for (let i = 1; i <= n; i++) consider(score[i][m], m);
+  return best.overlap;
 }
 
 /**
- * The lines of screenshots of a chest, in order, each line once. A
+ * The lines of screenshots of a chest, in order, each line once: a
  * screenshot that starts with lines already read (the bottom of the
  * previous one, or further up when the list was scrolled back) adds only
- * what follows them. The longest such overlap wins; a line in four may be
- * read differently on the two screenshots. `overlaps[i]`: how many lines of
- * screenshot i were already read, 0 when it shares none with what came before.
+ * what follows them. `overlaps[i]`: how many lines of screenshot i were
+ * already read, 0 when it shares none with what came before.
  */
 export function stitchPages(pages: ReadLine[][]) {
   const lines: ReadLine[] = [];
   const overlaps: number[] = [];
   for (const page of pages) {
-    let overlap = 0;
-    for (let start = 0; start < lines.length && overlap === 0; start++) {
-      const k = Math.min(lines.length - start, page.length);
-      let wrong = 0;
-      for (let i = 0; i < k; i++) if (!sameLine(lines[start + i], page[i])) wrong++;
-      // Two lines at least, and the first one right: a single equal line may be chance.
-      if ((k >= 2 || k === page.length) && sameLine(lines[start], page[0]) && wrong <= Math.floor(k / 4)) overlap = k;
-    }
+    const overlap = lines.length ? overlapOf(lines, page) : 0;
     overlaps.push(overlap);
     lines.push(...page.slice(overlap));
   }
