@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, getTableColumns, gt, gte, ilike, inArray, isNotNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, getTableColumns, gt, gte, ilike, inArray, isNotNull, lt, or, sql, type SQL } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
 import { categoryOf } from "@/lib/categories";
 import type { ShopMember } from "@/lib/auth/session";
@@ -24,14 +24,43 @@ const withCategory = {
 
 export type CategorizedProduct = Awaited<ReturnType<typeof activeProducts>>[number];
 
+/** The shop's merchandises still sold, each with the game names tied to it (`aliases`, normalized) for searches. */
 export async function activeProducts(shopId: number) {
-  const products = await getDb()
-    .select(withCategory)
-    .from(schema.products)
-    .innerJoin(schema.productCategories, eq(schema.productCategories.id, schema.products.categoryId))
-    .where(and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false)))
-    .orderBy(byName(schema.products.name), asc(schema.products.id));
-  return withPrivilegedPrices(products);
+  const [products, aliases] = await Promise.all([
+    getDb()
+      .select(withCategory)
+      .from(schema.products)
+      .innerJoin(schema.productCategories, eq(schema.productCategories.id, schema.products.categoryId))
+      .where(and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false)))
+      .orderBy(byName(schema.products.name), asc(schema.products.id)),
+    productAliases(shopId),
+  ]);
+  const priced = await withPrivilegedPrices(products);
+  return priced.map((p) => ({
+    ...p,
+    aliases: aliases.filter((a) => a.productId === p.id).map((a) => a.name),
+  }));
+}
+
+/**
+ * A merchandise of the outer query (`products`) answers a search: its name
+ * contains `q`, or one of the game names tied to it does (see matchesSearch,
+ * lib/product-search.ts, the same rule for lists filtered in the browser).
+ */
+export function productNameMatches(q: string) {
+  const byOwnName = ilike(schema.products.name, containing(q));
+  const key = normalizeName(q);
+  if (!key) return byOwnName;
+  const a = schema.productAliases;
+  return or(
+    byOwnName,
+    exists(
+      getDb()
+        .select({ one: a.productId })
+        .from(a)
+        .where(and(eq(a.productId, schema.products.id), ilike(a.name, containing(key)))),
+    ),
+  )!;
 }
 
 /** A shop setting's value, undefined while it was never saved. */
@@ -103,7 +132,7 @@ export async function setFeaturedOrder(shopId: number, ids: number[]) {
 }
 
 export type MovementFilter = {
-  /** Part of the merchandise's name. */
+  /** Part of the merchandise's name, or of a game name tied to it. */
   q?: string;
   memberId?: number;
   direction?: "in" | "out";
@@ -114,7 +143,7 @@ export type MovementFilter = {
 function movementConditions(shopId: number, filter: MovementFilter) {
   const m = schema.stockMovements;
   const where: SQL[] = [eq(m.shopId, shopId)];
-  if (filter.q) where.push(ilike(schema.products.name, containing(filter.q)));
+  if (filter.q) where.push(productNameMatches(filter.q));
   if (filter.memberId) where.push(eq(m.memberId, filter.memberId));
   if (filter.direction) where.push(filter.direction === "in" ? gt(m.delta, 0) : lt(m.delta, 0));
   if (filter.from) where.push(gte(m.createdAt, filter.from));
@@ -335,10 +364,10 @@ export async function setBlacksmithLeatherPrice(shopId: number, value: number) {
   await writeSetting(shopId, BLACKSMITH_LEATHER_PRICE, value);
 }
 
-/** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name. */
+/** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name or of a game name tied to it. */
 export async function productPage(shopId: number, q: string, page: number) {
   const inShop = eq(schema.products.shopId, shopId);
-  const where = q ? and(inShop, ilike(schema.products.name, containing(q))) : inShop;
+  const where = q ? and(inShop, productNameMatches(q)) : inShop;
   const db = getDb();
   const [products, [{ total }]] = await Promise.all([
     db
@@ -365,7 +394,7 @@ export async function productOf(shopId: number, id: number): Promise<ShopProduct
 }
 
 /** The game's names the shop tied to its merchandises, normalized. */
-export async function productAliases(shopId: number) {
+async function productAliases(shopId: number) {
   return getDb()
     .select({ name: schema.productAliases.name, productId: schema.productAliases.productId })
     .from(schema.productAliases)

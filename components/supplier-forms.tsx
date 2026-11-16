@@ -52,7 +52,7 @@ export function OfferForm({
   products,
 }: {
   supplierId: number;
-  products: { id: number; name: string; unit: string }[];
+  products: { id: number; name: string; unit: string; aliases?: readonly string[] }[];
 }) {
   const [state, action, pending] = useActionState<SupplierFormState, FormData>(saveOffer, null);
   return (
@@ -65,7 +65,7 @@ export function OfferForm({
             id="o-product"
             name="productId"
             required
-            products={products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})` }))}
+            products={products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})`, aliases: p.aliases }))}
           />
         </div>
         <div className="field span-2">

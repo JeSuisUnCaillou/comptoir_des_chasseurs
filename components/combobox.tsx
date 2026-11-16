@@ -2,7 +2,10 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 
-export type Choice<T> = { id: T; name: string; group?: string };
+import { matchesSearch } from "@/lib/product-search";
+
+/** `aliases`: other names the typed text may find it by (a merchandise's game names). */
+export type Choice<T> = { id: T; name: string; group?: string; aliases?: readonly string[] };
 
 type Common<T> = {
   id: string;
@@ -90,7 +93,7 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   useEffect(() => field.current?.setCustomValidity(stray ? strayText : ""), [stray, strayText]);
   const query = text.trim().toLocaleLowerCase("fr");
   const matches =
-    editing && query ? choices.filter((c) => c.name.toLocaleLowerCase("fr").includes(query)) : choices;
+    editing && query ? choices.filter((c) => matchesSearch(query, c.name, c.aliases)) : choices;
   // A free field hides its list when nothing matches, or when the text is exactly a choice.
   const shown = props.free
     ? matches.filter((c) => c.name.toLocaleLowerCase("fr") !== query || matches.length > 1)

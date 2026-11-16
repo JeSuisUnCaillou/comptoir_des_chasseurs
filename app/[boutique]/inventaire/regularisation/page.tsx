@@ -5,16 +5,12 @@ import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { shopCategories } from "@/lib/categories";
-import { activeProducts, productAliases } from "@/lib/products";
+import { activeProducts } from "@/lib/products";
 
 /** /<slug>/inventaire/regularisation (Régulariser le stock): a gérant counts a chest of the game from screenshots of its inventory. */
 export default async function RegulariserLeStock() {
   const member = await requireMember(["gerant"]);
-  const [products, aliases, categories] = await Promise.all([
-    activeProducts(member.shopId),
-    productAliases(member.shopId),
-    shopCategories(member.shopId),
-  ]);
+  const [products, categories] = await Promise.all([activeProducts(member.shopId), shopCategories(member.shopId)]);
 
   return (
     <>
@@ -35,8 +31,8 @@ export default async function RegulariserLeStock() {
         <div className="eyebrow">Régularisation</div>
         <h2>Compter un coffre du jeu</h2>
         <GameCountForm
-          products={products.map(({ id, name, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, stock, categoryId, categoryName, categoryPosition }))}
-          aliases={aliases}
+          products={products.map(({ id, name, aliases, stock, categoryId, categoryName, categoryPosition }) => ({ id, name, aliases, stock, categoryId, categoryName, categoryPosition }))}
+          aliases={products.flatMap((p) => p.aliases.map((name) => ({ name, productId: p.id })))}
           categories={categories.map(({ id, name }) => ({ id, name }))}
         />
       </section>
