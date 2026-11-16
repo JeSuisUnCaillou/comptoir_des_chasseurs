@@ -22,6 +22,10 @@ export default async function RegulariserLeStock() {
         Donne les captures d&apos;un coffre en jeu : l&apos;app lit chaque objet, tu vérifies, et le stock prend les
         comptes du coffre.
       </PageHead>
+      <p className="notice warning" role="note">
+        Pendant la régularisation, que personne ne vende ni n&apos;achète : le stock prendra les comptes du coffre, et une
+        vente faite entre-temps serait effacée.
+      </p>
       <p>
         <Link className="btn btn-small btn-ghost" href={shopPath(member.shop.slug, "/inventaire")}>
           <ArrowLeft size={14} /> Retour à l&apos;inventaire
