@@ -9,7 +9,8 @@ export type TransactionDraft = {
   lines: DraftLine[];
   counterparty: string;
   notes: string;
-  tillPending: boolean;
+  /** The « pas encore en caisse » box, or null when the member left it as the form had it. */
+  tillPending: boolean | null;
   /** The seller's privileged group, by id, or null for the usual prices. */
   privileged: number | null;
 };
@@ -59,7 +60,7 @@ export function decodeDraft(raw: string | string[] | undefined): TransactionDraf
     lines,
     counterparty: text(d.counterparty, 100),
     notes: text(d.notes, 500),
-    tillPending: d.tillPending === true,
+    tillPending: typeof d.tillPending === "boolean" ? d.tillPending : null,
     privileged: Number.isSafeInteger(d.privileged) && (d.privileged as number) > 0 ? (d.privileged as number) : null,
   };
 }

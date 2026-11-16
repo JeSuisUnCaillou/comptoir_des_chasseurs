@@ -29,6 +29,8 @@ async function record(
   // The tariff fills the amount on its own.
   await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
   if (counterparty) await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
+  // A purchase starts « pas encore sorti de la caisse »: these septims leave the till now.
+  if (kind === "achat") await form.getByLabel("Pas encore sorti de la caisse").uncheck();
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   const status = page.getByRole("status").filter({ hasText: `${quantity} × ${product}` });
@@ -828,6 +830,8 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
   await purchase.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
+  // The member unchecks the box, then checks it again: their choice, not the purchase's default, goes to the sale.
+  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
   await purchase.getByLabel("Pas encore sorti de la caisse").check();
   await toSale.click();
 
