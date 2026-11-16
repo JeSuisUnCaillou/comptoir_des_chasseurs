@@ -462,7 +462,8 @@ jusqu'au bas du coffre.
 - Au-dessus de la relecture, « À propos des captures » prévient d'une
   capture qui n'est pas en 16:9, d'une capture sans aucun objet lu, et de
   deux captures qui n'ont aucune ligne en commun alors que la seconde
-  continue la liste dans l'ordre des noms (une page manque peut-être).
+  continue la liste dans l'ordre alphabétique des objets (une page manque
+  peut-être).
 - La relecture montre une ligne par objet lu, en colonnes : son nom et ses
   lignes (« 255 + 1 »), la marchandise qu'il est, son stock, son compte
   (modifiable) et l'écart entre les deux (« +70 » en vert, « −16 » en

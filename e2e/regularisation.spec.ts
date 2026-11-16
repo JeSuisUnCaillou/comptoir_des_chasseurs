@@ -53,7 +53,6 @@ async function inscribe(review: Locator) {
   if (await checks.isVisible()) await checks.getByRole("button", { name: "Inscrire quand même" }).click();
 }
 
-/** Gives the screenshots, once the page is ready to read them. */
 /** Gives the screenshots, saved a minute apart in the order given, as the game would; `names` renames them. */
 async function upload(page: Page, files: string[], names?: string[]) {
   const dir = mkdtempSync(join(tmpdir(), "coffre-"));
