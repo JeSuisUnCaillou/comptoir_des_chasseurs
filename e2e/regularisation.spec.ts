@@ -216,7 +216,8 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
   await expect(unfold).toHaveAttribute("aria-expanded", "true");
   await expect.poll(turn).toMatch(/^matrix\(0, 1, -1, 0|^matrix\([-\de.]+, 1, -1, [-\de.]+/);
   await expect(ours.getByLabel("Compté")).not.toHaveAttribute("title", /mal lu/);
-  await expect(ours.getByRole("img", { name: /^Sur ScreenShot163\.jpg : Peau d'ours/ })).toHaveCount(3);
+  // From the screenshot higher in the list, 163 or 164 (scrolled back up), whichever reads it first.
+  await expect(ours.getByRole("img", { name: /^Sur ScreenShot16[34]\.jpg : Peau d'ours/ })).toHaveCount(3);
   await unfold.click();
   await expect.poll(turn).toBe("none");
   await unfold.click();
@@ -294,7 +295,8 @@ test("une capture reprise après avoir remonté la liste, avec une ligne coupée
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 180_000 });
   const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
-  await expect(counted("Patte de lapin crue")).toHaveValue("233");
+  // 164b reads its "(1)" line "Patte de lapin que", an item of its own: never 232 twice.
+  await expect(counted("Patte de lapin crue")).toHaveValue("232");
   await expect(counted("Pattes de vasard")).toHaveValue("466");
   await expect(counted("Peau d'ours")).toHaveValue("68");
   await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
@@ -345,7 +347,7 @@ test("sur grand écran, le champ des captures ne s'étire pas sur toute la large
   expect(box!.width).toBeLessThanOrEqual(420);
 });
 
-test("les captures se lisent dans l'ordre où elles ont été prises, même si leurs noms ne le suivent pas", async ({ page }) => {
+test("les captures se recollent dans l'ordre de la liste, quels que soient l'ordre de leurs noms et leurs dates", async ({ page }) => {
   test.setTimeout(240_000);
   const shop = await shopWithStock({ Biche: 0 });
   await loginAsGerant(page);
@@ -358,12 +360,13 @@ test("les captures se lisent dans l'ordre où elles ont été prises, même si l
     /jusqu'au bas du coffre/,
   ]);
   await expect(page.getByText("Les lignes vues sur deux captures, là où elles se chevauchent, ne comptent qu'une fois.")).toBeVisible();
-  // Taken 162, 163, 164b, but named the other way round.
-  await upload(page, fixtures("162", "163", "164b"), ["ScreenShot3.jpg", "ScreenShot2.jpg", "ScreenShot1.jpg"]);
+  // 162, 163 then 164b down the list, but saved 164b, 162, 163 and named the other way round.
+  await upload(page, fixtures("164b", "162", "163"), ["ScreenShot1.jpg", "ScreenShot3.jpg", "ScreenShot2.jpg"]);
   const review = page.getByRole("form", { name: "Relire le comptage" });
   await expect(review).toBeVisible({ timeout: 180_000 });
   const counted = (item: string) => review.getByRole("group", { name: item, exact: true }).getByLabel("Compté");
-  await expect(counted("Patte de lapin crue")).toHaveValue("233");
+  // 164b reads its "(1)" line "Patte de lapin que", an item of its own: never 232 twice.
+  await expect(counted("Patte de lapin crue")).toHaveValue("232");
   await expect(counted("Mountain Lion Pelt")).toHaveValue("30");
 });
 

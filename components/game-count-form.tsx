@@ -13,6 +13,7 @@ import {
   MAX_COUNT_LINES,
   NEW_PRODUCT,
   normalizeName,
+  inListOrder,
   stitchPages,
   sumByProduct,
   sumItems,
@@ -93,8 +94,7 @@ export function GameCountForm({
   }, [state, products]);
 
   async function read(list: FileList | null) {
-    // Screenshots are taken while scrolling down: in the order they were saved, which their
-    // names may not keep; the name only breaks a tie (ScreenShot138, 139… within one second).
+    // Shown in the order they were saved; they are stitched in the order of the list (inListOrder).
     const sorted = [...(list ?? [])].sort(
       (a, b) =>
         Math.floor(a.lastModified / 1000) - Math.floor(b.lastModified / 1000) ||
@@ -109,7 +109,8 @@ export function GameCountForm({
     setFiles(sorted);
     setReading({ done: 0, of: sorted.length });
     try {
-      const pages = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const taken = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const pages = inListOrder(taken, (p) => p.lines);
       const { lines, overlaps } = stitchPages(pages.map((p) => p.lines));
       setWarnings(screenshotWarnings(pages, overlaps));
       const items = sumItems(lines).slice(0, MAX_COUNT_LINES);

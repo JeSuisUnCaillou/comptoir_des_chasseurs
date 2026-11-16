@@ -449,15 +449,19 @@ jusqu'au bas du coffre.
 - Les captures sont lues dans le navigateur (OCR) : elles ne quittent pas
   l'ordinateur. Seule la colonne des noms est lue, quel que soit l'onglet du
   coffre (Tous, Nourriture, Ingrédients, Divers…) : l'icône « volé » et ce
-  qui la suit ne font pas partie du nom. Elles se suivent dans l'ordre où
-  elles ont été prises (la date du fichier) ; deux captures de la même
-  seconde, dans l'ordre de leurs noms (`ScreenShot138`, `ScreenShot139`…).
+  qui la suit ne font pas partie du nom. Elles se recollent dans l'ordre de
+  la liste du coffre, que le jeu trie par nom, quels que soient leurs noms
+  de fichier ou leurs dates : chacune prend sa place d'après le nom de sa
+  deuxième ligne (la première peut être coupée).
 - Une capture qui reprend des lignes déjà lues (le bas de la précédente, ou
   plus haut quand la liste a été remontée) n'ajoute que ce qui les suit.
   Les deux captures sont alignées ligne à ligne en tolérant les accrocs de
   l'OCR : une ligne lue autrement, coupée en haut de la capture ou manquée
   sur l'une des deux. Il faut au moins deux lignes communes, et deux fois
-  plus de lignes communes que d'accrocs. Les lignes d'un
+  plus de lignes communes que d'accrocs. Une ligne que seule la seconde a
+  lue, entre deux lignes communes, prend sa place dans la liste ; quand une
+  ligne est lue sur les deux, c'est la lecture de la capture la plus haute
+  dans la liste qui reste. Les lignes d'un
   même objet s'additionnent, volées ou non : « (13) » compte 13, une ligne
   sans nombre compte 1. Les lettres que l'OCR confond (« a » et « o »,
   « i », « l » et « t ») ne séparent pas deux lignes.
