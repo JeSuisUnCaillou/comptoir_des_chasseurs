@@ -11,6 +11,8 @@ import { lineMessage } from "@/lib/transaction-kinds";
 import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
 
 export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
+/** A merchandise created where the archived ones are not shown. */
+const DUPLICATE_MAYBE_ARCHIVED = `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`;
 
 /** A merchandise's columns, with its category's name and whether it holds hides. */
 const withCategory = {
@@ -284,9 +286,7 @@ export async function createStocked(
       if (!result.ok) throw new UserError(result.error);
     });
   } catch (error) {
-    if (isUniqueViolation(error)) {
-      throw new UserError(`${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`);
-    }
+    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
     throw error;
   }
 }
@@ -372,55 +372,87 @@ export async function productAliases(shopId: number) {
     .where(eq(schema.productAliases.shopId, shopId));
 }
 
-/** An item of a chest counted from the game, tied to a merchandise by the gérant. */
-export type CountLine = { productId: number; counted: number; readName: string };
+/**
+ * An item of a chest counted from the game, tied by the gérant to a
+ * merchandise of the shop, or to a new one to create (`newName`).
+ */
+export type CountLine = { counted: number; readName: string } & (
+  | { productId: number }
+  | { newName: string; categoryId: number }
+);
 
 /**
  * Sets the stock of the counted merchandises to what the chest holds, as
- * stock movements with one reason, all together or not at all. Items tied to
- * the same merchandise add up. A merchandise already at its count gets no
- * movement. Each game name tied to a merchandise other than its own is
- * remembered for the next count. Gérants only. Returns the movements' ids.
+ * stock movements with one reason, all together or not at all. The new
+ * merchandises are created first, without prices; items tied to the same
+ * new name make one. Items tied to the same merchandise add up. A
+ * merchandise already at its count gets no movement. Each game name tied to
+ * a merchandise other than its own is remembered for the next count.
+ * Gérants only. Returns the movements' ids and how many merchandises were created.
  */
-export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, lines: CountLine[], reason: string) {
+export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, given: CountLine[], reason: string) {
   if (!isGerant(member)) throw new UserError("Seul un gérant compte le stock depuis le jeu.");
-  const counted = sumByProduct(lines);
-  return getDb().transaction(async (tx) => {
-    const ids = [...counted.keys()];
-    const products = ids.length
-      ? await tx
-          .select({ id: schema.products.id, name: schema.products.name, stock: schema.products.stock })
-          .from(schema.products)
-          .where(
-            and(
-              inArray(schema.products.id, ids),
-              eq(schema.products.shopId, member.shopId),
-              eq(schema.products.archived, false),
-            ),
-          )
-          .orderBy(byName(schema.products.name))
-          .for("update")
-      : [];
-    if (products.length !== ids.length) throw new UserError("Une marchandise n'existe plus : recharge la page.");
+  try {
+    return await getDb().transaction(async (tx) => {
+      const created = new Map<string, number>();
+      const lines: { productId: number; counted: number; readName: string }[] = [];
+      for (const line of given) {
+        if ("productId" in line) {
+          lines.push(line);
+          continue;
+        }
+        const key = normalizeName(line.newName);
+        if (!created.has(key)) {
+          await categoryOf(tx, member.shopId, line.categoryId);
+          const [product] = await tx
+            .insert(schema.products)
+            .values({ shopId: member.shopId, name: line.newName, categoryId: line.categoryId })
+            .returning({ id: schema.products.id });
+          created.set(key, product.id);
+        }
+        lines.push({ productId: created.get(key)!, counted: line.counted, readName: line.readName });
+      }
 
-    for (const { productId, readName } of lines) {
-      const name = normalizeName(readName);
-      const product = products.find((p) => p.id === productId)!;
-      if (!name || name === normalizeName(product.name)) continue;
-      await tx
-        .insert(schema.productAliases)
-        .values({ shopId: member.shopId, name, productId })
-        .onConflictDoUpdate({ target: [schema.productAliases.shopId, schema.productAliases.name], set: { productId } });
-    }
+      const counted = sumByProduct(lines);
+      const ids = [...counted.keys()];
+      const products = ids.length
+        ? await tx
+            .select({ id: schema.products.id, name: schema.products.name, stock: schema.products.stock })
+            .from(schema.products)
+            .where(
+              and(
+                inArray(schema.products.id, ids),
+                eq(schema.products.shopId, member.shopId),
+                eq(schema.products.archived, false),
+              ),
+            )
+            .orderBy(byName(schema.products.name))
+            .for("update")
+        : [];
+      if (products.length !== ids.length) throw new UserError("Une marchandise n'existe plus : recharge la page.");
 
-    const written: number[] = [];
-    for (const product of products) {
-      const delta = counted.get(product.id)! - product.stock;
-      if (delta === 0) continue;
-      const moved = await moveStock(tx, member.shopId, product.id, delta, member.id, reason);
-      if (!moved.ok) throw new UserError(`${product.name} : ${moved.error}`);
-      written.push(moved.id);
-    }
-    return written;
-  });
+      for (const { productId, readName } of lines) {
+        const name = normalizeName(readName);
+        const product = products.find((p) => p.id === productId)!;
+        if (!name || name === normalizeName(product.name)) continue;
+        await tx
+          .insert(schema.productAliases)
+          .values({ shopId: member.shopId, name, productId })
+          .onConflictDoUpdate({ target: [schema.productAliases.shopId, schema.productAliases.name], set: { productId } });
+      }
+
+      const written: number[] = [];
+      for (const product of products) {
+        const delta = counted.get(product.id)! - product.stock;
+        if (delta === 0) continue;
+        const moved = await moveStock(tx, member.shopId, product.id, delta, member.id, reason);
+        if (!moved.ok) throw new UserError(`${product.name} : ${moved.error}`);
+        written.push(moved.id);
+      }
+      return { written, created: created.size };
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
+    throw error;
+  }
 }

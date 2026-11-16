@@ -1,78 +1,53 @@
 "use client";
 
-import { Check, ImageUp, RotateCcw } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { AlertTriangle, Check, ImageUp, RotateCcw, ScanSearch } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { recordGameCount, type MoveState } from "@/app/[boutique]/inventaire/actions";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import type { CategorizedProduct } from "@/lib/products";
-import { matchProduct, MAX_COUNT_LINES, parsePage, stitchPages, sumByProduct, sumItems, type ReadItem } from "@/lib/game-count";
+import {
+  bigGap,
+  GUESS_FROM,
+  guessProduct,
+  matchProduct,
+  MAX_COUNT_LINES,
+  NEW_PRODUCT,
+  normalizeName,
+  stitchPages,
+  sumByProduct,
+  sumItems,
+  type ReadItem,
+} from "@/lib/game-count";
+import { LineStrip, readScreenshots, screenshotWarnings } from "@/components/game-count-reading";
 import { formatNumber } from "@/lib/pricing";
 
 export type CountProduct = Pick<CategorizedProduct, "id" | "name" | "stock" | "categoryId" | "categoryName" | "categoryPosition">;
 
-/** The choice that leaves an item out of the count. */
-const IGNORE = [{ id: "", name: "Ignorer" }];
+/** The choices that are not a merchandise of the shop: leave the item out, or create its merchandise. */
+const EXTRAS = [
+  { id: "", name: "Ignorer" },
+  { id: NEW_PRODUCT, name: "Nouvelle marchandise" },
+];
 
 /**
- * An item of the chest under review: the merchandise it is ("" to ignore it)
- * and its count. `recognized`: the app found its merchandise when reading;
- * it keeps the item in its section while the gérant changes it. `n`: its
- * place in the reading, for the ids of its fields.
+ * An item of the chest under review: the merchandise it is ("" to ignore it,
+ * NEW_PRODUCT to create it as `newName` in `categoryId`) and its count.
+ * `recognized`: the app found its merchandise when reading; it keeps the
+ * item in its section while the gérant changes it. `guessed`: the merchandise
+ * is only the closest name, until the gérant confirms it. `doubtful`: the
+ * OCR was not sure of a count, until the gérant checks it. `n`: its place in
+ * the reading, for the ids of its fields.
  */
-type Row = ReadItem & { n: number; productId: string; counted: string; recognized: boolean };
-
-// Where the item names are on a 16:9 screenshot of a chest (SkyUI), as
-// fractions of its width and height: below the headers, and short of the Type
-// column, whose long words ("Nourriture", "Ingrédient") start at 0.317.
-const NAMES = { left: 0.039, top: 0.165, width: 0.261, height: 0.662 };
-
-/** The names column of a screenshot, three times as big, in black on white: what the OCR reads best. */
-async function namesColumn(file: File) {
-  const bitmap = await createImageBitmap(file);
-  const sx = Math.round(bitmap.width * NAMES.left);
-  const sy = Math.round(bitmap.height * NAMES.top);
-  const sw = Math.round(bitmap.width * NAMES.width);
-  const sh = Math.round(bitmap.height * NAMES.height);
-  const canvas = document.createElement("canvas");
-  canvas.width = sw * 3;
-  canvas.height = sh * 3;
-  const context = canvas.getContext("2d")!;
-  // Thin letters, enlarged three times and kept thick by a low threshold: at
-  // twice the size, "a" reads as "o" ("Chair de ssumon").
-  context.imageSmoothingQuality = "high";
-  context.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  const px = image.data;
-  for (let i = 0; i < px.length; i += 4) {
-    const light = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-    px[i] = px[i + 1] = px[i + 2] = light > 120 ? 0 : 255;
-    px[i + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
-  return canvas;
-}
-
-/** The OCR text of each screenshot, in their order, reading them in the browser. */
-async function readScreenshots(files: File[], onProgress: (done: number) => void) {
-  const { createWorker } = await import("tesseract.js");
-  // Served by the app (scripts/copy-ocr-assets.mjs), never by a CDN.
-  const base = `${window.location.origin}/ocr`;
-  const worker = await createWorker("fra", 1, { workerPath: `${base}/worker.min.js`, corePath: base, langPath: base });
-  try {
-    // One block of uniform lines: the list of the chest.
-    await worker.setParameters({ tessedit_pageseg_mode: "6" as never });
-    const texts: string[] = [];
-    for (const file of files) {
-      const { data } = await worker.recognize(await namesColumn(file));
-      texts.push(data.text);
-      onProgress(texts.length);
-    }
-    return texts;
-  } finally {
-    await worker.terminate();
-  }
-}
+type Row = ReadItem & {
+  n: number;
+  productId: string;
+  counted: string;
+  recognized: boolean;
+  guessed: boolean;
+  doubtful: boolean;
+  newName: string;
+  categoryId: string;
+};
 
 /**
  * Counts a chest of the game from screenshots of its inventory: reads them,
@@ -82,40 +57,81 @@ async function readScreenshots(files: File[], onProgress: (done: number) => void
 export function GameCountForm({
   products,
   aliases,
+  categories,
 }: {
   products: CountProduct[];
   aliases: { name: string; productId: number }[];
+  categories: { id: number; name: string }[];
 }) {
   const [state, action, pending] = useActionState<MoveState, FormData>(recordGameCount, null);
   const [reading, setReading] = useState<{ done: number; of: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[] | null>(null);
+  // The items whose lines of screenshot are shown.
+  const [shown, setShown] = useState<Set<number>>(new Set());
+  // The checks shown before writing, once the gérant asked to write.
+  const [checking, setChecking] = useState(false);
+  const confirmed = useRef(false);
+  const [bulkCategory, setBulkCategory] = useState(String(categories[0]?.id ?? ""));
   // A new file field after « Recommencer », so the same screenshots can be read again.
   const [fieldKey, setFieldKey] = useState(0);
   // Screenshots picked before the page is ready would be lost: the field waits for it.
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
+  // Merchandises just created, without stock to write: their items now are them, not new ones again.
+  useEffect(() => {
+    if (!state?.ok) return;
+    setRows((all) =>
+      all?.map((r) => {
+        if (r.productId !== NEW_PRODUCT) return r;
+        const made = products.find((p) => normalizeName(p.name) === normalizeName(r.newName));
+        return made ? { ...r, productId: String(made.id) } : r;
+      }) ?? null,
+    );
+  }, [state, products]);
 
   async function read(list: FileList | null) {
     // Screenshots are taken while scrolling down: their names keep that order (ScreenShot138, 139…).
-    const files = [...(list ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    if (files.length === 0) return;
+    const sorted = [...(list ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    if (sorted.length === 0) return;
     setError(null);
     setRows(null);
-    setReading({ done: 0, of: files.length });
+    setWarnings([]);
+    setShown(new Set());
+    setChecking(false);
+    setFiles(sorted);
+    setReading({ done: 0, of: sorted.length });
     try {
-      const texts = await readScreenshots(files, (done) => setReading({ done, of: files.length }));
-      const items = sumItems(stitchPages(texts.map(parsePage))).slice(0, MAX_COUNT_LINES);
+      const pages = await readScreenshots(sorted, (done) => setReading({ done, of: sorted.length }));
+      const { lines, overlaps } = stitchPages(pages.map((p) => p.lines));
+      setWarnings(screenshotWarnings(pages, overlaps));
+      const items = sumItems(lines).slice(0, MAX_COUNT_LINES);
       if (items.length === 0) {
         setError("Aucun objet lu sur ces captures. Prends-les en plein écran, sur la liste d'un coffre.");
-      } else {
-        setRows(
-          items.map((item, n) => {
-            const product = matchProduct(item.name, products, aliases);
-            return { ...item, n, productId: String(product?.id ?? ""), counted: String(item.total), recognized: Boolean(product) };
-          }),
-        );
+        return;
       }
+      const matched = items.map((item) => matchProduct(item.name, products, aliases));
+      // A guess is never a merchandise another item already is.
+      const free = products.filter((p) => !matched.includes(p));
+      setRows(
+        items.map((item, n) => {
+          const product = matched[n];
+          const guess = !product && item.total >= GUESS_FROM ? guessProduct(item.name, free) : undefined;
+          return {
+            ...item,
+            n,
+            productId: String(product?.id ?? guess?.id ?? ""),
+            counted: String(item.total),
+            recognized: Boolean(product),
+            guessed: Boolean(guess),
+            doubtful: item.lines.some((l) => l.doubtful),
+            newName: item.name,
+            categoryId: bulkCategory,
+          };
+        }),
+      );
     } catch {
       setError("La lecture des captures a échoué. Recharge la page et réessaie.");
     } finally {
@@ -123,28 +139,79 @@ export function GameCountForm({
     }
   }
 
-  function update(key: string, change: Partial<Row>) {
-    setRows((all) => all && all.map((r) => (r.key === key ? { ...r, ...change } : r)));
+  function update(n: number, change: Partial<Row>) {
+    confirmed.current = false;
+    setRows((all) => all && all.map((r) => (r.n === n ? { ...r, ...change } : r)));
   }
 
+  function toggleLines(row: Row) {
+    setShown((all) => {
+      const next = new Set(all);
+      if (next.has(row.n)) next.delete(row.n);
+      else next.add(row.n);
+      return next;
+    });
+    // Seen on the screenshot: its counts are checked.
+    if (row.doubtful) update(row.n, { doubtful: false });
+  }
+
+  const all = rows ?? [];
   const totals = sumByProduct(
-    (rows ?? []).filter((r) => r.productId).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
+    all.filter((r) => r.productId && r.productId !== NEW_PRODUCT).map((r) => ({ productId: r.productId, counted: Number(r.counted) || 0 })),
   );
   const choices = choicesByCategory(products);
   const productOf = (row: Row) => products.find((p) => String(p.id) === row.productId);
+  const gapOf = (row: Row) => {
+    const product = productOf(row);
+    return product && { product, total: totals.get(row.productId)!, big: bigGap(product.stock, totals.get(row.productId)!) };
+  };
+
+  // What the gérant should look at before writing.
+  const checks = all.flatMap((row) => {
+    const found: { n: number; text: string }[] = [];
+    if (row.guessed && row.productId) found.push({ n: row.n, text: `${row.name} : rattaché à ${productOf(row)?.name} par un nom approchant.` });
+    if (row.doubtful && row.productId) found.push({ n: row.n, text: `${row.name} : un nombre peut-être mal lu.` });
+    const gap = gapOf(row);
+    if (gap?.big && all.find((r) => r.productId === row.productId) === row) {
+      found.push({ n: row.n, text: `${gap.product.name} : ${formatNumber(gap.product.stock)} en stock, ${formatNumber(gap.total)} comptés.` });
+    }
+    return found;
+  });
+
+  function submit(ev: FormEvent<HTMLFormElement>) {
+    if (checks.length > 0 && !confirmed.current) {
+      ev.preventDefault();
+      setChecking(true);
+    }
+  }
+
+  function goTo(n: number) {
+    document.getElementById(`c-${n}`)?.focus();
+  }
 
   /** One item on one row: what was read, its merchandise, its stock, its count, and the gap between them. */
   function itemLine(row: Row) {
-    const product = productOf(row);
-    const total = product ? totals.get(row.productId)! : 0;
-    const gap = product ? total - product.stock : 0;
-    const shared = product && (rows ?? []).filter((r) => r.productId === row.productId).length > 1;
+    const gap = gapOf(row);
+    const diff = gap ? gap.total - gap.product.stock : 0;
+    const shared = gap && all.filter((r) => r.productId === row.productId).length > 1;
+    const creating = row.productId === NEW_PRODUCT;
+    const open = shown.has(row.n);
     return (
-      <fieldset key={row.key} className="count-line" aria-label={row.name}>
+      <fieldset key={row.n} className="count-line" aria-label={row.name}>
         <input type="hidden" name="readName" value={row.name} />
-        <div className="count-read">
-          <strong>{row.name}</strong> <span className="small muted">{row.counts.map(formatNumber).join(" + ")}</span>
-        </div>
+        <button
+          type="button"
+          className="count-read"
+          aria-expanded={open}
+          aria-controls={`lines-${row.n}`}
+          title="Voir les lignes lues sur les captures"
+          onClick={() => toggleLines(row)}
+        >
+          <strong>{row.name}</strong>{" "}
+          <span className="small muted nowrap">
+            {row.lines.map((l) => formatNumber(l.count)).join(" + ")} <ScanSearch size={14} aria-label="Voir sur les captures" />
+          </span>
+        </button>
         <div className="count-product">
           <label className="sr-only" htmlFor={`c-${row.n}`}>
             Marchandise
@@ -153,13 +220,18 @@ export function GameCountForm({
             id={`c-${row.n}`}
             name="productId"
             products={choices}
-            extras={IGNORE}
+            extras={EXTRAS}
             value={row.productId}
-            onChange={(productId) => update(row.key, { productId })}
+            onChange={(productId) => update(row.n, { productId, guessed: false })}
           />
+          {row.guessed && row.productId && (
+            <button type="button" className="count-guess" onClick={() => update(row.n, { guessed: false })}>
+              Proposée : confirmer
+            </button>
+          )}
         </div>
         <span className="count-stock" data-testid="stock">
-          {product ? formatNumber(product.stock) : ""}
+          {gap ? formatNumber(gap.product.stock) : creating ? "0" : ""}
         </span>
         <input
           name="counted"
@@ -168,21 +240,55 @@ export function GameCountForm({
           min={0}
           step={1}
           required
+          className={row.doubtful ? "doubtful" : undefined}
+          title={row.doubtful ? "Nombre peut-être mal lu : vérifie sur la capture" : undefined}
           value={row.counted}
-          onChange={(ev) => update(row.key, { counted: ev.target.value })}
+          onChange={(ev) => update(row.n, { counted: ev.target.value, doubtful: false })}
         />
         <span
-          className="count-gap"
+          className={`count-gap${gap?.big ? " big" : ""}`}
           data-testid="ecart"
-          title={shared ? "Compté avec les autres objets de cette marchandise" : undefined}
+          title={gap?.big ? "Gros écart : vérifie le compte" : shared ? "Compté avec les autres objets de cette marchandise" : undefined}
         >
-          {product && (
-            <strong className={gap > 0 ? "plus" : gap < 0 ? "minus" : "muted"}>
-              {gap === 0 ? "=" : `${gap > 0 ? "+" : "−"}${formatNumber(Math.abs(gap))}`}
+          {gap && (
+            <strong className={diff > 0 ? "plus" : diff < 0 ? "minus" : "muted"}>
+              {gap.big && <AlertTriangle size={12} aria-label="Gros écart" />}
+              {diff === 0 ? "=" : `${diff > 0 ? "+" : "−"}${formatNumber(Math.abs(diff))}`}
               {shared && "*"}
             </strong>
           )}
+          {creating && <strong className="plus">+{formatNumber(Number(row.counted) || 0)}</strong>}
         </span>
+        {creating ? (
+          <div className="count-new">
+            <label>
+              Nom
+              <input name="newName" required maxLength={100} value={row.newName} onChange={(ev) => update(row.n, { newName: ev.target.value })} />
+            </label>
+            <label>
+              Catégorie
+              <select name="categoryId" value={row.categoryId} onChange={(ev) => update(row.n, { categoryId: ev.target.value })}>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : (
+          <>
+            <input type="hidden" name="newName" value="" />
+            <input type="hidden" name="categoryId" value="" />
+          </>
+        )}
+        {open && (
+          <div className="count-strips" id={`lines-${row.n}`}>
+            {row.lines.map((line, i) => (
+              <LineStrip key={i} file={files[line.page!]} line={line} />
+            ))}
+          </div>
+        )}
       </fieldset>
     );
   }
@@ -198,8 +304,10 @@ export function GameCountForm({
     </div>
   );
 
-  const unknown = (rows ?? []).filter((r) => !r.recognized);
-  const known = (rows ?? []).filter((r) => r.recognized);
+  const unknown = all.filter((r) => !r.recognized);
+  const known = all.filter((r) => r.recognized);
+  const ignored = unknown.filter((r) => r.productId === "");
+  const creating = unknown.filter((r) => r.productId === NEW_PRODUCT);
 
   return (
     <>
@@ -228,10 +336,21 @@ export function GameCountForm({
           {error}
         </p>
       )}
+      {warnings.length > 0 && (
+        <div className="notice warning" role="status" aria-label="À propos des captures">
+          <strong>À propos des captures</strong>
+          <ul>
+            {warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {rows && (
-        <form action={action} aria-label="Relire le comptage">
+        <form action={action} onSubmit={submit} aria-label="Relire le comptage">
           <p className="small muted">
-            Un objet sur « Ignorer » ne change rien ; une marchandise absente du coffre garde son stock.
+            Un objet sur « Ignorer » ne change rien ; une marchandise absente du coffre garde son stock. Touche un nom pour
+            voir ses lignes sur les captures.
           </p>
           <div className="count-columns">
             {known.length > 0 && (
@@ -245,7 +364,47 @@ export function GameCountForm({
             {unknown.length > 0 && (
               <section className="count-section" aria-label="Objets non reconnus">
                 <h3>Non reconnus ({unknown.length})</h3>
-                <p className="small muted">Choisis leur marchandise, ou laisse « Ignorer ». Ton choix est retenu.</p>
+                <p className="small muted">
+                  Choisis leur marchandise, crée-la, ou laisse « Ignorer ». Ton choix est retenu pour la prochaine fois.
+                </p>
+                {(ignored.length > 0 || creating.length > 0) && categories.length > 0 && (
+                  <div className="count-bulk">
+                    {ignored.length > 0 && (
+                      <>
+                        <label className="sr-only" htmlFor="c-bulk-category">
+                          Catégorie des nouvelles marchandises
+                        </label>
+                        <select id="c-bulk-category" value={bulkCategory} onChange={(ev) => setBulkCategory(ev.target.value)}>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-small"
+                          onClick={() => {
+                            for (const r of ignored) update(r.n, { productId: NEW_PRODUCT, categoryId: bulkCategory });
+                          }}
+                        >
+                          Créer les {ignored.length} ignorés dans cette catégorie
+                        </button>
+                      </>
+                    )}
+                    {creating.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-small btn-ghost"
+                        onClick={() => {
+                          for (const r of creating) update(r.n, { productId: "" });
+                        }}
+                      >
+                        Ne plus créer les {creating.length} nouvelles
+                      </button>
+                    )}
+                  </div>
+                )}
                 {head}
                 <div className="count-lines">{unknown.map((row) => itemLine(row))}</div>
               </section>
@@ -255,6 +414,36 @@ export function GameCountForm({
             <label htmlFor="c-reason">Motif</label>
             <input id="c-reason" name="reason" required maxLength={200} defaultValue="Régularisation du stock" />
           </div>
+          {checking && checks.length > 0 && (
+            <div className="notice warning" role="alert" aria-label="À vérifier avant d'inscrire">
+              <strong>À vérifier avant d&apos;inscrire ({checks.length})</strong>
+              <ul>
+                {checks.map((c) => (
+                  <li key={c.text}>
+                    <button type="button" className="link-button" onClick={() => goTo(c.n)}>
+                      {c.text}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="move-actions">
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  disabled={pending}
+                  onClick={(ev) => {
+                    confirmed.current = true;
+                    ev.currentTarget.form?.requestSubmit();
+                  }}
+                >
+                  <Check size={16} /> Inscrire quand même
+                </button>
+                <button className="btn btn-ghost" type="button" onClick={() => setChecking(false)}>
+                  Revenir à la relecture
+                </button>
+              </div>
+            </div>
+          )}
           {state && (
             <p className={`notice ${state.ok ? "" : "error"}`} role={state.ok ? "status" : "alert"}>
               {state.message}
@@ -264,10 +453,16 @@ export function GameCountForm({
             <button className="btn btn-primary" type="submit" disabled={pending}>
               <Check size={16} /> Mettre le stock à jour
             </button>
-            <button className="btn btn-ghost" type="button" onClick={() => {
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => {
                 setRows(null);
+                setWarnings([]);
                 setFieldKey((k) => k + 1);
-              }} disabled={pending}>
+              }}
+              disabled={pending}
+            >
               <RotateCcw size={16} /> Recommencer
             </button>
           </div>
