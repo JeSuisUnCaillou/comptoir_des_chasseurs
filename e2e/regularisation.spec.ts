@@ -193,9 +193,20 @@ test("la relecture montre les lignes des captures, propose les noms approchants 
 
   // The lines an item was read from, cut from the screenshots; seeing them checks a doubtful count.
   await expect(ours.getByLabel("Compté")).toHaveAttribute("title", /mal lu/);
-  await ours.getByRole("button", { name: /^Peau d'ours/ }).click();
+  // A small arrow says the name unfolds: it points right, then down once the lines show.
+  const unfold = ours.getByRole("button", { name: /^Peau d'ours/ });
+  const arrow = unfold.locator(".count-chevron");
+  const turn = () => arrow.evaluate((el) => getComputedStyle(el).transform);
+  await expect(arrow).toBeVisible();
+  expect(await turn()).toBe("none");
+  await unfold.click();
+  await expect(unfold).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(turn).toMatch(/^matrix\(0, 1, -1, 0|^matrix\([-\de.]+, 1, -1, [-\de.]+/);
   await expect(ours.getByLabel("Compté")).not.toHaveAttribute("title", /mal lu/);
   await expect(ours.getByRole("img", { name: /^Sur ScreenShot163\.jpg : Peau d'ours/ })).toHaveCount(3);
+  await unfold.click();
+  await expect.poll(turn).toBe("none");
+  await unfold.click();
 
   // Many of an item nothing recognized: the closest name is proposed, to confirm.
   const lion = review.getByRole("region", { name: "Objets non reconnus" }).getByRole("group", { name: "Mountain Lion Pelt" });

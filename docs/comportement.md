@@ -469,7 +469,8 @@ bas de la liste :
   nom, puis par l'animal d'une peau (« Peau de loup » est Loup). Sinon,
   l'objet est sur « Ignorer » et le gérant choisit.
 - Toucher le nom d'un objet montre, sous sa ligne, les lignes des captures
-  d'où il a été lu, découpées dans les captures.
+  d'où il a été lu, découpées dans les captures. Une petite flèche devant le
+  nom le signale : elle pointe à droite, puis vers le bas une fois déplié.
 - Garde-fous, en orange :
   - un objet non reconnu d'au moins 6 reçoit la marchandise au nom le plus
     proche (une lettre sur six d'écart au plus, jamais une marchandise

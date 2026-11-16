@@ -2577,6 +2577,9 @@ tr.fresh td {
 
 /* The read name opens the lines of the screenshots it was read from. */
 button.count-read {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   background: none;
   border: 0;
   padding: 0;
@@ -2601,6 +2604,18 @@ button.count-read .nowrap {
 button.count-read svg {
   vertical-align: -2px;
   color: var(--muted);
+}
+
+/* Points at the lines it unfolds, and down once they show. */
+button.count-read .count-chevron {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 3px;
+  transition: transform 0.15s;
+}
+
+button.count-read[aria-expanded="true"] .count-chevron {
+  transform: rotate(90deg);
 }
 
 .count-strips {
