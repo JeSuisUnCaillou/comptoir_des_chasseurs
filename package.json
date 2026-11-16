@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "tsc --noEmit && node scripts/check-layers.mjs",
     "test:e2e": "playwright test",
+    "test:parser": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tests/game-count.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
     "legacy:export": "node scripts/legacy/export.mjs",
