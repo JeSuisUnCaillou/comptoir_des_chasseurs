@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   index,
   integer,
   pgEnum,
@@ -32,6 +33,25 @@ export const shops = pgTable(
 );
 
 export type Shop = typeof shops.$inferSelect;
+
+/** Raw bytes (Postgres bytea), read and written as a Buffer. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+/**
+ * The image a gérant uploaded in the shop's Réglages: its logo in the menu
+ * and the icon of the browser tab on its pages. A shop without one shows the
+ * app's own (public/icon.svg). Kept apart from shops so reading a shop doesn't
+ * load the image.
+ */
+export const shopLogos = pgTable("shop_logos", {
+  shopId: integer("shop_id")
+    .primaryKey()
+    .references(() => shops.id),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  // Changes with each upload: the image's address carries it, so browsers can cache it for good.
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * A link the super admin gives someone to become gérant of a shop made for

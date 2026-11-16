@@ -36,7 +36,7 @@ export const currentShop = cache(async function currentShop(): Promise<Shop> {
   return shop;
 });
 
-export type AccountShop = Pick<Shop, "id" | "name" | "slug"> & { role: MemberRole; members: number };
+export type AccountShop = Pick<Shop, "id" | "name" | "slug"> & { role: MemberRole; members: number; logo: number | null };
 
 /**
  * The shops an account may enter, by name, with its role in each and how many
@@ -53,19 +53,23 @@ export async function accountShops(account: Pick<Member, "id" | "superAdmin">): 
     .groupBy(sm.shopId)
     .as("members");
   const memberCount = sql<number>`coalesce(${members.count}, 0)::int`;
+  // The logo's version (see shopLogoVersion), null for a shop without one.
+  const logo = sql<number | null>`floor(extract(epoch from ${schema.shopLogos.updatedAt}) * 1000)::float8`;
   if (account.superAdmin) {
     const shops = await getDb()
-      .select({ id: s.id, name: s.name, slug: s.slug, members: memberCount })
+      .select({ id: s.id, name: s.name, slug: s.slug, members: memberCount, logo })
       .from(s)
       .leftJoin(members, eq(members.shopId, s.id))
+      .leftJoin(schema.shopLogos, eq(schema.shopLogos.shopId, s.id))
       .orderBy(byName(s.name), asc(s.id));
     return shops.map((shop) => ({ ...shop, role: "gerant" }));
   }
   return getDb()
-    .select({ id: s.id, name: s.name, slug: s.slug, role: sm.role, members: memberCount })
+    .select({ id: s.id, name: s.name, slug: s.slug, role: sm.role, members: memberCount, logo })
     .from(s)
     .innerJoin(sm, eq(sm.shopId, s.id))
     .leftJoin(members, eq(members.shopId, s.id))
+    .leftJoin(schema.shopLogos, eq(schema.shopLogos.shopId, s.id))
     .where(and(eq(sm.memberId, account.id), ne(sm.role, "desactive")))
     .orderBy(byName(s.name), asc(s.id));
 }
@@ -151,6 +155,7 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
     await tx.delete(schema.productCategories).where(of(schema.productCategories));
     await tx.delete(schema.announcements).where(of(schema.announcements));
     await tx.delete(schema.settings).where(of(schema.settings));
+    await tx.delete(schema.shopLogos).where(of(schema.shopLogos));
     await tx.delete(schema.shopInvitations).where(of(schema.shopInvitations));
     await tx.delete(schema.shopMembers).where(of(schema.shopMembers));
     await tx.delete(schema.shops).where(eq(schema.shops.id, shop.id));

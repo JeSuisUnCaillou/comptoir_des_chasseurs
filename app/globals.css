@@ -97,6 +97,8 @@ h3 {
   width: 44px;
   height: 44px;
   flex: none;
+  /* A shop's uploaded logo may not be square: it fits, uncropped. */
+  object-fit: contain;
 }
 
 .brand-name {
@@ -2706,4 +2708,46 @@ button.count-read svg {
 
 .count-section > p {
   margin: 0 0 6px;
+}
+
+/* A shop's logo in its Réglages, beside the form that changes it. */
+.logo-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.logo-preview {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  background: var(--panel-2);
+}
+
+.logo-settings-forms {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.logo-settings-forms input[type="file"] {
+  max-width: 100%;
+}
+
+.shop-card-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.logo-settings-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }

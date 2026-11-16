@@ -19,28 +19,33 @@ import { BrandMark } from "@/components/brand";
 import { NavLink } from "@/components/nav-link";
 import { logout } from "@/app/connexion/actions";
 import { requireMember } from "@/lib/auth/session";
+import { APP_LOGO, shopLogoPath } from "@/lib/logo";
 import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
+import { shopLogoVersion } from "@/lib/shop-logos";
 import { currentShop } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
 
-/** Browser tab: the shop's name, on every page of the shop. */
+/** Browser tab: the shop's name and logo, on every page of the shop. */
 export async function generateMetadata(): Promise<Metadata> {
   const shop = await currentShop();
-  return { title: shop.name };
+  const logo = await shopLogoVersion(shop.id);
+  const icon = logo === null ? { url: APP_LOGO, type: "image/svg+xml" } : { url: shopLogoPath(shop.slug, logo), type: "image/png" };
+  return { title: shop.name, icons: { icon } };
 }
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   const member = await requireMember();
   const gerant = isGerant(member);
   const at = (path: string) => shopPath(member.shop.slug, path);
+  const logo = shopLogoPath(member.shop.slug, await shopLogoVersion(member.shopId));
 
   return (
     <div className="shell">
       <aside className="sidebar">
         <Link href={at("/")} className="brand">
-          <BrandMark />
+          <BrandMark src={logo} />
           <span>
             <div className="brand-name">CODEX</div>
             <div className="brand-sub">Enchanté par Lomone</div>

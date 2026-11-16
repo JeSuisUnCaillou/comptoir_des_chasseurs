@@ -23,9 +23,12 @@ fichier à jour dans le même commit.
 - L'app s'appelle Codex enchanté (adresse codexomancien.vercel.app). En haut
   du menu et sur la connexion, le logo et « CODEX », « Enchanté par Lomone »
   en dessous (Lomone est le personnage du
-  propriétaire dans Keizaal), sur toutes les boutiques.
-- L'onglet du navigateur porte le nom de la boutique sur toutes ses pages ;
-  hors d'une boutique (connexion, Mes boutiques, invitation), « Codex enchanté ».
+  propriétaire dans Keizaal), sur toutes les boutiques. Le logo est celui du
+  Codex, sauf dans une boutique qui a téléversé le sien (§ Réglages).
+- L'onglet du navigateur porte le nom de la boutique sur toutes ses pages,
+  et son logo quand elle en a un (sinon celui du Codex) ; hors d'une
+  boutique (connexion, Mes boutiques, invitation), « Codex enchanté » et le
+  logo du Codex.
 
 ### Téléphone et petites fenêtres
 
@@ -94,7 +97,7 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
 ### Mes boutiques
 
 - `/boutiques` : en haut, le compte connecté et « Se déconnecter » ; puis
-  une carte par boutique du compte : son nom, son adresse, son nombre de
+  une carte par boutique du compte : son logo (s'il y en a un), son nom, son adresse, son nombre de
   membres actifs, le rôle du compte (badge Gérant ou Employé), un bouton
   « Entrer » et, pour un gérant, un lien vers ses Réglages.
 - Seul le super admin y **ouvre une boutique**, en lui donnant un nom : il en
@@ -114,6 +117,14 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
   comptoir garde la sienne, où mènent ses anciens liens).
   Sous les champs, le lien complet de la boutique suit l'adresse pendant
   qu'on la tape.
+- **Logo** : le gérant choisit une image ; la page la réduit à 256 pixels de
+  côté au plus (proportions gardées, en PNG) et l'affiche en aperçu avant
+  « Enregistrer le logo ». Elle devient le logo en haut du menu, sur la carte
+  de la boutique dans Mes boutiques et dans l'onglet du navigateur, sur les
+  pages de cette boutique seulement. Un fichier que le navigateur ne sait pas
+  lire comme une image est refusé avant l'envoi. « Retirer le logo » rend
+  celui du Codex. L'image est rangée dans la base (`shop_logos`) et servie à
+  `/<slug>/logo`, sans service de stockage à part.
 - **Supprimer** la boutique avec tout ce qu'elle contient, après avoir retapé
   son nom. Le comptoir ne se supprime pas, ni la seule boutique d'un gérant.
 - Les comptes de ses membres restent ; un compte resté sans aucune boutique

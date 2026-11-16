@@ -5,6 +5,7 @@ import { InvitationLink, InviteGerantForm, OpenShopForm } from "@/components/sho
 import { logout } from "@/app/connexion/actions";
 import { requireAccount } from "@/lib/auth/session";
 import { pendingInvitations } from "@/lib/invitations";
+import { shopLogoPath } from "@/lib/logo";
 import { invitationPath, shopPath } from "@/lib/paths";
 import { canOpenShop } from "@/lib/policies";
 import { accountShops } from "@/lib/shops";
@@ -63,7 +64,11 @@ export default async function Boutiques() {
                 <li key={shop.id}>
                   <article className="shop-card" aria-labelledby={`shop-${shop.id}`}>
                     <div className="shop-card-head">
-                      <Store size={22} className="shop-card-icon" aria-hidden="true" />
+                      {shop.logo === null ? (
+                        <Store size={22} className="shop-card-icon" aria-hidden="true" />
+                      ) : (
+                        <img className="shop-card-logo" src={shopLogoPath(shop.slug, shop.logo)} alt="" aria-hidden="true" />
+                      )}
                       <span className={`badge ${shop.role === "gerant" ? "badge-gold" : "badge-blue"}`}>
                         {ROLE_LABELS[shop.role]}
                       </span>

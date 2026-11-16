@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState, useSyncExternalStore } from "react";
-import { removeShop, saveShop, type ShopSettingsState } from "@/app/[boutique]/reglages/actions";
+import { startTransition, useActionState, useState, useSyncExternalStore, type FormEvent } from "react";
+import { removeLogo, removeShop, saveLogo, saveShop, type ShopSettingsState } from "@/app/[boutique]/reglages/actions";
 import { keepValues } from "@/components/keep-values";
+import { LOGO_MAX_SIDE } from "@/lib/logo";
 import { slugify } from "@/lib/paths";
 
 const noOrigin = () => () => {};
@@ -84,5 +85,116 @@ export function DeleteShopForm({ name }: { name: string }) {
       </button>
       <Status state={state} />
     </form>
+  );
+}
+
+/**
+ * Shrinks an image file to a PNG of at most LOGO_MAX_SIDE pixels a side,
+ * keeping its proportions and transparency. Rejects what the browser can't
+ * read as an image.
+ */
+async function shrinkToPng(file: File): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+    const width = image.naturalWidth || LOGO_MAX_SIDE;
+    const height = image.naturalHeight || LOGO_MAX_SIDE;
+    const scale = Math.min(1, LOGO_MAX_SIDE / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("no canvas");
+    context.imageSmoothingQuality = "high";
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("no blob"))), "image/png"),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * The shop's logo: an image chosen here, shrunk by the page, becomes the logo
+ * in the menu and the icon of the browser tab. Removing it brings the app's back.
+ */
+export function LogoForm({ current, custom }: { current: string; custom: boolean }) {
+  // One status line for both buttons: the last one pressed.
+  const [state, action, pending] = useActionState(
+    (prev: ShopSettingsState, formData: FormData) => (formData.has("logo") ? saveLogo(prev, formData) : removeLogo(prev)),
+    null,
+  );
+  const [chosen, setChosen] = useState<{ blob: Blob; preview: string } | null>(null);
+  const [unreadable, setUnreadable] = useState(false);
+
+  async function choose(file: File | undefined) {
+    setUnreadable(false);
+    if (chosen) URL.revokeObjectURL(chosen.preview);
+    setChosen(null);
+    if (!file) return;
+    try {
+      const blob = await shrinkToPng(file);
+      setChosen({ blob, preview: URL.createObjectURL(blob) });
+    } catch {
+      setUnreadable(true);
+    }
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!chosen) return;
+    const formData = new FormData();
+    formData.set("logo", chosen.blob, "logo.png");
+    startTransition(() => action(formData));
+  }
+
+  const shown = chosen?.preview ?? current;
+  return (
+    <div className="logo-settings">
+      <img className="logo-preview" src={shown} alt={chosen ? "Aperçu du nouveau logo" : "Logo actuel"} />
+      <div className="logo-settings-forms">
+        <form onSubmit={submit}>
+          <div className="field">
+            <label htmlFor="shop-logo">Image du logo</label>
+            <input
+              id="shop-logo"
+              type="file"
+              accept="image/*"
+              onChange={(event) => void choose(event.target.files?.[0])}
+              aria-describedby="shop-logo-hint"
+            />
+            <span id="shop-logo-hint" className="small muted">
+              {unreadable
+                ? null
+                : `Réduite à ${LOGO_MAX_SIDE} pixels au plus. Une image carrée rend le mieux dans l'onglet du navigateur.`}
+            </span>
+            {unreadable && (
+              <span className="small minus" role="alert">
+                Ce fichier n&apos;est pas une image que le navigateur sait lire.
+              </span>
+            )}
+          </div>
+          <div className="logo-settings-buttons">
+            <button className="btn" type="submit" disabled={!chosen || pending}>
+              Enregistrer le logo
+            </button>
+            {custom && (
+              <button
+                className="btn btn-ghost"
+                type="button"
+                disabled={pending}
+                onClick={() => startTransition(() => action(new FormData()))}
+              >
+                Retirer le logo
+              </button>
+            )}
+          </div>
+        </form>
+        <Status state={state} />
+      </div>
+    </div>
   );
 }
