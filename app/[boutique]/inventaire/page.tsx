@@ -99,15 +99,15 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
             </p>
           </div>
           <div className="move-actions">
-            {/* A manager counts the chest first; the movement is then the side door. */}
+            {/* A manager counts the chest first: the count is the main button, on the right; the movement is the side door. */}
+            <Link className={isGerant(member) ? "btn" : "btn btn-primary"} href={at("/inventaire/mouvement")}>
+              <ArrowLeftRight size={16} /> Mouvement de stock
+            </Link>
             {isGerant(member) && (
               <Link className="btn btn-primary" href={at("/inventaire/regularisation")}>
                 <ScanText size={16} /> Régulariser le stock
               </Link>
             )}
-            <Link className={isGerant(member) ? "btn" : "btn btn-primary"} href={at("/inventaire/mouvement")}>
-              <ArrowLeftRight size={16} /> Mouvement de stock
-            </Link>
           </div>
         </div>
         <div className="stats">
