@@ -34,6 +34,7 @@ export function ProductCombobox<T extends number | string>({
   id: string;
   products: Choice<T>[];
   extras?: Choice<T>[];
+  fallback?: T;
   value: T | null;
   onChange: (id: T, typed: string) => void;
   name?: string;
