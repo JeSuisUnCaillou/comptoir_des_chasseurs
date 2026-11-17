@@ -162,6 +162,13 @@
       "when": 1794862185867,
       "tag": "0022_fin-de-semaine",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794906761648,
+      "tag": "0023_fin-de-semaine-lundi-16-novembre",
+      "breakpoints": true
     }
   ]
 }
