@@ -155,6 +155,13 @@
       "when": 1794838472385,
       "tag": "0021_logo-des-boutiques",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794918692058,
+      "tag": "0022_initialisation-boutique",
+      "breakpoints": true
     }
   ]
 }

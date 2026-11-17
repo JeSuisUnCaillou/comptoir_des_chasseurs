@@ -2775,3 +2775,50 @@ button.count-read[aria-expanded="true"] .count-chevron {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* Setting up a new shop, on its Grand livre: two steps side by side, one under the other when narrow. */
+.setup-steps {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+}
+
+.setup-steps > li {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.setup-steps h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.setup-steps p {
+  margin: 0 0 10px;
+}
+
+.setup-till {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+}
+
+.setup-till .field {
+  flex: 1 1 160px;
+  margin: 0;
+}
+
+.setup-till .notice,
+.setup-till p {
+  flex-basis: 100%;
+  margin: 0;
+}

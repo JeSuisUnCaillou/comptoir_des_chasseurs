@@ -34,6 +34,17 @@ export async function pickProduct(form: Locator, name: string, label = "Marchand
   await expect(box).toHaveValue(name);
 }
 
+/** The super admin opens a shop from Mes boutiques and lands on its Grand livre; its address is returned. */
+export async function openShop(page: Page, name: string) {
+  await loginAsGerant(page);
+  await page.getByRole("link", { name: "Changer de boutique" }).click();
+  const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
+  await section.getByLabel("Nom de la boutique").fill(name);
+  await section.getByRole("button", { name: "Ouvrir la boutique" }).click();
+  await expect(page.getByTestId("shop-name")).toHaveText(name);
+  return new URL(page.url()).pathname;
+}
+
 /** A name unique to this test run, so parallel tests don't collide. */
 export function uniqueName(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 7)}`;

@@ -165,6 +165,25 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
 - Les dernières écritures.
 - Tout le tableau des annonces, sans pagination (choix du propriétaire).
 
+### Initialiser une nouvelle boutique
+
+Une boutique ouverte depuis Mes boutiques (par le super admin, ou par un
+lien d'invitation de gérant) est proposée à l'initialisation : tant qu'elle
+n'a rien en stock, son Grand livre montre à ses gérants, au-dessus de la
+caisse, « Initialiser la boutique » en deux étapes, faisables dans
+n'importe quel ordre :
+
+1. **La caisse** : « Septims dans la caisse » et « Mettre en caisse »
+   inscrivent un mouvement de caisse en entrée, au motif « Caisse de
+   départ ». L'étape est faite dès que le registre a une écriture.
+2. **Le stock** : « Importer le stock » mène à [Régulariser le
+   stock](#régulariser-le-stock), où les captures du coffre créent les
+   marchandises et leur stock.
+
+La proposition disparaît une fois le stock inscrit par la régularisation, ou
+avec « Passer l'initialisation » ; elle ne revient pas. Les employés ne la
+voient pas, ni les boutiques ouvertes avant elle (dont le comptoir).
+
 ## Achat, Vente et registre
 
 ### La page

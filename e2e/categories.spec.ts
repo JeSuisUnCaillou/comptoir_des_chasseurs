@@ -1,16 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ALERT, dragAbove, loginAsGerant, uniqueName } from "./helpers";
-
-/** The super admin opens a shop from Mes boutiques and lands in it; its address is returned. */
-async function openShop(page: Page, name: string) {
-  await loginAsGerant(page);
-  await page.getByRole("link", { name: "Changer de boutique" }).click();
-  const section = page.getByRole("region", { name: "Ouvrir une boutique", exact: true });
-  await section.getByLabel("Nom de la boutique").fill(name);
-  await section.getByRole("button", { name: "Ouvrir la boutique" }).click();
-  await expect(page.getByTestId("shop-name")).toHaveText(name);
-  return new URL(page.url()).pathname;
-}
+import { ALERT, dragAbove, loginAsGerant, openShop, uniqueName } from "./helpers";
 
 /** The categories panel of Gérer les marchandises. */
 const panel = (page: Page) => page.getByRole("region", { name: "Catégories" });

@@ -3,25 +3,31 @@ import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
 import { PageHead } from "@/components/page-head";
 import { RegisterTable } from "@/components/register-table";
+import { ShopSetup } from "@/components/shop-setup";
 import { TillOverview } from "@/components/till-overview";
 import { TillStat } from "@/components/till-stat";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { announcementList } from "@/lib/announcements";
 import { registerEntries, tillSummary } from "@/lib/register";
+import { isGerant } from "@/lib/policies";
+import { shopSetup } from "@/lib/shop-setup";
 
 export default async function GrandLivre() {
   const member = await requireMember();
   const at = (path: string) => shopPath(member.shop.slug, path);
-  const [till, recent, announcements] = await Promise.all([
+  const [till, recent, announcements, setup] = await Promise.all([
     tillSummary(member.shopId),
     registerEntries(member.shopId, {}, { limit: 10 }),
     announcementList(member.shopId),
+    // A new shop with nothing in stock is offered to its gérants to set up.
+    isGerant(member) ? shopSetup(member.shop) : null,
   ]);
 
   return (
     <>
       <PageHead title="Grand livre" />
+      {setup && <ShopSetup tillDone={setup.tillDone} />}
       <section className="panel">
         <div className="panel-head">
           <div>

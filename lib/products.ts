@@ -7,6 +7,7 @@ import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
 import { isGerant } from "@/lib/policies";
 import { normalizeName, sumByProduct } from "@/lib/game-count";
+import { endShopSetup } from "@/lib/shop-setup";
 import { lineMessage } from "@/lib/transaction-kinds";
 import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
 
@@ -422,7 +423,7 @@ export type CountLine = { counted: number; readName: string } & (
 export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, given: CountLine[], reason: string) {
   if (!isGerant(member)) throw new UserError("Seul un gérant compte le stock depuis le jeu.");
   try {
-    return await getDb().transaction(async (tx) => {
+    const result = await getDb().transaction(async (tx) => {
       const created = new Map<string, number>();
       const lines: { productId: number; counted: number; readName: string }[] = [];
       for (const line of given) {
@@ -480,6 +481,9 @@ export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "ro
       }
       return { written, created: created.size };
     });
+    // The stock is imported: a new shop is set up.
+    await endShopSetup(member.shopId);
+    return result;
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
     throw error;
