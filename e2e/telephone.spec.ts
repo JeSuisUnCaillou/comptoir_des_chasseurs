@@ -9,6 +9,7 @@ import {
   loginAs,
   loginAsGerant,
   memberRow,
+  openShop,
   pickProduct,
   uniqueName,
 } from "./helpers";
@@ -393,4 +394,30 @@ test("au téléphone, inviter un employé et la page du lien ne débordent pas",
   await visitor.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
   await expect(visitor.getByRole("link", { name: "Entrer avec Discord" })).toBeVisible();
   await expectNoSideScroll(visitor);
+});
+
+test("de 320 à 1600 px, l'initialisation d'une nouvelle boutique ne déborde pas et ses étapes ne se collent pas", async ({ page }) => {
+  await openShop(page, uniqueName("Étal de Vendeaume"));
+  const steps = page.getByRole("region", { name: "Initialiser la boutique" }).getByRole("listitem");
+  for (let width = 320; width <= 1600; width += 160) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.reload();
+    await expect(steps).toHaveCount(2);
+    await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+    await expectNoSideScroll(page);
+    // Side by side or one under the other, the two steps keep a gap between them.
+    const [one, two] = [(await steps.nth(0).boundingBox())!, (await steps.nth(1).boundingBox())!];
+    const gap = two.y >= one.y + one.height - 1 ? two.y - (one.y + one.height) : two.x - (one.x + one.width);
+    expect(gap, `à ${width} px`).toBeGreaterThanOrEqual(8);
+    // The amount and its button do not overlap.
+    const field = (await page.getByLabel("Septims dans la caisse").boundingBox())!;
+    const button = (await page.getByRole("button", { name: "Mettre en caisse" }).boundingBox())!;
+    const apart = button.x >= field.x + field.width || button.y >= field.y + field.height;
+    expect(apart, `à ${width} px`).toBe(true);
+    // Side by side, the two steps' buttons line up at the bottom of their cards.
+    if (two.y < one.y + one.height) {
+      const other = (await page.getByRole("link", { name: "Importer le stock" }).boundingBox())!;
+      expect(Math.abs(other.y - button.y), `à ${width} px`).toBeLessThanOrEqual(1);
+    }
+  }
 });

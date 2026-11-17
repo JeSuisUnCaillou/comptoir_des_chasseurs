@@ -27,6 +27,9 @@ export const shops = pgTable(
     name: text("name").notNull(),
     // Its address in the app: /<slug>/…
     slug: text("slug").notNull(),
+    // A shop opened from Mes boutiques is offered to its gérants to set it up
+    // (till, then stock) until they import its stock or skip it.
+    setupPending: boolean("setup_pending").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("shops_slug_idx").on(t.slug)],

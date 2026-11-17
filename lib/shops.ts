@@ -95,7 +95,7 @@ export async function insertShop(tx: Tx, name: string): Promise<Shop> {
   const slug = slugify(name);
   checkSlug(slug);
   return claimingSlug(slug, async () => {
-    const [shop] = await tx.insert(schema.shops).values({ name, slug }).returning();
+    const [shop] = await tx.insert(schema.shops).values({ name, slug, setupPending: true }).returning();
     await insertDefaultCategory(tx, shop.id);
     return shop;
   });

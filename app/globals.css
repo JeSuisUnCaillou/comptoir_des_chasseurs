@@ -2805,3 +2805,50 @@ button.count-read[aria-expanded="true"] .count-chevron {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* Setting up a new shop, on its Grand livre: two steps side by side, one under the other when narrow. */
+.setup-steps {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+}
+
+.setup-steps > li {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  padding: 14px 16px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.setup-steps h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.setup-steps p {
+  margin: 0 0 10px;
+}
+
+/* Side by side, the two steps' buttons line up at the bottom of their cards. */
+.setup-steps > li > .btn,
+.setup-till > .btn {
+  margin-top: auto;
+}
+
+.setup-till {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.setup-till .field {
+  margin: 0 0 10px;
+}

@@ -169,6 +169,20 @@
       "when": 1794906761648,
       "tag": "0023_fin-de-semaine-lundi-16-novembre",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794921653341,
+      "tag": "0024_initialisation-boutique",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794921653998,
+      "tag": "0025_initialisation-boutiques-vides",
+      "breakpoints": true
     }
   ]
 }

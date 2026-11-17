@@ -1,0 +1,1 @@
+ALTER TABLE "shops" ADD COLUMN IF NOT EXISTS "setup_pending" boolean DEFAULT false NOT NULL;
