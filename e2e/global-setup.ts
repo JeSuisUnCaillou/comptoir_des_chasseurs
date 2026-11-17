@@ -4,7 +4,6 @@ import { GERANT } from "./helpers";
 
 /** Resets the test database and seeds the gérant used by the tests. */
 export default async function globalSetup() {
-  if (process.env.BASE_URL) return; // never touch a deployed database
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL est requis pour les tests e2e.");
   // The tests wipe the database: only ever run them against a test one.
