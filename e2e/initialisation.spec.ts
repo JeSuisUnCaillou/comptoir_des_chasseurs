@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import postgres from "postgres";
 import { copyFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { COMPTOIR, loginAsGerant, openShop, uniqueName } from "./helpers";
+import { COMPTOIR, loginAsGerant, newEmployeePage, openShop, uniqueName } from "./helpers";
 
 const setup = (page: Page) => page.getByRole("region", { name: "Initialiser la boutique" });
 
@@ -65,4 +66,22 @@ test("le comptoir ne propose pas l'initialisation", async ({ page }) => {
   await page.goto(COMPTOIR);
   await expect(page.getByRole("heading", { level: 1, name: "Grand livre" })).toBeVisible();
   await expect(setup(page)).toHaveCount(0);
+});
+
+test("un employé d'une nouvelle boutique ne voit pas l'initialisation", async ({ page, browser }) => {
+  const shop = await openShop(page, uniqueName("Étal de Pierre-Blanche"));
+  await expect(setup(page)).toBeVisible();
+  const employee = await newEmployeePage(browser, "brenuin");
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql`
+      insert into shop_members (shop_id, member_id, role)
+      select s.id, m.id, 'employe' from shops s, members m
+      where s.slug = ${shop.slice(1)} and m.username = ${employee.username}`;
+  } finally {
+    await sql.end();
+  }
+  await employee.page.goto(shop);
+  await expect(employee.page.getByRole("heading", { level: 1, name: "Grand livre" })).toBeVisible();
+  await expect(setup(employee.page)).toHaveCount(0);
 });
