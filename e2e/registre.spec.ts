@@ -603,6 +603,14 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   expect(asked.at(-1)).toContain(`• 2 × ${hide}\n• 3 × ${meat}\n• 4 × ${fang}`);
   await expect(lines.filter({ hasText: "Annulée" })).toHaveCount(0);
   await expect(table.getByTestId("total-ecriture").filter({ visible: true })).toHaveText("Total : +25 septims");
+  // The button for the whole entry sits beside its total, on its line, as a card and as a table.
+  for (const width of [1280, 1700]) {
+    await page.setViewportSize({ width, height: 900 });
+    const total = (await table.getByTestId("total-ecriture").filter({ visible: true }).boundingBox())!;
+    const all = (await table.getByRole("button", { name: /^Tout annuler/ }).boundingBox())!;
+    expect(Math.abs(all.y + all.height / 2 - (total.y + total.height / 2))).toBeLessThan(4);
+    expect(all.x).toBeGreaterThan(total.x + total.width);
+  }
   for (const [product, left] of [
     [hide, "8"],
     [meat, "7"],

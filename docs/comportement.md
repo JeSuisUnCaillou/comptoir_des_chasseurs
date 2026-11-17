@@ -306,8 +306,9 @@ sortie d'argent) les septims :
   ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
   quantité. L'annuler encore rend ce qu'elle a vraiment pris la dernière
   fois.
-- **Toute une écriture d'un coup** : sur la première ligne d'une écriture
-  de plusieurs lignes, « Tout annuler » annule toutes celles qui comptent
+- **Toute une écriture d'un coup** : dans une écriture de plusieurs lignes,
+  à côté de son total (sous le client ou le vendeur, ou au bas de la carte
+  sur un téléphone), « Tout annuler » annule toutes celles qui comptent
   encore, « Tout rétablir » toutes celles qui sont annulées (le bouton
   n'apparaît que s'il touche au moins deux lignes). La confirmation liste
   les lignes ; elles changent toutes ensemble, ou aucune (un achat dont la
