@@ -604,7 +604,7 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   await expect(lines.filter({ hasText: "Annulée" })).toHaveCount(0);
   await expect(table.getByTestId("total-ecriture").filter({ visible: true })).toHaveText("Total : +25 septims");
   // The button for the whole entry sits beside its total, on its line, as a card and as a table.
-  for (const width of [1280, 1700]) {
+  for (const width of [390, 1700]) {
     await page.setViewportSize({ width, height: 900 });
     const total = (await table.getByTestId("total-ecriture").filter({ visible: true }).boundingBox())!;
     const all = (await table.getByRole("button", { name: /^Tout annuler/ }).boundingBox())!;
@@ -651,6 +651,45 @@ test("tout annuler un achat dont une marchandise est déjà vendue ne change auc
   await expect(table.locator("tbody tr").filter({ hasText: "Annulée" })).toHaveCount(0);
   await expect(await stockOf(page, kept)).toHaveText("4");
   await expect(await stockOf(page, sold)).toHaveText("2");
+});
+
+test("sur un petit téléphone, Tout annuler et Tout rétablir tiennent dans la carte", async ({ browser }) => {
+  const products = ["Peau de renard des neiges", "Viande de renard", "Griffe de loup", "Corne de bouc"].map(uniqueName);
+  for (const product of products) await createProduct(product, { sellPrice: 1, stock: 10 });
+  const { page, username } = await newEmployeePage(browser, "brand-shei");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  for (const [i, product] of products.entries()) {
+    if (i > 0) await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+    await pickProduct(line(form, i + 1), product);
+    await line(form, i + 1).getByLabel("Quantité").fill("1");
+  }
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: products[0] })).toBeVisible();
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const table = page.getByTestId("registre");
+  page.on("dialog", (dialog) => dialog.accept());
+  // Two lines cancelled, two still counted: both buttons.
+  for (const product of products.slice(0, 2)) {
+    const row = table.locator("tbody tr").filter({ hasText: product });
+    await row.getByRole("button", { name: /^Annuler la vente/ }).click();
+    await expect(row).toContainText("Annulée par");
+  }
+  for (const width of [320, 360]) {
+    await page.setViewportSize({ width, height: 900 });
+    const card = (await table.locator("tbody tr").last().boundingBox())!;
+    const total = (await table.getByTestId("total-ecriture").filter({ visible: true }).boundingBox())!;
+    for (const name of [/^Tout annuler/, /^Tout rétablir/]) {
+      const button = (await table.getByRole("button", { name }).boundingBox())!;
+      // In the last line's card, at the total or under it, and inside the card.
+      expect(button.y + button.height / 2).toBeGreaterThan(total.y);
+      expect(button.y + button.height).toBeLessThanOrEqual(card.y + card.height + 1);
+      expect(button.x).toBeGreaterThanOrEqual(card.x - 1);
+      expect(button.x + button.width).toBeLessThanOrEqual(card.x + card.width + 1);
+    }
+  }
 });
 
 test("une ligne annulée tient sur une ligne, son bouton Rétablir à côté", async ({ browser }) => {

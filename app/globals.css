@@ -2061,8 +2061,11 @@ tr.fresh td {
     display: inline-block;
   }
 
+  /* On a narrow card, the two buttons go under the total, one under the other if need be. */
   .entry-cards .entry-actions.on-card {
     display: inline-flex;
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   .entry-cards .entry-actions:not(.on-card) {
