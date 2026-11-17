@@ -152,7 +152,9 @@ relance une fois le workflow « Preview » (`actions_run_trigger`,
 `preview.yml`, `ref` = la branche) ; l'offre Hobby compte 100 déploiements
 par jour. Le lien est dans la description de la PR, entre
 `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
-réécris la description).
+réécris la description). L'adresse fixe des previews (README)
+suit la dernière preview construite, de n'importe quelle PR : ne la donne que
+pour Discord, juste après avoir relancé la preview de ta branche.
 
 Donne **toujours le lien de la page précise à essayer**
 (`…vercel.app/le-comptoir-des-chasseurs/contacts`), jamais la racine
