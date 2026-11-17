@@ -154,6 +154,7 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
     await tx.delete(schema.privilegedGroups).where(of(schema.privilegedGroups));
     await tx.delete(schema.productCategories).where(of(schema.productCategories));
     await tx.delete(schema.announcements).where(of(schema.announcements));
+    await tx.delete(schema.weekEnds).where(of(schema.weekEnds));
     await tx.delete(schema.settings).where(of(schema.settings));
     await tx.delete(schema.shopLogos).where(of(schema.shopLogos));
     await tx.delete(schema.shopInvitations).where(of(schema.shopInvitations));
