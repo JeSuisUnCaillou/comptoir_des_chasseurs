@@ -155,7 +155,9 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
 
 - **Quatre tuiles, depuis la dernière fin de semaine** : en gros, le chiffre
   depuis la dernière fin de semaine déclarée (depuis l'ouverture avant la
-  première) ; en petit dessous, le total depuis l'ouverture :
+  première) ; juste dessous, en gris, depuis combien de jours il compte
+  (« depuis 3 jours », « depuis aujourd'hui », jours du calendrier à
+  l'heure de Paris) ; en petit plus bas, le total depuis l'ouverture :
   - la trésorerie : en gros, ce que la caisse a gagné ou perdu (ventes
     encaissées − achats payés ± mouvements de caisse, dont la tuile donne le
     total) ; dessous, ce qu'il y a en caisse ;

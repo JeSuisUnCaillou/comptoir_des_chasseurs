@@ -50,7 +50,7 @@ export default async function GrandLivre() {
             </Link>
           </div>
         </div>
-        <TillOverview week={till.week} all={till.all} />
+        <TillOverview week={till.week} all={till.all} days={till.days} />
         <div className="week-end">
           <p className="small muted" data-testid="fin-de-semaine">
             {till.weekEnd

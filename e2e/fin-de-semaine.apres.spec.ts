@@ -5,14 +5,18 @@ import { COMPTOIR, GERANT, createTransactions, loginAsGerant, newEmployeePage } 
 // Declaring the end of the week changes the Grand livre of the whole comptoir.
 test.describe.configure({ mode: "serial" });
 
-/** Forgets every declared end of the week, as the tests found the comptoir. */
-async function noWeekEnd() {
+async function withDb(run: (sql: postgres.Sql) => Promise<unknown>) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
-    await sql`delete from week_ends where shop_id = 1`;
+    await run(sql);
   } finally {
     await sql.end();
   }
+}
+
+/** Forgets every declared end of the week, as the tests found the comptoir. */
+function noWeekEnd() {
+  return withDb((sql) => sql`delete from week_ends where shop_id = 1`);
 }
 
 test.afterAll(noWeekEnd);
@@ -37,6 +41,7 @@ test("un gérant déclare la fin de semaine : les chiffres repartent de zéro, l
   await employee.goto(COMPTOIR);
   await expect(employee.getByTestId("fin-de-semaine")).toContainText("aucune fin de semaine");
   await expect(employee.getByRole("button", { name: "Déclarer la fin de semaine" })).toHaveCount(0);
+  await expect(employee.getByTestId("total-ventes").locator(".stat-since")).toHaveText("depuis l'ouverture");
 
   await loginAsGerant(page);
   const before = await tile(page, "total-ventes");
@@ -60,6 +65,9 @@ test("un gérant déclare la fin de semaine : les chiffres repartent de zéro, l
   }
   await expect(page.getByTestId("total-ventes").locator(".stat-total")).toHaveText(before.total);
   await expect(page.getByTestId("tresorerie-actuelle")).toHaveText(treasuryBefore!);
+  for (const id of ["caisse-totale", "total-ventes", "total-rachats", "solde-ventes-rachats"]) {
+    await expect(page.getByTestId(id).locator(".stat-since")).toHaveText("depuis aujourd'hui");
+  }
 
   // A line written after the end of the week counts again; those before stay in the totals only.
   await createTransactions(username, 1, { amount: 7, at: "now()" });
@@ -74,4 +82,11 @@ test("un gérant déclare la fin de semaine : les chiffres repartent de zéro, l
   await employee.reload();
   await expect(employee.getByTestId("fin-de-semaine")).toContainText(`déclarée par ${GERANT.name}`);
   await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("7 septims");
+
+  // Three days later, each figure says how long it has been counting.
+  await withDb((sql) => sql`update week_ends set declared_at = declared_at - interval '3 days' where shop_id = 1`);
+  await employee.reload();
+  for (const id of ["caisse-totale", "total-ventes", "total-rachats", "solde-ventes-rachats"]) {
+    await expect(employee.getByTestId(id).locator(".stat-since")).toHaveText("depuis 3 jours");
+  }
 });

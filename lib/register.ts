@@ -239,14 +239,16 @@ async function totalsOf(shopId: number, filter: RegisterFilter, pending: boolean
  * whole register before the first) and since the opening (`all`), with that
  * end of the week.
  */
-export async function tillSummary(shopId: number) {
+export async function tillSummary(shopId: number, now = new Date()) {
   const t = schema.transactions;
   const weekEnd = await lastWeekEnd(shopId);
   const [row] = await getDb()
     .select({ ...tillColumns("week", weekEnd?.declaredAt), ...tillColumns("all") })
     .from(t)
     .where(and(eq(t.shopId, shopId), ...live()));
-  return { week: tillFrom(row, "week"), all: tillFrom(row, "all"), weekEnd };
+  // Calendar days in Paris: 0 when the week ended today.
+  const days = weekEnd ? daysBetween(parisToday(weekEnd.declaredAt), parisToday(now)) : null;
+  return { week: tillFrom(row, "week"), all: tillFrom(row, "all"), weekEnd, days };
 }
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {
@@ -288,6 +290,11 @@ export function lastDays(duParam: string | undefined, auParam: string | undefine
   const au = asked.au ?? parisToday(now);
   const du = asked.du ?? parisToday(parisDay(au, 1 - days)!);
   return { ...dayRange(du, au), asked };
+}
+
+/** Days from one "YYYY-MM-DD" date to another. */
+function daysBetween(from: string, to: string) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
 /** Today's date in Paris, as "YYYY-MM-DD". */
