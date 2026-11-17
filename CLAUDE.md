@@ -132,6 +132,13 @@ en attente dans une seule transaction : une valeur ajoutée à un enum
 (`ALTER TYPE … ADD VALUE`) ne peut pas servir dans le même lot, donc son
 usage part dans une PR suivante.
 
+Deux branches prennent souvent le même numéro de migration. Avant le merge,
+merge `main` ; s'il a ton numéro, supprime ton SQL, reprends `drizzle/meta`
+de `main` et relance `npm run db:generate` (nouveau numéro, nouvelle date),
+en y remettant le SQL écrit à la main. La base des previews, commune, a déjà
+passé ta migration sous l'ancien nom et la rejouera : écris-la rejouable
+(`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`…).
+
 Les secrets vivent dans les variables d'environnement de Vercel (`AUTH_SECRET`,
 `POSTGRES_URL`…), jamais dans le dépôt. L'adresse et les identifiants de
 l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
