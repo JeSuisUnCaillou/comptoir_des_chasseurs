@@ -123,6 +123,41 @@ test("délier Discord ferme les sessions ouvertes avec Discord", async ({ browse
   await loginAs(other, username, "mot-de-passe");
 });
 
+test("délier Discord ne rouvre pas la session qu'avait fermée la liaison", async ({ browser }) => {
+  const { page, username } = await newEmployeePage(browser, "discord-relie");
+  const discord = discordAccount("Relie");
+
+  // Another device, signed in with the password before Discord is linked.
+  const shared = await (await browser.newContext()).newPage();
+  await loginAs(shared, username, "mot-de-passe");
+  await shared.goto(`${COMPTOIR}/mot-de-passe`);
+  await expect(shared.getByRole("link", { name: "Lier mon compte Discord" })).toBeVisible();
+  const oldCookies = await shared.context().cookies();
+
+  await page.goto(`${COMPTOIR}/mot-de-passe`);
+  await page.getByRole("link", { name: "Lier mon compte Discord" }).click();
+  await approveOnDiscord(page, discord);
+  await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
+  await shared.reload();
+  await expect(shared).toHaveURL(/\/connexion/);
+
+  await page.getByRole("button", { name: "Délier Discord" }).click();
+  await expect(page.getByRole("status")).toHaveText("Discord n'est plus lié à ton compte.");
+
+  // The cookie kept from before the link opens nothing after the unlink.
+  const stale = await (await browser.newContext()).newPage();
+  await stale.context().addCookies(oldCookies);
+  await stale.goto(`${COMPTOIR}/mot-de-passe`);
+  await expect(stale).toHaveURL(/\/connexion/);
+
+  // Linking the same Discord again does not bring it back either.
+  await page.getByRole("link", { name: "Lier mon compte Discord" }).click();
+  await approveOnDiscord(page, discord);
+  await expect(page.getByText(`Lié au compte Discord ${discord.name}`)).toBeVisible();
+  await stale.goto(`${COMPTOIR}/mot-de-passe`);
+  await expect(stale).toHaveURL(/\/connexion/);
+});
+
 test("un membre désactivé n'entre pas avec Discord", async ({ browser }) => {
   const { page, username } = await newEmployeePage(browser, "discord-desactive");
   const discord = discordAccount("Desactive");

@@ -18,14 +18,20 @@ const MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
 
 export { authConfigured } from "@/lib/auth/key";
 
-type SessionKeys = Pick<Member, "id" | "passwordHash" | "discordId">;
+type SessionKeys = Pick<Member, "id" | "passwordHash" | "discordId" | "sessionEpoch">;
 
-// Ties a session to the password and the Discord account it was opened with:
-// changing or resetting a password, or linking or unlinking Discord, signs the
-// member out of every other device. Without Discord the stamp is the one
-// sessions had before Discord, so they stay open.
-function accountStamp({ passwordHash, discordId }: SessionKeys) {
-  const keys = discordId ? `${passwordHash}\n${discordId}` : passwordHash;
+// Ties a session to the password, the Discord account and the session epoch
+// it was opened with: changing or resetting a password, or linking or
+// unlinking Discord (which bumps the epoch), signs the member out of every
+// other device, for good. An account still at epoch 0 keeps the stamp it had
+// before the epoch existed, so deploying it signed nobody out.
+function accountStamp({ passwordHash, discordId, sessionEpoch }: SessionKeys) {
+  const keys =
+    sessionEpoch > 0
+      ? `${passwordHash}\n${discordId ?? ""}\n${sessionEpoch}`
+      : discordId
+        ? `${passwordHash}\n${discordId}`
+        : passwordHash;
   return createHash("sha256").update(keys).digest("base64url").slice(0, 16);
 }
 

@@ -41,7 +41,7 @@ export async function linkDiscord(memberId: number, discord: { id: string; name:
   try {
     const [member] = await getDb()
       .update(schema.members)
-      .set({ discordId: discord.id, discordName: discord.name })
+      .set({ discordId: discord.id, discordName: discord.name, sessionEpoch: sql`${schema.members.sessionEpoch} + 1` })
       .where(eq(schema.members.id, memberId))
       .returning();
     return member;
@@ -58,7 +58,7 @@ export async function linkDiscord(memberId: number, discord: { id: string; name:
 export async function unlinkDiscord(memberId: number): Promise<Member> {
   const [member] = await getDb()
     .update(schema.members)
-    .set({ discordId: null, discordName: null })
+    .set({ discordId: null, discordName: null, sessionEpoch: sql`${schema.members.sessionEpoch} + 1` })
     .where(and(eq(schema.members.id, memberId), ne(schema.members.passwordHash, NO_PASSWORD)))
     .returning();
   if (!member) throw new UserError("Choisis d'abord un mot de passe : sans lui, plus rien n'ouvrirait ton compte.");
