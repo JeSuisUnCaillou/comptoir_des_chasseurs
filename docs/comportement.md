@@ -185,7 +185,11 @@ page ; l'écriture enregistrée ramène au registre.
   marchandise, prête à taper ; la liste s'ouvre dès qu'on tape (ou avec ↓),
   pas avant, pour ne pas cacher le bouton.
 - Une ligne par marchandise : article, quantité, montant. Une ligne porte sur
-  une marchandise du stock ou sur un article libre hors stock.
+  une marchandise du stock ou sur un article libre hors stock. Choisir
+  « Autre article (hors stock)… » après avoir tapé un texte dans le champ
+  remplit tout de suite le nom de l'article avec ce texte, qui reste
+  modifiable. Quand le texte tapé ne correspond à aucune marchandise,
+  « Autre article » est surligné, et Entrée ou Tab le choisit.
 - La marchandise se choisit dans un champ où l'on tape son nom (comme dans le
   calculateur des Tarifs) ; la liste garde ses catégories. Partout où l'on
   choisit ainsi une marchandise, Tab après avoir tapé prend le premier

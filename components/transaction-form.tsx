@@ -198,8 +198,12 @@ export function TransactionForm({
                     placeholder="Choisir ou taper un nom…"
                     products={choices}
                     extras={[{ id: OTHER, name: "Autre article (hors stock)…" }]}
+                    fallback={OTHER}
                     value={line.productId || null}
-                    onChange={(productId) => update(line.key, { productId })}
+                    // "Autre article" takes the name the member had typed to look for it.
+                    onChange={(productId, typed) =>
+                      update(line.key, productId === OTHER && typed ? { productId, label: typed } : { productId })
+                    }
                   />
                   {e.product && (
                     <span className="small muted" data-testid="stock-dispo">
