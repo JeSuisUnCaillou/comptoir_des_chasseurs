@@ -307,10 +307,14 @@ test("le serveur refuse de régler la caisse d'un autre à qui n'est plus géran
   await expect(row).toContainText("Pas encore en caisse");
 });
 
-test("un achat part coché « Pas encore sorti de la caisse », une vente non", async ({ browser }) => {
+test("un achat et une vente partent cochés « pas encore en caisse », et la case suit d'un formulaire à l'autre", async ({ browser }) => {
   const product = uniqueName("Peau de loup");
   await createProduct(product, { stock: 5, buyPrice: 2, sellPrice: 3 });
   const { page } = await newEmployeePage(browser, "brina");
+
+  await page.goto("/achat-vente/vente");
+  const sale = page.getByRole("region", { name: "Inscrire une vente" });
+  await expect(sale.getByLabel("Pas encore mis en caisse")).toBeChecked();
 
   await page.goto("/achat-vente/achat");
   const purchase = page.getByRole("region", { name: "Inscrire un achat" });
@@ -318,10 +322,12 @@ test("un achat part coché « Pas encore sorti de la caisse », une vente non", 
   await pickProduct(purchase, product);
   await purchase.getByLabel("Quantité").fill("2");
 
-  // Left untouched, the box follows each form's own default.
+  // Unchecked on the purchase, it stays unchecked on the sale, and back.
+  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
   await page.getByRole("button", { name: "C'est une vente" }).click();
-  const sale = page.getByRole("region", { name: "Inscrire une vente" });
-  await expect(sale.getByLabel("Pas encore mis en caisse")).not.toBeChecked();
+  const switched = page.getByRole("region", { name: "Inscrire une vente" });
+  await expect(switched.getByLabel("Pas encore mis en caisse")).not.toBeChecked();
+  await switched.getByLabel("Pas encore mis en caisse").check();
   await page.getByRole("button", { name: "C'est un achat" }).click();
   const again = page.getByRole("region", { name: "Inscrire un achat" });
   await expect(again.getByLabel("Pas encore sorti de la caisse")).toBeChecked();

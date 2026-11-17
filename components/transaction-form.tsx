@@ -121,10 +121,8 @@ export function TransactionForm({
   const [group, setGroup] = useState<number | null>(draft?.privileged ?? null);
   const [counterparty, setCounterparty] = useState(draft?.counterparty ?? "");
   const [notes, setNotes] = useState(draft?.notes ?? "");
-  // A purchase is usually paid later from the till, so its box starts checked; a sale's starts unchecked.
-  // Once the member clicks it, their choice follows them to the other form.
-  const [tillChoice, setTillChoice] = useState<boolean | null>(draft?.tillPending ?? null);
-  const tillPending = tillChoice ?? !sale;
+  // The septims usually reach the till later, so the box starts checked.
+  const [tillPending, setTillPending] = useState(draft?.tillPending ?? true);
   const evaluated = lines.map((line) => evaluate(line, kind, products, group));
   const total = evaluated.reduce((sum, e) => sum + e.value, 0);
   // The purchase's products that have privileged prices, once each, and their groups in the groups' order.
@@ -171,7 +169,7 @@ export function TransactionForm({
       })),
       counterparty,
       notes,
-      tillPending: tillChoice,
+      tillPending,
       privileged: group,
     };
     const params = new URLSearchParams({ [DRAFT_PARAM]: encodeDraft(carried) });
@@ -417,7 +415,7 @@ export function TransactionForm({
               type="checkbox"
               name="tillPending"
               checked={tillPending}
-              onChange={(ev) => setTillChoice(ev.target.checked)}
+              onChange={(ev) => setTillPending(ev.target.checked)}
             />{" "}
             {sale
               ? "Pas encore mis en caisse"

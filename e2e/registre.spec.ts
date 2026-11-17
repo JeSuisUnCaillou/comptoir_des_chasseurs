@@ -29,8 +29,8 @@ async function record(
   // The tariff fills the amount on its own.
   await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
   if (counterparty) await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(counterparty);
-  // A purchase starts « pas encore sorti de la caisse »: these septims leave the till now.
-  if (kind === "achat") await form.getByLabel("Pas encore sorti de la caisse").uncheck();
+  // The box starts « pas encore en caisse »: these septims go through the till now.
+  await form.getByLabel(kind === "vente" ? "Pas encore mis en caisse" : "Pas encore sorti de la caisse").uncheck();
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   const status = page.getByRole("status").filter({ hasText: `${quantity} × ${product}` });
@@ -122,6 +122,7 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   await pickProduct(form, "Autre article (hors stock)…");
   await form.getByLabel("Nom de l'article").fill(label);
   await form.getByLabel("Montant (septims)").fill("500");
+  await form.getByLabel("Pas encore mis en caisse").uncheck();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
     `Vente inscrite : 1 × ${label}, 500 septims.`,
@@ -142,6 +143,7 @@ test("l'article hors stock reprend le nom tapé dans le champ Marchandise", asyn
   await expect(box).toHaveValue("Autre article (hors stock)…");
   await expect(form.getByLabel("Nom de l'article")).toHaveValue(label);
   await form.getByLabel("Montant (septims)").fill("7");
+  await form.getByLabel("Pas encore sorti de la caisse").uncheck();
   await form.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
     `Achat inscrit : 1 × ${label}, 7 septims.`,
@@ -380,6 +382,7 @@ test("le montant suit le tarif, et le crayon permet de le changer", async ({ bro
   await form.getByRole("button", { name: "Modifier le montant" }).click();
   await expect(amount).toBeEditable();
   await amount.fill("13");
+  await form.getByLabel("Pas encore mis en caisse").uncheck();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toHaveText(
     `Vente inscrite : 5 × ${product}, 13 septims.`,
@@ -718,6 +721,7 @@ test("une vente de plusieurs marchandises s'inscrit d'un coup, avec son total en
   await expect(total).toHaveText("Total de la vente : 21 septims");
 
   await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Ysolda");
+  await form.getByLabel("Pas encore mis en caisse").uncheck();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: hide })).toHaveText(
     `Vente inscrite : 2 × ${hide}, 3 × ${meat}, 21 septims au total.`,
@@ -890,9 +894,8 @@ test("on passe d'un achat à une vente et retour sans rien retaper", async ({ br
   await line(purchase, 2).getByLabel("Montant (septims)").fill("5");
   await purchase.getByLabel("Nom RP du client / vendeur (facultatif)").fill("Brenuin");
   await purchase.getByLabel("Notes (facultatif)").fill("Il a hésité");
-  // The member unchecks the box, then checks it again: their choice, not the purchase's default, goes to the sale.
-  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
-  await purchase.getByLabel("Pas encore sorti de la caisse").check();
+  // The box starts checked, and stays so on the sale.
+  await expect(purchase.getByLabel("Pas encore sorti de la caisse")).toBeChecked();
   await toSale.click();
 
   // Same goods, client and notes; the tariff amount follows the sale price, the typed one stays.
