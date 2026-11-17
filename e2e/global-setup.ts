@@ -27,8 +27,8 @@ export default async function globalSetup() {
     await sql`delete from shops where id <> 1`;
     await sql`
       with gerant as (
-        insert into members (username, name, password_hash, role, super_admin)
-        values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant', true)
+        insert into members (username, name, password_hash, super_admin)
+        values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, true)
         returning id
       )
       insert into shop_members (shop_id, member_id, role) select 1, id, 'gerant' from gerant`;

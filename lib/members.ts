@@ -94,7 +94,7 @@ export async function createFirstGerant(
     if (total > 0) return null;
     const [member] = await tx
       .insert(schema.members)
-      .values({ username, name, passwordHash, role: "gerant", superAdmin: true })
+      .values({ username, name, passwordHash, superAdmin: true })
       .returning();
     await tx.insert(schema.shopMembers).values({ shopId, memberId: member.id, role: "gerant" });
     return member;
@@ -129,9 +129,9 @@ export async function freeUsername(tx: Tx, wanted: string) {
 }
 
 /** Creates an account, with no shop yet, inside `tx`. Refuses a username already taken. */
-export async function insertAccount(tx: Tx, account: NewAccount, role: MemberRole = "employe") {
+export async function insertAccount(tx: Tx, account: NewAccount) {
   try {
-    const [member] = await tx.insert(schema.members).values({ ...account, role }).returning();
+    const [member] = await tx.insert(schema.members).values(account).returning();
     return member;
   } catch (error) {
     if (isUniqueViolation(error)) throw new UserError("Cet identifiant est déjà pris.");
@@ -142,7 +142,7 @@ export async function insertAccount(tx: Tx, account: NewAccount, role: MemberRol
 /** Creates an account with its role in the gérant's shop. */
 export async function createAccount(shopId: number, { role, ...account }: NewAccount & { role: MemberRole }) {
   await getDb().transaction(async (tx) => {
-    const member = await insertAccount(tx, account, role);
+    const member = await insertAccount(tx, account);
     await tx.insert(schema.shopMembers).values({ shopId, memberId: member.id, role });
   });
 }
