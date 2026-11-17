@@ -84,6 +84,18 @@ function conditions(shopId: number, filter: RegisterFilter) {
   return where;
 }
 
+/**
+ * What the line really moved in stock (the sum of its stock movements), or
+ * null when no movement is tied to it (imported from the old app): a sale
+ * beyond the stock takes less than it sells, and cancelling it gives back
+ * only that (`cancelLine`).
+ */
+function stockMovedColumn() {
+  const m = schema.stockMovements;
+  const t = schema.transactions;
+  return sql<number | null>`(select sum(${m.delta})::int from ${m} where ${m.transactionId} = ${t.id} and ${m.productId} = ${t.productId})`;
+}
+
 export async function registerEntries(
   shopId: number,
   filter: RegisterFilter,
@@ -109,6 +121,7 @@ export async function registerEntries(
       cancelledBy: canceller.name,
       entryKey: entryKeyColumn(),
       entrySum: entrySumColumn(),
+      stockMoved: stockMovedColumn(),
       ...pendingEntryColumns(),
     })
     .from(t)
