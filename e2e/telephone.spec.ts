@@ -409,5 +409,10 @@ test("de 320 à 1600 px, l'initialisation d'une nouvelle boutique ne déborde pa
     const button = (await page.getByRole("button", { name: "Mettre en caisse" }).boundingBox())!;
     const apart = button.x >= field.x + field.width || button.y >= field.y + field.height;
     expect(apart, `à ${width} px`).toBe(true);
+    // Side by side, the two steps' buttons line up at the bottom of their cards.
+    if (two.y < one.y + one.height) {
+      const other = (await page.getByRole("link", { name: "Importer le stock" }).boundingBox())!;
+      expect(Math.abs(other.y - button.y), `à ${width} px`).toBeLessThanOrEqual(1);
+    }
   }
 });

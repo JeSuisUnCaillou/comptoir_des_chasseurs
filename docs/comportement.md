@@ -182,7 +182,9 @@ n'importe quel ordre :
 
 La proposition disparaît une fois le stock inscrit par la régularisation, ou
 avec « Passer l'initialisation » ; elle ne revient pas. Les employés ne la
-voient pas, ni les boutiques ouvertes avant elle (dont le comptoir).
+voient pas, ni le comptoir. Une boutique ouverte avant elle la reçoit
+si elle était encore vide le jour où elle est arrivée (aucune marchandise
+en stock, aucun mouvement de stock).
 
 ## Achat, Vente et registre
 

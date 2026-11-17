@@ -2791,6 +2791,8 @@ button.count-read[aria-expanded="true"] .count-chevron {
   background: var(--panel-2);
   padding: 14px 16px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .setup-steps h3 {
@@ -2805,20 +2807,18 @@ button.count-read[aria-expanded="true"] .count-chevron {
   margin: 0 0 10px;
 }
 
+/* Side by side, the two steps' buttons line up at the bottom of their cards. */
+.setup-steps > li > .btn,
+.setup-till > .btn {
+  margin-top: auto;
+}
+
 .setup-till {
+  flex: 1;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px 12px;
+  flex-direction: column;
 }
 
 .setup-till .field {
-  flex: 1 1 160px;
-  margin: 0;
-}
-
-.setup-till .notice,
-.setup-till p {
-  flex-basis: 100%;
-  margin: 0;
+  margin: 0 0 10px;
 }

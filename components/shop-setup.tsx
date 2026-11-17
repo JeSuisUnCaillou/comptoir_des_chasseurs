@@ -38,17 +38,17 @@ export function ShopSetup({ tillDone }: { tillDone: boolean }) {
                 <label htmlFor="setup-amount">Septims dans la caisse</label>
                 <input id="setup-amount" name="amount" type="number" min={1} step={1} required />
               </div>
-              <button className="btn btn-primary" type="submit" disabled={pending}>
-                <Wallet size={16} /> Mettre en caisse
-              </button>
+              <p className="small muted">
+                Inscrit comme un mouvement de caisse en entrée. Caisse vide ? Passe à l&apos;étape 2.
+              </p>
               {state && !state.ok && (
                 <p className="notice error" role="alert">
                   {state.message}
                 </p>
               )}
-              <p className="small muted">
-                Inscrit comme un mouvement de caisse en entrée. Caisse vide ? Passe à l&apos;étape 2.
-              </p>
+              <button className="btn btn-primary" type="submit" disabled={pending}>
+                <Wallet size={16} /> Mettre en caisse
+              </button>
             </form>
           )}
         </li>

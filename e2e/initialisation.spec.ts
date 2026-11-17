@@ -60,7 +60,7 @@ test("le gérant peut passer l'initialisation, qui n'est plus proposée", async 
   await expect(setup(page)).toHaveCount(0);
 });
 
-test("une boutique ouverte avant l'initialisation ne la propose pas", async ({ page }) => {
+test("le comptoir ne propose pas l'initialisation", async ({ page }) => {
   await loginAsGerant(page);
   await page.goto(COMPTOIR);
   await expect(page.getByRole("heading", { level: 1, name: "Grand livre" })).toBeVisible();

@@ -162,6 +162,13 @@
       "when": 1794918692058,
       "tag": "0022_initialisation-boutique",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794920976744,
+      "tag": "0023_initialisation-boutiques-vides",
+      "breakpoints": true
     }
   ]
 }
