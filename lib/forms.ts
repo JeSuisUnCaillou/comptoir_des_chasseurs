@@ -26,6 +26,17 @@ export function optionalId(formData: FormData, key = "id") {
   return n === 0 ? NaN : n;
 }
 
+/** The most of one merchandise a line, a movement or an offer may count. */
+export const MAX_QUANTITY = 1_000_000;
+
+/** The one message for a quantity that is not a whole number from 1 to MAX_QUANTITY. */
+export const QUANTITY_ERROR = "La quantité doit être un nombre entier entre 1 et 1 000 000.";
+
+/** A quantity of merchandise: a whole number from 1 to MAX_QUANTITY. */
+export function isQuantity(n: number) {
+  return Number.isInteger(n) && n >= 1 && n <= MAX_QUANTITY;
+}
+
 /** A checkbox: true when ticked. */
 export function checked(formData: FormData, key: string) {
   return formData.get(key) === "on";
@@ -83,8 +94,8 @@ export function readProductPrices(formData: FormData) {
   const numbers = [...Object.values(prices), ...privileged.map((p) => p.buyPrice)].filter((v) => typeof v === "number");
   const error = numbers.some((n) => Number.isNaN(n))
     ? "Les prix et quantités doivent être des nombres entiers positifs."
-    : [prices.buyQty, prices.sellQty, prices.bulkQty].some((n) => n < 1)
-      ? "La quantité doit être un nombre entier d'au moins 1."
+    : [prices.buyQty, prices.sellQty, prices.bulkQty].some((n) => !isQuantity(n))
+      ? QUANTITY_ERROR
       : (prices.hidesPerBatch == null) !== (prices.leatherPerBatch == null)
         ? "Remplis les peaux et les cuirs, ou laisse les deux vides."
         : undefined;

@@ -5,7 +5,7 @@ import { shopPath } from "@/lib/paths";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { checked, optionalText, text } from "@/lib/forms";
+import { QUANTITY_ERROR, checked, isQuantity, optionalText, text } from "@/lib/forms";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 import { cancelLine, recordCashLine, recordLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
@@ -53,8 +53,8 @@ export async function recordTransaction(
     if (productId != null && !Number.isInteger(productId)) {
       return { ok: false, message: at(i, "Marchandise inconnue.") };
     }
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return { ok: false, message: at(i, "La quantité doit être un nombre entier positif.") };
+    if (!isQuantity(quantity)) {
+      return { ok: false, message: at(i, QUANTITY_ERROR) };
     }
     if (!Number.isInteger(amount) || amount < 0) {
       return { ok: false, message: at(i, "Le montant doit être un nombre entier de septims.") };

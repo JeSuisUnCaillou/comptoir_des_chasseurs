@@ -5,7 +5,7 @@ import { shopPath } from "@/lib/paths";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { optionalId, text } from "@/lib/forms";
+import { QUANTITY_ERROR, isQuantity, optionalId, text } from "@/lib/forms";
 import {
   CONTACT_NOTES_MAX,
   deleteSupplier as remove,
@@ -49,8 +49,8 @@ export async function saveOffer(_prev: SupplierFormState, formData: FormData): P
   if (!Number.isInteger(price) || price < 0 || price > 1_000_000) {
     return { ok: false, message: "Le prix doit être un nombre entier (0 ou plus)." };
   }
-  if (!Number.isInteger(qty) || qty < 1 || qty > 1_000_000) {
-    return { ok: false, message: "La quantité doit être un nombre entier d'au moins 1." };
+  if (!isQuantity(qty)) {
+    return { ok: false, message: QUANTITY_ERROR };
   }
   if (side !== "sells" && side !== "buys") return { ok: false, message: "Dis s'il nous la vend ou nous l'achète." };
   const result = await attempt(() => offer(member.shopId, { supplierId, productId, price, qty, side }));

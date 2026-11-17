@@ -107,6 +107,23 @@ async function moveIn(page: Page, name: string, quantity: string, reason: string
   await expect(card.getByLabel("Quantité ajoutée")).toBeHidden();
 }
 
+test("une quantité démesurée donne un message, pas une page d'erreur", async ({ page }) => {
+  const name = uniqueName("Horqueur");
+  await loginAsGerant(page);
+  await addProduct(page, name);
+  await page.goto("/inventaire");
+  await page.getByLabel("Rechercher une marchandise").fill(name);
+  const card = page.getByTestId(`stock-${name}`);
+
+  await card.getByRole("button", { name: "Entrée" }).click();
+  await card.getByLabel("Quantité ajoutée").evaluate((el) => el.removeAttribute("max"));
+  await card.getByLabel("Quantité ajoutée").fill("99999999999");
+  await card.getByLabel("Motif").fill("trop");
+  await card.getByRole("button", { name: "Valider" }).click();
+  await expect(card.locator(ALERT)).toHaveText("La quantité doit être un nombre entier entre 1 et 1 000 000.");
+  await expect(card.getByTestId("stock-value")).toHaveText("0");
+});
+
 test("filtrer l'historique : ce qu'un membre a ajouté la semaine passée", async ({ page, browser }) => {
   const name = uniqueName("Horker");
   await createProduct(name, { stock: 0 });
