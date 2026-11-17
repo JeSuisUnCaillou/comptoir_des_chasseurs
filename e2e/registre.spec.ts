@@ -282,6 +282,11 @@ test("annuler une ligne rétablit le stock, et seul l'auteur ou un gérant le pe
   await expect(row).toContainText("Annulée par");
   await expect(row.getByRole("button", { name: /Annuler/ })).toHaveCount(0);
   await expect(await stockOf(author, product)).toHaveText("5");
+
+  // Restoring it is theirs too: the colleague sees it cancelled, with no button.
+  await colleague.reload();
+  await expect(theirRow).toContainText("Annulée par");
+  await expect(theirRow.getByRole("button", { name: /Rétablir/ })).toHaveCount(0);
 });
 
 // The hidden button is not the only guard: the server refuses too. A gérant
@@ -605,6 +610,39 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   ]) {
     await expect(await stockOf(page, product)).toHaveText(left);
   }
+});
+
+test("tout annuler un achat dont une marchandise est déjà vendue ne change aucune ligne", async ({ browser }) => {
+  const kept = uniqueName("Peau de daim");
+  const sold = uniqueName("Peau de mammouth");
+  await createProduct(kept, { buyPrice: 2 });
+  await createProduct(sold, { buyPrice: 2 });
+  const { page, username } = await newEmployeePage(browser, "derkeethus");
+  await page.goto("/achat-vente/achat");
+  const form = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(line(form, 1), kept);
+  await line(form, 1).getByLabel("Quantité").fill("4");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), sold);
+  await line(form, 2).getByLabel("Quantité").fill("10");
+  await form.getByLabel("Pas encore sorti de la caisse").uncheck();
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: kept })).toBeVisible();
+  await record(page, "vente", { product: sold, quantity: 8 });
+
+  await page.goto("/achat-vente?type=rachat");
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const table = page.getByTestId("registre");
+  page.once("dialog", (dialog) => dialog.accept());
+  await table.getByRole("button", { name: "Tout annuler : les 2 lignes de cet achat" }).click();
+  await expect(table.locator(ALERT)).toContainText(`Impossible d'annuler ${sold} : la marchandise rachetée a déjà été vendue.`);
+  await page.reload();
+  await expect(table.locator("tbody tr")).toHaveCount(2);
+  await expect(table.locator("tbody tr").filter({ hasText: "Annulée" })).toHaveCount(0);
+  await expect(await stockOf(page, kept)).toHaveText("4");
+  await expect(await stockOf(page, sold)).toHaveText("2");
 });
 
 test("une ligne annulée tient sur une ligne, son bouton Rétablir à côté", async ({ browser }) => {
