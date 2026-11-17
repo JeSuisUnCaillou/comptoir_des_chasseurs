@@ -133,7 +133,7 @@ en attente dans une seule transaction : une valeur ajoutée à un enum
 usage part dans une PR suivante.
 
 Deux branches prennent souvent le même numéro de migration. Avant le merge,
-merge `main` ; s'il a ton numéro, supprime ton SQL, reprends `drizzle/meta`
+merge `main` ; s'il a déjà pris ton numéro, supprime ton SQL, reprends `drizzle/meta`
 de `main` et relance `npm run db:generate` (nouveau numéro, nouvelle date),
 en y remettant le SQL écrit à la main. La base des previews, commune, a déjà
 passé ta migration sous l'ancien nom et la rejouera : écris-la rejouable
@@ -152,8 +152,7 @@ relance une fois le workflow « Preview » (`actions_run_trigger`,
 `preview.yml`, `ref` = la branche) ; l'offre Hobby compte 100 déploiements
 par jour. Le lien est dans la description de la PR, entre
 `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
-réécris la description). L'adresse fixe des previews (README)
-suit la dernière preview construite, de n'importe quelle PR : ne la donne que
+réécris la description). Ne donne l'adresse fixe des previews (README) que
 pour Discord, juste après avoir relancé la preview de ta branche.
 
 Donne **toujours le lien de la page précise à essayer**
