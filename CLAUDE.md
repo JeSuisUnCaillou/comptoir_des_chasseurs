@@ -168,7 +168,10 @@ lignes ») ; « met moi de la data pour tester ta feature », 2026-11-11.
 
 Dès qu'une branche est poussée, ouvre sa pull request vers `main`. Titre et
 description disent ce qui change et pourquoi. Un travail séparé part sur sa
-propre branche et sa propre PR.
+propre branche et sa propre PR. Le propriétaire autorise d'avance plusieurs
+branches par fil : nomme chacune d'après son travail, en kebab-case
+(`categories-marchandises`), même si la session propose
+`claude/project-thread-…` ; une PR déjà ouverte garde sa branche.
 
 Les PR sont ouvertes sous le compte de Caillou : tout commentaire et toute
 assignation lui envoient un e-mail. Ne l'assigne jamais, ne lui demande pas
