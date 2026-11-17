@@ -13,7 +13,8 @@ import { shopMemberOf } from "@/lib/members";
 import { canActOn, isGerant } from "@/lib/policies";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { formatNumber, septims } from "@/lib/pricing";
-import { lastDays, parisDay, tillTotals } from "@/lib/register";
+import { lastDays, parisDay } from "@/lib/dates";
+import { tillTotals } from "@/lib/register";
 
 type Search = Record<"du" | "au" | "page", string | string[] | undefined>;
 

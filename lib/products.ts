@@ -1,18 +1,17 @@
 import "server-only";
-import { and, asc, count, desc, eq, exists, getTableColumns, gt, gte, ilike, inArray, isNotNull, lt, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, eq, exists, getTableColumns, ilike, isNotNull, or } from "drizzle-orm";
 import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
 import { categoryOf } from "@/lib/categories";
-import type { ShopMember } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
-import { isGerant } from "@/lib/policies";
-import { normalizeName, sumByProduct } from "@/lib/game-count";
-import { lineMessage } from "@/lib/transaction-kinds";
-import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
+import { normalizeName } from "@/lib/game-count";
+import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct } from "@/lib/privileged-groups";
+
+/** The shop's catalogue: its merchandises, their prices and which are put forward. */
 
 const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 /** A merchandise created where the archived ones are not shown. */
-const DUPLICATE_MAYBE_ARCHIVED = `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`;
+export const DUPLICATE_MAYBE_ARCHIVED = `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`;
 
 /** A merchandise's columns, with its category's name and whether it holds hides. */
 const withCategory = {
@@ -63,30 +62,6 @@ export function productNameMatches(q: string) {
   )!;
 }
 
-/** A shop setting's value, undefined while it was never saved. */
-async function readSetting(shopId: number, key: string) {
-  const [row] = await getDb()
-    .select()
-    .from(schema.settings)
-    .where(and(eq(schema.settings.shopId, shopId), eq(schema.settings.key, key)))
-    .limit(1);
-  return row?.value;
-}
-
-async function writeSetting(shopId: number, key: string, value: number) {
-  await getDb()
-    .insert(schema.settings)
-    .values({ shopId, key, value })
-    .onConflictDoUpdate({ target: [schema.settings.shopId, schema.settings.key], set: { value } });
-}
-
-export async function blacksmithLeatherPrice(shopId: number) {
-  return (await readSetting(shopId, BLACKSMITH_LEATHER_PRICE)) ?? 6;
-}
-
-/** Settings key of the price the blacksmith pays for a leather. */
-const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
-
 /** The products the Tarifs page puts forward, among the given active ones, in the order gérants set. */
 export function featuredProducts<P extends { id: number; featuredAt: Date | null }>(active: P[]) {
   return active
@@ -135,191 +110,6 @@ export async function setFeaturedOrder(shopId: number, ids: number[]) {
   });
 }
 
-export type MovementFilter = {
-  /** Part of the merchandise's name, or of a game name tied to it. */
-  q?: string;
-  memberId?: number;
-  direction?: "in" | "out";
-  from?: Date;
-  to?: Date;
-};
-
-function movementConditions(shopId: number, filter: MovementFilter) {
-  const m = schema.stockMovements;
-  const where: SQL[] = [eq(m.shopId, shopId)];
-  if (filter.q) where.push(productNameMatches(filter.q));
-  if (filter.memberId) where.push(eq(m.memberId, filter.memberId));
-  if (filter.direction) where.push(filter.direction === "in" ? gt(m.delta, 0) : lt(m.delta, 0));
-  if (filter.from) where.push(gte(m.createdAt, filter.from));
-  if (filter.to) where.push(lt(m.createdAt, filter.to));
-  return and(...where);
-}
-
-/** Number of stock movements matching the filter. */
-export async function movementCount(shopId: number, filter: MovementFilter = {}) {
-  const [row] = await getDb()
-    .select({ total: count() })
-    .from(schema.stockMovements)
-    .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
-    .where(movementConditions(shopId, filter));
-  return row.total;
-}
-
-/**
- * The same text for the hand movements one member wrote together: one
- * Mouvement de stock, written in one database transaction, so at the same
- * instant. They show as one entry. Null for the movement of a register line
- * (a sale, a buyback, a cancellation), which stays a row of its own.
- */
-export function movementEntryKey() {
-  const m = schema.stockMovements;
-  return sql<string | null>`case when ${m.transactionId} is null then (${m.memberId}, ${m.createdAt})::text end`;
-}
-
-export async function recentMovements(
-  shopId: number,
-  filter: MovementFilter,
-  { limit, offset = 0 }: { limit: number; offset?: number },
-) {
-  return getDb()
-    .select({
-      id: schema.stockMovements.id,
-      createdAt: schema.stockMovements.createdAt,
-      product: schema.products.name,
-      unit: schema.products.unit,
-      delta: schema.stockMovements.delta,
-      stockAfter: schema.stockMovements.stockAfter,
-      member: schema.members.name,
-      reason: schema.stockMovements.reason,
-      entryKey: movementEntryKey(),
-    })
-    .from(schema.stockMovements)
-    .innerJoin(schema.products, eq(schema.products.id, schema.stockMovements.productId))
-    .innerJoin(schema.members, eq(schema.members.id, schema.stockMovements.memberId))
-    .where(movementConditions(shopId, filter))
-    .orderBy(desc(schema.stockMovements.createdAt), desc(schema.stockMovements.id))
-    .limit(limit)
-    .offset(offset);
-}
-
-export type Movement = Awaited<ReturnType<typeof recentMovements>>[number];
-
-type MoveResult = { ok: true; stock: number; id: number } | { ok: false; error: string };
-
-/**
- * Adds `delta` units to a product of the shop and records the movement, tied
- * to the register line that caused it when there is one.
- * Refuses to go below zero, and a product of another shop. With `clamp`, a
- * removal takes only what is left instead of refusing: the stock stops at zero
- * and the movement records what really left (possibly 0). Runs inside the
- * given transaction.
- */
-export async function moveStock(
-  tx: Tx,
-  shopId: number,
-  productId: number,
-  delta: number,
-  memberId: number,
-  reason: string,
-  transactionId: number | null = null,
-  { clamp = false }: { clamp?: boolean } = {},
-): Promise<MoveResult> {
-  if (clamp && delta < 0) {
-    const [locked] = await tx
-      .select({ stock: schema.products.stock })
-      .from(schema.products)
-      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, shopId)))
-      .for("update");
-    if (!locked) return { ok: false, error: "Marchandise inconnue." };
-    delta = -Math.min(-delta, locked.stock);
-  }
-  const [updated] = await tx
-    .update(schema.products)
-    .set({ stock: sql`${schema.products.stock} + ${delta}` })
-    .where(
-      and(
-        eq(schema.products.id, productId),
-        eq(schema.products.shopId, shopId),
-        sql`${schema.products.stock} + ${delta} >= 0`,
-      ),
-    )
-    .returning({ stock: schema.products.stock });
-  if (!updated) return { ok: false, error: "Stock insuffisant pour cette sortie." };
-  const [movement] = await tx
-    .insert(schema.stockMovements)
-    .values({ shopId, productId, delta, stockAfter: updated.stock, memberId, reason, transactionId })
-    .returning({ id: schema.stockMovements.id });
-  return { ok: true, stock: updated.stock, id: movement.id };
-}
-
-type Actor = Pick<ShopMember, "id" | "shopId">;
-
-/** A stock movement entered by hand on the Inventaire (a hunt, a loss…). */
-export async function recordMovement(member: Actor, productId: number, delta: number, reason: string) {
-  return getDb().transaction((tx) => moveStock(tx, member.shopId, productId, delta, member.id, reason));
-}
-
-/**
- * Several merchandises in or out of stock at once, with one reason and no
- * money: written all together or not at all, in one database transaction, so
- * they share their instant and show as one entry. Returns the movements' ids.
- */
-export async function recordMovements(
-  member: Actor,
-  direction: "in" | "out",
-  lines: { productId: number; quantity: number }[],
-  reason: string,
-) {
-  return getDb().transaction(async (tx) => {
-    const written: number[] = [];
-    for (const [i, { productId, quantity }] of lines.entries()) {
-      const [product] = await tx
-        .select({ id: schema.products.id })
-        .from(schema.products)
-        .where(
-          and(eq(schema.products.id, productId), activeIn(member.shopId)),
-        )
-        .limit(1);
-      if (!product) throw new UserError(lineMessage(lines.length, i, "Marchandise inconnue."));
-      const delta = direction === "in" ? quantity : -quantity;
-      // Throwing rolls back every movement already written.
-      const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason);
-      if (!moved.ok) throw new UserError(lineMessage(lines.length, i, moved.error));
-      written.push(moved.id);
-    }
-    return written;
-  });
-}
-
-/**
- * Creates a merchandise and records its first entry in stock, together.
- * `prices` are set at once when given, which only a gérant may do.
- */
-export async function createStocked(
-  member: Pick<ShopMember, "id" | "shopId" | "role">,
-  identity: { name: string; categoryId: number; unit: string },
-  prices: { prices: ProductPrices; privileged: PrivilegedInput } | null,
-  quantity: number,
-  reason: string,
-) {
-  if (prices && !isGerant(member)) throw new UserError("Seul un gérant fixe les prix.");
-  try {
-    await getDb().transaction(async (tx) => {
-      const category = await categoryOf(tx, member.shopId, identity.categoryId);
-      const [product] = await tx
-        .insert(schema.products)
-        .values({ ...identity, ...(prices && batchFor(category, prices.prices)), shopId: member.shopId })
-        .returning({ id: schema.products.id });
-      if (prices) await setPrivilegedPrices(tx, member.shopId, product.id, prices.privileged);
-      const result = await moveStock(tx, member.shopId, product.id, quantity, member.id, reason);
-      if (!result.ok) throw new UserError(result.error);
-    });
-  } catch (error) {
-    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
-    throw error;
-  }
-}
-
 /** What Gérer les marchandises sets on a merchandise. */
 type ProductValues = Omit<
   typeof schema.products.$inferInsert,
@@ -327,10 +117,10 @@ type ProductValues = Omit<
 > & { categoryId: number };
 
 /** A merchandise's prices, without its name, category, unit or archiving. */
-type ProductPrices = Omit<ProductValues, "name" | "categoryId" | "unit" | "archived">;
+export type ProductPrices = Omit<ProductValues, "name" | "categoryId" | "unit" | "archived">;
 
 /** The prices as saved: only a merchandise of the hides' category turns into leather by batches. */
-function batchFor<P extends ProductPrices>(category: { hides: boolean }, prices: P): P {
+export function batchFor<P extends ProductPrices>(category: { hides: boolean }, prices: P): P {
   return category.hides ? prices : { ...prices, hidesPerBatch: null, leatherPerBatch: null };
 }
 
@@ -358,10 +148,6 @@ export async function saveProduct(
     if (isUniqueViolation(error)) throw new UserError(DUPLICATE_PRODUCT_NAME);
     throw error;
   }
-}
-
-export async function setBlacksmithLeatherPrice(shopId: number, value: number) {
-  await writeSetting(shopId, BLACKSMITH_LEATHER_PRICE, value);
 }
 
 /** One page of the shop's catalogue, archived goods last, each part by name; `q` is part of the name or of a game name tied to it. */
@@ -399,85 +185,4 @@ async function productAliases(shopId: number) {
     .select({ name: schema.productAliases.name, productId: schema.productAliases.productId })
     .from(schema.productAliases)
     .where(eq(schema.productAliases.shopId, shopId));
-}
-
-/**
- * An item of a chest counted from the game, tied by the gérant to a
- * merchandise of the shop, or to a new one to create (`newName`).
- */
-export type CountLine = { counted: number; readName: string } & (
-  | { productId: number }
-  | { newName: string; categoryId: number }
-);
-
-/**
- * Sets the stock of the counted merchandises to what the chest holds, as
- * stock movements with one reason, all together or not at all. The new
- * merchandises are created first, without prices; items tied to the same
- * new name make one. Items tied to the same merchandise add up. A
- * merchandise already at its count gets no movement. Each game name tied to
- * a merchandise other than its own is remembered for the next count.
- * Gérants only. Returns the movements' ids and how many merchandises were created.
- */
-export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "role">, given: CountLine[], reason: string) {
-  if (!isGerant(member)) throw new UserError("Seul un gérant compte le stock depuis le jeu.");
-  try {
-    return await getDb().transaction(async (tx) => {
-      const created = new Map<string, number>();
-      const lines: { productId: number; counted: number; readName: string }[] = [];
-      for (const line of given) {
-        if ("productId" in line) {
-          lines.push(line);
-          continue;
-        }
-        const key = normalizeName(line.newName);
-        if (!created.has(key)) {
-          await categoryOf(tx, member.shopId, line.categoryId);
-          const [product] = await tx
-            .insert(schema.products)
-            .values({ shopId: member.shopId, name: line.newName, categoryId: line.categoryId })
-            .returning({ id: schema.products.id });
-          created.set(key, product.id);
-        }
-        lines.push({ productId: created.get(key)!, counted: line.counted, readName: line.readName });
-      }
-
-      const counted = sumByProduct(lines);
-      const ids = [...counted.keys()];
-      const products = ids.length
-        ? await tx
-            .select({ id: schema.products.id, name: schema.products.name, stock: schema.products.stock })
-            .from(schema.products)
-            .where(
-              and(inArray(schema.products.id, ids), activeIn(member.shopId)),
-            )
-            .orderBy(byName(schema.products.name))
-            .for("update")
-        : [];
-      if (products.length !== ids.length) throw new UserError("Une marchandise n'existe plus : recharge la page.");
-
-      for (const { productId, readName } of lines) {
-        const name = normalizeName(readName);
-        const product = products.find((p) => p.id === productId)!;
-        if (!name || name === normalizeName(product.name)) continue;
-        await tx
-          .insert(schema.productAliases)
-          .values({ shopId: member.shopId, name, productId })
-          .onConflictDoUpdate({ target: [schema.productAliases.shopId, schema.productAliases.name], set: { productId } });
-      }
-
-      const written: number[] = [];
-      for (const product of products) {
-        const delta = counted.get(product.id)! - product.stock;
-        if (delta === 0) continue;
-        const moved = await moveStock(tx, member.shopId, product.id, delta, member.id, reason);
-        if (!moved.ok) throw new UserError(`${product.name} : ${moved.error}`);
-        written.push(moved.id);
-      }
-      return { written, created: created.size };
-    });
-  } catch (error) {
-    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
-    throw error;
-  }
 }

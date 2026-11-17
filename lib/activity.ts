@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
-import { movementEntryKey } from "@/lib/products";
+import { movementEntryKey } from "@/lib/stock";
 import { entryKeyColumn, entrySumColumn, pendingEntryColumns } from "@/lib/register";
 
 export type HandStock = {

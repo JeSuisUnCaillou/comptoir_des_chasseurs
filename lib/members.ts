@@ -270,3 +270,14 @@ export async function shopMemberOf(shopId: number, id: number) {
     .limit(1);
   return member;
 }
+
+/** Every member of the shop, deactivated ones included, for the "Employé" filters. */
+export async function memberNames(shopId: number) {
+  const m = schema.members;
+  return getDb()
+    .select({ id: m.id, name: m.name })
+    .from(m)
+    .innerJoin(schema.shopMembers, eq(schema.shopMembers.memberId, m.id))
+    .where(eq(schema.shopMembers.shopId, shopId))
+    .orderBy(byName(m.name), asc(m.id));
+}
