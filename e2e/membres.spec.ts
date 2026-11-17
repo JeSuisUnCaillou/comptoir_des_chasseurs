@@ -174,6 +174,20 @@ test("personne d'autre que le super admin ne touche à son compte", async ({ pag
   await expect(theirs.locator(".badge")).toHaveText("Employé");
 });
 
+test("un mot de passe trop court reçoit le même message partout", async ({ page }) => {
+  const username = uniqueName("0-court").toLowerCase();
+  await createMember(username, "mot-de-passe", "employe", `0 ${username}`);
+  await loginAsGerant(page);
+  await page.goto("/membres");
+  const row = page.getByTestId(`member-${username}`);
+  // Skip the browser's minLength check to reach the server's rule.
+  const field = row.getByLabel("Nouveau mot de passe");
+  await field.evaluate((el) => el.removeAttribute("minlength"));
+  await field.fill("court");
+  await row.getByRole("button", { name: "Changer" }).click();
+  await expect(row.locator(ALERT)).toHaveText("Le mot de passe doit faire au moins 8 caractères.");
+});
+
 test("le serveur refuse de modifier le super admin, même par un formulaire ouvert avant", async ({ page, browser }) => {
   const boss = uniqueName("aa-chef").toLowerCase();
   const other = uniqueName("aa-second").toLowerCase();

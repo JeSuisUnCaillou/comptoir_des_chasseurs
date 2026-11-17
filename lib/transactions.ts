@@ -5,7 +5,7 @@ import { getDb, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
-import { moveStock } from "@/lib/products";
+import { activeIn, moveStock } from "@/lib/products";
 import { settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
@@ -58,11 +58,7 @@ export async function recordLines(
           .select({ name: schema.products.name })
           .from(schema.products)
           .where(
-            and(
-              eq(schema.products.id, productId),
-              eq(schema.products.shopId, member.shopId),
-              eq(schema.products.archived, false),
-            ),
+            and(eq(schema.products.id, productId), activeIn(member.shopId)),
           )
           .limit(1);
         if (!product) throw new UserError(at(i, "Marchandise inconnue."));

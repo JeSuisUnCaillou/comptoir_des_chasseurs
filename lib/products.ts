@@ -10,7 +10,7 @@ import { normalizeName, sumByProduct } from "@/lib/game-count";
 import { lineMessage } from "@/lib/transaction-kinds";
 import { setPrivilegedPrices, withPrivilegedPrices, type PrivilegedInput, type ShopProduct, type Tx } from "@/lib/privileged-groups";
 
-export const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
+const DUPLICATE_PRODUCT_NAME = "Il y a déjà une marchandise à ce nom.";
 /** A merchandise created where the archived ones are not shown. */
 const DUPLICATE_MAYBE_ARCHIVED = `${DUPLICATE_PRODUCT_NAME} Elle est peut-être archivée : regarde dans « Gérer les marchandises ».`;
 
@@ -85,7 +85,7 @@ export async function blacksmithLeatherPrice(shopId: number) {
 }
 
 /** Settings key of the price the blacksmith pays for a leather. */
-export const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
+const BLACKSMITH_LEATHER_PRICE = "prix_forgeron_cuir";
 
 /** The products the Tarifs page puts forward, among the given active ones, in the order gérants set. */
 export function featuredProducts<P extends { id: number; featuredAt: Date | null }>(active: P[]) {
@@ -94,17 +94,21 @@ export function featuredProducts<P extends { id: number; featuredAt: Date | null
     .sort((a, b) => a.featuredAt!.getTime() - b.featuredAt!.getTime() || a.id - b.id);
 }
 
+/**
+ * The shop's merchandise that may still be sold, bought, moved or put forward:
+ * of this shop, and not archived. Every write about a merchandise checks it here.
+ */
+export function activeIn(shopId: number) {
+  return and(eq(schema.products.shopId, shopId), eq(schema.products.archived, false));
+}
+
 /** Puts one of the shop's active products forward on the Tarifs page, after the others, or takes it back. */
 export async function setFeatured(shopId: number, productId: number, featured: boolean) {
   const [product] = await getDb()
     .update(schema.products)
     .set({ featuredAt: featured ? new Date() : null })
     .where(
-      and(
-        eq(schema.products.id, productId),
-        eq(schema.products.shopId, shopId),
-        eq(schema.products.archived, false),
-      ),
+      and(eq(schema.products.id, productId), activeIn(shopId)),
     )
     .returning({ id: schema.products.id });
   if (!product) throw new UserError("Marchandise inconnue.");
@@ -200,7 +204,7 @@ export async function recentMovements(
 
 export type Movement = Awaited<ReturnType<typeof recentMovements>>[number];
 
-export type MoveResult = { ok: true; stock: number; id: number } | { ok: false; error: string };
+type MoveResult = { ok: true; stock: number; id: number } | { ok: false; error: string };
 
 /**
  * Adds `delta` units to a product of the shop and records the movement, tied
@@ -273,11 +277,7 @@ export async function recordMovements(
         .select({ id: schema.products.id })
         .from(schema.products)
         .where(
-          and(
-            eq(schema.products.id, productId),
-            eq(schema.products.shopId, member.shopId),
-            eq(schema.products.archived, false),
-          ),
+          and(eq(schema.products.id, productId), activeIn(member.shopId)),
         )
         .limit(1);
       if (!product) throw new UserError(lineMessage(lines.length, i, "Marchandise inconnue."));
@@ -321,13 +321,13 @@ export async function createStocked(
 }
 
 /** What Gérer les marchandises sets on a merchandise. */
-export type ProductValues = Omit<
+type ProductValues = Omit<
   typeof schema.products.$inferInsert,
   "id" | "shopId" | "stock" | "createdAt" | "category" | "leather"
 > & { categoryId: number };
 
 /** A merchandise's prices, without its name, category, unit or archiving. */
-export type ProductPrices = Omit<ProductValues, "name" | "categoryId" | "unit" | "archived">;
+type ProductPrices = Omit<ProductValues, "name" | "categoryId" | "unit" | "archived">;
 
 /** The prices as saved: only a merchandise of the hides' category turns into leather by batches. */
 function batchFor<P extends ProductPrices>(category: { hides: boolean }, prices: P): P {
@@ -449,11 +449,7 @@ export async function recordCount(member: Pick<ShopMember, "id" | "shopId" | "ro
             .select({ id: schema.products.id, name: schema.products.name, stock: schema.products.stock })
             .from(schema.products)
             .where(
-              and(
-                inArray(schema.products.id, ids),
-                eq(schema.products.shopId, member.shopId),
-                eq(schema.products.archived, false),
-              ),
+              and(inArray(schema.products.id, ids), activeIn(member.shopId)),
             )
             .orderBy(byName(schema.products.name))
             .for("update")

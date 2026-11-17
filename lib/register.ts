@@ -54,7 +54,7 @@ export function pendingEntryColumns() {
   const pending = sql`${t.tillPending} and ${t.cancelledAt} is null`;
   return {
     entryLines: sql<number>`case when ${pending} then (select count(*)::int ${from}) else 0 end`,
-    entryTotal: sql<number>`case when ${pending} then (select coalesce(sum(${s.amount}), 0)::int ${from}) else 0 end`,
+    pendingTotal: sql<number>`case when ${pending} then (select coalesce(sum(${s.amount}), 0)::int ${from}) else 0 end`,
     entryItems: sql<string>`case when ${pending} then (select string_agg(${s.quantity} || ' × ' || ${s.label}, E'\n' order by ${s.id}) ${from}) else '' end`,
   };
 }
@@ -310,6 +310,6 @@ function daysBetween(from: string, to: string) {
 }
 
 /** Today's date in Paris, as "YYYY-MM-DD". */
-export function parisToday(now = new Date()) {
+function parisToday(now = new Date()) {
   return parisDate.format(now);
 }

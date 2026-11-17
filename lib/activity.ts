@@ -84,7 +84,7 @@ export type ActivityLine = {
   entryKey: string | null;
   /** What settling it settles with it: see `pendingEntryColumns`. */
   entryLines: number;
-  entryTotal: number;
+  pendingTotal: number;
   entryItems: string;
   /** The septims of its whole entry: see `entrySumColumn`. */
   entrySum: number | null;
@@ -107,7 +107,7 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
       ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by,
-      ${entry.entryLines} as entry_lines, ${entry.entryTotal} as entry_total, ${entry.entryItems} as entry_items,
+      ${entry.entryLines} as entry_lines, ${entry.pendingTotal} as pending_total, ${entry.entryItems} as entry_items,
       ${entryKeyColumn()} as entry_key, ${entrySumColumn()} as entry_sum
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
@@ -143,7 +143,7 @@ export async function memberActivity(
     notes: (r.notes as string | null) ?? null,
     tillPending: r.till_pending === true,
     entryLines: Number(r.entry_lines),
-    entryTotal: Number(r.entry_total),
+    pendingTotal: Number(r.pending_total),
     entryItems: String(r.entry_items ?? ""),
     entryKey: (r.entry_key as string | null) ?? null,
     entrySum: r.entry_sum == null ? null : Number(r.entry_sum),

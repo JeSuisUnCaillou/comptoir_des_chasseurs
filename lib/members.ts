@@ -149,7 +149,8 @@ export async function createAccount(shopId: number, { role, ...account }: NewAcc
 
 /**
  * The accounts a gérant may change: those of their shop. Only the super admin
- * themself may change their account; to anyone else the update matches no row.
+ * themself may change their account (`canEditAccount`, `lib/policies.ts`); to
+ * anyone else the update matches no row.
  */
 function editableBy(me: Pick<ShopMember, "id" | "shopId">, id: number) {
   return and(
@@ -199,7 +200,8 @@ export async function updateAccount(
 
 /**
  * A gérant deactivates an account of their shop, or reactivates it as an
- * employé. Neither their own account nor the super admin's.
+ * employé. Neither their own account nor the super admin's
+ * (`canResetOrDeactivate`, `lib/policies.ts`).
  */
 export async function setAccountActive(me: Pick<ShopMember, "id" | "shopId">, id: number, active: boolean) {
   const sm = schema.shopMembers;

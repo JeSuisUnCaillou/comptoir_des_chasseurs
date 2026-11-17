@@ -11,11 +11,6 @@ import { cancelLine, recordCashLine, recordLines, settleLine, type TransactionLi
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
-function revalidate() {
-  revalidateShop();
-  // Members' activity pages show register lines too.
-}
-
 /**
  * Records a sale or a purchase of one or more merchandises: one register line
  * each, sharing the client and the notes, written all together or not at all.
@@ -64,7 +59,7 @@ export async function recordTransaction(
 
   const result = await attempt(() => recordLines(member, { kind, counterparty, notes, tillPending, lines }));
   if (!result.ok) return result;
-  revalidate();
+  revalidateShop();
   // Back to the register, which shows the new lines.
   redirect(shopPath(member.shop.slug, `/achat-vente?inscrit=${result.value.join(",")}`));
 }
@@ -91,7 +86,7 @@ export async function recordCashMovement(
   if (!label) return { ok: false, message: "Précise la raison." };
 
   const id = await recordCashLine(member, { kind, label, amount, counterparty, notes, tillPending });
-  revalidate();
+  revalidateShop();
   redirect(shopPath(member.shop.slug, `/achat-vente?inscrit=${id}`));
 }
 
@@ -109,7 +104,7 @@ export async function settleTransaction(
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
   const result = await attempt(() => settleLine(member, id));
   if (!result.ok) return result;
-  revalidate();
+  revalidateShop();
   return { ok: true, message: "C'est noté, la caisse est à jour." };
 }
 
@@ -123,6 +118,6 @@ export async function cancelTransaction(
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
   const result = await attempt(() => cancelLine(member, id));
   if (!result.ok) return result;
-  revalidate();
+  revalidateShop();
   return { ok: true, message: "Ligne annulée, stock rétabli." };
 }

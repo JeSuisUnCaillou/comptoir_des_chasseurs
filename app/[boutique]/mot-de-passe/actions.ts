@@ -1,6 +1,6 @@
 "use server";
 
-import { MIN_PASSWORD_LENGTH, hasPassword, hashPassword, verifyPassword } from "@/lib/auth/password";
+import { hasPassword, newPasswordError, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { requireMember, startSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { attempt } from "@/lib/errors";
@@ -18,12 +18,8 @@ export async function changePassword(_prev: PasswordState, formData: FormData): 
   if (!first && !(await verifyPassword(current, member.passwordHash))) {
     return { ok: false, message: "Le mot de passe actuel est incorrect." };
   }
-  if (next.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, message: `Le nouveau mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.` };
-  }
-  if (next !== formData.get("confirm")) {
-    return { ok: false, message: "Les deux mots de passe ne correspondent pas." };
-  }
+  const invalid = newPasswordError(next, formData.get("confirm"));
+  if (invalid) return { ok: false, message: invalid };
   const passwordHash = await hashPassword(next);
   await setOwnPassword(member.id, passwordHash);
   // Other devices are signed out; this one gets a fresh session.
