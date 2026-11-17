@@ -292,7 +292,8 @@ test("le grand livre montre la caisse et les dernières écritures", async ({ br
 
   await page.getByRole("link", { name: "Grand livre" }).click();
   await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie");
-  await expect(page.getByTestId("tresorerie-actuelle")).toContainText(/En caisse : \d/);
+  await expect(page.getByTestId("tresorerie-actuelle")).toHaveText(/^−?\d[\d\s]* septims?$/);
+  await expect(page.getByTestId("tresorerie-semaine")).toContainText(/septims? depuis/);
   await expect(page.getByTestId("caisse-jour")).toHaveCount(0);
   await expect(page.getByTestId("caisse-semaine")).toHaveCount(0);
   // The figures count from the end of the week, which only a gérant declares.
@@ -582,7 +583,7 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
     };
   };
   await loginAsGerant(page);
-  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie");
+  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
   await expect(page.getByTestId("total-ventes")).toContainText("Ventes");
   await expect(page.getByTestId("total-rachats")).toContainText("Rachats");
   await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
