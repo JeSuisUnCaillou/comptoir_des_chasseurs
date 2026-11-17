@@ -129,6 +129,68 @@ test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   ).toContainText("+500 septims");
 });
 
+test("l'article hors stock reprend le nom tapé dans le champ Marchandise", async ({ browser }) => {
+  const label = uniqueName("Pomme");
+  const { page } = await newEmployeePage(browser, "j-ysolda");
+  await page.goto("/achat-vente/achat");
+  const form = page.getByRole("region", { name: "Inscrire un achat" });
+  const box = form.getByRole("combobox", { name: "Marchandise", exact: true });
+  await box.fill(label);
+  await form.getByRole("option", { name: "Autre article (hors stock)…" }).click();
+  await expect(box).toHaveValue("Autre article (hors stock)…");
+  await expect(form.getByLabel("Nom de l'article")).toHaveValue(label);
+  await form.getByLabel("Montant (septims)").fill("7");
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: label })).toHaveText(
+    `Achat inscrit : 1 × ${label}, 7 septims.`,
+  );
+});
+
+test("un nom qui ne correspond à rien devient un article hors stock avec Entrée ou Tab", async ({ browser }) => {
+  const label = uniqueName("Poire");
+  const product = uniqueName("Peau de renard");
+  await createProduct(product, { stock: 2, sellPrice: 3 });
+  const { page } = await newEmployeePage(browser, "j-hulda");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  const first = form.getByRole("group", { name: "Marchandise 1" });
+  const box = first.getByRole("combobox", { name: "Marchandise", exact: true });
+
+  // Enter: "Autre article" is highlighted, and taken with the typed name.
+  await box.fill(label);
+  await expect(form.getByRole("option", { name: "Autre article (hors stock)…" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await box.press("Enter");
+  await expect(box).toHaveValue("Autre article (hors stock)…");
+  await expect(first.getByLabel("Nom de l'article")).toHaveValue(label);
+  await first.getByLabel("Montant (septims)").fill("4");
+
+  // Tab: same, and the cursor moves on to the quantity.
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  const second = form.getByRole("group", { name: "Marchandise 2" });
+  const box2 = second.getByRole("combobox", { name: "Marchandise", exact: true });
+  await box2.pressSequentially(`${label}-bis`);
+  await box2.press("Tab");
+  await expect(box2).toHaveValue("Autre article (hors stock)…");
+  await expect(second.getByLabel("Nom de l'article")).toHaveValue(`${label}-bis`);
+  await expect(second.getByLabel("Quantité")).toBeFocused();
+  await second.getByLabel("Montant (septims)").fill("3");
+
+  // A name that matches a product still picks the product.
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  const third = form.getByRole("group", { name: "Marchandise 3" });
+  const box3 = third.getByRole("combobox", { name: "Marchandise", exact: true });
+  await box3.pressSequentially(product.slice(-12));
+  await box3.press("Tab");
+  await expect(box3).toHaveValue(product);
+  await expect(third.getByLabel("Nom de l'article")).toHaveCount(0);
+
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: label })).toContainText(`1 × ${label}`);
+});
+
 test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ browser }) => {
   const product = uniqueName("Peau de mammouth");
   await createProduct(product, { stock: 3 });
@@ -162,11 +224,9 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
     // A name typed without picking anything keeps the product already chosen.
     await box.fill("introuvable-xyz");
     await expect(form.getByRole("listbox")).toContainText("Aucune marchandise ne correspond.");
-    // Enter does not pick "Autre article" behind the member's back.
-    await box.press("Enter");
-    await expect(form.getByLabel("Nom de l'article")).toHaveCount(0);
     await box.press("Escape");
     await expect(box).toHaveValue(product);
+    await expect(form.getByLabel("Nom de l'article")).toHaveCount(0);
   }
 });
 

@@ -23,8 +23,11 @@ type Picked<T> = Common<T> & {
   free?: false;
   /** Stay at the end of the list whatever is typed (e.g. "Autre article"). */
   extras?: Choice<T>[];
+  /** The extra that Enter or Tab picks when the typed text matches nothing (e.g. "Autre article"). */
+  fallback?: T;
   value: T | null;
-  onChange: (id: T) => void;
+  /** `typed`: the text the member had typed to find the choice, empty when they typed nothing. */
+  onChange: (id: T, typed: string) => void;
   /** Shown when the typed text matches nothing. */
   emptyText: string;
   /** Why the form is refused when Tab left a text that matches nothing. */
@@ -60,7 +63,8 @@ export function focusCombobox(id: string) {
  * leaving the field keeps the one already chosen; after typing, Tab picks the
  * highlighted match and moves on, or, in a field sent with a form, keeps a
  * text that matches nothing (the form is then refused until a choice is
- * picked), and `required` refuses the
+ * picked); with a `fallback`, Enter or Tab on such a text picks it instead,
+ * and `required` refuses the
  * form while nothing is chosen. With `free`, any text is a value: the
  * choices are suggestions, nothing is highlighted until the arrows move, so
  * Enter on a new name submits the form like a plain field.
@@ -68,6 +72,7 @@ export function focusCombobox(id: string) {
 export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>) {
   const { id, choices, listLabel, name, required, placeholder, maxLength } = props;
   const extras = props.free ? [] : (props.extras ?? []);
+  const fallback = props.free ? undefined : extras.find((c) => c.id === props.fallback);
   const all = [...choices, ...extras];
   const selected = props.free ? undefined : all.find((c) => c.id === props.value);
   const [pickedText, setPickedText] = useState(selected?.name ?? "");
@@ -110,7 +115,9 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
   function choose(c: Choice<T>) {
     if (props.free) props.onChange(c.name);
     else {
-      props.onChange(c.id);
+      // The choice's own name, typed in full, is not a name of its own.
+      const typed = editing ? pickedText.trim() : "";
+      props.onChange(c.id, typed.toLocaleLowerCase("fr") === c.name.toLocaleLowerCase("fr") ? "" : typed);
       setPickedText(c.name);
       setStray(false);
     }
@@ -170,13 +177,14 @@ export function Combobox<T extends number | string>(props: Picked<T> | Typed<T>)
             if (props.free && !shown[active]) return setOpen(false);
             // While the list is open, Enter belongs to it and never submits the form.
             e.preventDefault();
-            // A name that matches nothing does not fall through to the extras.
+            // A name that matches nothing does not fall through to the extras, except to the fallback.
             if (shown[active] && (matches.length > 0 || !(editing && query))) choose(shown[active]);
+            else if (fallback) choose(fallback);
           } else if (e.key === "Tab" && !props.free && editing && query) {
             // Tab moves on with the highlighted match (the first one unless the
-            // arrows moved), or keeps the typed text when nothing matches.
+            // arrows moved), or the fallback, or keeps the typed text when nothing matches.
             tabbed.current = true;
-            const match = matches.length > 0 ? (shown[active] ?? matches[0]) : undefined;
+            const match = matches.length > 0 ? (shown[active] ?? matches[0]) : fallback;
             if (match) choose(match);
             // Only a field sent with a form keeps the text, which the form then refuses;
             // elsewhere (the Tarifs calculator) the field shows its choice again.
