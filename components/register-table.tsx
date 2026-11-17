@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CancelButton } from "@/components/cancel-button";
 import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
 import { SettleButton } from "@/components/settle-button";
-import type { Member } from "@/lib/db/schema";
+import type { MemberRole } from "@/lib/db/schema";
 import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { EntryTotal } from "@/components/entry-total";
 import { formatNumber, septims } from "@/lib/pricing";
@@ -23,7 +23,7 @@ export function RegisterTable({
   highlight,
 }: {
   entries: RegisterEntry[];
-  member: Pick<Member, "id" | "role">;
+  member: { id: number; role: MemberRole };
   showNotes?: boolean;
   /** Lines just written, shown fresh. */
   highlight?: number[];

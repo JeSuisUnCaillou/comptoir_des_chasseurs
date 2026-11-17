@@ -32,6 +32,10 @@ frappe.
    nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en
    employé et sans mot de passe (identifiant tiré du nom, sans accents ni
    espaces) ; le gérant lui en donne un depuis Membres.
+   Chaque marchandise va dans la catégorie de la boutique qui lui
+   correspond : les peaux avec les peaux, les viandes dans « Viandes et
+   venaison », le reste dans « Autres ressources », le cuir compris (marqué
+   comme le cuir du forgeron).
    Les ajustements de trésorerie deviennent des mouvements de caisse
    « Ajustement de trésorerie » du registre. Un fournisseur désactivé dans
    l'ancienne app n'est pas repris ; ce qu'il vend est rattaché aux

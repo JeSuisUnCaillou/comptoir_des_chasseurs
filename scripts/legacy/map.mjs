@@ -84,6 +84,7 @@ export function mapLegacy(data, members) {
     if (!products.has(k)) {
       products.set(k, {
         name: String(name).trim(),
+        // The old app's kind of merchandise: categoryFor() gives its category.
         category: "autre",
         unit: "pièce",
         stock: 0,
@@ -312,6 +313,28 @@ export function mapLegacy(data, members) {
     suppliers,
     warnings,
   };
+}
+
+/**
+ * The shop's category for an old app's kind of merchandise, as the migration to
+ * per-shop categories (drizzle/0016) placed them: hides with the hides, meats
+ * with the meats, the rest (leather included) with the other resources.
+ *
+ * @param kind "peau", "cuir", "viande", "ressource" or "autre"
+ * @param categories the shop's categories ({ id, name, hides }), in their order
+ */
+export function categoryFor(kind, categories) {
+  if (!categories.length) throw new Error("La boutique cible n'a aucune catégorie de marchandises.");
+  const byName = (name) => categories.find((c) => !c.hides && key(c.name) === key(name));
+  const hides = categories.find((c) => c.hides);
+  const chosen =
+    (kind === "peau" && hides) ||
+    (kind === "viande" && byName("Viandes et venaison")) ||
+    byName("Autres ressources") ||
+    byName("Autres marchandises") ||
+    categories.find((c) => !c.hides) ||
+    categories[0];
+  return chosen.id;
 }
 
 /** Till as the new app counts it: sales and money in, buybacks and money out, cancelled lines aside. */

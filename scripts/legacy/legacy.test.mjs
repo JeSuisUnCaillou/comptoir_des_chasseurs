@@ -154,10 +154,12 @@ before(async () => {
   await run(["scripts/migrate.mjs"], "", { DATABASE_URL: dbUrl }, ROOT);
   admin = postgres(dbUrl, { max: 1, onnotice: () => {} });
   await admin`
-    insert into members (username, name, password_hash, role) values
-      ('lomone', 'Lomone', 'x', 'gerant'),
-      ('einar', 'Einar', 'x', 'employe')`;
-  await admin`insert into shop_members (shop_id, member_id, role) select 1, id, role from members`;
+    insert into members (username, name, password_hash) values
+      ('lomone', 'Lomone', 'x'),
+      ('einar', 'Einar', 'x')`;
+  await admin`
+    insert into shop_members (shop_id, member_id, role)
+    select 1, id, case username when 'lomone' then 'gerant' else 'employe' end::member_role from members`;
 });
 
 after(async () => {
@@ -209,7 +211,10 @@ test("export puis import, sans toucher aux membres", async () => {
   assert.doesNotMatch(imported.output, /postgres:postgres/, "l'URL n'est jamais affichée en entier");
 
   // Existing accounts untouched; the unknown author gets one he cannot sign in with.
-  const members = await admin`select username, name, role, password_hash from members order by id`;
+  const members = await admin`
+    select username, name, s.role, password_hash
+    from members m left join shop_members s on s.member_id = m.id and s.shop_id = 1
+    order by m.id`;
   assert.deepEqual(
     members.map((m) => ({ ...m })),
     [
@@ -221,14 +226,19 @@ test("export puis import, sans toucher aux membres", async () => {
     ],
   );
 
-  const products = await admin`select * from products order by name`;
+  const products = await admin`
+    select p.*, c.name as category from products p join product_categories c on c.id = p.category_id
+    order by p.name`;
   assert.deepEqual(products.map((p) => p.name), ["Biche", "Cuir", "Lanterne", "Venaison"]);
   const biche = products.find((p) => p.name === "Biche");
-  assert.equal(biche.category, "peau");
+  assert.equal(biche.category, "Peaux");
   assert.equal(biche.stock, 12);
   assert.equal(biche.hides_per_batch, 4);
   const venaison = products.find((p) => p.name === "Venaison");
-  assert.equal(venaison.category, "viande");
+  assert.equal(venaison.category, "Viandes et venaison");
+  const cuir = products.find((p) => p.name === "Cuir");
+  assert.deepEqual([cuir.category, cuir.leather], ["Autres ressources", true]);
+  assert.equal(products.find((p) => p.name === "Lanterne").category, "Autres ressources");
   assert.equal(venaison.bulk_min, 200);
   assert.equal(products.find((p) => p.name === "Lanterne").stock, 0);
   const [{ value: smith }] = await admin`select value from settings where key = 'prix_forgeron_cuir'`;
