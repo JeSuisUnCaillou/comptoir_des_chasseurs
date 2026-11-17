@@ -107,6 +107,22 @@ test("une vente peut dépasser le stock : un avertissement, et le stock s'arrêt
   await expect(await stockOf(page, product)).toHaveText("2");
 });
 
+test("une quantité au-delà d'un million est refusée avec un message", async ({ browser }) => {
+  const product = uniqueName("Peau de horqueur");
+  await createProduct(product, { stock: 1 });
+  const { page } = await newEmployeePage(browser, "onmund");
+  await page.goto("/achat-vente/achat");
+  const form = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(form, product);
+  const quantity = form.getByLabel("Quantité");
+  await quantity.evaluate((el) => el.removeAttribute("max"));
+  await quantity.fill("2000000");
+  await form.getByLabel("Montant (septims)").fill("1");
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(form.locator(ALERT)).toHaveText("La quantité doit être un nombre entier entre 1 et 1 000 000.");
+  await expect(await stockOf(page, product)).toHaveText("1");
+});
+
 test("un article hors stock s'inscrit avec son nom", async ({ browser }) => {
   const label = uniqueName("Trophée de dragon");
   const { page } = await newEmployeePage(browser, "j-zargo");

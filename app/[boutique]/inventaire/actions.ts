@@ -5,7 +5,7 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
-import { QUANTITY_ERROR, checked, isQuantity, readProductIdentity, readProductPrices, text } from "@/lib/forms";
+import { MAX_QUANTITY, QUANTITY_ERROR, checked, isQuantity, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { endShopSetup } from "@/lib/shop-setup";
 import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
 import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
@@ -127,8 +127,8 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
     if (productIds[i] === "") continue;
     const counted = counts[i];
     const readName = readNames[i].slice(0, 100);
-    if (!Number.isInteger(counted) || counted < 0) {
-      return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier, 0 ou plus.` };
+    if (!Number.isInteger(counted) || counted < 0 || counted > MAX_QUANTITY) {
+      return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier entre 0 et 1 000 000.` };
     }
     if (productIds[i] === NEW_PRODUCT) {
       if (!newNames[i]) return { ok: false, message: `${readNames[i]} : donne un nom à la nouvelle marchandise.` };
