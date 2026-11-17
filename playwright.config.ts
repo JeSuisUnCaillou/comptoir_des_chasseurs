@@ -4,9 +4,9 @@ import { loadEnvConfig } from "@next/env";
 // Same environment as the app (.env.local in development, real env vars in CI).
 loadEnvConfig(process.cwd());
 
-// When BASE_URL is set (e.g. a Vercel deployment), tests run against it.
-// Otherwise a local production build is started.
-const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
+// Always a local production build: the tests write straight into DATABASE_URL,
+// and never run against a deployment (CLAUDE.md § Tests de bout en bout).
+const baseURL = "http://localhost:3000";
 
 // e2e/fake-discord.mjs
 const FAKE_DISCORD = "http://localhost:3999";
@@ -33,25 +33,23 @@ export default defineConfig({
       dependencies: ["chromium"],
     },
   ],
-  webServer: process.env.BASE_URL
-    ? undefined
-    : [
-        // A fake Discord, for signing in with Discord (e2e/discord.spec.ts).
-        {
-          command: "node e2e/fake-discord.mjs",
-          url: `${FAKE_DISCORD}/health`,
-          reuseExistingServer: !process.env.CI,
-        },
-        {
-          command: "npm run start",
-          url: baseURL,
-          reuseExistingServer: !process.env.CI,
-          env: {
-            DISCORD_CLIENT_ID: "comptoir-e2e",
-            DISCORD_CLIENT_SECRET: "comptoir-e2e-secret",
-            DISCORD_AUTHORIZE_URL: `${FAKE_DISCORD}/oauth2/authorize`,
-            DISCORD_API_URL: `${FAKE_DISCORD}/api`,
-          },
-        },
-      ],
+  webServer: [
+    // A fake Discord, for signing in with Discord (e2e/discord.spec.ts).
+    {
+      command: "node e2e/fake-discord.mjs",
+      url: `${FAKE_DISCORD}/health`,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: "npm run start",
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      env: {
+        DISCORD_CLIENT_ID: "comptoir-e2e",
+        DISCORD_CLIENT_SECRET: "comptoir-e2e-secret",
+        DISCORD_AUTHORIZE_URL: `${FAKE_DISCORD}/oauth2/authorize`,
+        DISCORD_API_URL: `${FAKE_DISCORD}/api`,
+      },
+    },
+  ],
 });
