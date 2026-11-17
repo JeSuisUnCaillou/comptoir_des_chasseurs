@@ -268,8 +268,10 @@ page ; l'écriture enregistrée ramène au registre.
 | Achat | + quantité |
 | Vente | − quantité, mais jamais sous zéro : sans assez de stock, seul ce qui reste sort |
 | Annulation | revient à l'état d'avant : remet ce qui est sorti du stock, pas la quantité vendue |
+| Rétablissement | comme une nouvelle vente ou un nouvel achat de la ligne |
 
-Chaque mouvement de stock né d'une écriture (vente, achat ou son annulation)
+Chaque mouvement de stock né d'une écriture (vente, achat, son annulation ou
+son rétablissement)
 garde le numéro de sa ligne, pour le distinguer de ceux faits à la main. Une
 vente faite sans rien en stock a quand même son mouvement, de 0, dans
 l'historique du stock.
@@ -298,7 +300,18 @@ sortie d'argent) les septims :
 - **Filtres** : opération, employé (le membre qui a inscrit la ligne),
   dates.
 - **Annuler une ligne** : son auteur ou un gérant. Elle reste barrée, ne
-  compte plus dans la caisse, et le stock revient à l'état d'avant.
+  compte plus dans la caisse, et le stock revient à l'état d'avant. À côté
+  de « Annulée par … », sur la même ligne, **Rétablir** la fait compter de
+  nouveau, comme si on l'inscrivait à nouveau : une vente ressort du stock
+  ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
+  quantité. L'annuler encore rend ce qu'elle a vraiment pris la dernière
+  fois.
+- **Toute une écriture d'un coup** : sur la première ligne d'une écriture
+  de plusieurs lignes, « Tout annuler » annule toutes celles qui comptent
+  encore, « Tout rétablir » toutes celles qui sont annulées (le bouton
+  n'apparaît que s'il touche au moins deux lignes). La confirmation liste
+  les lignes ; elles changent toutes ensemble, ou aucune (un achat dont la
+  marchandise est déjà vendue bloque tout).
 - **Une écriture = un bloc**, même d'une seule ligne, dans le registre comme
   dans l'activité d'un membre : une carte encadrée d'un trait fin, une barre
   dorée à gauche, un espace entre deux cartes. La date, l'opération, le
