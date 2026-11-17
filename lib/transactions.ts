@@ -6,7 +6,7 @@ import { UserError } from "@/lib/errors";
 import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { moveStock } from "@/lib/products";
-import { settleEntry } from "@/lib/register";
+import { cancelStockDelta, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
@@ -159,7 +159,6 @@ export async function cancelLine(member: Actor, id: number) {
     }
     if (line.productId != null) {
       // What the line really moved: a sale may have taken less than it sold.
-      // A line with no movement tied to it (imported from the old app) moved its quantity.
       const [{ moved: linked, count }] = await tx
         .select({
           moved: sql<number>`coalesce(sum(${schema.stockMovements.delta}), 0)::int`,
@@ -169,7 +168,7 @@ export async function cancelLine(member: Actor, id: number) {
         .where(
           and(eq(schema.stockMovements.transactionId, line.id), eq(schema.stockMovements.productId, line.productId)),
         );
-      const delta = count > 0 ? -linked : line.kind === "vente" ? line.quantity : -line.quantity;
+      const delta = cancelStockDelta(line.kind, line.quantity, count > 0 ? linked : null);
       const reason = `Annulation ${line.kind} n°${line.id}`;
       const moved = await moveStock(tx, member.shopId, line.productId, delta, member.id, reason, line.id);
       // A cancelled buyback whose goods are already gone cannot be undone.
