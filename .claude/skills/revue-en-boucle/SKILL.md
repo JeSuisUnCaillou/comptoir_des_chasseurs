@@ -40,7 +40,8 @@ dans le cas courant, trois au plus. Le changement est toute la branche :
 
 6. **Ce qui reste** (questions non tranchées, cas limites non couverts,
    trouvailles réelles hors sujet) : une issue chacun, sauf s'il en existe
-   déjà une.
+   déjà une, envoyée au coordinateur (`CLAUDE.md` § Suivre le travail dans
+   les issues).
 
 Puis merge ou attends le propriétaire selon `CLAUDE.md` § Qui merge.
 

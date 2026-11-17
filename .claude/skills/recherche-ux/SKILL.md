@@ -89,7 +89,8 @@ d'emploi que tu aurais lu ; pas de lecture de `app/` ni `lib/`, pas de SQL.
   commentaire). Un bug (l'app fait autre chose que `docs/comportement.md`, ou compte faux)
   a sa propre issue `bug`, avec les étapes.
 - Dans le fil : les besoins dans l'ordre, les issues, ce que le propriétaire
-  doit trancher, et le rapport joint.
+  doit trancher, et le rapport joint. Puis les issues au coordinateur
+  (`CLAUDE.md` § Suivre le travail dans les issues).
 
 **Ne change aucun code ni doc** : le propriétaire choisit ce que deviennent
 les besoins.
