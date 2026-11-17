@@ -46,7 +46,8 @@ autre travail (`CLAUDE.md` § Suivre le travail dans les issues).
    étiquetée `architecture` et fermée aussitôt : les issues ouvertes, les
    choix laissés au propriétaire, et chaque trouvaille rejetée avec sa
    raison, que la prochaine revue lit à l'étape 2. Puis réponds au
-   propriétaire avec son lien.
+   propriétaire avec son lien, et envoie les issues ouvertes au
+   coordinateur (`CLAUDE.md` § Suivre le travail dans les issues).
 
 ## Les messages aux relecteurs
 
