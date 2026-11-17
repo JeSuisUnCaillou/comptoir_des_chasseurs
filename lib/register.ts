@@ -84,6 +84,29 @@ function conditions(shopId: number, filter: RegisterFilter) {
   return where;
 }
 
+/**
+ * What the line really moved in stock (the sum of its stock movements), or
+ * null when no movement is tied to it (imported from the old app): a sale
+ * beyond the stock takes less than it sells, and cancelling it gives back
+ * only that (`cancelLine`).
+ */
+function stockMovedColumn() {
+  const m = schema.stockMovements;
+  const t = schema.transactions;
+  return sql<number | null>`(select sum(${m.delta})::int from ${m} where ${m.transactionId} = ${t.id} and ${m.productId} = ${t.productId})`;
+}
+
+/**
+ * What cancelling a line does to the stock: it gives back what the line
+ * really moved (`linked`, the sum of its stock movements), or, for a line with
+ * no movement tied to it (imported from the old app), its quantity. Used by
+ * `cancelLine` and by the confirmation that announces it.
+ */
+export function cancelStockDelta(kind: TransactionKind, quantity: number, linked: number | null) {
+  if (linked != null) return -linked;
+  return kind === "vente" ? quantity : -quantity;
+}
+
 export async function registerEntries(
   shopId: number,
   filter: RegisterFilter,
@@ -109,6 +132,7 @@ export async function registerEntries(
       cancelledBy: canceller.name,
       entryKey: entryKeyColumn(),
       entrySum: entrySumColumn(),
+      stockMoved: stockMovedColumn(),
       ...pendingEntryColumns(),
     })
     .from(t)
@@ -117,7 +141,14 @@ export async function registerEntries(
     .where(and(...where))
     .orderBy(desc(t.createdAt), desc(t.id))
     .limit(limit)
-    .offset(offset);
+    .offset(offset)
+    .then((rows) =>
+      rows.map(({ stockMoved, ...row }) => ({
+        ...row,
+        // Units cancelling the line puts back in stock (or takes out, for a buyback).
+        stockBack: row.productId == null ? 0 : Math.abs(cancelStockDelta(row.kind, row.quantity, stockMoved)),
+      })),
+    );
 }
 
 /** Every member of the shop, deactivated ones included, for the "Employé" filters. */

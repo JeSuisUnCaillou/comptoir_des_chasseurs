@@ -98,12 +98,19 @@ test("une vente peut dépasser le stock : un avertissement, et le stock s'arrêt
   // Cancelling puts back what really left the stock: 2 peaux, not 5, and nothing for the last sale.
   await page.goto("/achat-vente");
   const rows = page.getByTestId("registre").getByRole("row").filter({ hasText: product });
-  page.on("dialog", (dialog) => dialog.accept());
+  // The confirmation says the same: what the line really took, not what it sold.
+  const asked: string[] = [];
+  page.on("dialog", (dialog) => {
+    asked.push(dialog.message());
+    return dialog.accept();
+  });
   for (const quantity of ["1", "5"]) {
     const row = rows.filter({ has: page.locator("td.cell-qty", { hasText: new RegExp(`^${quantity}$`) }) });
     await row.getByRole("button", { name: /Annuler/ }).click();
     await expect(row).toContainText("Annulée par");
   }
+  expect(asked[0]).toContain("Le stock ne change pas.");
+  expect(asked[1]).toContain(`2 ${product} reviendront en stock.`);
   await expect(await stockOf(page, product)).toHaveText("2");
 });
 
