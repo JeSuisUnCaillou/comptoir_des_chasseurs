@@ -1,6 +1,6 @@
 {
-  "id": "2b8d51c6-2df4-4e3d-b45e-0ea1aa59166f",
-  "prevId": "3e950953-72e8-412e-821d-0a8ce2f37ed4",
+  "id": "5dd591df-790f-4a0d-b2a3-95abe476dd0a",
+  "prevId": "762fc972-fcd8-4d2f-93df-59d50bd95efd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1102,13 +1102,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "setup_pending": {
-          "name": "setup_pending",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1649,6 +1642,93 @@
           "value": "\"transactions\".\"amount\" >= 0"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.week_ends": {
+      "name": "week_ends",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declared_at": {
+          "name": "declared_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "week_ends_shop_declared_at_idx": {
+          "name": "week_ends_shop_declared_at_idx",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "declared_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "week_ends_shop_id_shops_id_fk": {
+          "name": "week_ends_shop_id_shops_id_fk",
+          "tableFrom": "week_ends",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "tableTo": "shops",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "week_ends_member_id_members_id_fk": {
+          "name": "week_ends_member_id_members_id_fk",
+          "tableFrom": "week_ends",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "tableTo": "members",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },

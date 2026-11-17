@@ -433,3 +433,20 @@ export const supplierOffers = pgTable(
 export type Supplier = typeof suppliers.$inferSelect;
 export type SupplierOffer = typeof supplierOffers.$inferSelect;
 export type OfferSide = (typeof offerSide.enumValues)[number];
+
+/**
+ * A gérant declared the end of the week: the Grand livre's tiles count from
+ * the shop's latest one. The register itself is untouched.
+ */
+export const weekEnds = pgTable(
+  "week_ends",
+  {
+    id: serial("id").primaryKey(),
+    shopId: shopColumn(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    declaredAt: timestamp("declared_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("week_ends_shop_declared_at_idx").on(t.shopId, t.declaredAt)],
+);

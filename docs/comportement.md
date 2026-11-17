@@ -153,13 +153,24 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
 
 ## Grand livre
 
-- **Quatre tuiles sur tout le registre**, comme dans l'ancienne app :
-  - la trésorerie actuelle : ventes encaissées − achats payés ± mouvements
-    de caisse (la tuile donne leur total) ;
-  - le total des ventes ;
-  - le total des rachats ;
+- **Quatre tuiles, depuis la dernière fin de semaine** : en gros, le chiffre
+  depuis la dernière fin de semaine déclarée (depuis l'ouverture avant la
+  première), et son petit titre dit depuis combien de jours il compte
+  (« Ventes depuis 3 jours », « depuis aujourd'hui », « depuis
+  l'ouverture » ; jours du calendrier à l'heure de Paris) ; en petit
+  dessous, le total depuis la première ligne du registre, avec son nombre de
+  jours (« 15 634 septims depuis 152 jours ») :
+  - la trésorerie, à part : en gros, tout ce qu'il y a en caisse (ventes
+    encaissées − achats payés ± mouvements de caisse) ; dessous, en gris, ce
+    que la caisse a gagné ou perdu depuis la fin de semaine (« +16 septims
+    depuis 1 jour »), et rien d'autre ;
+  - les ventes ;
+  - les rachats ;
   - le solde ventes − rachats.
-- En dessous : la caisse du jour et des 7 derniers jours.
+- **Déclarer la fin de semaine** (gérant, en bas du cadre de la caisse, après
+  confirmation) : les ventes, les rachats, leur solde et la variation de la
+  trésorerie repartent de zéro. La caisse, les totaux et le registre ne
+  changent pas. Le cadre dit qui a déclaré la dernière et quand.
 - Les boutons : Mouvement de caisse, Mouvement de stock, puis, mis en avant à
   droite, Nouvel achat et Nouvelle vente.
 - Les dernières écritures.

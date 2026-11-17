@@ -272,14 +272,14 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
       await expect(main.getByRole("link", { name, exact: true })).toBeInViewport({ ratio: 1 });
     }
     const last = await main.getByRole("link", { name: "Mouvement de stock", exact: true }).boundingBox();
-    const tile = await page.getByText("Trésorerie actuelle").boundingBox();
+    const tile = await page.getByTestId("caisse-totale").boundingBox();
     expect(tile!.y - (last!.y + last!.height)).toBeGreaterThanOrEqual(12);
   });
 
   test("avec une police plus large, les boutons du Grand livre tiennent à toutes les largeurs", async ({ page }) => {
     await loginAsGerant(page);
     // Another computer's fonts can be wider than this one's: the buttons must not count on a few pixels.
-    await page.addStyleTag({ content: ".move-actions .btn { letter-spacing: 0.08em !important; }" });
+    await page.addStyleTag({ content: ".move-actions .btn, .week-end { letter-spacing: 0.08em !important; }" });
     const main = page.getByRole("main");
     const widths = [320, 360, 390, 430, 600, 800, 1000];
     for (let width = 1100; width <= 1700; width += 40) widths.push(width);
@@ -292,6 +292,11 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
         const button = (await main.getByRole("link", { name, exact: true }).boundingBox())!;
         expect(button.x + button.width, `${name} à ${width} px`).toBeLessThanOrEqual(panel.x + panel.width);
       }
+      // The end of the week's button stays in the panel, apart from the tiles above it.
+      const weekEnd = (await main.getByRole("button", { name: "Déclarer la fin de semaine" }).boundingBox())!;
+      const tiles = (await main.locator(".till-overview").boundingBox())!;
+      expect(weekEnd.x + weekEnd.width, `fin de semaine à ${width} px`).toBeLessThanOrEqual(panel.x + panel.width);
+      expect(weekEnd.y - (tiles.y + tiles.height), `fin de semaine à ${width} px`).toBeGreaterThanOrEqual(8);
     }
   });
 

@@ -159,15 +159,29 @@
     {
       "idx": 22,
       "version": "7",
-      "when": 1794918692058,
-      "tag": "0022_initialisation-boutique",
+      "when": 1794862185867,
+      "tag": "0022_fin-de-semaine",
       "breakpoints": true
     },
     {
       "idx": 23,
       "version": "7",
-      "when": 1794920976744,
-      "tag": "0023_initialisation-boutiques-vides",
+      "when": 1794906761648,
+      "tag": "0023_fin-de-semaine-lundi-16-novembre",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794921653341,
+      "tag": "0024_initialisation-boutique",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794921653998,
+      "tag": "0025_initialisation-boutiques-vides",
       "breakpoints": true
     }
   ]

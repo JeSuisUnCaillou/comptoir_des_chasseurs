@@ -291,14 +291,21 @@ test("le serveur refuse d'annuler la ligne d'un autre à qui n'est plus gérant"
 test("le grand livre montre la caisse et les dernières écritures", async ({ browser }) => {
   const product = uniqueName("Peau de mammouth");
   await createProduct(product, { buyPrice: 5, sellPrice: 8, stock: 3 });
-  const { page } = await newEmployeePage(browser, "faralda");
+  const { page, username } = await newEmployeePage(browser, "faralda");
   await record(page, "vente", { product, quantity: 2 });
+  // Money in the till outside sales and purchases: the Grand livre no longer details it.
+  await createTransactions(username, 1, { amount: 5, kind: "entree" });
 
   await page.getByRole("link", { name: "Grand livre" }).click();
-  await expect(page.getByTestId("caisse-jour")).toContainText("Aujourd'hui");
-  await expect(page.getByTestId("caisse-jour")).toContainText(/septims? encaissés/);
-  await expect(page.getByTestId("caisse-semaine")).toContainText("7 derniers jours");
-  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
+  await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie");
+  await expect(page.getByTestId("tresorerie-actuelle")).toHaveText(/^−?\d[\d\s]* septims?$/);
+  await expect(page.getByTestId("tresorerie-semaine")).toContainText(/septims? depuis/);
+  await expect(page.getByTestId("caisse-totale")).not.toContainText("hors achats et ventes");
+  await expect(page.getByTestId("caisse-jour")).toHaveCount(0);
+  await expect(page.getByTestId("caisse-semaine")).toHaveCount(0);
+  // The figures count from the end of the week, which only a gérant declares.
+  await expect(page.getByTestId("fin-de-semaine")).toContainText("Depuis");
+  await expect(page.getByRole("button", { name: "Déclarer la fin de semaine" })).toHaveCount(0);
   await expect(page.getByTestId("registre").getByRole("row").filter({ hasText: product })).toContainText(
     "+16 septims",
   );
@@ -422,28 +429,6 @@ test("sous le stock, le formulaire montre le prix utilisé par défaut", async (
     "Prix par défaut : 2 septims / unité (prix de gros)",
   );
   await expect(sale.getByLabel("Montant (septims)")).toHaveValue("20");
-});
-
-test("le grand livre compte chaque ligne dans la bonne fenêtre", async ({ page, browser }) => {
-  // Amounts far above what other tests write, so their lines cannot blur the
-  // deltas: a purchase they record meanwhile only takes a few septims off.
-  const { username } = await newEmployeePage(browser, "brynjolf");
-  const till = async () => {
-    await page.goto(COMPTOIR);
-    const read = async (id: string) =>
-      Number(((await page.getByTestId(id).locator(".stat-value").textContent()) ?? "").replace(/\D/g, ""));
-    return { day: await read("caisse-jour"), week: await read("caisse-semaine"), all: await read("caisse-totale") };
-  };
-  await loginAsGerant(page);
-  const before = await till();
-  await createTransactions(username, 1, { at: "now() - interval '4 days'", amount: 100_000 });
-  await createTransactions(username, 1, { at: "now() - interval '8 days'", amount: 1_000_000 });
-  const after = await till();
-
-  expect(after.day - before.day).toBeLessThan(100_000); // neither line is today
-  expect(after.week - before.week).toBeGreaterThan(90_000); // 4 days ago is in the week
-  expect(after.week - before.week).toBeLessThan(1_000_000); // 8 days ago is not
-  expect(after.all - before.all).toBeGreaterThan(1_090_000);
 });
 
 test("annuler un achat retire la marchandise, sauf si elle est déjà vendue", async ({ browser }) => {
@@ -607,9 +592,12 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   };
   await loginAsGerant(page);
   await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie actuelle");
-  await expect(page.getByTestId("total-ventes")).toContainText("Total des ventes");
-  await expect(page.getByTestId("total-rachats")).toContainText("Total des rachats");
+  await expect(page.getByTestId("total-ventes")).toContainText("Ventes");
+  await expect(page.getByTestId("total-rachats")).toContainText("Rachats");
   await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
+  for (const id of ["total-ventes", "total-rachats", "solde-ventes-rachats"]) {
+    await expect(page.getByTestId(id).locator(".stat-total")).toHaveText(/ septims? depuis (\d+ jours?|aujourd'hui)$/);
+  }
 
   const before = await tiles();
   await createTransactions(username, 1, { amount: 5_000_000 });

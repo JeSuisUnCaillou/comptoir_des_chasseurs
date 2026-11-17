@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gte, inArray, isNull, lt, sql, type AnyColum
 import { alias } from "drizzle-orm/pg-core";
 import { byName, getDb, schema } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
+import { lastWeekEnd } from "@/lib/week-ends";
 
 export type RegisterFilter = {
   kinds?: TransactionKind[];
@@ -233,19 +234,33 @@ async function totalsOf(shopId: number, filter: RegisterFilter, pending: boolean
   return tillFrom(row, "all");
 }
 
-/** The shop's till today, over the last 7 days and since the opening, in one query. */
+/**
+ * The shop's till since the latest declared end of the week (`week`, the
+ * whole register before the first) and since the opening (`all`), with that
+ * end of the week. `days` and `allDays` say for how many calendar days in
+ * Paris each counts: 0 from today, null before the first end of the week or
+ * the first line.
+ */
 export async function tillSummary(shopId: number, now = new Date()) {
   const t = schema.transactions;
-  const today = parisToday(now);
-  const [row] = await getDb()
+  const weekEnd = await lastWeekEnd(shopId);
+  const [{ first, ...sums }] = await getDb()
     .select({
-      ...tillColumns("day", parisDay(today)!),
-      ...tillColumns("week", parisDay(today, -6)!),
+      ...tillColumns("week", weekEnd?.declaredAt),
       ...tillColumns("all"),
+      first: sql<Date | null>`min(${t.createdAt})`.mapWith(t.createdAt),
     })
     .from(t)
     .where(and(eq(t.shopId, shopId), ...live()));
-  return { day: tillFrom(row, "day"), week: tillFrom(row, "week"), all: tillFrom(row, "all") };
+  const daysSince = (from: Date | null | undefined) =>
+    from ? daysBetween(parisToday(from), parisToday(now)) : null;
+  return {
+    week: tillFrom(sums, "week"),
+    all: tillFrom(sums, "all"),
+    weekEnd,
+    days: daysSince(weekEnd?.declaredAt),
+    allDays: daysSince(first),
+  };
 }
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {
@@ -287,6 +302,11 @@ export function lastDays(duParam: string | undefined, auParam: string | undefine
   const au = asked.au ?? parisToday(now);
   const du = asked.du ?? parisToday(parisDay(au, 1 - days)!);
   return { ...dayRange(du, au), asked };
+}
+
+/** Days from one "YYYY-MM-DD" date to another. */
+function daysBetween(from: string, to: string) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
 /** Today's date in Paris, as "YYYY-MM-DD". */
