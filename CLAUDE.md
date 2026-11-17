@@ -132,6 +132,13 @@ en attente dans une seule transaction : une valeur ajoutée à un enum
 (`ALTER TYPE … ADD VALUE`) ne peut pas servir dans le même lot, donc son
 usage part dans une PR suivante.
 
+Deux branches prennent souvent le même numéro de migration. Avant le merge,
+merge `main` ; s'il a déjà pris ton numéro, supprime ton SQL, reprends `drizzle/meta`
+de `main` et relance `npm run db:generate` (nouveau numéro, nouvelle date),
+en y remettant le SQL écrit à la main. La base des previews, commune, a déjà
+passé ta migration sous l'ancien nom et la rejouera : écris-la rejouable
+(`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`…).
+
 Les secrets vivent dans les variables d'environnement de Vercel (`AUTH_SECRET`,
 `POSTGRES_URL`…), jamais dans le dépôt. L'adresse et les identifiants de
 l'ancienne app du comptoir n'entrent pas dans le dépôt non plus.
@@ -145,7 +152,8 @@ relance une fois le workflow « Preview » (`actions_run_trigger`,
 `preview.yml`, `ref` = la branche) ; l'offre Hobby compte 100 déploiements
 par jour. Le lien est dans la description de la PR, entre
 `<!-- preview-vercel -->` et `<!-- /preview-vercel -->` (garde ce bloc si tu
-réécris la description).
+réécris la description). Ne donne l'adresse fixe des previews (README) que
+pour Discord, juste après avoir relancé la preview de ta branche.
 
 Donne **toujours le lien de la page précise à essayer**
 (`…vercel.app/le-comptoir-des-chasseurs/contacts`), jamais la racine
@@ -161,7 +169,10 @@ lignes ») ; « met moi de la data pour tester ta feature », 2026-11-11.
 
 Dès qu'une branche est poussée, ouvre sa pull request vers `main`. Titre et
 description disent ce qui change et pourquoi. Un travail séparé part sur sa
-propre branche et sa propre PR.
+propre branche et sa propre PR. Le propriétaire autorise d'avance plusieurs
+branches par fil : nomme chacune d'après son travail, en kebab-case
+(`categories-marchandises`), même si la session propose
+`claude/project-thread-…` ; une PR déjà ouverte garde sa branche.
 
 Les PR sont ouvertes sous le compte de Caillou : tout commentaire et toute
 assignation lui envoient un e-mail. Ne l'assigne jamais, ne lui demande pas
@@ -199,4 +210,6 @@ Pour merger :
 Après chaque merge, compte les PR mergées depuis la dernière passe du harness
 (le plus récent `.claude/audits/*-harness*.md`). À 20 ou plus, propose au
 propriétaire une passe `harness-engineer` et une `revue-architecture`. Il
-décide.
+décide. Proposer, c'est aussi ouvrir l'issue `harness` « Passe du harness
+AAAA-MM-JJ » que la passe reprendra : si elle est déjà ouverte, un autre fil
+l'a proposée, ne la répète pas.
