@@ -6,6 +6,7 @@ import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
 import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
+import { endShopSetup } from "@/lib/shop-setup";
 import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
 import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
@@ -144,6 +145,8 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
 
   const result = await attempt(() => recordCount(member, lines, reason));
   if (!result.ok) return result;
+  // The stock is imported: a new shop is set up.
+  await endShopSetup(member.shopId);
   revalidateShop();
   const { written, created } = result.value;
   if (written.length === 0) {

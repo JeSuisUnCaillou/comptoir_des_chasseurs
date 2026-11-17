@@ -53,5 +53,8 @@ export async function recordOpeningTill(member: Pick<ShopMember, "id" | "role" |
 
 /** The shop is no longer offered to be set up: its gérant skipped it, or counted its stock. */
 export async function endShopSetup(shopId: number) {
-  await getDb().update(schema.shops).set({ setupPending: false }).where(eq(schema.shops.id, shopId));
+  await getDb()
+    .update(schema.shops)
+    .set({ setupPending: false })
+    .where(and(eq(schema.shops.id, shopId), eq(schema.shops.setupPending, true)));
 }
