@@ -86,11 +86,7 @@ export function RegisterTable({
                           effect={
                             cash
                               ? "L'argent est retiré de la caisse."
-                              : e.productId == null
-                                ? "Le stock ne change pas."
-                                : sale
-                                  ? `${e.quantity} ${e.label} reviendront en stock.`
-                                  : `${e.quantity} ${e.label} sortiront du stock.`
+                              : stockEffect(e, sale)
                           }
                         />
                       </div>
@@ -104,4 +100,10 @@ export function RegisterTable({
       </table>
     </div>
   );
+}
+
+/** What cancelling the line does to the stock: what it really moved, not what it says. */
+function stockEffect(e: RegisterEntry, sale: boolean) {
+  if (e.stockBack === 0) return "Le stock ne change pas.";
+  return sale ? `${e.stockBack} ${e.label} reviendront en stock.` : `${e.stockBack} ${e.label} sortiront du stock.`;
 }

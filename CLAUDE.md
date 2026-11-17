@@ -60,6 +60,15 @@ traînent (2026-11-11). Ce qu'on découvre en route sans le faire part dans une
 nouvelle issue, pas dans un commentaire TODO. Pèse le gain contre le coût :
 c'est une petite app pour une dizaine de joueurs.
 
+Une issue ouverte en route n'est pas rangée pour toujours : le propriétaire
+veut qu'elle soit traitée, et souvent par un autre fil que celui qui l'a
+ouverte (2026-11-17). Un fil qui ouvre des issues (revue, recherche UX,
+revue en boucle) finit en les envoyant au coordinateur du projet
+(`message_coordinator`) : pour chacune, sa taille et si elle attend une
+décision du propriétaire. Le coordinateur lance un fil pour celles qui sont
+claires, une par fil ou regroupées par sujet, et met les décisions dans une
+seule question au propriétaire.
+
 ## Tests de bout en bout
 
 L'app est couverte par des tests Playwright dans `e2e/`, lancés contre un
