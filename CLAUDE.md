@@ -211,4 +211,6 @@ Pour merger :
 Après chaque merge, compte les PR mergées depuis la dernière passe du harness
 (le plus récent `.claude/audits/*-harness*.md`). À 20 ou plus, propose au
 propriétaire une passe `harness-engineer` et une `revue-architecture`. Il
-décide.
+décide. Proposer, c'est aussi ouvrir l'issue `harness` « Passe du harness
+AAAA-MM-JJ » que la passe reprendra : si elle est déjà ouverte, un autre fil
+l'a proposée, ne la répète pas.
