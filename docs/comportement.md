@@ -635,7 +635,8 @@ Ne comptent pas :
 
 - Un compte (identifiant, mot de passe, nom affiché) peut appartenir à
   plusieurs boutiques, avec un rôle dans chacune (`shop_members`).
-- Un compte sans boutique où il est actif ne peut plus se connecter.
+- Un compte sans boutique où il est actif ne peut plus se connecter, sauf
+  le super admin.
 - Seul le super admin ouvre une boutique : pour lui, ou pour quelqu'un
   d'autre par un lien d'invitation (voir [Mes boutiques](#mes-boutiques)).
 - Un compte peut être lié à un compte Discord, par son propriétaire seulement

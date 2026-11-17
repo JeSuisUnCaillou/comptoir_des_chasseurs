@@ -23,7 +23,7 @@ et le sens des imports.
 
 ## Développer en local
 
-Il faut Node 22 et un Postgres local.
+Il faut Node 22.18 ou plus et un Postgres local.
 
 ```bash
 npm install
@@ -41,7 +41,12 @@ Le schéma est dans `lib/db/schema.ts`. Une seule base héberge plusieurs
 **boutiques** (table `shops`) : les marchandises, l'historique du stock, le
 registre, les annonces, les contacts et les réglages appartiennent chacun à
 une boutique (`shop_id`), et chaque page ou action ne lit et n'écrit que ceux de
-la boutique visitée (`currentShop`, `lib/shops.ts`). La migration des boutiques
+la boutique visitée (`currentShop`, `lib/shops.ts`).
+
+`lib/db/url.mjs` choisit la base : `DATABASE_URL` si elle est là, sinon celle
+que Vercel fournit selon `VERCEL_ENV` (la base des previews sur une preview).
+Les migrations et le seed prennent `DATABASE_MIGRATION_URL` avant
+`DATABASE_URL` (voir `.env.example`). La migration des boutiques
 a rangé tout l'existant dans la première, « Le Comptoir Des Chasseurs »
 ([#113](https://github.com/JeSuisUnCaillou/comptoir_des_chasseurs/issues/113)).
 
@@ -123,10 +128,11 @@ Discord (`e2e/fake-discord.mjs`, port 3999) et le donne à l'app.
 
 ## Intégration et déploiement continus
 
-- **CI** (`.github/workflows/ci.yml`) : sur chaque pull request et chaque push
-  sur `main`, vérification TypeScript, cohérence schéma/migrations, tests des
-  scripts de reprise de l'ancienne app, build, puis tests e2e Playwright sur un
-  Postgres jetable.
+- **CI** (`.github/workflows/ci.yml`, qui fait foi pour la liste des
+  étapes) : sur chaque pull request et chaque push sur `main`, `npm run lint`
+  (types et sens des imports), cohérence schéma/migrations, tests sans
+  navigateur (analyseur de coffre, reprise de l'ancienne app, copie de la
+  prod), build, puis tests e2e Playwright sur un Postgres jetable.
 - **Déploiement** : Vercel est relié au repo GitHub. Chaque merge sur `main`
   part en production. Les autres branches ne déploient rien d'elles-mêmes
   (`git.deploymentEnabled` dans `vercel.json`) : l'offre Hobby limite à 100

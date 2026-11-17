@@ -201,12 +201,15 @@ test("le serveur refuse de modifier le super admin, même par un formulaire ouve
   await expect(row.getByLabel("Rôle")).toBeVisible();
   await makeSuperAdmin(boss);
 
-  await row.getByLabel("Nouveau mot de passe").fill("vole-le-compte");
-  await row.getByRole("button", { name: "Changer" }).click();
-  await expect(row.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
+  // Each form answers in its own cell: once both have answered, the row holds two alerts.
+  const password = row.getByRole("cell").filter({ has: page.getByLabel("Nouveau mot de passe") });
+  await password.getByLabel("Nouveau mot de passe").fill("vole-le-compte");
+  await password.getByRole("button", { name: "Changer" }).click();
+  await expect(password.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
 
-  await row.getByRole("button", { name: /^Désactiver/ }).click();
-  await expect(row.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
+  const toggle = row.getByRole("cell").filter({ has: page.getByRole("button", { name: /^Désactiver/ }) });
+  await toggle.getByRole("button", { name: /^Désactiver/ }).click();
+  await expect(toggle.locator(ALERT)).toHaveText("Tu ne peux pas modifier ce compte.");
   await row.getByLabel("Rôle").selectOption("employe");
   await row.getByRole("button", { name: "Enregistrer" }).click();
   await expect(row.getByText("Super admin")).toBeVisible();
