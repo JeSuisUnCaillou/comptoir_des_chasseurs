@@ -8,7 +8,6 @@ import type { Till } from "@/lib/register";
  * the end of the week.
  */
 export function TillOverview({ week, all, days }: { week: Till; all: Till; days: number | null }) {
-  const movements = all.inflows - all.outflows;
   const since = sinceLabel(days);
   return (
     <div className="stats till-overview">
@@ -20,11 +19,6 @@ export function TillOverview({ week, all, days }: { week: Till; all: Till; days:
         <div className="stat-since" data-testid="tresorerie-semaine">
           {septims(week.balance, { signed: true })} {since}
         </div>
-        {movements !== 0 && (
-          <div className="stat-total">
-            Dont {septims(movements, { signed: true })} d&apos;entrées et sorties d&apos;argent hors achats et ventes
-          </div>
-        )}
       </div>
       <div className="stat stat-accent-green" data-testid="total-ventes">
         <div className="stat-label">Ventes {since}</div>

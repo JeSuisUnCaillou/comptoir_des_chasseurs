@@ -160,9 +160,9 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
   l'ouverture » ; jours du calendrier à l'heure de Paris) ; en petit
   dessous, le total depuis l'ouverture :
   - la trésorerie, à part : en gros, tout ce qu'il y a en caisse (ventes
-    encaissées − achats payés ± mouvements de caisse, dont la tuile donne le
-    total) ; dessous, en gris, ce que la caisse a gagné ou perdu depuis la
-    fin de semaine (« +16 septims depuis 1 jour ») ;
+    encaissées − achats payés ± mouvements de caisse) ; dessous, en gris, ce
+    que la caisse a gagné ou perdu depuis la fin de semaine (« +16 septims
+    depuis 1 jour »), et rien d'autre ;
   - les ventes ;
   - les rachats ;
   - le solde ventes − rachats.

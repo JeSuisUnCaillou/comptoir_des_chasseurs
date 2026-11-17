@@ -163,7 +163,7 @@ export async function createTransactions(
     at = "now() - interval '1 day'",
     amount = 1,
     label = "Article de test",
-    kind = "vente" as "vente" | "rachat",
+    kind = "vente" as "vente" | "rachat" | "entree" | "sortie",
   } = {},
 ) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });

@@ -287,13 +287,16 @@ test("le serveur refuse d'annuler la ligne d'un autre à qui n'est plus gérant"
 test("le grand livre montre la caisse et les dernières écritures", async ({ browser }) => {
   const product = uniqueName("Peau de mammouth");
   await createProduct(product, { buyPrice: 5, sellPrice: 8, stock: 3 });
-  const { page } = await newEmployeePage(browser, "faralda");
+  const { page, username } = await newEmployeePage(browser, "faralda");
   await record(page, "vente", { product, quantity: 2 });
+  // Money in the till outside sales and purchases: the Grand livre no longer details it.
+  await createTransactions(username, 1, { amount: 5, kind: "entree" });
 
   await page.getByRole("link", { name: "Grand livre" }).click();
   await expect(page.getByTestId("caisse-totale")).toContainText("Trésorerie");
   await expect(page.getByTestId("tresorerie-actuelle")).toHaveText(/^−?\d[\d\s]* septims?$/);
   await expect(page.getByTestId("tresorerie-semaine")).toContainText(/septims? depuis/);
+  await expect(page.getByTestId("caisse-totale")).not.toContainText("hors achats et ventes");
   await expect(page.getByTestId("caisse-jour")).toHaveCount(0);
   await expect(page.getByTestId("caisse-semaine")).toHaveCount(0);
   // The figures count from the end of the week, which only a gérant declares.
