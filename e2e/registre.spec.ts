@@ -591,7 +591,7 @@ test("le grand livre montre la trésorerie, les ventes, les rachats et leur sold
   await expect(page.getByTestId("total-rachats")).toContainText("Rachats");
   await expect(page.getByTestId("solde-ventes-rachats")).toContainText("Solde ventes − rachats");
   for (const id of ["total-ventes", "total-rachats", "solde-ventes-rachats"]) {
-    await expect(page.getByTestId(id).locator(".stat-total")).toContainText("Total :");
+    await expect(page.getByTestId(id).locator(".stat-total")).toHaveText(/ septims? depuis (\d+ jours?|aujourd'hui)$/);
   }
 
   const before = await tiles();

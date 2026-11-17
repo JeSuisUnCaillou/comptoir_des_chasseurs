@@ -158,7 +158,8 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
   première), et son petit titre dit depuis combien de jours il compte
   (« Ventes depuis 3 jours », « depuis aujourd'hui », « depuis
   l'ouverture » ; jours du calendrier à l'heure de Paris) ; en petit
-  dessous, le total depuis l'ouverture :
+  dessous, le total depuis la première ligne du registre, avec son nombre de
+  jours (« 15 634 septims depuis 152 jours ») :
   - la trésorerie, à part : en gros, tout ce qu'il y a en caisse (ventes
     encaissées − achats payés ± mouvements de caisse) ; dessous, en gris, ce
     que la caisse a gagné ou perdu depuis la fin de semaine (« +16 septims

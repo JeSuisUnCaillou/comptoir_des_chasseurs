@@ -237,18 +237,30 @@ async function totalsOf(shopId: number, filter: RegisterFilter, pending: boolean
 /**
  * The shop's till since the latest declared end of the week (`week`, the
  * whole register before the first) and since the opening (`all`), with that
- * end of the week.
+ * end of the week. `days` and `allDays` say for how many calendar days in
+ * Paris each counts: 0 from today, null before the first end of the week or
+ * the first line.
  */
 export async function tillSummary(shopId: number, now = new Date()) {
   const t = schema.transactions;
   const weekEnd = await lastWeekEnd(shopId);
-  const [row] = await getDb()
-    .select({ ...tillColumns("week", weekEnd?.declaredAt), ...tillColumns("all") })
+  const [{ first, ...sums }] = await getDb()
+    .select({
+      ...tillColumns("week", weekEnd?.declaredAt),
+      ...tillColumns("all"),
+      first: sql<Date | null>`min(${t.createdAt})`.mapWith(t.createdAt),
+    })
     .from(t)
     .where(and(eq(t.shopId, shopId), ...live()));
-  // Calendar days in Paris: 0 when the week ended today.
-  const days = weekEnd ? daysBetween(parisToday(weekEnd.declaredAt), parisToday(now)) : null;
-  return { week: tillFrom(row, "week"), all: tillFrom(row, "all"), weekEnd, days };
+  const daysSince = (from: Date | null | undefined) =>
+    from ? daysBetween(parisToday(from), parisToday(now)) : null;
+  return {
+    week: tillFrom(sums, "week"),
+    all: tillFrom(sums, "all"),
+    weekEnd,
+    days: daysSince(weekEnd?.declaredAt),
+    allDays: daysSince(first),
+  };
 }
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {

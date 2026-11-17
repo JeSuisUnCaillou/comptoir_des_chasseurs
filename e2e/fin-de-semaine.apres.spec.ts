@@ -45,7 +45,7 @@ test("un gérant déclare la fin de semaine : les chiffres repartent de zéro, l
 
   await loginAsGerant(page);
   const before = await tile(page, "total-ventes");
-  expect(before.total).toBe(`Total : ${before.value}`);
+  expect(before.total).toMatch(new RegExp(`^${before.value} depuis \\d+ jours?$`));
   const treasuryBefore = await page.getByTestId("tresorerie-actuelle").textContent();
 
   let question = "";
@@ -80,13 +80,20 @@ test("un gérant déclare la fin de semaine : les chiffres repartent de zéro, l
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("7 septims");
   await expect(page.getByTestId("tresorerie-semaine")).toHaveText("+7 septims depuis aujourd'hui");
   const after = await tile(page, "total-ventes");
-  const amount = (text: string) => Number(text.replace(/\D/g, ""));
+  const amount = (text: string) => Number(text.split(" septim")[0].replace(/\D/g, ""));
   expect(amount(after.total) - amount(before.total)).toBe(7);
 
   // The employee sees the same figures and who ended the week.
   await employee.reload();
   await expect(employee.getByTestId("fin-de-semaine")).toContainText(`déclarée par ${GERANT.name}`);
   await expect(employee.getByTestId("total-ventes").locator(".stat-value")).toHaveText("7 septims");
+
+  // The totals count from the first line of the register: older than every test's.
+  await createTransactions(username, 1, { amount: 1, at: "now() - interval '5000 days'" });
+  await employee.reload();
+  for (const id of ["total-ventes", "total-rachats", "solde-ventes-rachats"]) {
+    await expect(employee.getByTestId(id).locator(".stat-total")).toHaveText(/ septims? depuis (4999|5000|5001) jours$/); // ±1 across a change of summer time
+  }
 
   // Three days later, each figure says how long it has been counting.
   await withDb((sql) => sql`update week_ends set declared_at = declared_at - interval '3 days' where shop_id = 1`);
