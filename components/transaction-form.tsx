@@ -121,7 +121,8 @@ export function TransactionForm({
   const [group, setGroup] = useState<number | null>(draft?.privileged ?? null);
   const [counterparty, setCounterparty] = useState(draft?.counterparty ?? "");
   const [notes, setNotes] = useState(draft?.notes ?? "");
-  const [tillPending, setTillPending] = useState(draft?.tillPending ?? false);
+  // The septims usually reach the till later, so the box starts checked.
+  const [tillPending, setTillPending] = useState(draft?.tillPending ?? true);
   const evaluated = lines.map((line) => evaluate(line, kind, products, group));
   const total = evaluated.reduce((sum, e) => sum + e.value, 0);
   // The purchase's products that have privileged prices, once each, and their groups in the groups' order.

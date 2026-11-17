@@ -59,7 +59,7 @@ export function decodeDraft(raw: string | string[] | undefined): TransactionDraf
     lines,
     counterparty: text(d.counterparty, 100),
     notes: text(d.notes, 500),
-    tillPending: d.tillPending === true,
+    tillPending: d.tillPending !== false,
     privileged: Number.isSafeInteger(d.privileged) && (d.privileged as number) > 0 ? (d.privileged as number) : null,
   };
 }

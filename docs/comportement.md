@@ -250,7 +250,9 @@ sortie d'argent) les septims :
 1. Il coche « Pas encore mis en caisse » (vente, entrée) ou « Pas encore
    sorti de la caisse » (achat, sortie). Toute l'écriture porte le statut
    *Pas encore en caisse* : le stock bouge, mais les septims ne comptent pas
-   dans la caisse.
+   dans la caisse. Sur un achat ou une vente, la case est cochée
+   d'avance : il la décoche s'il prend ou dépose les septims tout de suite.
+   Passer d'un achat à une vente (ou l'inverse) garde la case comme elle est.
 2. Une tuile du registre donne leur total ; le filtre Opération « Pas encore
    en caisse » les retrouve.
 3. Plus tard, l'auteur ou un gérant clique sur le bouton de l'écriture, dans

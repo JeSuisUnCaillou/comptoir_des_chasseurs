@@ -56,6 +56,7 @@ test("le gérant fixe un prix de rachat pour les citoyens d'Estemarche, appliqu�
   await none.check();
   await expect(amount).toHaveValue("30");
   await citizen.check();
+  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
   await purchase.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(employee.getByRole("status").filter({ hasText: `10 × ${name}` })).toHaveText(
     `Achat inscrit : 10 × ${name}, 40 septims.`,
@@ -122,6 +123,7 @@ test("à l'achat de plusieurs marchandises, un seul choix pour le vendeur", asyn
   await expect(citizen).not.toBeChecked();
   await expect(total).toHaveText("Total de l'achat : 34 septims");
   await citizen.check();
+  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
   await purchase.getByRole("button", { name: "Confirmer l'achat" }).click();
   await expect(page.getByRole("status").filter({ hasText: leather })).toHaveText(
     `Achat inscrit : 2 × ${hide}, 10 × ${leather}, 44 septims au total.`,

@@ -8,6 +8,8 @@ async function record(page: Page, kind: "vente" | "achat", product: string, quan
   await pickProduct(form, product);
   await form.getByLabel("Quantité").fill(String(quantity));
   await expect(form.getByLabel("Montant (septims)")).not.toHaveValue("");
+  // The box starts « pas encore en caisse »: these septims go through the till now.
+  await form.getByLabel(kind === "vente" ? "Pas encore mis en caisse" : "Pas encore sorti de la caisse").uncheck();
   await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
   await expect(page).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
   // Once cancelled, the row is no longer the fresh one: give its line's test id.
