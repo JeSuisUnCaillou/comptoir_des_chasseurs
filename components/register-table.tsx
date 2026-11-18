@@ -2,7 +2,7 @@ import { CancelButton } from "@/components/cancel-button";
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
 import type { MemberRole } from "@/lib/db/schema";
-import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
+import { entryClasses, entryPositions, entryTotals, type EntryTotal as EntryPlace } from "@/lib/entry-groups";
 import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
@@ -24,6 +24,9 @@ export function RegisterTable({
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(entries, (e) => e.cancelledAt == null && e.tillPending);
   const totals = entryTotals(entries, positions, (e) => (e.entrySum == null ? null : signedAmount(e.kind, e.entrySum)));
+  // The buttons acting on a whole entry go where its total goes, under it:
+  // only the place matters here, not the number.
+  const buttonPlaces = entryTotals(entries, positions, (e) => (hasEntryButtons(e, member) ? 0 : null));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="registre">
@@ -67,7 +70,13 @@ export function RegisterTable({
                 <td className="cell-label">{e.label}</td>
                 <td className={`num cell-qty${cash ? " cell-none" : ""}`}>{cash ? "—" : formatNumber(e.quantity)}</td>
                 <AmountCell money={signedAmount(e.kind, e.amount)} cancelled={cancelled} waiting={waiting} />
-                <PartyCell party={e.counterparty} label={counterpartyLabel(e.kind)} total={totals[i]} place={place} />
+                <PartyCell
+                  party={e.counterparty}
+                  label={counterpartyLabel(e.kind)}
+                  total={totals[i]}
+                  place={place}
+                  actions={buttonPlaces[i] && <EntryButtons entry={e} where={buttonPlaces[i]} />}
+                />
                 <td className={`cell-member${rep}`} data-label="Employé">
                   {shared(e.member)}
                 </td>
@@ -94,7 +103,6 @@ export function RegisterTable({
                             question={`Annuler ${label} ? ${cash ? "L'argent est retiré de la caisse." : stockEffect(e, sale)}`}
                           />
                         ))}
-                      {mine && place.first && <EntryButtons entry={e} />}
                     </div>
                   )}
                 </td>
@@ -127,19 +135,33 @@ function entryName(kind: RegisterEntry["kind"]) {
   return kind === "vente" ? "cette vente" : kind === "rachat" ? "cet achat" : "cette écriture";
 }
 
+/** Every line still counted of the entry, and every cancelled one, as "quantity × label". */
+function entryItems(e: RegisterEntry) {
+  return {
+    active: e.entryActiveItems ? e.entryActiveItems.split("\n") : [],
+    cancelled: e.entryCancelledItems ? e.entryCancelledItems.split("\n") : [],
+  };
+}
+
+/** Whether the member gets a button acting on the whole entry: at least two lines to change. */
+function hasEntryButtons(e: RegisterEntry, member: { id: number; role: MemberRole }) {
+  const { active, cancelled } = entryItems(e);
+  return canActOn(member, e) && (active.length > 1 || cancelled.length > 1);
+}
+
 /**
- * On an entry of several lines, its first row cancels every line still
- * counted, or restores every cancelled one, in one click.
+ * On an entry of several lines, under its total, the buttons that cancel
+ * every line still counted, or restore every cancelled one, in one click.
+ * `where` places them like the total (see `entryTotals`).
  */
-function EntryButtons({ entry: e }: { entry: RegisterEntry }) {
-  if (e.entryCount < 2) return null;
-  const active = e.entryActiveItems ? e.entryActiveItems.split("\n") : [];
-  const cancelled = e.entryCancelledItems ? e.entryCancelledItems.split("\n") : [];
+function EntryButtons({ entry: e, where }: { entry: RegisterEntry; where: EntryPlace }) {
+  const { active, cancelled } = entryItems(e);
   const name = entryName(e.kind);
   const list = (items: string[]) => items.map((item) => `• ${item}`).join("\n");
   const sale = e.kind === "vente";
+  const place = [...(where.table ? ["on-table"] : []), ...(where.card ? ["on-card"] : [])].join(" ");
   return (
-    <>
+    <span className={`entry-actions ${place}`}>
       {active.length > 1 && (
         <CancelButton
           whole
@@ -165,6 +187,6 @@ function EntryButtons({ entry: e }: { entry: RegisterEntry }) {
           }`}
         />
       )}
-    </>
+    </span>
   );
 }

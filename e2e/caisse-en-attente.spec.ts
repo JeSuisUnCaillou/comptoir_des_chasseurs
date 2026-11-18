@@ -261,6 +261,13 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
   await expect(settle).toHaveCount(1);
   await expect(settle).toHaveText("Mettre 12 septims en caisse");
   await expect(sale.first().getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ })).toHaveCount(1);
+  // As a card, like in the register, the line's button sits right under its septims, on the right.
+  await page.setViewportSize({ width: 390, height: 900 });
+  const septims = (await sale.first().locator("td.cell-amount").boundingBox())!;
+  const button = (await settle.boundingBox())!;
+  expect(button.y).toBeGreaterThanOrEqual(septims.y + septims.height - 1);
+  expect(button.y).toBeLessThan(septims.y + septims.height + 16);
+  expect(Math.abs(button.x + button.width - (septims.x + septims.width))).toBeLessThan(2);
 
   // The line on top is cancelled: the button moves to the next line, with what is left.
   await page.goto("/achat-vente");
