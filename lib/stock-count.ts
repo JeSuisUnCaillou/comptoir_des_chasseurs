@@ -2,11 +2,10 @@ import "server-only";
 import { and, inArray } from "drizzle-orm";
 import { byName, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import type { ShopMember } from "@/lib/auth/session";
-import { categoryOf } from "@/lib/categories";
 import { UserError } from "@/lib/errors";
 import { normalizeName, sumByProduct } from "@/lib/game-count";
 import { isGerant } from "@/lib/policies";
-import { activeIn, DUPLICATE_MAYBE_ARCHIVED } from "@/lib/products";
+import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
 
 /** Counting a chest from the game: the only writer of the game names tied to merchandises. */
@@ -61,12 +60,7 @@ async function createMissing(tx: Tx, shopId: number, given: CountLine[]) {
     }
     const key = normalizeName(line.newName);
     if (!created.has(key)) {
-      await categoryOf(tx, shopId, line.categoryId);
-      const [product] = await tx
-        .insert(schema.products)
-        .values({ shopId, name: line.newName, categoryId: line.categoryId })
-        .returning({ id: schema.products.id });
-      created.set(key, product.id);
+      created.set(key, await insertProduct(tx, shopId, { name: line.newName, categoryId: line.categoryId }));
     }
     lines.push({ productId: created.get(key)!, counted: line.counted, readName: line.readName });
   }

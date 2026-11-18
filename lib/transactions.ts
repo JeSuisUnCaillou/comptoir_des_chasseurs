@@ -1,11 +1,11 @@
 import "server-only";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
-import { getDb, schema, type Tx } from "@/lib/db";
+import { getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
-import { activeIn } from "@/lib/products";
+import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct, type ProductIdentity } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
 import { cancelStockDelta, sameEntryAs, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
@@ -16,8 +16,10 @@ import { lineMessage } from "@/lib/transaction-kinds";
 type Actor = Pick<ShopMember, "id" | "role" | "shopId">;
 
 export type TransactionLine = {
-  /** null for an article that is not in stock, written under its label. */
+  /** null for an article that is not in stock, written under its label, or for `newProduct`. */
   productId: number | null;
+  /** On a purchase, a merchandise the shop does not know yet: created without prices, then bought into stock. */
+  newProduct?: ProductIdentity;
   /** The typed label; a stocked merchandise is written under its own name. */
   label: string;
   quantity: number;
@@ -47,59 +49,73 @@ export async function recordLines(
   },
 ) {
   const at = (i: number, message: string) => lineMessage(lines.length, i, message);
-  return getDb().transaction(async (tx) => {
-    // A known contact is written as they spell their name; an unknown name becomes a contact, below.
-    const known = typedName && (await contactNamed(tx, member.shopId, typedName));
-    const counterparty = known || typedName;
-    const written: number[] = [];
-    for (const [i, { productId, quantity, amount, label: typed }] of lines.entries()) {
-      let label = typed;
-      if (productId != null) {
-        const [product] = await tx
-          .select({ name: schema.products.name })
-          .from(schema.products)
-          .where(
-            and(eq(schema.products.id, productId), activeIn(member.shopId)),
-          )
-          .limit(1);
-        if (!product) throw new UserError(at(i, "Marchandise inconnue."));
-        label = product.name;
+  try {
+    return await getDb().transaction(async (tx) => {
+      // A known contact is written as they spell their name; an unknown name becomes a contact, below.
+      const known = typedName && (await contactNamed(tx, member.shopId, typedName));
+      const counterparty = known || typedName;
+      const written: number[] = [];
+      // Each line with the merchandise it moves, new ones included, for the contact's offers.
+      const tied: TransactionLine[] = [];
+      for (const [i, { newProduct, productId: chosen, quantity, amount, label: typed }] of lines.entries()) {
+        let productId = chosen;
+        let label = typed;
+        if (newProduct) {
+          if (kind !== "rachat") throw new UserError(at(i, "Une nouvelle marchandise s'achète, elle ne se vend pas."));
+          productId = await insertProduct(tx, member.shopId, newProduct);
+          label = newProduct.name;
+        } else if (productId != null) {
+          const [product] = await tx
+            .select({ name: schema.products.name })
+            .from(schema.products)
+            .where(
+              and(eq(schema.products.id, productId), activeIn(member.shopId)),
+            )
+            .limit(1);
+          if (!product) throw new UserError(at(i, "Marchandise inconnue."));
+          label = product.name;
+        }
+        if (!label) throw new UserError(at(i, "Choisis une marchandise."));
+        const [line] = await tx
+          .insert(schema.transactions)
+          .values({
+            shopId: member.shopId,
+            kind,
+            productId,
+            label,
+            quantity,
+            amount,
+            counterparty,
+            notes,
+            tillPending,
+            memberId: member.id,
+          })
+          .returning({ id: schema.transactions.id });
+        if (productId != null) {
+          // A sale goes through even without enough stock: only what is left
+          // leaves it, so the stock stops at zero. The movement is written even
+          // when nothing leaves, so that cancelling the line knows it.
+          const delta = kind === "vente" ? -quantity : quantity;
+          const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
+          // Throwing rolls back every line with its movement.
+          const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id, {
+            clamp: true,
+          });
+          if (!moved.ok) throw new UserError(at(i, moved.error));
+        }
+        written.push(line.id);
+        tied.push({ productId, quantity, amount, label });
       }
-      if (!label) throw new UserError(at(i, "Choisis une marchandise."));
-      const [line] = await tx
-        .insert(schema.transactions)
-        .values({
-          shopId: member.shopId,
-          kind,
-          productId,
-          label,
-          quantity,
-          amount,
-          counterparty,
-          notes,
-          tillPending,
-          memberId: member.id,
-        })
-        .returning({ id: schema.transactions.id });
-      if (productId != null) {
-        // A sale goes through even without enough stock: only what is left
-        // leaves it, so the stock stops at zero. The movement is written even
-        // when nothing leaves, so that cancelling the line knows it.
-        const delta = kind === "vente" ? -quantity : quantity;
-        const reason = `${kind === "vente" ? "Vente" : "Achat"}${counterparty ? ` · ${counterparty}` : ""}`;
-        // Throwing rolls back every line with its movement.
-        const moved = await moveStock(tx, member.shopId, productId, delta, member.id, reason, line.id, {
-          clamp: true,
-        });
-        if (!moved.ok) throw new UserError(at(i, moved.error));
+      if (typedName && !known) {
+        await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side: contactSide(kind), lines: tied });
       }
-      written.push(line.id);
-    }
-    if (typedName && !known) {
-      await createContactFromTransaction(tx, member.shopId, { name: typedName, notes, side: contactSide(kind), lines });
-    }
-    return written;
-  });
+      return written;
+    });
+  } catch (error) {
+    // A new merchandise named like one the shop already has, maybe archived.
+    if (isUniqueViolation(error)) throw new UserError(DUPLICATE_MAYBE_ARCHIVED);
+    throw error;
+  }
 }
 
 /** Money in or out of the till alone, with no merchandise. Returns the new line's id. */

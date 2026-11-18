@@ -6,7 +6,7 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { QUANTITY_ERROR, checked, isQuantity, optionalText, text } from "@/lib/forms";
-import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
+import { MAX_LINES, NEW_MERCHANDISE, OTHER_ARTICLE, lineMessage } from "@/lib/transaction-kinds";
 import { cancelLines, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
 export type TransactionState = { ok: boolean; message: string } | null;
@@ -14,6 +14,8 @@ export type TransactionState = { ok: boolean; message: string } | null;
 /**
  * Records a sale or a purchase of one or more merchandises: one register line
  * each, sharing the client and the notes, written all together or not at all.
+ * A purchase line may create its merchandise (`categoryId` and `unit`, empty
+ * on the other lines).
  */
 export async function recordTransaction(
   _prev: TransactionState,
@@ -28,12 +30,14 @@ export async function recordTransaction(
   const labels = formData.getAll("label").map(String);
   const quantities = formData.getAll("quantity").map(Number);
   const amounts = formData.getAll("amount").map(Number);
+  const categoryIds = formData.getAll("categoryId").map(String);
+  const units = formData.getAll("unit").map((v) => String(v).trim().slice(0, 30));
 
   if (kind !== "vente" && kind !== "rachat") return { ok: false, message: "Opération inconnue." };
   const count = productIds.length;
   if (count === 0) return { ok: false, message: "Choisis une marchandise." };
   if (count > MAX_LINES) return { ok: false, message: `Pas plus de ${MAX_LINES} marchandises à la fois.` };
-  if (labels.length !== count || quantities.length !== count || amounts.length !== count) {
+  if ([labels, quantities, amounts, categoryIds, units].some((field) => field.length !== count)) {
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
   }
   // With several lines, each message says which one is wrong.
@@ -42,9 +46,12 @@ export async function recordTransaction(
   const lines: TransactionLine[] = [];
   for (let i = 0; i < count; i++) {
     const raw = productIds[i];
-    const productId = raw === "" || raw === "autre" ? null : Number(raw);
+    const creating = raw === NEW_MERCHANDISE;
+    const productId = raw === "" || raw === OTHER_ARTICLE || creating ? null : Number(raw);
     const quantity = quantities[i];
     const amount = amounts[i];
+    const label = labels[i].trim().slice(0, 100);
+    const categoryId = Number(categoryIds[i]);
     if (productId != null && !Number.isInteger(productId)) {
       return { ok: false, message: at(i, "Marchandise inconnue.") };
     }
@@ -54,7 +61,13 @@ export async function recordTransaction(
     if (!Number.isInteger(amount) || amount < 0) {
       return { ok: false, message: at(i, "Le montant doit être un nombre entier de septims.") };
     }
-    lines.push({ productId, quantity, amount, label: labels[i].trim().slice(0, 100) });
+    if (creating) {
+      if (kind !== "rachat") return { ok: false, message: at(i, "Une nouvelle marchandise s'achète, elle ne se vend pas.") };
+      if (!label) return { ok: false, message: at(i, "Donne un nom à la nouvelle marchandise.") };
+      if (categoryIds[i] === "" || !Number.isInteger(categoryId)) return { ok: false, message: at(i, "Choisis sa catégorie.") };
+    }
+    const newProduct = creating ? { name: label, categoryId, unit: units[i] || "pièce" } : undefined;
+    lines.push({ productId, newProduct, quantity, amount, label });
   }
 
   const result = await attempt(() => recordLines(member, { kind, counterparty, notes, tillPending, lines }));

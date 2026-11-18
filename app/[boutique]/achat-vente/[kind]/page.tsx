@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHead } from "@/components/page-head";
 import { TransactionForm } from "@/components/transaction-form";
 import { requireMember } from "@/lib/auth/session";
+import { shopCategories } from "@/lib/categories";
 import { contactSide } from "@/lib/contact-kind";
 import { activeProducts } from "@/lib/products";
 import { contactNames } from "@/lib/suppliers";
@@ -23,9 +24,11 @@ export default async function NouvelleEcriture({
   if (segment !== "vente" && segment !== "achat") notFound();
   const kind = segment === "vente" ? "vente" : "rachat";
   const sale = kind === "vente";
-  const [products, contacts] = await Promise.all([
+  const [products, contacts, categories] = await Promise.all([
     activeProducts(member.shopId),
     contactNames(member.shopId, contactSide(kind)),
+    // A purchase can create its merchandise, in one of them.
+    sale ? [] : shopCategories(member.shopId),
   ]);
 
   return (
@@ -56,6 +59,7 @@ export default async function NouvelleEcriture({
           privileged: p.privileged,
         }))}
         contacts={contacts}
+        categories={categories.map(({ id, name, hides }) => ({ id, name, hides }))}
         draft={decodeDraft((await searchParams)[DRAFT_PARAM])}
       />
     </>
