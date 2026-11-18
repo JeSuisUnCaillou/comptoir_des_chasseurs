@@ -1,4 +1,4 @@
-/** Calendar days in Keizaal's time zone (Europe/Paris), for filters and counts of days. */
+/** Calendar days in the shops' time zone (Europe/Paris), for filters and counts of days. */
 
 const parisHour = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/Paris",
@@ -7,7 +7,7 @@ const parisHour = new Intl.DateTimeFormat("en-GB", {
 });
 const parisDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
 
-/** Midnight in Keizaal's time zone (Europe/Paris) for a "YYYY-MM-DD" date. */
+/** Midnight in the shops' time zone (Europe/Paris) for a "YYYY-MM-DD" date. */
 export function parisDay(value: string | undefined, offsetDays = 0): Date | undefined {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
   const utc = new Date(`${value}T00:00:00Z`);

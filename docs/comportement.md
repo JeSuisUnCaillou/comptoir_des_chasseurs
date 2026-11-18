@@ -23,7 +23,7 @@ fichier à jour dans le même commit.
 - L'app s'appelle Codex enchanté (adresse codexomancien.vercel.app). En haut
   du menu et sur la connexion, le logo et « CODEX », « Enchanté par Lomone »
   en dessous (Lomone est le personnage du
-  propriétaire dans Keizaal), sur toutes les boutiques. Le logo est celui du
+  propriétaire dans le jeu), sur toutes les boutiques. Le logo est celui du
   Codex, sauf dans une boutique qui a téléversé le sien (§ Réglages).
 - L'onglet du navigateur porte le nom de la boutique sur toutes ses pages,
   et son logo quand elle en a un (sinon celui du Codex) ; hors d'une

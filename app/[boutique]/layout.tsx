@@ -110,7 +110,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           </div>
         </header>
         <main className="content">{children}</main>
-        <footer className="footer">✦ Codex enchanté · Keizaal ✦</footer>
+        <footer className="footer">✦ Codex enchanté ✦</footer>
       </div>
     </div>
   );

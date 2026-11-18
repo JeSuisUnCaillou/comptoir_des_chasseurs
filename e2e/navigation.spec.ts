@@ -83,3 +83,19 @@ test("l'onglet porte le nom de la boutique, ou Codex enchanté hors boutique", a
   await expect(page).toHaveTitle("Codex enchanté");
   await expect(page.getByText(/Registre des marchands/)).toHaveCount(0);
 });
+
+test("aucune page ne nomme le serveur ni le jeu", async ({ page }) => {
+  const names = /Keizaal|Skyrim|Bordeciel/i;
+  await page.goto("/connexion");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(names);
+
+  await loginAsGerant(page);
+  await expect(page.getByTestId("shop-name")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(names);
+
+  await page.goto("/boutiques");
+  await expect(page).toHaveTitle("Codex enchanté");
+  await expect(page.locator("body")).not.toContainText(names);
+  await expect(page.locator('meta[name="description"]')).not.toHaveAttribute("content", names);
+});
