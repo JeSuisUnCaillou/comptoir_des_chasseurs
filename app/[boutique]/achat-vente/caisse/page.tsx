@@ -4,13 +4,14 @@ import { CashMovementForm } from "@/components/cash-movement-form";
 import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
-import { tillTotals } from "@/lib/register";
+import { hasPending, pendingTotals, tillTotals } from "@/lib/register";
 
 /** /achat-vente/caisse: septims in or out of the till, with no merchandise. */
 export default async function MouvementDeCaisse() {
   const member = await requireMember();
   const at = (path: string) => shopPath(member.shop.slug, path);
-  const till = await tillTotals(member.shopId);
+  const [till, waiting] = await Promise.all([tillTotals(member.shopId), pendingTotals(member.shopId)]);
+  const anyWaiting = hasPending(waiting);
 
   return (
     <>
@@ -26,6 +27,12 @@ export default async function MouvementDeCaisse() {
       <section className="panel" style={{ maxWidth: 760 }} aria-label="Inscrire un mouvement de caisse">
         <div className="eyebrow">Nouvelle écriture</div>
         <h2>Inscrire un mouvement de caisse</h2>
+        {anyWaiting && (
+          <p className="notice" data-testid="caisse-en-attente">
+            Des écritures ne sont pas encore en caisse. Avant de compter le coffre,{" "}
+            <Link href={at("/achat-vente?type=attente")}>valide ou annule-les</Link> : la caisse ne les compte pas.
+          </p>
+        )}
         <CashMovementForm balance={till.balance} />
       </section>
     </>

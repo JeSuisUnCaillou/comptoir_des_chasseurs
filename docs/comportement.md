@@ -326,6 +326,13 @@ sortie d'argent) les septims :
 - Fait entrer ou sortir des septims sans marchandise (salaires, apport du
   gérant…).
 - Champs : sens, montant, motif ; l'aperçu de la caisse après le mouvement.
+- « J'ai compté dans le coffre » (facultatif) : on tape les septims comptés,
+  l'app remplit le sens et le montant de l'écart avec la caisse, et le motif
+  « Correction de caisse » s'il est vide ; un compte égal à la caisse dit
+  « La caisse est juste : rien à inscrire. ». Changer ensuite le sens, le
+  montant ou la case ci-dessous à la main vide le compte.
+- Si des écritures ne sont pas encore en caisse, un encadré le dit, avec un
+  lien vers elles dans le registre : à valider ou annuler avant de compter.
 - Une case « Pas encore mis en caisse » ou « Pas encore sorti de la caisse »,
   comme pour un achat ou une vente (voir [Pas encore en
   caisse](#pas-encore-en-caisse)).

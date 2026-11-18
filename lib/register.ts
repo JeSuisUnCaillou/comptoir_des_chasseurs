@@ -227,6 +227,11 @@ export type Till = {
   margin: number;
 };
 
+/** Whether any money is written but waiting for the till (see pendingTotals). */
+export function hasPending(waiting: Till) {
+  return waiting.sales + waiting.inflows + waiting.buybacks + waiting.outflows > 0;
+}
+
 type TillSums = Omit<Till, "balance" | "margin">;
 
 function till({ sales, buybacks, inflows, outflows }: TillSums): Till {

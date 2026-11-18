@@ -13,6 +13,7 @@ import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import { dayRange } from "@/lib/dates";
 import { memberNames } from "@/lib/members";
 import {
+  hasPending,
   pendingTotals,
   registerCount,
   registerEntries,
@@ -60,7 +61,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
     tillTotals(member.shopId, filter),
     pendingTotals(member.shopId, filter),
   ]);
-  const anyWaiting = waiting.sales + waiting.inflows + waiting.buybacks + waiting.outflows > 0;
+  const anyWaiting = hasPending(waiting);
   const filtered = Boolean(operation || employe || du || au);
   // Coming back from the entry form: confirm the lines just written, in the order they were typed.
   const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
