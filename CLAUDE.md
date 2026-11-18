@@ -113,9 +113,13 @@ Comment les tests sont écrits :
   `waitForTimeout`.
 - Une mise en page se regarde de 320 à 1600 px, avec une police un peu
   élargie : celles de la CI sont plus larges que celles d'une session. On y
-  cherche ce qui déborde et ce qui se colle, et le test mesure l'écart
-  (`e2e/telephone.spec.ts`) ; le propriétaire a dû signaler cinq blocs
-  collés ou débordants en quatre jours (2026-11-10 au 13).
+  cherche ce qui déborde et ce qui se colle ; le propriétaire a dû signaler
+  six blocs collés ou débordants en quatre jours (2026-11-10 au 13). Le
+  balayage des largeurs de `e2e/telephone.spec.ts` échoue sur une page qui
+  déborde ou sur deux blocs cadrés à moins de 4 px (`touchingBlocks`,
+  `e2e/blocs.ts`) : une nouvelle page, ou un état qui fait apparaître des
+  blocs (une liste remplie, un formulaire en cours), y entre avec ses
+  données.
 - Un test qui change un réglage de toute la boutique (le produit phare…)
   va dans un `*.apres.spec.ts` : il tourne après tous les autres, en série
   (`test.describe.configure({ mode: "serial" })`), et remet le réglage comme
