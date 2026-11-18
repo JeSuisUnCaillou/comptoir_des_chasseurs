@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, count, eq, exists, getTableColumns, ilike, isNotNull, or } from "drizzle-orm";
-import { byName, containing, getDb, isUniqueViolation, schema } from "@/lib/db";
+import { byName, containing, getDb, isUniqueViolation, schema, type Tx } from "@/lib/db";
 import { categoryOf } from "@/lib/categories";
 import { UserError } from "@/lib/errors";
 import { PAGE_SIZE, offsetOf } from "@/lib/pagination";
@@ -20,6 +20,23 @@ const withCategory = {
   hides: schema.productCategories.hides,
   categoryPosition: schema.productCategories.position,
 };
+
+/** What a new merchandise needs before it has prices. */
+export type ProductIdentity = { name: string; categoryId: number; unit?: string };
+
+/**
+ * Creates a merchandise without prices inside `tx`, refusing a category of
+ * another shop. A name already taken fails the insert: the caller turns it
+ * into DUPLICATE_MAYBE_ARCHIVED once the transaction is rolled back.
+ */
+export async function insertProduct(tx: Tx, shopId: number, identity: ProductIdentity) {
+  await categoryOf(tx, shopId, identity.categoryId);
+  const [product] = await tx
+    .insert(schema.products)
+    .values({ ...identity, shopId })
+    .returning({ id: schema.products.id });
+  return product.id;
+}
 
 export type CategorizedProduct = Awaited<ReturnType<typeof activeProducts>>[number];
 

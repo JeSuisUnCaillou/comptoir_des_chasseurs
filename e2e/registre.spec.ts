@@ -240,7 +240,12 @@ test("la marchandise d'une vente ou d'un achat se cherche en tapant", async ({ b
 
     // Typing filters; Enter picks the product.
     await box.fill(product.slice(-12));
-    await expect(form.getByRole("option")).toHaveText([product, "Autre article (hors stock)…"]);
+    // A purchase can also create a merchandise the shop does not know yet.
+    await expect(form.getByRole("option")).toHaveText(
+      kind === "achat"
+        ? [product, "Nouvelle marchandise (entre en stock)…", "Autre article (hors stock)…"]
+        : [product, "Autre article (hors stock)…"],
+    );
     await box.press("Enter");
     await expect(box).toHaveValue(product);
     await expect(form.getByRole("listbox")).toHaveCount(0);

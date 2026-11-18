@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { CategorySelect, defaultCategory, type CategoryChoice } from "@/components/category-select";
 import { Combobox, focusCombobox, type Choice } from "@/components/combobox";
 import { ProductCombobox, choicesByCategory } from "@/components/product-combobox";
 import { recordTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
@@ -13,7 +14,7 @@ import type { CategorizedProduct } from "@/lib/products";
 import { keepValues } from "@/components/keep-values";
 import { useShopPath } from "@/components/use-shop-path";
 import { DRAFT_PARAM, encodeDraft, type TransactionDraft } from "@/lib/transaction-draft";
-import { MAX_LINES } from "@/lib/transaction-kinds";
+import { MAX_LINES, NEW_MERCHANDISE, OTHER_ARTICLE as OTHER } from "@/lib/transaction-kinds";
 import { appliedRate, buyTotal, plural, rate, sellTotal, septims, type Total } from "@/lib/pricing";
 
 export type TransactionProduct = Pick<
@@ -37,7 +38,9 @@ export type TransactionProduct = Pick<
   privileged: { groupId: number; name: string; price: number }[];
 };
 
-const OTHER = "autre";
+/** What the picker offers besides the shop's merchandises: on a purchase, a new merchandise first. */
+const OTHER_CHOICE = { id: OTHER, name: "Autre article (hors stock)…" };
+const PURCHASE_EXTRAS = [{ id: NEW_MERCHANDISE, name: "Nouvelle marchandise (entre en stock)…" }, OTHER_CHOICE];
 
 /** One merchandise of the entry, as the member is filling it in. */
 type Line = {
@@ -48,18 +51,32 @@ type Line = {
   amount: string;
   // The amount follows the tariff until the member takes it over with the pencil.
   manual: boolean;
+  // A new merchandise's category and unit; its name is the label.
+  categoryId: number | undefined;
+  unit: string;
 };
 
 function newLine(key: number): Line {
-  return { key, productId: "", quantity: "1", label: "", amount: "", manual: false };
+  return { key, productId: "", quantity: "1", label: "", amount: "", manual: false, categoryId: undefined, unit: "pièce" };
 }
 
-/** The lines carried over from the other form; an amount typed by hand stays typed by hand. */
-function draftLines(draft: TransactionDraft | null, products: TransactionProduct[]): Line[] {
+/**
+ * The lines carried over from the other form; an amount typed by hand stays
+ * typed by hand. A new merchandise is only bought: on a sale it becomes an
+ * article outside the stock, under the same name.
+ */
+function draftLines(draft: TransactionDraft | null, products: TransactionProduct[], sale: boolean): Line[] {
   if (!draft) return [newLine(0)];
   return draft.lines.map((l, key) => ({
-    key,
-    productId: l.productId === OTHER || products.some((p) => String(p.id) === l.productId) ? l.productId : "",
+    ...newLine(key),
+    productId:
+      l.productId === NEW_MERCHANDISE
+        ? sale
+          ? OTHER
+          : NEW_MERCHANDISE
+        : l.productId === OTHER || products.some((p) => String(p.id) === l.productId)
+          ? l.productId
+          : "",
     quantity: l.quantity,
     label: l.label,
     amount: l.amount ?? "",
@@ -101,12 +118,15 @@ export function TransactionForm({
   kind,
   products,
   contacts,
+  categories,
   draft,
 }: {
   kind: TransactionKind;
   products: TransactionProduct[];
   /** The shop's contacts, suggested in the name field. */
   contacts: Choice<number>[];
+  /** The shop's categories, for a merchandise created by a purchase. */
+  categories: CategoryChoice[];
   /** What was filled in on the other form before switching to this one. */
   draft: TransactionDraft | null;
 }) {
@@ -115,7 +135,7 @@ export function TransactionForm({
   const [state, action, pending] = useActionState<TransactionState, FormData>(recordTransaction, null);
   const sale = kind === "vente";
   const submitLabel = sale ? "Confirmer la vente" : "Confirmer l'achat";
-  const [lines, setLines] = useState<Line[]>(() => draftLines(draft, products));
+  const [lines, setLines] = useState<Line[]>(() => draftLines(draft, products, kind === "vente"));
   const nextKey = useRef(lines.length);
   // One seller for the whole purchase: their group applies to every line that has a price for it.
   const [group, setGroup] = useState<number | null>(draft?.privileged ?? null);
@@ -198,12 +218,18 @@ export function TransactionForm({
                     required
                     placeholder="Choisir ou taper un nom…"
                     products={choices}
-                    extras={[{ id: OTHER, name: "Autre article (hors stock)…" }]}
-                    fallback={OTHER}
+                    extras={sale ? [OTHER_CHOICE] : PURCHASE_EXTRAS}
+                    // A name that matches nothing: on a purchase, most likely a merchandise to stock.
+                    fallback={sale ? OTHER : NEW_MERCHANDISE}
                     value={line.productId || null}
-                    // "Autre article" takes the name the member had typed to look for it.
+                    // "Autre article" and a new merchandise take the name the member had typed to look for it.
                     onChange={(productId, typed) =>
-                      update(line.key, productId === OTHER && typed ? { productId, label: typed } : { productId })
+                      update(
+                        line.key,
+                        (productId === OTHER || productId === NEW_MERCHANDISE) && typed
+                          ? { productId, label: typed }
+                          : { productId },
+                      )
                     }
                   />
                   {e.product && (
@@ -314,7 +340,43 @@ export function TransactionForm({
                   </button>
                 )}
               </div>
-              {line.productId === OTHER ? (
+              {line.productId === NEW_MERCHANDISE ? (
+                <div className="tx-new-product" data-testid="nouvelle-marchandise">
+                  <div className="form-grid">
+                    <div className="field span-2">
+                      <label htmlFor={`${id}-label`}>Nom de la nouvelle marchandise</label>
+                      <input
+                        id={`${id}-label`}
+                        name="label"
+                        required
+                        maxLength={100}
+                        value={line.label}
+                        onChange={(ev) => update(line.key, { label: ev.target.value })}
+                      />
+                    </div>
+                    <CategorySelect
+                      id={`${id}-category`}
+                      categories={categories}
+                      value={line.categoryId ?? defaultCategory(categories)}
+                      onChange={(categoryId) => update(line.key, { categoryId })}
+                    />
+                    <div className="field">
+                      <label htmlFor={`${id}-unit`}>Unité (au singulier)</label>
+                      <input
+                        id={`${id}-unit`}
+                        name="unit"
+                        maxLength={30}
+                        value={line.unit}
+                        onChange={(ev) => update(line.key, { unit: ev.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <p className="small muted">
+                    Créée avec cet achat, elle entre en stock. Elle n&apos;aura pas de prix au début : un gérant
+                    pourra les fixer dans « Gérer les marchandises ».
+                  </p>
+                </div>
+              ) : line.productId === OTHER ? (
                 <div className="field">
                   <label htmlFor={`${id}-label`}>Nom de l&apos;article</label>
                   <input
@@ -329,6 +391,12 @@ export function TransactionForm({
               ) : (
                 // Keeps the fields of every line aligned in the submitted form.
                 <input type="hidden" name="label" value="" />
+              )}
+              {line.productId !== NEW_MERCHANDISE && (
+                <>
+                  <input type="hidden" name="categoryId" value="" />
+                  <input type="hidden" name="unit" value="" />
+                </>
               )}
             </fieldset>
           );

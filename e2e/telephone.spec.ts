@@ -421,3 +421,28 @@ test("de 320 à 1600 px, l'initialisation d'une nouvelle boutique ne déborde pa
     }
   }
 });
+
+test("de 320 à 1600 px, une nouvelle marchandise dans un achat ne déborde pas et ses champs ne se collent pas", async ({ page }) => {
+  await loginAsGerant(page);
+  for (let width = 320; width <= 1600; width += 160) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/achat-vente/achat");
+    const form = page.getByRole("region", { name: "Inscrire un achat" });
+    await form.getByRole("combobox", { name: "Marchandise", exact: true }).fill(uniqueName("Défense de horqueur"));
+    await form.getByRole("option", { name: "Nouvelle marchandise (entre en stock)…" }).click();
+    await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+    await expectNoSideScroll(page);
+    // Name, category and unit: side by side or one under the other, never on top of each other.
+    const boxes = await Promise.all(
+      ["Nom de la nouvelle marchandise", "Catégorie", "Unité (au singulier)"].map(
+        async (label) => (await form.getByLabel(label).boundingBox())!,
+      ),
+    );
+    for (const [i, a] of boxes.entries()) {
+      for (const b of boxes.slice(i + 1)) {
+        const apart = b.x >= a.x + a.width + 8 || a.x >= b.x + b.width + 8 || b.y >= a.y + a.height || a.y >= b.y + b.height;
+        expect(apart, `à ${width} px`).toBe(true);
+      }
+    }
+  }
+});

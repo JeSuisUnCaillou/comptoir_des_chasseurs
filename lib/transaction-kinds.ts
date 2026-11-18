@@ -35,3 +35,9 @@ export function gapToCount(balance: number, counted: number): { kind: "entree" |
 export function lineMessage(count: number, i: number, message: string) {
   return count > 1 ? `Marchandise ${i + 1} : ${message}` : message;
 }
+
+/** The merchandise picker's choice for an article written under its own label, outside the stock. */
+export const OTHER_ARTICLE = "autre";
+
+/** The purchase's choice for a merchandise the shop does not know yet: created, then bought into stock. */
+export const NEW_MERCHANDISE = "nouvelle";

@@ -217,6 +217,17 @@ page ; l'écriture enregistrée ramène au registre.
   remplit tout de suite le nom de l'article avec ce texte, qui reste
   modifiable. Quand le texte tapé ne correspond à aucune marchandise,
   « Autre article » est surligné, et Entrée ou Tab le choisit.
+- **Acheter une marchandise que la boutique ne connaît pas encore** : un
+  achat propose aussi « Nouvelle marchandise (entre en stock)… », avant
+  « Autre article ». La ligne demande son nom (repris de ce qui a été tapé),
+  sa catégorie et son unité ; à l'enregistrement, la marchandise est créée
+  sans prix, comme depuis l'Inventaire, et la quantité achetée entre en
+  stock avec l'achat. Tout membre le peut. Sur un achat, c'est elle qu'un
+  texte qui ne correspond à rien surligne, et que Entrée ou Tab choisit. Un
+  nom déjà pris par une marchandise, même archivée, est refusé. Annuler la
+  ligne retire la quantité du stock et laisse la marchandise. Passée en
+  vente (« C'est une vente »), la ligne devient un article hors stock du
+  même nom.
 - La marchandise se choisit dans un champ où l'on tape son nom (comme dans le
   calculateur des Tarifs) ; la liste garde ses catégories. Partout où l'on
   choisit ainsi une marchandise, Tab après avoir tapé prend le premier
