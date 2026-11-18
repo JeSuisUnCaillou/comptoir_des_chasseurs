@@ -39,11 +39,13 @@ before(async () => {
   prod = postgres(prodUrl, { max: 1, onnotice: () => {} });
   preview = postgres(previewUrl, { max: 1, onnotice: () => {} });
   const [boss] = await prod`
-    insert into members (username, name, password_hash, role, super_admin)
-    values ('patron', 'Le Patron', 'scrypt$x$y', 'gerant', true) returning id`;
+    insert into members (username, name, password_hash, super_admin)
+    values ('patron', 'Le Patron', 'scrypt$x$y', true) returning id`;
   await prod`insert into shop_members (shop_id, member_id, role) values (1, ${boss.id}, 'gerant')`;
   const [product] = await prod`
-    insert into products (shop_id, name, stock, sell_price) values (1, 'Peau de troll', 7, 30) returning id`;
+    insert into products (shop_id, name, category_id, stock, sell_price)
+    select 1, 'Peau de troll', id, 7, 30 from product_categories where shop_id = 1 and hides
+    order by id limit 1 returning id`;
   const [sale] = await prod`
     insert into transactions (shop_id, kind, product_id, label, quantity, amount, counterparty, member_id)
     values (1, 'vente', ${product.id}, 'Peau de troll', 2, 60, 'Brynjolf', ${boss.id}) returning id`;
@@ -132,7 +134,9 @@ test("copie la prod dans la preview, garde Lomone et Aela, sans exemples ensuite
   assert.deepEqual(gerants.map((g) => g.username), ["aela", "lomone", "patron"]);
 
   // New rows get fresh ids after the copied ones.
-  await preview`insert into products (shop_id, name, stock) values (1, 'Nouvelle marchandise', 1)`;
+  await preview`
+    insert into products (shop_id, name, category_id, stock)
+    select 1, 'Nouvelle marchandise', id, 1 from product_categories where shop_id = 1 order by id limit 1`;
 
   // The next preview build adds the accounts only, no sample on the real data.
   const seeded = await run(["scripts/seed-preview.mjs"], "", { DATABASE_URL: previewUrl, VERCEL_ENV: "preview" });
