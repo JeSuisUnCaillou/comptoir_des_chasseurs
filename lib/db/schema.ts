@@ -100,9 +100,6 @@ export const members = pgTable(
     // Name shown in the registers (RP name).
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
-    // Replaced by the role in each shop (shopMembers.role): no longer read,
-    // dropped by a later migration.
-    role: memberRole("role").notNull().default("employe"),
     // The comptoir's owner: always a gérant, and nobody else can change their
     // account (name, role, password).
     superAdmin: boolean("super_admin").notNull().default(false),
@@ -116,8 +113,6 @@ export const members = pgTable(
     uniqueIndex("members_username_idx").on(t.username),
     // A Discord account opens one member's account only.
     uniqueIndex("members_discord_id_idx").on(t.discordId),
-    // The super admin has every right, always: they stay a gérant.
-    check("members_super_admin_gerant", sql`not ${t.superAdmin} or ${t.role} = 'gerant'`),
   ],
 );
 
@@ -142,19 +137,6 @@ export const shopMembers = pgTable(
     index("shop_members_member_idx").on(t.memberId),
   ],
 );
-
-/**
- * The old fixed categories, kept in products.category until the code in
- * production stops writing it (issue #184); the shop's own categories are
- * productCategories.
- */
-export const productCategory = pgEnum("product_category", [
-  "peau",
-  "cuir",
-  "viande",
-  "ressource",
-  "autre",
-]);
 
 /**
  * A shop's own category of merchandise, which its gérants rename, add,
@@ -189,8 +171,6 @@ export const products = pgTable(
     id: serial("id").primaryKey(),
     shopId: shopColumn(),
     name: text("name").notNull(),
-    // Old fixed category, no longer read: see productCategory.
-    category: productCategory("category").notNull().default("autre"),
     categoryId: integer("category_id")
       .notNull()
       .references(() => productCategories.id),
@@ -201,9 +181,6 @@ export const products = pgTable(
     stock: integer("stock").notNull().default(0),
     buyPrice: integer("buy_price"),
     buyQty: integer("buy_qty").notNull().default(1),
-    // Replaced by privilegedPrices: no longer read, dropped once the code in
-    // production no longer writes it.
-    citizenBuyPrice: integer("citizen_buy_price"),
     sellPrice: integer("sell_price"),
     sellQty: integer("sell_qty").notNull().default(1),
     // Wholesale: from bulkMin units, bulkPrice septims per bulkQty units.

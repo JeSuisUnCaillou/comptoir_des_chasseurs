@@ -301,8 +301,8 @@ try {
       ["sven", "Sven", "desactive"],
     ]) {
       const [added] = await tx`
-        insert into members (username, name, password_hash, role)
-        values (${username}, ${name}, ${GERANT.passwordHash}, ${role})
+        insert into members (username, name, password_hash)
+        values (${username}, ${name}, ${GERANT.passwordHash})
         on conflict (username) do nothing
         returning id`;
       if (added) {

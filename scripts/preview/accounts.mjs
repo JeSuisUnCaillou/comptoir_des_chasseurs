@@ -19,24 +19,15 @@ export const SECOND_GERANT = { username: "aela", name: "Aela" };
 /** Adds Lomone and Aela as gérants of the comptoir when missing; returns Lomone's id. */
 export async function ensurePreviewAccounts(tx) {
   const [gerant] = await tx`
-    insert into members (username, name, password_hash, role)
-    values (${GERANT.username}, ${GERANT.name}, ${GERANT.passwordHash}, 'gerant')
+    insert into members (username, name, password_hash)
+    values (${GERANT.username}, ${GERANT.name}, ${GERANT.passwordHash})
     on conflict (username) do nothing
     returning id`;
   console.log(gerant ? "Gérant Lomone créé." : "Gérant Lomone déjà présent.");
 
-  // The members migration only names the owner's prod account: Lomone becomes
-  // super admin, unless someone already is.
-  const [boss] = await tx`
-    update members set super_admin = true
-    where username = ${GERANT.username} and role = 'gerant'
-      and not exists (select 1 from members where super_admin)
-    returning id`;
-  if (boss) console.log("Lomone est super admin.");
-
   const [second] = await tx`
-    insert into members (username, name, password_hash, role)
-    values (${SECOND_GERANT.username}, ${SECOND_GERANT.name}, ${GERANT.passwordHash}, 'gerant')
+    insert into members (username, name, password_hash)
+    values (${SECOND_GERANT.username}, ${SECOND_GERANT.name}, ${GERANT.passwordHash})
     on conflict (username) do nothing
     returning id`;
   console.log(second ? "Gérante Aela créée." : "Gérante Aela déjà présente.");
@@ -46,6 +37,16 @@ export async function ensurePreviewAccounts(tx) {
     insert into shop_members (shop_id, member_id, role)
     select 1, id, 'gerant' from members where username in (${GERANT.username}, ${SECOND_GERANT.username})
     on conflict do nothing`;
+
+  // The members migration only names the owner's prod account: Lomone becomes
+  // super admin, unless someone already is.
+  const [boss] = await tx`
+    update members set super_admin = true
+    where username = ${GERANT.username}
+      and exists (select 1 from shop_members s where s.member_id = members.id and s.shop_id = 1 and s.role = 'gerant')
+      and not exists (select 1 from members where super_admin)
+    returning id`;
+  if (boss) console.log("Lomone est super admin.");
 
   const [{ id }] = await tx`select id from members where username = ${GERANT.username}`;
   return id;

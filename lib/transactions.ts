@@ -1,13 +1,13 @@
 import "server-only";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { ShopMember } from "@/lib/auth/session";
-import { getDb, schema } from "@/lib/db";
+import { getDb, schema, type Tx } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { activeIn } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
-import { cancelStockDelta, settleEntry } from "@/lib/register";
+import { cancelStockDelta, sameEntryAs, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
@@ -140,37 +140,88 @@ export async function settleLine(member: Actor, id: number) {
   await settleEntry(member.shopId, id);
 }
 
-/** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */
-export async function cancelLine(member: Actor, id: number) {
+type Line = typeof schema.transactions.$inferSelect;
+
+/**
+ * Cancels a line, or every line still counted of its entry (`whole`), and
+ * puts the stock back: all of them or none. Gérants, or the member who wrote it.
+ */
+export async function cancelLines(member: Actor, id: number, whole = false) {
+  await changeLines(member, id, whole, "cancel");
+}
+
+/**
+ * Counts a cancelled line again, or every cancelled line of its entry
+ * (`whole`), as if written anew: a sale takes its goods out of the stock
+ * again, as far as it holds, a buyback puts them back in. Gérants, or the
+ * member who wrote it.
+ */
+export async function restoreLines(member: Actor, id: number, whole = false) {
+  await changeLines(member, id, whole, "restore");
+}
+
+async function changeLines(member: Actor, id: number, whole: boolean, change: "cancel" | "restore") {
   const t = schema.transactions;
+  const cancel = change === "cancel";
   await getDb().transaction(async (tx) => {
-    const [line] = await tx
+    const lines = await tx
       .select()
       .from(t)
-      .where(and(eq(t.id, id), eq(t.shopId, member.shopId), isNull(t.cancelledAt)))
-      .for("update")
-      .limit(1);
-    if (!line) throw new UserError("Cette ligne est introuvable ou déjà annulée.");
-    if (!canActOn(member, line)) {
-      throw new UserError("Seul un gérant peut annuler la ligne d'un autre membre.");
+      .where(
+        and(
+          eq(t.shopId, member.shopId),
+          whole ? sameEntryAs(id) : eq(t.id, id),
+          cancel ? isNull(t.cancelledAt) : isNotNull(t.cancelledAt),
+        ),
+      )
+      .orderBy(asc(t.id))
+      .for("update");
+    if (lines.length === 0) {
+      throw new UserError(`Cette ligne est introuvable ou déjà ${cancel ? "annulée" : "rétablie"}.`);
     }
-    if (line.productId != null) {
-      // What the line really moved: a sale may have taken less than it sold.
-      const [{ moved: linked, count }] = await tx
-        .select({
-          moved: sql<number>`coalesce(sum(${schema.stockMovements.delta}), 0)::int`,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(schema.stockMovements)
-        .where(
-          and(eq(schema.stockMovements.transactionId, line.id), eq(schema.stockMovements.productId, line.productId)),
-        );
-      const delta = cancelStockDelta(line.kind, line.quantity, count > 0 ? linked : null);
-      const reason = `Annulation ${line.kind} n°${line.id}`;
-      const moved = await moveStock(tx, member.shopId, line.productId, delta, member.id, reason, line.id);
-      // A cancelled buyback whose goods are already gone cannot be undone.
-      if (!moved.ok) throw new UserError("Impossible d'annuler : la marchandise rachetée a déjà été vendue.");
+    // The lines of one entry share their author.
+    if (!canActOn(member, lines[0])) {
+      throw new UserError(`Seul un gérant peut ${cancel ? "annuler" : "rétablir"} la ligne d'un autre membre.`);
     }
-    await tx.update(t).set({ cancelledAt: new Date(), cancelledBy: member.id }).where(eq(t.id, id));
+    for (const line of lines) {
+      if (cancel) await cancelOne(tx, member, line, lines.length > 1);
+      else await restoreOne(tx, member, line);
+    }
   });
+}
+
+async function cancelOne(tx: Tx, member: Actor, line: Line, several: boolean) {
+  const t = schema.transactions;
+  if (line.productId != null) {
+    const m = schema.stockMovements;
+    // What the line holds: a sale may have taken less than it sold.
+    const [{ moved, moves }] = await tx
+      .select({ moved: sql<number>`coalesce(sum(${m.delta}), 0)::int`, moves: sql<number>`count(*)::int` })
+      .from(m)
+      .where(and(eq(m.transactionId, line.id), eq(m.productId, line.productId)));
+    const delta = cancelStockDelta(line.kind, line.quantity, moved, moves);
+    const reason = `Annulation ${line.kind} n°${line.id}`;
+    const result = await moveStock(tx, member.shopId, line.productId, delta, member.id, reason, line.id);
+    // A cancelled buyback whose goods are already gone cannot be undone; throwing keeps every line.
+    if (!result.ok) {
+      throw new UserError(
+        `Impossible d'annuler${several ? ` ${line.label}` : ""} : la marchandise rachetée a déjà été vendue.`,
+      );
+    }
+  }
+  await tx.update(t).set({ cancelledAt: new Date(), cancelledBy: member.id }).where(eq(t.id, line.id));
+}
+
+async function restoreOne(tx: Tx, member: Actor, line: Line) {
+  const t = schema.transactions;
+  if (line.productId != null) {
+    // Like writing it again: a sale beyond the stock takes only what is left.
+    const delta = line.kind === "vente" ? -line.quantity : line.quantity;
+    const reason = `Rétablissement ${line.kind} n°${line.id}`;
+    const result = await moveStock(tx, member.shopId, line.productId, delta, member.id, reason, line.id, {
+      clamp: true,
+    });
+    if (!result.ok) throw new UserError(result.error);
+  }
+  await tx.update(t).set({ cancelledAt: null, cancelledBy: null }).where(eq(t.id, line.id));
 }

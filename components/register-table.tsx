@@ -1,7 +1,7 @@
 import { CancelButton } from "@/components/cancel-button";
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
-import type { Member } from "@/lib/db/schema";
+import type { MemberRole } from "@/lib/db/schema";
 import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
@@ -15,7 +15,7 @@ export function RegisterTable({
   highlight,
 }: {
   entries: RegisterEntry[];
-  member: Pick<Member, "id" | "role">;
+  member: { id: number; role: MemberRole };
   showNotes?: boolean;
   /** Lines just written, shown fresh. */
   highlight?: number[];
@@ -48,7 +48,6 @@ export function RegisterTable({
             const cash = isCashKind(e.kind);
             const cancelled = e.cancelledAt != null;
             const mine = canActOn(member, e);
-            const canCancel = !cancelled && mine;
             // Its septims are not in the till yet: shown, but not counted.
             const waiting = !cancelled && e.tillPending;
             const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
@@ -74,23 +73,29 @@ export function RegisterTable({
                 </td>
                 {showNotes && <td className={`small cell-notes${rep}`}>{shared(e.notes ?? "")}</td>}
                 <td className="cell-actions">
-                  {cancelled ? (
-                    <CancelledNote by={e.cancelledBy} />
-                  ) : (
-                    canCancel && (
-                      <div className="row-actions">
-                        {waiting && place.settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
-                        <CancelButton
-                          id={e.id}
-                          label={label}
-                          effect={
-                            cash
-                              ? "L'argent est retiré de la caisse."
-                              : stockEffect(e, sale)
-                          }
-                        />
-                      </div>
-                    )
+                  {(cancelled || mine) && (
+                    <div className="row-actions">
+                      {cancelled && <CancelledNote by={e.cancelledBy} beside />}
+                      {waiting && mine && place.settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
+                      {mine &&
+                        (cancelled ? (
+                          <CancelButton
+                            restore
+                            id={e.id}
+                            text="Rétablir"
+                            name={`Rétablir ${label}`}
+                            question={`Rétablir ${label} ? ${restoreEffect(e, sale, cash)}`}
+                          />
+                        ) : (
+                          <CancelButton
+                            id={e.id}
+                            text="Annuler"
+                            name={`Annuler ${label}`}
+                            question={`Annuler ${label} ? ${cash ? "L'argent est retiré de la caisse." : stockEffect(e, sale)}`}
+                          />
+                        ))}
+                      {mine && place.first && <EntryButtons entry={e} />}
+                    </div>
                   )}
                 </td>
               </tr>
@@ -106,4 +111,60 @@ export function RegisterTable({
 function stockEffect(e: RegisterEntry, sale: boolean) {
   if (e.stockBack === 0) return "Le stock ne change pas.";
   return sale ? `${e.stockBack} ${e.label} reviendront en stock.` : `${e.stockBack} ${e.label} sortiront du stock.`;
+}
+
+/** What restoring the line does: like writing it again. */
+function restoreEffect(e: RegisterEntry, sale: boolean, cash: boolean) {
+  if (cash) return "Le mouvement compte à nouveau.";
+  if (e.productId == null) return "Le stock ne change pas.";
+  return sale
+    ? `${e.quantity} ${e.label} sortiront à nouveau du stock, autant qu'il en reste.`
+    : `${e.quantity} ${e.label} reviendront en stock.`;
+}
+
+/** "cette vente", "cet achat"…: an entry of several lines. */
+function entryName(kind: RegisterEntry["kind"]) {
+  return kind === "vente" ? "cette vente" : kind === "rachat" ? "cet achat" : "cette écriture";
+}
+
+/**
+ * On an entry of several lines, its first row cancels every line still
+ * counted, or restores every cancelled one, in one click.
+ */
+function EntryButtons({ entry: e }: { entry: RegisterEntry }) {
+  if (e.entryCount < 2) return null;
+  const active = e.entryActiveItems ? e.entryActiveItems.split("\n") : [];
+  const cancelled = e.entryCancelledItems ? e.entryCancelledItems.split("\n") : [];
+  const name = entryName(e.kind);
+  const list = (items: string[]) => items.map((item) => `• ${item}`).join("\n");
+  const sale = e.kind === "vente";
+  return (
+    <>
+      {active.length > 1 && (
+        <CancelButton
+          whole
+          id={e.id}
+          text="Tout annuler"
+          name={`Tout annuler : les ${active.length} lignes de ${name}`}
+          question={`Annuler les ${active.length} lignes de ${name} ?\n\n${list(active)}\n\n${
+            sale ? "Ce qui est sorti du stock y revient." : "Ce qui est entré en stock en ressort."
+          }`}
+        />
+      )}
+      {cancelled.length > 1 && (
+        <CancelButton
+          whole
+          restore
+          id={e.id}
+          text="Tout rétablir"
+          name={`Tout rétablir : les ${cancelled.length} lignes de ${name}`}
+          question={`Rétablir les ${cancelled.length} lignes de ${name} ?\n\n${list(cancelled)}\n\n${
+            sale
+              ? "Les marchandises sortiront à nouveau du stock, autant qu'il en reste."
+              : "Les marchandises reviendront en stock."
+          }`}
+        />
+      )}
+    </>
+  );
 }

@@ -16,7 +16,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 import { connectionOptions } from "../../lib/db/url.mjs";
-import { key, mapLegacy, till } from "./map.mjs";
+import { categoryFor, key, mapLegacy, till } from "./map.mjs";
 import { createPrompter } from "./prompt.mjs";
 
 const TARGETS = { preview: "écraser la preview", prod: "écraser la prod", local: "écraser" };
@@ -153,15 +153,17 @@ async function write(sql, plan) {
     const memberIds = new Map();
     for (const m of plan.newMembers) {
       const [{ id }] = await tx`
-        insert into members (username, name, password_hash, role)
-        values (${m.username}, ${m.name}, '!', 'employe') returning id`;
+        insert into members (username, name, password_hash)
+        values (${m.username}, ${m.name}, '!') returning id`;
       await tx`insert into shop_members (shop_id, member_id, role) values (1, ${id}, 'employe')`;
       memberIds.set(m.ref, id);
     }
     const member = (row) => ({ ...row, memberId: memberIds.get(row.memberId) ?? row.memberId });
+    const categories = await tx`select id, name, hides from product_categories where shop_id = 1 order by position, id`;
     const ids = new Map();
-    for (const p of plan.products) {
-      const [{ id }] = await tx`insert into products ${tx(snake(p))} returning id`;
+    for (const { category, ...p } of plan.products) {
+      const row = { ...p, categoryId: categoryFor(category, categories), leather: category === "cuir" };
+      const [{ id }] = await tx`insert into products ${tx(snake(row))} returning id`;
       ids.set(p.name, id);
     }
     for (const [key, value] of Object.entries(plan.settings)) {

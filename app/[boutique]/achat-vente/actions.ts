@@ -7,7 +7,7 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { QUANTITY_ERROR, checked, isQuantity, optionalText, text } from "@/lib/forms";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
-import { cancelLine, recordCashLine, recordLines, settleLine, type TransactionLine } from "@/lib/transactions";
+import { cancelLines, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
@@ -108,7 +108,10 @@ export async function settleTransaction(
   return { ok: true, message: "C'est noté, la caisse est à jour." };
 }
 
-/** Cancels a line and puts the stock back. Gérants, or the member who wrote it. */
+/**
+ * Cancels a line and puts the stock back, or every line of its entry when
+ * the form says `entier`. Gérants, or the member who wrote it.
+ */
 export async function cancelTransaction(
   _prev: TransactionState,
   formData: FormData,
@@ -116,8 +119,25 @@ export async function cancelTransaction(
   const member = await requireMember();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
-  const result = await attempt(() => cancelLine(member, id));
+  const result = await attempt(() => cancelLines(member, id, formData.get("entier") === "1"));
   if (!result.ok) return result;
   revalidateShop();
-  return { ok: true, message: "Ligne annulée, stock rétabli." };
+  return { ok: true, message: "Annulé, stock rétabli." };
+}
+
+/**
+ * Counts a cancelled line again, or every cancelled line of its entry when
+ * the form says `entier`. Gérants, or the member who wrote it.
+ */
+export async function restoreTransaction(
+  _prev: TransactionState,
+  formData: FormData,
+): Promise<TransactionState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
+  const result = await attempt(() => restoreLines(member, id, formData.get("entier") === "1"));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "Rétabli." };
 }

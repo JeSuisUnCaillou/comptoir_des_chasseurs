@@ -73,6 +73,34 @@ export function entrySumColumn() {
     from ${schema.transactions} ${s} where ${entryOf(s)} = ${entryOf(t)})`;
 }
 
+/** Every line of the entry holding line `id` (see `entryOf`). */
+export function sameEntryAs(id: number) {
+  const t = schema.transactions;
+  const s = sameEntry;
+  return sql`${entryOf(t)} = (select ${s.shopId}, ${s.memberId}, ${s.kind}, ${s.createdAt}
+    from ${schema.transactions} ${s} where ${s.id} = ${id})`;
+}
+
+/**
+ * For each line, its whole entry, whatever page its lines fall on: how many
+ * lines it has, and one "quantity × label" per line still counted and per
+ * line cancelled, so one click can cancel or restore them all and its
+ * confirmation can say which.
+ */
+export function entryStateColumns() {
+  const t = schema.transactions;
+  const s = sameEntry;
+  const from = sql`from ${schema.transactions} ${s} where ${entryOf(s)} = ${entryOf(t)}`;
+  const items = (cancelled: boolean) =>
+    sql<string>`coalesce((select string_agg(${s.quantity} || ' × ' || ${s.label}, E'\n' order by ${s.id}) ${from}
+      and ${s.cancelledAt} is ${cancelled ? sql`not null` : sql`null`}), '')`;
+  return {
+    entryCount: sql<number>`(select count(*)::int ${from})`,
+    entryActiveItems: items(false),
+    entryCancelledItems: items(true),
+  };
+}
+
 /** The shop's lines matching the filter. */
 function conditions(shopId: number, filter: RegisterFilter) {
   const t = schema.transactions;
@@ -86,26 +114,32 @@ function conditions(shopId: number, filter: RegisterFilter) {
 }
 
 /**
- * What the line really moved in stock (the sum of its stock movements), or
- * null when no movement is tied to it (imported from the old app): a sale
- * beyond the stock takes less than it sells, and cancelling it gives back
- * only that (`cancelLine`).
+ * What the line's stock movements moved (their sum) and how many there are,
+ * read by `cancelStockDelta`.
  */
-function stockMovedColumn() {
+function stockMovedColumns() {
   const m = schema.stockMovements;
   const t = schema.transactions;
-  return sql<number | null>`(select sum(${m.delta})::int from ${m} where ${m.transactionId} = ${t.id} and ${m.productId} = ${t.productId})`;
+  const of = sql`from ${m} where ${m.transactionId} = ${t.id} and ${m.productId} = ${t.productId}`;
+  return {
+    stockMoved: sql<number>`(select coalesce(sum(${m.delta}), 0)::int ${of})`,
+    stockMoves: sql<number>`(select count(*)::int ${of})`,
+  };
 }
 
 /**
- * What cancelling a line does to the stock: it gives back what the line
- * really moved (`linked`, the sum of its stock movements), or, for a line with
- * no movement tied to it (imported from the old app), its quantity. Used by
- * `cancelLine` and by the confirmation that announces it.
+ * What cancelling a line still counted does to the stock: it gives back what
+ * the line holds. That is what its stock movements moved (`moved`, their sum:
+ * a sale beyond the stock takes less than it sells), plus, for a line
+ * imported from the old app, the movement it never wrote: its quantity.
+ * A line written here starts with one movement, and each cancellation and
+ * each restoration adds one, so a line still counted has an odd number of
+ * them (`moves`) when written here, an even number when imported. Used by
+ * `cancelLines` and by the confirmation that announces it.
  */
-export function cancelStockDelta(kind: TransactionKind, quantity: number, linked: number | null) {
-  if (linked != null) return -linked;
-  return kind === "vente" ? quantity : -quantity;
+export function cancelStockDelta(kind: TransactionKind, quantity: number, moved: number, moves: number) {
+  const unwritten = moves % 2 === 0 ? (kind === "vente" ? -quantity : quantity) : 0;
+  return -(moved + unwritten);
 }
 
 export async function registerEntries(
@@ -133,8 +167,9 @@ export async function registerEntries(
       cancelledBy: canceller.name,
       entryKey: entryKeyColumn(),
       entrySum: entrySumColumn(),
-      stockMoved: stockMovedColumn(),
+      ...stockMovedColumns(),
       ...pendingEntryColumns(),
+      ...entryStateColumns(),
     })
     .from(t)
     .innerJoin(schema.members, eq(schema.members.id, t.memberId))
@@ -144,10 +179,11 @@ export async function registerEntries(
     .limit(limit)
     .offset(offset)
     .then((rows) =>
-      rows.map(({ stockMoved, ...row }) => ({
+      rows.map(({ stockMoved, stockMoves, ...row }) => ({
         ...row,
         // Units cancelling the line puts back in stock (or takes out, for a buyback).
-        stockBack: row.productId == null ? 0 : Math.abs(cancelStockDelta(row.kind, row.quantity, stockMoved)),
+        stockBack:
+          row.productId == null ? 0 : Math.abs(cancelStockDelta(row.kind, row.quantity, stockMoved, stockMoves)),
       })),
     );
 }

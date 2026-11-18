@@ -80,6 +80,7 @@ export function PartyCell({
   );
 }
 
-export function CancelledNote({ by }: { by: string | null }) {
-  return <span className="small muted">Annulée{by ? ` par ${by}` : ""}</span>;
+/** Who cancelled a line; `beside` keeps it on one line next to its Rétablir button. */
+export function CancelledNote({ by, beside = false }: { by: string | null; beside?: boolean }) {
+  return <span className={`small muted${beside ? " cancelled-by" : ""}`}>Annulée{by ? ` par ${by}` : ""}</span>;
 }

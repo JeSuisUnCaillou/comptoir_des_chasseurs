@@ -183,6 +183,20 @@
       "when": 1794921653998,
       "tag": "0025_initialisation-boutiques-vides",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794927106393,
+      "tag": "0026_anciennes-colonnes",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794932039779,
+      "tag": "0027_supprimer-anciennes-colonnes",
+      "breakpoints": true
     }
   ]
 }
