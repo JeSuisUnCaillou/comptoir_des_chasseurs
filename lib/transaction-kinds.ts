@@ -21,6 +21,16 @@ export function signedAmount(kind: TransactionKind, amount: number) {
   return kind === "vente" || kind === "entree" ? amount : -amount;
 }
 
+/**
+ * The cash movement that brings the till from `balance` to the septims
+ * counted in the coffer; null when they already match.
+ */
+export function gapToCount(balance: number, counted: number): { kind: "entree" | "sortie"; amount: number } | null {
+  const gap = counted - balance;
+  if (gap === 0) return null;
+  return { kind: gap > 0 ? "entree" : "sortie", amount: Math.abs(gap) };
+}
+
 /** A refusal about line `i` of an entry of `count` lines: it names the line when there are several. */
 export function lineMessage(count: number, i: number, message: string) {
   return count > 1 ? `Marchandise ${i + 1} : ${message}` : message;

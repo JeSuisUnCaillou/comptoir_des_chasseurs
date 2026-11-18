@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { recordCashMovement, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
 import { keepValues } from "@/components/keep-values";
 import { septims } from "@/lib/pricing";
-import { signedAmount } from "@/lib/transaction-kinds";
+import { gapToCount, signedAmount } from "@/lib/transaction-kinds";
 
 const COUNT_REASON = "Correction de caisse";
 const REASONS = ["Salaires", "Apport du gérant", "Retrait du gérant", COUNT_REASON];
@@ -30,9 +30,9 @@ export function CashMovementForm({ balance }: { balance: number }) {
     setCounted(text);
     const total = Number(text);
     if (text === "" || !Number.isInteger(total) || total < 0) return;
-    const gap = total - balance;
-    setKind(gap > 0 ? "entree" : gap < 0 ? "sortie" : "");
-    setAmount(gap === 0 ? "" : String(Math.abs(gap)));
+    const gap = gapToCount(balance, total);
+    setKind(gap?.kind ?? "");
+    setAmount(gap ? String(gap.amount) : "");
     setTillPending(false);
     if (label === "") setLabel(COUNT_REASON);
   }

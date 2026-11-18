@@ -4,14 +4,14 @@ import { CashMovementForm } from "@/components/cash-movement-form";
 import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
-import { pendingTotals, tillTotals } from "@/lib/register";
+import { hasPending, pendingTotals, tillTotals } from "@/lib/register";
 
 /** /achat-vente/caisse: septims in or out of the till, with no merchandise. */
 export default async function MouvementDeCaisse() {
   const member = await requireMember();
   const at = (path: string) => shopPath(member.shop.slug, path);
   const [till, waiting] = await Promise.all([tillTotals(member.shopId), pendingTotals(member.shopId)]);
-  const anyWaiting = waiting.sales + waiting.buybacks + waiting.inflows + waiting.outflows > 0;
+  const anyWaiting = hasPending(waiting);
 
   return (
     <>
