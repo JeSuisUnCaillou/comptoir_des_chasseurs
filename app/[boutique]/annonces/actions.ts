@@ -11,10 +11,6 @@ import { optionalId } from "@/lib/forms";
 
 export type AnnouncementState = { ok: boolean; message: string; id?: number } | null;
 
-function revalidate() {
-  revalidateShop();
-}
-
 /** The parchment's fields, or the message saying what is wrong with them. */
 function readAnnouncement(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
@@ -35,7 +31,7 @@ export async function postAnnouncement(_prev: AnnouncementState, formData: FormD
   if (!values) return { ok: false, message: error };
 
   const id = await post(member, values);
-  revalidate();
+  revalidateShop();
   return { ok: true, message: "Le parchemin est accroché au tableau.", id };
 }
 
@@ -49,7 +45,7 @@ export async function editAnnouncement(_prev: AnnouncementState, formData: FormD
 
   const result = await attempt(() => reviseAnnouncement(member, id, values));
   if (!result.ok) return { ok: false, message: result.message };
-  revalidate();
+  revalidateShop();
   redirect(safeReturnPath(formData.get("back")));
 }
 
@@ -58,5 +54,5 @@ export async function takeDownAnnouncement(formData: FormData) {
   const member = await requireMember();
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return;
-  if (await takeDown(member, id)) revalidate();
+  if (await takeDown(member, id)) revalidateShop();
 }

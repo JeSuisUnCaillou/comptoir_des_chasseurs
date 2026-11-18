@@ -107,6 +107,10 @@ export const members = pgTable(
     discordId: text("discord_id"),
     // Its Discord name when it was linked, shown on their account page.
     discordName: text("discord_name"),
+    // Bumped each time Discord is linked or unlinked: it is part of the
+    // session stamp, so every session opened before the change closes, even
+    // when the account comes back to an earlier Discord state.
+    sessionEpoch: integer("session_epoch").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

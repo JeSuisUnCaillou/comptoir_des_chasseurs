@@ -41,7 +41,7 @@ export async function linkDiscord(memberId: number, discord: { id: string; name:
   try {
     const [member] = await getDb()
       .update(schema.members)
-      .set({ discordId: discord.id, discordName: discord.name })
+      .set({ discordId: discord.id, discordName: discord.name, sessionEpoch: sql`${schema.members.sessionEpoch} + 1` })
       .where(eq(schema.members.id, memberId))
       .returning();
     return member;
@@ -58,7 +58,7 @@ export async function linkDiscord(memberId: number, discord: { id: string; name:
 export async function unlinkDiscord(memberId: number): Promise<Member> {
   const [member] = await getDb()
     .update(schema.members)
-    .set({ discordId: null, discordName: null })
+    .set({ discordId: null, discordName: null, sessionEpoch: sql`${schema.members.sessionEpoch} + 1` })
     .where(and(eq(schema.members.id, memberId), ne(schema.members.passwordHash, NO_PASSWORD)))
     .returning();
   if (!member) throw new UserError("Choisis d'abord un mot de passe : sans lui, plus rien n'ouvrirait ton compte.");
@@ -149,7 +149,8 @@ export async function createAccount(shopId: number, { role, ...account }: NewAcc
 
 /**
  * The accounts a gérant may change: those of their shop. Only the super admin
- * themself may change their account; to anyone else the update matches no row.
+ * themself may change their account (`canEditAccount`, `lib/policies.ts`); to
+ * anyone else the update matches no row.
  */
 function editableBy(me: Pick<ShopMember, "id" | "shopId">, id: number) {
   return and(
@@ -199,7 +200,8 @@ export async function updateAccount(
 
 /**
  * A gérant deactivates an account of their shop, or reactivates it as an
- * employé. Neither their own account nor the super admin's.
+ * employé. Neither their own account nor the super admin's
+ * (`canResetOrDeactivate`, `lib/policies.ts`).
  */
 export async function setAccountActive(me: Pick<ShopMember, "id" | "shopId">, id: number, active: boolean) {
   const sm = schema.shopMembers;
@@ -267,4 +269,15 @@ export async function shopMemberOf(shopId: number, id: number) {
     .where(and(eq(schema.members.id, id), eq(schema.shopMembers.shopId, shopId)))
     .limit(1);
   return member;
+}
+
+/** Every member of the shop, deactivated ones included, for the "Employé" filters. */
+export async function memberNames(shopId: number) {
+  const m = schema.members;
+  return getDb()
+    .select({ id: m.id, name: m.name })
+    .from(m)
+    .innerJoin(schema.shopMembers, eq(schema.shopMembers.memberId, m.id))
+    .where(eq(schema.shopMembers.shopId, shopId))
+    .orderBy(byName(m.name), asc(m.id));
 }

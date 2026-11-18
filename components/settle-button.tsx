@@ -7,7 +7,7 @@ import { septims } from "@/lib/pricing";
 import { signedAmount } from "@/lib/transaction-kinds";
 
 /** The lines a click settles together: those of one entry, see `pendingEntryColumns`. */
-export type PendingEntry = { entryLines: number; entryTotal: number; entryItems: string };
+export type PendingEntry = { entryLines: number; pendingTotal: number; entryItems: string };
 
 /** "la vente n°12", "cet achat de 3 lignes"…: what one click settles. */
 function entryName(id: number, kind: TransactionKind, lines: number) {
@@ -23,8 +23,8 @@ function ofEntry(name: string) {
 }
 
 /** What the confirmation asks: one line, or every line of the entry with their total. */
-export function settleQuestion(id: number, kind: TransactionKind, entry: PendingEntry) {
-  const amount = `${entry.entryTotal >= 2 ? "les " : ""}${septims(entry.entryTotal)}`;
+function settleQuestion(id: number, kind: TransactionKind, entry: PendingEntry) {
+  const amount = `${entry.pendingTotal >= 2 ? "les " : ""}${septims(entry.pendingTotal)}`;
   const done = `${signedAmount(kind, 1) > 0 ? "mis" : "pris"} ${amount}`;
   const of = ofEntry(entryName(id, kind, entry.entryLines));
   if (entry.entryLines <= 1) return `Tu as bien ${done} ${of} dans la caisse ?`;
@@ -41,7 +41,7 @@ export function settleQuestion(id: number, kind: TransactionKind, entry: Pending
  */
 export function SettleButton({ id, kind, entry }: { id: number; kind: TransactionKind; entry: PendingEntry }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(settleTransaction, null);
-  const total = entry.entryTotal;
+  const total = entry.pendingTotal;
   const amount = `${total >= 2 ? "les " : ""}${septims(total)}`;
   const into = signedAmount(kind, 1) > 0;
   const name = entryName(id, kind, entry.entryLines);

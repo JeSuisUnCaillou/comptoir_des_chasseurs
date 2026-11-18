@@ -11,7 +11,7 @@ import { canOpenShop } from "@/lib/policies";
 import { insertDefaultCategory } from "@/lib/categories";
 import { RESERVED_SLUGS, isComptoir, slugOf, slugify } from "@/lib/paths";
 
-export async function shopBySlug(slug: string): Promise<Shop | undefined> {
+async function shopBySlug(slug: string): Promise<Shop | undefined> {
   const [shop] = await getDb().select().from(schema.shops).where(eq(schema.shops.slug, slug)).limit(1);
   return shop;
 }
