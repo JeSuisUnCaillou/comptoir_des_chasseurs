@@ -27,7 +27,7 @@ export const SHOP_PAGES = [
 export const RESERVED_SLUGS: readonly string[] = ["api", "auth", "boutiques", "connexion", "invitation", ...SHOP_PAGES];
 
 /** Longest shop address, the slash aside. */
-export const MAX_SLUG_LENGTH = 40;
+const MAX_SLUG_LENGTH = 40;
 
 /**
  * The address a shop named `name` gets: lower case, accents dropped, words

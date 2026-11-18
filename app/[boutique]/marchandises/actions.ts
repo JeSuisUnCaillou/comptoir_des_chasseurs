@@ -10,10 +10,10 @@ import { createPrivilegedGroup, deletePrivilegedGroup, renamePrivilegedGroup } f
 import { addCategory, deleteCategory, renameCategory, setCategoryOrder } from "@/lib/categories";
 import {
   saveProduct as save,
-  setBlacksmithLeatherPrice,
   setFeatured,
   setFeaturedOrder,
 } from "@/lib/products";
+import { setBlacksmithLeatherPrice } from "@/lib/settings";
 
 export type ProductFormState = { error: string } | null;
 

@@ -37,12 +37,12 @@ function total(price: number, per: number, quantity: number): Total {
   return { value: (quantity * price) / per, complete: quantity % per === 0 };
 }
 
-export function isBulk(p: Prices, quantity: number) {
+function isBulk(p: Prices, quantity: number) {
   return p.bulkMin != null && p.bulkPrice != null && quantity >= p.bulkMin;
 }
 
 /** `privileged`: the seller's privileged group's name, when its own price applied. */
-export type Rate = { price: number; qty: number; bulk: boolean; privileged: string | null };
+type Rate = { price: number; qty: number; bulk: boolean; privileged: string | null };
 
 /** A privileged group's buyback price, for the product's buyQty units. */
 export type PrivilegedRate = { name: string; price: number };

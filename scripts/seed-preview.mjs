@@ -217,7 +217,7 @@ try {
     if (waiting === 0) {
       // Each entry at its own instant; the lines of one entry share theirs.
       // Mirrors recordTransaction and moveStock (app/[boutique]/achat-vente/actions.ts,
-      // lib/products.ts): follow them if they change.
+      // lib/stock.ts): follow them if they change.
       for (const [i, [kind, counterparty, pending, lines]] of SAMPLES.entries()) {
         const at = sql`now() - ${`${(SAMPLES.length - i) * 7} minutes`}::interval`;
         for (const [name, quantity, amount] of lines) {

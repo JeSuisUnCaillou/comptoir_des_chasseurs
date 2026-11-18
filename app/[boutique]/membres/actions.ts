@@ -1,6 +1,6 @@
 "use server";
 
-import { MIN_PASSWORD_LENGTH, hashPassword, newPasswordError, normalizeUsername, usernameError } from "@/lib/auth/password";
+import { hashPassword, newPasswordError, normalizeUsername, usernameError } from "@/lib/auth/password";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
@@ -53,9 +53,8 @@ export async function resetPassword(_prev: MemberFormState, formData: FormData):
   const id = Number(formData.get("id"));
   const password = String(formData.get("password") ?? "");
   if (!Number.isInteger(id)) return { ok: false, message: "Membre inconnu." };
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, message: `${MIN_PASSWORD_LENGTH} caractères minimum.` };
-  }
+  const invalid = newPasswordError(password);
+  if (invalid) return { ok: false, message: invalid };
   const passwordHash = await hashPassword(password);
   const result = await attempt(() => resetAccountPassword(me, id, passwordHash));
   if (!result.ok) return result;
