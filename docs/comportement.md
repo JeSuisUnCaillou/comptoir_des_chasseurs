@@ -301,8 +301,9 @@ sortie d'argent) les septims :
   dates.
 - **Annuler une ligne** : son auteur ou un gérant. Elle reste barrée, ne
   compte plus dans la caisse, et le stock revient à l'état d'avant. Sur
-  une carte (téléphone, fenêtre étroite), les boutons d'une ligne sont juste
-  sous son prix, à droite. À côté
+  une carte (téléphone, fenêtre étroite), dans le registre comme dans
+  l'activité d'un membre, les boutons d'une ligne sont juste sous son prix,
+  à droite. À côté
   de « Annulée par … », sur la même ligne, **Rétablir** la fait compter de
   nouveau, comme si on l'inscrivait à nouveau : une vente ressort du stock
   ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
