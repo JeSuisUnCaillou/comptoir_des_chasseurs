@@ -1003,13 +1003,15 @@ tr.cancelled td .badge {
   display: none;
 }
 
-/* « Tout annuler », « Tout rétablir »: beside the entry's total, on one line. */
+/* « Tout annuler », « Tout rétablir »: under the entry's total, side by side,
+   one under the other if need be. Inline-flex, so that a cancelled line's
+   strike-through does not reach them; full width puts them on their own line. */
 .entry-actions {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-left: 8px;
-  white-space: nowrap;
-  vertical-align: middle;
+  width: 100%;
+  margin-top: 4px;
 }
 
 .entry-actions .btn-small {
@@ -2061,11 +2063,8 @@ tr.fresh td {
     display: inline-block;
   }
 
-  /* On a narrow card, the two buttons go under the total, one under the other if need be. */
   .entry-cards .entry-actions.on-card {
     display: inline-flex;
-    flex-wrap: wrap;
-    white-space: normal;
   }
 
   .entry-cards .entry-actions:not(.on-card) {
@@ -2087,10 +2086,10 @@ tr.fresh td {
     grid-template-areas:
       "date date kind"
       "label qty amount"
+      "actions actions actions"
       "party party party"
       "member member member"
-      "notes notes notes"
-      "actions actions actions";
+      "notes notes notes";
     column-gap: 12px;
     padding: 0 12px 0 15px;
     background: rgb(255 255 255 / 0.025);
@@ -2218,8 +2217,14 @@ tr.fresh td {
     font-style: italic;
   }
 
+  /* A line's buttons right under its septims, on the right; its entry's buttons go under the total. */
   .entry-cards .cell-actions {
     grid-area: actions;
+    justify-self: end;
+  }
+
+  .entry-cards .cell-actions .row-actions {
+    justify-content: flex-end;
   }
 
   .entry-cards .cell-actions:not(:empty) {

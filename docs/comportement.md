@@ -300,14 +300,16 @@ sortie d'argent) les septims :
 - **Filtres** : opération, employé (le membre qui a inscrit la ligne),
   dates.
 - **Annuler une ligne** : son auteur ou un gérant. Elle reste barrée, ne
-  compte plus dans la caisse, et le stock revient à l'état d'avant. À côté
+  compte plus dans la caisse, et le stock revient à l'état d'avant. Sur
+  une carte (téléphone, fenêtre étroite), les boutons d'une ligne sont juste
+  sous son prix, à droite. À côté
   de « Annulée par … », sur la même ligne, **Rétablir** la fait compter de
   nouveau, comme si on l'inscrivait à nouveau : une vente ressort du stock
   ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
   quantité. L'annuler encore rend ce qu'elle a vraiment pris la dernière
   fois.
 - **Toute une écriture d'un coup** : dans une écriture de plusieurs lignes,
-  à côté de son total (sous le client ou le vendeur, ou au bas de la carte
+  juste sous son total (sous le client ou le vendeur, ou au bas de la carte
   sur un téléphone), « Tout annuler » annule toutes celles qui comptent
   encore, « Tout rétablir » toutes celles qui sont annulées (le bouton
   n'apparaît que s'il touche au moins deux lignes). La confirmation liste

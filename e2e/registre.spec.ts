@@ -603,14 +603,23 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   expect(asked.at(-1)).toContain(`• 2 × ${hide}\n• 3 × ${meat}\n• 4 × ${fang}`);
   await expect(lines.filter({ hasText: "Annulée" })).toHaveCount(0);
   await expect(table.getByTestId("total-ecriture").filter({ visible: true })).toHaveText("Total : +25 septims");
-  // The button for the whole entry sits beside its total, on its line, as a card and as a table.
-  for (const width of [390, 1700]) {
+  // The button for the whole entry sits right under its total, as a table and as a card.
+  const box = async (locator: ReturnType<Page["locator"]>) => (await locator.boundingBox())!;
+  for (const width of [1920, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const total = (await table.getByTestId("total-ecriture").filter({ visible: true }).boundingBox())!;
-    const all = (await table.getByRole("button", { name: /^Tout annuler/ }).boundingBox())!;
-    expect(Math.abs(all.y + all.height / 2 - (total.y + total.height / 2))).toBeLessThan(4);
-    expect(all.x).toBeGreaterThan(total.x + total.width);
+    const total = await box(table.getByTestId("total-ecriture").filter({ visible: true }));
+    const all = await box(table.getByRole("button", { name: /^Tout annuler/ }));
+    expect(all.y).toBeGreaterThanOrEqual(total.y + total.height);
+    expect(all.y).toBeLessThan(total.y + total.height + 12);
+    expect(Math.abs(all.x - total.x)).toBeLessThan(2);
   }
+  // As a card, a line's own button sits right under its septims, on the right.
+  const hideRow = lines.filter({ hasText: hide });
+  const septims = await box(hideRow.locator("td.cell-amount"));
+  const cancel = await box(hideRow.getByRole("button", { name: /^Annuler la vente/ }));
+  expect(cancel.y).toBeGreaterThanOrEqual(septims.y + septims.height - 1);
+  expect(cancel.y).toBeLessThan(septims.y + septims.height + 16);
+  expect(Math.abs(cancel.x + cancel.width - (septims.x + septims.width))).toBeLessThan(2);
   for (const [product, left] of [
     [hide, "8"],
     [meat, "7"],
