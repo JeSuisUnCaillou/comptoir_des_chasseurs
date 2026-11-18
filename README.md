@@ -1,7 +1,7 @@
 # Comptoir des chasseurs
 
 App de gestion du stock, des achats et des ventes du comptoir des chasseurs
-de Vendeaume, pour le serveur Skyrim RP Keizaal.
+de Vendeaume, pour un serveur de jeu de rôle.
 
 ## Stack
 

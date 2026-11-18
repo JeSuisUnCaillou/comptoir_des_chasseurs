@@ -1,4 +1,4 @@
--- Monday 16 November 2026 at midnight in Keizaal's time zone (Europe/Paris) is
+-- Monday 16 November 2026 at midnight in the shops' time zone (Europe/Paris) is
 -- each shop's first end of the week, declared by its owner (the super admin
 -- when they belong to it, else its first gérant). Only for a shop without one.
 INSERT INTO "week_ends" ("shop_id", "member_id", "declared_at")

@@ -42,7 +42,6 @@ export default async function Invitation({
     <main className="gate">
       <div className="gate-card">
         <BrandMark />
-        <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>Invitation</h1>
         {!shop ? (
           <>

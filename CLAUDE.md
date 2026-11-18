@@ -1,6 +1,6 @@
 # Travailler sur le Comptoir des chasseurs
 
-Une app web de gestion de boutiques du serveur Skyrim RP Keizaal : tarifs,
+Une app web de gestion de boutiques d'un serveur de jeu de rôle : tarifs,
 inventaire, ventes et rachats, registre. Chaque boutique vit sous
 `/<boutique>/…` ; la première est le comptoir des chasseurs de Vendeaume
 (`/le-comptoir-des-chasseurs`), avec une dizaine de gérants et d'employés.

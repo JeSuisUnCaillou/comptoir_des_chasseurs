@@ -145,7 +145,7 @@ export default async function Boutiques() {
           </section>
         )}
       </main>
-      <footer className="footer">✦ Codex enchanté · Keizaal ✦</footer>
+      <footer className="footer">✦ Codex enchanté ✦</footer>
     </div>
   );
 }

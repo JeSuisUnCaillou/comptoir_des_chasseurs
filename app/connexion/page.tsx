@@ -34,7 +34,6 @@ export default async function Connexion({
     <main className="gate">
       <div className="gate-card">
         <BrandMark />
-        <div className="eyebrow">Keizaal · Bordeciel</div>
         <h1>
           Codex <span>Enchanté par Lomone</span>
         </h1>
