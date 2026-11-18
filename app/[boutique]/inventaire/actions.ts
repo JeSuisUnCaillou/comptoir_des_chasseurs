@@ -7,7 +7,8 @@ import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
 import { MAX_QUANTITY, QUANTITY_ERROR, checked, isQuantity, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { endShopSetup } from "@/lib/shop-setup";
-import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
+import { createStocked, recordMovement as moveByHand, recordMovements } from "@/lib/stock";
+import { recordCount, type CountLine } from "@/lib/stock-count";
 import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
 

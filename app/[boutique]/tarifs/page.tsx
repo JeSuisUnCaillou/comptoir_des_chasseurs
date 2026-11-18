@@ -23,7 +23,8 @@ import {
   unitPrice,
 } from "@/lib/pricing";
 import type { ShopProduct as Product } from "@/lib/privileged-groups";
-import { activeProducts, blacksmithLeatherPrice, featuredProducts, type CategorizedProduct } from "@/lib/products";
+import { activeProducts, featuredProducts, type CategorizedProduct } from "@/lib/products";
+import { blacksmithLeatherPrice } from "@/lib/settings";
 import { shopCategories } from "@/lib/categories";
 import { isGerant } from "@/lib/policies";
 import { matchesSearch } from "@/lib/product-search";

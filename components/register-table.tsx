@@ -1,20 +1,12 @@
-import type { ReactNode } from "react";
 import { CancelButton } from "@/components/cancel-button";
-import { OperationBadge, TillPendingBadge } from "@/components/operation-badge";
+import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
 import type { MemberRole } from "@/lib/db/schema";
 import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
-import { EntryTotal } from "@/components/entry-total";
-import { formatNumber, septims } from "@/lib/pricing";
+import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
 import { canActOn } from "@/lib/policies";
-
-const dateTime = new Intl.DateTimeFormat("fr-FR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "Europe/Paris",
-});
 
 export function RegisterTable({
   entries,
@@ -51,17 +43,13 @@ export function RegisterTable({
         <tbody>
           {entries.map((e, i) => {
             const place = positions[i];
-            const shared = (text: ReactNode) => (place.first ? text : <span className="sr-only">{text}</span>);
+            const { shared, rep } = entryPlace(place);
             const sale = e.kind === "vente";
             const cash = isCashKind(e.kind);
-            const amount = signedAmount(e.kind, e.amount);
             const cancelled = e.cancelledAt != null;
             const mine = canActOn(member, e);
             // Its septims are not in the till yet: shown, but not counted.
             const waiting = !cancelled && e.tillPending;
-            // On a phone each line is a card (see `.entry-cards` in globals.css); a shared
-            // cell repeated on a later line stays for screen readers only.
-            const rep = place.first ? "" : " cell-repeat";
             const label = cash ? `le mouvement de caisse n°${e.id}` : sale ? `la vente n°${e.id}` : `l'achat n°${e.id}`;
             return (
               <tr
@@ -74,28 +62,12 @@ export function RegisterTable({
                 }
                 data-testid={`ligne-${e.id}`}
               >
-                <td className={`num cell-date${rep}`}>{shared(dateTime.format(e.createdAt))}</td>
-                <td className={`cell-kind${rep}`}>{shared(<OperationBadge kind={e.kind} />)}</td>
+                <DateCell at={e.createdAt} place={place} />
+                <KindCell kind={e.kind} place={place} />
                 <td className="cell-label">{e.label}</td>
                 <td className={`num cell-qty${cash ? " cell-none" : ""}`}>{cash ? "—" : formatNumber(e.quantity)}</td>
-                <td
-                  className={`num cell-amount ${cancelled ? "" : waiting ? "muted" : amount >= 0 ? "plus" : "minus"}`}
-                >
-                  {septims(amount, { signed: true })}
-                  {waiting && (
-                    <>
-                      <br />
-                      <TillPendingBadge />
-                    </>
-                  )}
-                </td>
-                <td
-                  className={`cell-party${rep}${e.counterparty || totals[i] != null ? "" : " cell-none"}`}
-                  data-label={counterpartyLabel(e.kind)}
-                >
-                  {shared(e.counterparty ?? "—")}
-                  <EntryTotal total={totals[i]} />
-                </td>
+                <AmountCell money={signedAmount(e.kind, e.amount)} cancelled={cancelled} waiting={waiting} />
+                <PartyCell party={e.counterparty} label={counterpartyLabel(e.kind)} total={totals[i]} place={place} />
                 <td className={`cell-member${rep}`} data-label="Employé">
                   {shared(e.member)}
                 </td>
@@ -103,11 +75,7 @@ export function RegisterTable({
                 <td className="cell-actions">
                   {(cancelled || mine) && (
                     <div className="row-actions">
-                      {cancelled && (
-                        <span className="small muted cancelled-by">
-                          Annulée{e.cancelledBy ? ` par ${e.cancelledBy}` : ""}
-                        </span>
-                      )}
+                      {cancelled && <CancelledNote by={e.cancelledBy} beside />}
                       {waiting && mine && place.settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
                       {mine &&
                         (cancelled ? (

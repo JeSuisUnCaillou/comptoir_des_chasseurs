@@ -12,7 +12,8 @@ import { rate, septims } from "@/lib/pricing";
 import { MAX_PRIVILEGED_GROUPS, privilegedGroups } from "@/lib/privileged-groups";
 import { CategoryManager } from "@/components/category-manager";
 import { shopCategories } from "@/lib/categories";
-import { activeProducts, blacksmithLeatherPrice, featuredProducts, productPage } from "@/lib/products";
+import { activeProducts, featuredProducts, productPage } from "@/lib/products";
+import { blacksmithLeatherPrice } from "@/lib/settings";
 import { PrivilegedGroupsForm } from "@/components/privileged-groups-form";
 import { saveBlacksmithPrice, saveFeatured } from "./actions";
 

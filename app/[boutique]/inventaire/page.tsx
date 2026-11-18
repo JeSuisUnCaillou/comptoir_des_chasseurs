@@ -14,9 +14,12 @@ import { formatNumber, septims } from "@/lib/pricing";
 import { Pagination } from "@/components/pagination";
 import { PAGE_SIZE, offsetOf, pageParam, param, searchParam } from "@/lib/pagination";
 import { privilegedGroups } from "@/lib/privileged-groups";
-import { activeProducts, movementCount, recentMovements, type CategorizedProduct, type MovementFilter } from "@/lib/products";
+import { activeProducts, type CategorizedProduct } from "@/lib/products";
+import { movementCount, recentMovements, type MovementFilter } from "@/lib/stock";
 import { shopCategories } from "@/lib/categories";
-import { dayRange, memberNames, tillTotals } from "@/lib/register";
+import { dayRange } from "@/lib/dates";
+import { memberNames } from "@/lib/members";
+import { tillTotals } from "@/lib/register";
 
 type Search = Record<"q" | "employe" | "sens" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
 

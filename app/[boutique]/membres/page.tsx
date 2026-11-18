@@ -7,6 +7,7 @@ import { ActiveToggleForm, InviteEmployeeForm, NewMemberForm, ResetPasswordForm 
 import { requireMember } from "@/lib/auth/session";
 import { invitationPath, shopPath } from "@/lib/paths";
 import { shopMemberPage } from "@/lib/members";
+import { canEditAccount, canResetOrDeactivate, effectiveRole } from "@/lib/policies";
 import type { MemberRole } from "@/lib/db/schema";
 import { InvitationLink } from "@/components/shop-forms";
 import { pendingEmployeeInvitations } from "@/lib/invitations";
@@ -28,11 +29,6 @@ const BADGE: Record<MemberRole, string> = {
   employe: "badge badge-green",
   desactive: "badge badge-red",
 };
-
-/** The super admin is a gérant in every shop, whatever their role there says. */
-function roleOf(member: { role: MemberRole; superAdmin: boolean }): MemberRole {
-  return member.superAdmin ? "gerant" : member.role;
-}
 
 export default async function Membres({
   searchParams,
@@ -111,12 +107,12 @@ export default async function Membres({
                   <td className="stack-title">{m.username}</td>
                   <td className="stack-aside">
                     <span className="badges">
-                      <span className={BADGE[roleOf(m)]}>{LABELS[roleOf(m)]}</span>
+                      <span className={BADGE[effectiveRole(m)]}>{LABELS[effectiveRole(m)]}</span>
                       {m.superAdmin && <span className="badge badge-gold">Super admin</span>}
                     </span>
                   </td>
                   <td>
-                    {m.superAdmin && m.id !== me.id ? (
+                    {!canEditAccount(me, m) ? (
                       <span>{m.name}</span>
                     ) : (
                       <form action={updateMember} className="inline-form">
@@ -125,8 +121,8 @@ export default async function Membres({
                         {m.id === me.id ? (
                           <input type="hidden" name="role" value="gerant" />
                         ) : (
-                          roleOf(m) !== "desactive" && (
-                            <select name="role" defaultValue={roleOf(m)} aria-label="Rôle">
+                          effectiveRole(m) !== "desactive" && (
+                            <select name="role" defaultValue={effectiveRole(m)} aria-label="Rôle">
                               {ROLES.map((r) => (
                                 <option key={r} value={r}>
                                   {LABELS[r]}
@@ -141,14 +137,14 @@ export default async function Membres({
                       </form>
                     )}
                   </td>
-                  <td>{m.id !== me.id && !m.superAdmin && <ResetPasswordForm id={m.id} />}</td>
+                  <td>{canResetOrDeactivate(me, m) && <ResetPasswordForm id={m.id} />}</td>
                   <td>
                     <div className="row-actions">
                       <Link className="btn btn-small btn-primary" href={at(`/membres/${m.id}`)}>
                         <ScrollText size={14} /> Activité
                       </Link>
-                      {m.id !== me.id && !m.superAdmin && (
-                        <ActiveToggleForm id={m.id} name={m.name} active={roleOf(m) !== "desactive"} />
+                      {canResetOrDeactivate(me, m) && (
+                        <ActiveToggleForm id={m.id} name={m.name} active={effectiveRole(m) !== "desactive"} />
                       )}
                     </div>
                   </td>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { entryClasses, entryPositions } from "@/lib/entry-groups";
 import { formatNumber, plural } from "@/lib/pricing";
-import type { Movement } from "@/lib/products";
+import type { Movement } from "@/lib/stock";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
