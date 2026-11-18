@@ -82,10 +82,9 @@ export function sameEntryAs(id: number) {
 }
 
 /**
- * For each line, its whole entry, whatever page its lines fall on: how many
- * lines it has, and one "quantity × label" per line still counted and per
- * line cancelled, so one click can cancel or restore them all and its
- * confirmation can say which.
+ * For each line, its whole entry, whatever page its lines fall on: one
+ * "quantity × label" per line still counted and per line cancelled, so one
+ * click can cancel or restore them all and its confirmation can say which.
  */
 export function entryStateColumns() {
   const t = schema.transactions;
@@ -95,7 +94,6 @@ export function entryStateColumns() {
     sql<string>`coalesce((select string_agg(${s.quantity} || ' × ' || ${s.label}, E'\n' order by ${s.id}) ${from}
       and ${s.cancelledAt} is ${cancelled ? sql`not null` : sql`null`}), '')`;
   return {
-    entryCount: sql<number>`(select count(*)::int ${from})`,
     entryActiveItems: items(false),
     entryCancelledItems: items(true),
   };

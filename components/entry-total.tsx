@@ -1,4 +1,4 @@
-import type { EntryTotal as Total } from "@/lib/entry-groups";
+import { entryPlaceClasses, type EntryTotal as Total } from "@/lib/entry-groups";
 import { septims } from "@/lib/pricing";
 
 /**
@@ -7,9 +7,11 @@ import { septims } from "@/lib/pricing";
  */
 export function EntryTotal({ total }: { total: Total | null }) {
   if (total == null) return null;
-  const where = [...(total.table ? ["on-table"] : []), ...(total.card ? ["on-card"] : [])].join(" ");
   return (
-    <span className={`entry-total small ${where} ${total.total >= 0 ? "plus" : "minus"}`} data-testid="total-ecriture">
+    <span
+      className={`entry-total small ${entryPlaceClasses(total)} ${total.total >= 0 ? "plus" : "minus"}`}
+      data-testid="total-ecriture"
+    >
       Total : {septims(total.total, { signed: true })}
     </span>
   );
