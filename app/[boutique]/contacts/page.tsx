@@ -1,6 +1,7 @@
 import { Contact, Plus } from "lucide-react";
 import Link from "next/link";
 import { PageHead } from "@/components/page-head";
+import { LiveSearch } from "@/components/live-search";
 import { Pagination } from "@/components/pagination";
 import { SupplierCard } from "@/components/supplier-card";
 import { requireMember } from "@/lib/auth/session";
@@ -38,24 +39,7 @@ export default async function Fournisseurs({ searchParams }: { searchParams: Pro
             </Link>
           )}
         </div>
-        <form className="inline-form filters" method="get" aria-label="Chercher un contact">
-          <input
-            name="q"
-            type="search"
-            defaultValue={q}
-            placeholder="Rechercher un nom, un lieu ou une marchandise"
-            aria-label="Rechercher un nom, un lieu ou une marchandise"
-            style={{ flex: 1 }}
-          />
-          <button className="btn btn-small" type="submit">
-            Chercher
-          </button>
-          {q && (
-            <Link className="btn btn-small btn-ghost" href={at("/contacts")}>
-              Tout afficher
-            </Link>
-          )}
-        </form>
+        <LiveSearch label="Chercher un nom, un lieu ou une marchandise" />
         {suppliers.length === 0 && (
           <p className="muted" style={{ margin: 0 }}>
             {q ? "Aucun contact ne correspond." : "Aucun contact pour l'instant."}

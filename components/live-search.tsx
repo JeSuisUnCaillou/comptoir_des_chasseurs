@@ -6,11 +6,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 const DELAY_MS = 250;
 
 /**
- * Product name search that filters as you type: it writes its query parameter
- * `q` to the URL, back to page 1, after a short pause, and the server page
- * filters on it.
+ * Search that filters as you type: it writes its query parameter `q` to the
+ * URL, back to page 1, after a short pause, and the server page filters on it.
+ * `label` names what it finds (a product name by default).
  */
-export function LiveSearch() {
+export function LiveSearch({ label = "Chercher une marchandise" }: { label?: string }) {
   const name = "q";
   const router = useRouter();
   const pathname = usePathname();
@@ -56,8 +56,8 @@ export function LiveSearch() {
         type="search"
         value={value}
         onChange={(e) => search(e.target.value)}
-        placeholder="Chercher une marchandise"
-        aria-label="Chercher une marchandise"
+        placeholder={label}
+        aria-label={label}
         maxLength={100}
       />
     </form>

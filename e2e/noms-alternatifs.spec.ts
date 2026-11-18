@@ -89,7 +89,6 @@ test("une marchandise se trouve partout par le nom du jeu que la boutique a rete
 
   // Contacts, by the merchandise they sell.
   await page.goto(`${shop}/contacts`);
-  await page.getByLabel("Rechercher un nom, un lieu ou une marchandise").fill("Deer Pelt");
-  await page.getByRole("button", { name: "Chercher" }).click();
+  await page.getByRole("searchbox", { name: "Chercher un nom, un lieu ou une marchandise" }).fill("Deer Pelt");
   await expect(page.getByRole("article", { name: contact, exact: true })).toBeVisible();
 });
