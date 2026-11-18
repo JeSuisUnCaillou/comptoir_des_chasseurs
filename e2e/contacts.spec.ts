@@ -12,9 +12,10 @@ async function createSuppliers(names: string[], place = "") {
   }
 }
 
+/** The search filters as you type, with no button: wait until the address carries the query. */
 async function search(page: Page, q: string) {
-  await page.getByLabel("Rechercher un nom, un lieu ou une marchandise").fill(q);
-  await page.getByRole("button", { name: "Chercher" }).click();
+  await page.getByRole("searchbox", { name: "Chercher un nom, un lieu ou une marchandise" }).fill(q);
+  await expect(page).toHaveURL((url) => (url.searchParams.get("q") ?? "") === q.trim());
 }
 
 function card(page: Page, name: string) {
@@ -122,8 +123,10 @@ test("la recherche trouve un contact par son nom, son lieu ou ce qu'il vend", as
     await expect(page.getByRole("article")).toHaveCount(1);
     await expect(card(page, name)).toContainText(product);
   }
-  await page.getByRole("link", { name: "Tout afficher" }).click();
-  await expect(page.getByLabel("Rechercher un nom, un lieu ou une marchandise")).toHaveValue("");
+  // Emptying the field shows every contact again.
+  await search(page, "");
+  await expect(page.getByRole("article").nth(1)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
 });
 
 test("les contacts sont paginés et rangés par nom", async ({ page }) => {

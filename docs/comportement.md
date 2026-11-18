@@ -380,7 +380,8 @@ tous), à l'adresse `/<boutique>/contacts`.
   l'étiquette « Créé lors d'une transaction ».
 - Une marchandise va dans un seul sens par contact : l'enregistrer dans
   l'autre sens la déplace, avec son nouveau prix.
-- Une recherche trouve un nom, un lieu, une note ou une marchandise.
+- Une recherche, qui filtre pendant qu'on tape, trouve un nom, un lieu, une note
+  ou une marchandise.
 - Tout le monde les consulte. Seuls les gérants en ajoutent, les modifient
   (nom, lieu, note, marchandises, sens et prix) ou les suppriment, par les
   boutons de la page. La marchandise d'un prix se cherche en tapant, comme
