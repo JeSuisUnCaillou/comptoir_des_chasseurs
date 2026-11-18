@@ -724,4 +724,6 @@ l'app Discord est configurée (voir le README).
 - Un compte Discord déjà lié à un autre membre est refusé (« Ce compte
   Discord est déjà lié à un autre membre. »).
 - Lier ou délier Discord ferme les sessions ouvertes sur les autres
-  appareils ; celle en cours reste ouverte. Le mot de passe marche toujours.
+  appareils, pour de bon : délier, ou relier le même Discord, ne rouvre pas
+  une session qu'une liaison avait fermée. Celle en cours reste ouverte. Le
+  mot de passe marche toujours.
