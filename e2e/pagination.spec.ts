@@ -18,6 +18,9 @@ test("les cartes du stock sont paginées, et une recherche revient à la premiè
 });
 
 test("le catalogue des marchandises se cherche et se pagine", async ({ page }) => {
+  // A word only this test uses: products other tests create can't match it.
+  const word = uniqueName("Vorgal").toLowerCase();
+  for (const suffix of ["", " des neiges", " troglodyte"]) await createProduct(`${word}${suffix}`);
   await loginAsGerant(page);
   await page.goto("/marchandises");
   const pages = page.getByRole("navigation", { name: "Pages des marchandises" });
@@ -29,9 +32,9 @@ test("le catalogue des marchandises se cherche et se pagine", async ({ page }) =
   const search = page.getByRole("searchbox", { name: "Chercher une marchandise" });
   // The search filters as you type, with no button, and goes back to page 1.
   await expect(page.getByRole("button", { name: "Chercher" })).toHaveCount(0);
-  await search.pressSequentially("ours");
-  await expect(page).toHaveURL(/\/marchandises\?q=ours$/);
-  await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(3); // Ours, des neiges, troglodyte
+  await search.pressSequentially(word);
+  await expect(page).toHaveURL(new RegExp(`/marchandises\\?q=${word}$`));
+  await expect(page.getByRole("link", { name: /^Modifier / })).toHaveCount(3);
   await search.fill("introuvable-xyz");
   await expect(page.getByText("Aucune marchandise ne correspond.")).toBeVisible();
   await search.clear();
