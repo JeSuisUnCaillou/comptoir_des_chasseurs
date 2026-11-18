@@ -42,9 +42,19 @@ test("un achat crée la marchandise que la boutique ne connaît pas encore, et e
   await page.goto("/achat-vente/achat");
   await box.fill(name);
   await expect(form.getByRole("option").first()).toHaveText(name);
+
+  // Cancelling the purchase takes the 40 back out of the stock; the merchandise stays.
+  await page.goto("/achat-vente");
+  page.on("dialog", (dialog) => dialog.accept());
+  const row = page.getByTestId("registre").getByRole("row").filter({ hasText: name });
+  await row.getByRole("button", { name: /Annuler/ }).click();
+  await expect(row).toContainText("Annulée par");
+  await page.goto("/inventaire");
+  await page.getByLabel("Rechercher une marchandise").fill(name);
+  await expect(card.getByTestId("stock-value")).toHaveText("0");
 });
 
-test("un achat refuse une nouvelle marchandise au nom déjà pris, et passée en vente elle devient un article hors stock", async ({
+test("un achat refuse une nouvelle marchandise au nom déjà pris ou sur deux lignes, et passée en vente elle devient un article hors stock", async ({
   browser,
 }) => {
   const taken = uniqueName("Peau de horqueur");
@@ -65,8 +75,20 @@ test("un achat refuse une nouvelle marchandise au nom déjà pris, et passée en
   await expect(page).toHaveURL(/\/achat-vente\/achat$/);
   await expect(line(1).getByLabel("Nom de la nouvelle marchandise")).toHaveValue(taken);
 
-  // Switched to a sale, the line becomes an article outside the stock, under the same name.
+  // The same new merchandise on two lines: refused on the second, by its number.
   await line(1).getByLabel("Nom de la nouvelle marchandise").fill(fresh);
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await line(2).getByRole("combobox", { name: "Marchandise", exact: true }).fill(fresh);
+  await line(2).getByRole("combobox", { name: "Marchandise", exact: true }).press("Enter");
+  await expect(line(2).getByLabel("Nom de la nouvelle marchandise")).toHaveValue(fresh);
+  await line(2).getByLabel("Montant (septims)").fill("4");
+  await form.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(form.locator(ALERT)).toContainText(
+    "Marchandise 2 : Cette marchandise est déjà sur une autre ligne de l'achat.",
+  );
+  await line(2).getByRole("button", { name: "Retirer la marchandise 2" }).click();
+
+  // Switched to a sale, the line becomes an article outside the stock, under the same name.
   await page.getByRole("button", { name: "C'est une vente" }).click();
   const sale = page.getByRole("region", { name: "Inscrire une vente" });
   const saleLine = sale.getByRole("group", { name: "Marchandise 1" });

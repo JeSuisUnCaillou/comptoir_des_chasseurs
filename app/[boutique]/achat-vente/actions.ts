@@ -5,7 +5,7 @@ import { shopPath } from "@/lib/paths";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
-import { QUANTITY_ERROR, checked, isQuantity, optionalText, text } from "@/lib/forms";
+import { QUANTITY_ERROR, checked, isQuantity, optionalText, productIdentity, text } from "@/lib/forms";
 import { MAX_LINES, NEW_MERCHANDISE, OTHER_ARTICLE, lineMessage } from "@/lib/transaction-kinds";
 import { cancelLines, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
@@ -30,8 +30,8 @@ export async function recordTransaction(
   const labels = formData.getAll("label").map(String);
   const quantities = formData.getAll("quantity").map(Number);
   const amounts = formData.getAll("amount").map(Number);
-  const categoryIds = formData.getAll("categoryId").map(String);
-  const units = formData.getAll("unit").map((v) => String(v).trim().slice(0, 30));
+  const categoryIds = formData.getAll("categoryId");
+  const units = formData.getAll("unit");
 
   if (kind !== "vente" && kind !== "rachat") return { ok: false, message: "Opération inconnue." };
   const count = productIds.length;
@@ -51,7 +51,6 @@ export async function recordTransaction(
     const quantity = quantities[i];
     const amount = amounts[i];
     const label = labels[i].trim().slice(0, 100);
-    const categoryId = Number(categoryIds[i]);
     if (productId != null && !Number.isInteger(productId)) {
       return { ok: false, message: at(i, "Marchandise inconnue.") };
     }
@@ -61,12 +60,13 @@ export async function recordTransaction(
     if (!Number.isInteger(amount) || amount < 0) {
       return { ok: false, message: at(i, "Le montant doit être un nombre entier de septims.") };
     }
+    let newProduct;
     if (creating) {
-      if (kind !== "rachat") return { ok: false, message: at(i, "Une nouvelle marchandise s'achète, elle ne se vend pas.") };
-      if (!label) return { ok: false, message: at(i, "Donne un nom à la nouvelle marchandise.") };
-      if (categoryIds[i] === "" || !Number.isInteger(categoryId)) return { ok: false, message: at(i, "Choisis sa catégorie.") };
+      // Read like the Inventaire's « Nouvelle marchandise »; the service refuses it on a sale.
+      const { error, ...identity } = productIdentity(label, categoryIds[i], units[i]);
+      if (error) return { ok: false, message: at(i, error) };
+      newProduct = identity;
     }
-    const newProduct = creating ? { name: label, categoryId, unit: units[i] || "pièce" } : undefined;
     lines.push({ productId, newProduct, quantity, amount, label });
   }
 

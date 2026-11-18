@@ -53,15 +53,24 @@ export function readRole(formData: FormData): MemberRole | null {
  * every form that creates one. `error` says what is wrong, if anything.
  */
 export function readProductIdentity(formData: FormData) {
-  const name = text(formData, "name", 100);
-  const categoryId = optionalId(formData, "categoryId");
-  const unit = text(formData, "unit", 30) || "pièce";
+  return productIdentity(formData.get("name"), formData.get("categoryId"), formData.get("unit"));
+}
+
+/**
+ * `readProductIdentity` from the fields' raw values, for a form with several
+ * merchandises (a purchase, one per line).
+ */
+export function productIdentity(rawName: unknown, rawCategory: unknown, rawUnit: unknown) {
+  const name = String(rawName ?? "").trim().slice(0, 100);
+  const category = String(rawCategory ?? "").trim();
+  const categoryId = Number(category);
+  const unit = String(rawUnit ?? "").trim().slice(0, 30) || "pièce";
   const error = !name
     ? "Le nom est obligatoire."
-    : categoryId == null || Number.isNaN(categoryId)
+    : category === "" || !Number.isInteger(categoryId) || categoryId < 1
       ? "Choisis une catégorie."
       : undefined;
-  return { name, categoryId: categoryId ?? 0, unit, error };
+  return { name, categoryId: error ? 0 : categoryId, unit, error };
 }
 
 /** A quantity a price is given for: 1 when left empty. */

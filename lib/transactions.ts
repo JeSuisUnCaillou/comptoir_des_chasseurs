@@ -62,6 +62,10 @@ export async function recordLines(
         let label = typed;
         if (newProduct) {
           if (kind !== "rachat") throw new UserError(at(i, "Une nouvelle marchandise s'achète, elle ne se vend pas."));
+          // Named like a merchandise of an earlier line: say so, rather than « already exists ».
+          if (tied.some((l) => l.productId != null && l.label === newProduct.name)) {
+            throw new UserError(at(i, "Cette marchandise est déjà sur une autre ligne de l'achat."));
+          }
           productId = await insertProduct(tx, member.shopId, newProduct);
           label = newProduct.name;
         } else if (productId != null) {
