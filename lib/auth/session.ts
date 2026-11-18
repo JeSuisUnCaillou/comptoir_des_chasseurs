@@ -90,7 +90,7 @@ export async function requireAccount(path: string): Promise<Member> {
  * A signed-in account inside the shop being visited: `role` is its role in
  * that shop, and `shopId` the shop every query of the page or action is about.
  */
-export type ShopMember = Member & { shopId: number; shop: Shop };
+export type ShopMember = Member & { role: MemberRole; shopId: number; shop: Shop };
 
 /**
  * The signed-in member of the current shop, or null. The role is always read

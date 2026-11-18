@@ -72,24 +72,6 @@ test("sans prix privilégié, l'achat ne propose pas de choix", async ({ browser
   await expect(purchase.getByRole("group", { name: "Prix privilégié du vendeur" })).toHaveCount(0);
 });
 
-test("le prix privilégié du produit phare a sa propre tuile sur les Tarifs", async ({ browser }) => {
-  // The seeded leather; no other test reads its tiles.
-  await setPrivilegedPrice("Cuir", 5);
-  const { page } = await newEmployeePage(browser, "ralof");
-  await page.getByRole("link", { name: "Tarifs" }).click();
-  const leather = page.getByRole("region", { name: "Cuir", exact: true });
-  await expect(leather).toContainText("Rachat · autres vendeurs4 septims");
-  await expect(leather.getByTestId("rachat-phare-privilegie")).toHaveText(`Rachat · ${CITIZENS}5 septims`);
-  // One line: the privileged price first, then the others', the sale, the blacksmith's.
-  const box = async (label: string) => (await leather.locator(".stat").filter({ hasText: label }).boundingBox())!;
-  const order = [CITIZENS, "autres vendeurs", "Vente", "Rachat par le forgeron"];
-  const boxes = await Promise.all(order.map(box));
-  for (let i = 1; i < boxes.length; i++) {
-    expect(boxes[i].y).toBe(boxes[0].y);
-    expect(boxes[i].x).toBeGreaterThan(boxes[i - 1].x);
-  }
-});
-
 test("à l'achat de plusieurs marchandises, un seul choix pour le vendeur", async ({ browser }) => {
   const leather = uniqueName("Cuir épais");
   const hide = uniqueName("Peau de daim");

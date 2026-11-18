@@ -1,5 +1,5 @@
 {
-  "id": "bf8c83ab-03cb-4133-b67b-4733cc1b2eea",
+  "id": "372b270b-1363-4452-9234-e8f66f868547",
   "prevId": "b97d1d54-d2f9-4073-b391-5a69e801621f",
   "version": "7",
   "dialect": "postgresql",
@@ -139,14 +139,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "role": {
-          "name": "role",
-          "type": "member_role",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'employe'"
-        },
         "super_admin": {
           "name": "super_admin",
           "type": "boolean",
@@ -165,13 +157,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "session_epoch": {
-          "name": "session_epoch",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -217,12 +202,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "members_super_admin_gerant": {
-          "name": "members_super_admin_gerant",
-          "value": "not \"members\".\"super_admin\" or \"members\".\"role\" = 'gerant'"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.privileged_groups": {
@@ -580,14 +560,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "category": {
-          "name": "category",
-          "type": "product_category",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'autre'"
-        },
         "category_id": {
           "name": "category_id",
           "type": "integer",
@@ -627,12 +599,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 1
-        },
-        "citizen_buy_price": {
-          "name": "citizen_buy_price",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "sell_price": {
           "name": "sell_price",
@@ -1771,17 +1737,6 @@
       "values": [
         "sells",
         "buys"
-      ]
-    },
-    "public.product_category": {
-      "name": "product_category",
-      "schema": "public",
-      "values": [
-        "peau",
-        "cuir",
-        "viande",
-        "ressource",
-        "autre"
       ]
     },
     "public.transaction_kind": {

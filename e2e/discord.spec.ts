@@ -2,7 +2,6 @@ import { expect, test, type Page } from "@playwright/test";
 import { ALERT, COMPTOIR, createMember, loginAs, newEmployeePage, setRole, uniqueName } from "./helpers";
 
 // Discord is played by e2e/fake-discord.mjs, started by playwright.config.ts.
-test.skip(!!process.env.BASE_URL, "Le faux Discord ne tourne qu'avec le serveur local.");
 
 /** A Discord account unique to this test. */
 function discordAccount(prefix: string) {

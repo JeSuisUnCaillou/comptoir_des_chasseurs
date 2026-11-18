@@ -5,7 +5,7 @@ import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
-import { checked, readProductIdentity, readProductPrices, text } from "@/lib/forms";
+import { MAX_QUANTITY, QUANTITY_ERROR, checked, isQuantity, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { endShopSetup } from "@/lib/shop-setup";
 import { createStocked, recordCount, recordMovement as moveByHand, recordMovements, type CountLine } from "@/lib/products";
 import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
@@ -23,8 +23,8 @@ export async function recordMovement(_prev: MoveState, formData: FormData): Prom
   if (!Number.isInteger(productId) || (direction !== "in" && direction !== "out")) {
     return { ok: false, message: "Mouvement invalide." };
   }
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return { ok: false, message: "La quantité doit être un nombre entier positif." };
+  if (!isQuantity(quantity)) {
+    return { ok: false, message: QUANTITY_ERROR };
   }
   if (!reason) return { ok: false, message: "Précise la raison." };
 
@@ -51,8 +51,8 @@ export async function createAndStock(_prev: CreateState, formData: FormData): Pr
   const withPrices = checked(formData, "withPrices");
 
   if (error) return { ok: false, message: error };
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    return { ok: false, message: "La quantité doit être un nombre entier positif." };
+  if (!isQuantity(quantity)) {
+    return { ok: false, message: QUANTITY_ERROR };
   }
   if (!reason) return { ok: false, message: "Précise la raison." };
   if (withPrices && priceError) return { ok: false, message: priceError };
@@ -89,8 +89,8 @@ export async function recordStockMovement(_prev: MoveState, formData: FormData):
     const productId = productIds[i] === "" ? NaN : Number(productIds[i]);
     const quantity = quantities[i];
     if (!Number.isInteger(productId)) return { ok: false, message: at(i, "Choisis la marchandise.") };
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return { ok: false, message: at(i, "La quantité doit être un nombre entier positif.") };
+    if (!isQuantity(quantity)) {
+      return { ok: false, message: at(i, QUANTITY_ERROR) };
     }
     lines.push({ productId, quantity });
   }
@@ -127,8 +127,8 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
     if (productIds[i] === "") continue;
     const counted = counts[i];
     const readName = readNames[i].slice(0, 100);
-    if (!Number.isInteger(counted) || counted < 0) {
-      return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier, 0 ou plus.` };
+    if (!Number.isInteger(counted) || counted < 0 || counted > MAX_QUANTITY) {
+      return { ok: false, message: `${readNames[i]} : le compte doit être un nombre entier entre 0 et 1 000 000.` };
     }
     if (productIds[i] === NEW_PRODUCT) {
       if (!newNames[i]) return { ok: false, message: `${readNames[i]} : donne un nom à la nouvelle marchandise.` };

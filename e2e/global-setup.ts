@@ -4,7 +4,6 @@ import { GERANT } from "./helpers";
 
 /** Resets the test database and seeds the gérant used by the tests. */
 export default async function globalSetup() {
-  if (process.env.BASE_URL) return; // never touch a deployed database
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL est requis pour les tests e2e.");
   // The tests wipe the database: only ever run them against a test one.
@@ -28,8 +27,8 @@ export default async function globalSetup() {
     await sql`delete from shops where id <> 1`;
     await sql`
       with gerant as (
-        insert into members (username, name, password_hash, role, super_admin)
-        values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, 'gerant', true)
+        insert into members (username, name, password_hash, super_admin)
+        values (${GERANT.username}, ${GERANT.name}, ${await hashPassword(GERANT.password)}, true)
         returning id
       )
       insert into shop_members (shop_id, member_id, role) select 1, id, 'gerant' from gerant`;
