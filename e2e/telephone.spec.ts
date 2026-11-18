@@ -13,6 +13,7 @@ import {
   pickProduct,
   uniqueName,
 } from "./helpers";
+import { touchingBlocks } from "./blocs";
 
 // A small phone, as a member who manages the comptoir while playing.
 const PHONE = { viewport: { width: 360, height: 780 }, isMobile: true, hasTouch: true };
@@ -320,8 +321,10 @@ test.describe("sur un écran moyen (tablette, petite fenêtre)", () => {
   });
 });
 
-test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne coupe un tableau", async ({ page }) => {
-  test.slow();
+test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne coupe un tableau ni ne colle deux blocs", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
   // A pending sale of millions: the longest amount and button a register card holds.
   const product = uniqueName("Couronne de Nordique");
   await createProduct(product, { stock: 1, sellPrice: 7_000_000 });
@@ -341,24 +344,93 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde ni ne c
   // The Grand livre shows the whole board; the Annonces page could have it past its first page.
   await page.goto(COMPTOIR);
   const edit = (await page.getByRole("link", { name: `Modifier « ${parchment} 1 »` }).getAttribute("href"))!;
-  const pages = [COMPTOIR, "/achat-vente", "/achat-vente/vente", "/inventaire", "/tarifs", "/marchandises", "/contacts", "/annonces", "/membres", `${COMPTOIR}/reglages`, activity, edit];
-  for (let width = 320; width <= 1600; width += 160) {
+  // An invitation link, listed under the button that made it.
+  await page.goto("/membres");
+  await page.getByRole("button", { name: "Créer un lien d'invitation" }).click();
+  await expect(page.getByLabel("Nouveau lien d'invitation")).toBeVisible();
+  // A contact's own page, and a merchandise's.
+  const contact = uniqueName("Markir");
+  await page.goto("/contacts/nouveau");
+  await page.getByLabel("Nom", { exact: true }).fill(contact);
+  await page.getByRole("button", { name: "Ajouter le contact" }).click();
+  await expect(page.getByRole("heading", { name: contact, level: 1 })).toBeVisible();
+  const contactPage = new URL(page.url()).pathname;
+  await page.goto("/marchandises");
+  await page.getByRole("searchbox").fill(product);
+  const goods = (await page.getByRole("link", { name: `Modifier ${product}` }).getAttribute("href"))!;
+
+  const pages = [
+    COMPTOIR,
+    "/achat-vente",
+    "/achat-vente/achat",
+    "/achat-vente/caisse",
+    "/inventaire",
+    "/inventaire/mouvement",
+    "/inventaire/regularisation",
+    "/tarifs",
+    "/marchandises",
+    goods,
+    "/contacts",
+    "/contacts/nouveau",
+    contactPage,
+    "/annonces",
+    edit,
+    "/membres",
+    "/boutiques",
+    "/mot-de-passe",
+    `${COMPTOIR}/reglages`,
+    activity,
+  ];
+  const widths: number[] = [];
+  for (let width = 320; width <= 1600; width += 80) widths.push(width);
+  /** What is wrong with the page as it is now laid out. */
+  const check = async (where: string) => {
+    await expectNoSideScroll(page);
+    // A table wider than its box would hide its last columns behind a sideways scroll.
+    const cut = await page.evaluate(() =>
+      [...document.querySelectorAll(".table-wrap")]
+        .filter((wrap) => wrap.scrollWidth > wrap.clientWidth + 1)
+        .map((wrap) => wrap.querySelector("th")?.textContent ?? "?"),
+    );
+    expect(cut, where).toEqual([]);
+    // Panels, tiles, cards, buttons and fields keep a gap between them.
+    expect(await touchingBlocks(page), where).toEqual([]);
+  };
+  for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of pages) {
       await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
       // Other computers' fonts can be a little wider than this one's: the layout must not count on a few pixels.
       await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
-      await expectNoSideScroll(page);
-      // A table wider than its box would hide its last columns behind a sideways scroll.
-      const cut = await page.evaluate(() =>
-        [...document.querySelectorAll(".table-wrap")]
-          .filter((wrap) => wrap.scrollWidth > wrap.clientWidth + 1)
-          .map((wrap) => wrap.querySelector("th")?.textContent ?? "?"),
-      );
-      expect(cut, `${path} à ${width} px`).toEqual([]);
+      await check(`${path} à ${width} px`);
     }
   }
+
+  // A sale being written, with two lines, its stock warning and its total, at every width.
+  await page.goto("/achat-vente/vente");
+  await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+  await pickProduct(form, product);
+  await form.getByLabel("Quantité").fill("3");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(form.getByRole("group", { name: "Marchandise 2" }), product);
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await check(`une vente en cours à ${width} px`);
+  }
+});
+
+test("le balayage des largeurs voit un bouton collé à la liste sous lui", async ({ page }) => {
+  // The sixth stuck block the owner saw (#167): the invitation list right under its button.
+  await loginAsGerant(page);
+  await page.goto("/membres");
+  await page.getByRole("button", { name: "Créer un lien d'invitation" }).click();
+  await expect(page.getByLabel("Nouveau lien d'invitation")).toBeVisible();
+  expect(await touchingBlocks(page)).toEqual([]);
+  await page.addStyleTag({ content: ".panel form + .invitation-list { margin-top: 0 !important; }" });
+  expect(await touchingBlocks(page)).toContainEqual(
+    expect.stringMatching(/^button\.btn « Créer un lien d'invitation » et li « .* » : 0 px$/),
+  );
 });
 
 test("au téléphone, les en-têtes des tarifs restent au-dessus des fiches et les trient", async ({ page }) => {

@@ -2272,8 +2272,10 @@ tr.fresh td {
 /* Price and member lists, when their box is narrower than their columns:
    one card per row, its name on top (with its pencil, button or badge
    beside it), then one "label  value" line per column, instead of columns
-   cut at the edge. */
-@container table (max-width: 1099px) {
+   cut at the edge. The price grid needs about 1050 px with this computer's
+   fonts and more with wider ones (the CI's cut it at 1104 px): the same
+   threshold as the register leaves them room. */
+@container table (max-width: 1199px) {
   .stack-cards thead {
     display: none;
   }
