@@ -242,6 +242,12 @@ export type StockReminder = {
   items: { label: string; quantity: number }[];
 };
 
+/** The member's purchase lines still to put in the chest, cancelled ones left out. */
+function reminderOf(shopId: number, memberId: number) {
+  const t = schema.transactions;
+  return and(eq(t.shopId, shopId), eq(t.memberId, memberId), eq(t.stockReminder, true), isNull(t.cancelledAt));
+}
+
 /** The member's purchases still to put in the chest, oldest first, cancelled lines left out. */
 export async function stockReminders(shopId: number, memberId: number): Promise<StockReminder[]> {
   const t = schema.transactions;
@@ -255,7 +261,7 @@ export async function stockReminders(shopId: number, memberId: number): Promise<
       entryKey: entryKeyColumn(),
     })
     .from(t)
-    .where(and(eq(t.shopId, shopId), eq(t.memberId, memberId), eq(t.stockReminder, true), isNull(t.cancelledAt)))
+    .where(reminderOf(shopId, memberId))
     .orderBy(t.createdAt, t.id);
   const entries = new Map<string, StockReminder>();
   for (const { entryKey, label, quantity, ...line } of rows) {
@@ -272,7 +278,7 @@ export async function stockReminderCount(shopId: number, memberId: number) {
   const [row] = await getDb()
     .select({ total: count() })
     .from(t)
-    .where(and(eq(t.shopId, shopId), eq(t.memberId, memberId), eq(t.stockReminder, true), isNull(t.cancelledAt)));
+    .where(reminderOf(shopId, memberId));
   return row.total;
 }
 
@@ -286,6 +292,11 @@ export type Till = {
   /** Sales minus buybacks, cash movements left out. */
   margin: number;
 };
+
+/** What waiting money asks of its authors: septims to put in the till, septims to take from it. */
+export function toSettle(waiting: Till) {
+  return { deposit: waiting.sales + waiting.inflows, take: waiting.buybacks + waiting.outflows };
+}
 
 /** Whether any money is written but waiting for the till (see pendingTotals). */
 export function hasPending(waiting: Till) {

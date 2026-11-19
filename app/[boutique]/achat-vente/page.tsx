@@ -18,6 +18,7 @@ import {
   registerCount,
   registerEntries,
   tillTotals,
+  toSettle,
   type RegisterFilter,
 } from "@/lib/register";
 
@@ -136,7 +137,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
               <div className="stat-label">Pas encore en caisse</div>
               <div className="stat-value muted">{septims(waiting.balance, { signed: true })}</div>
               <div className="small muted">
-                {septims(waiting.sales + waiting.inflows)} à déposer · {septims(waiting.buybacks + waiting.outflows)} à prendre, pas encore dans la caisse
+                {septims(toSettle(waiting).deposit)} à déposer · {septims(toSettle(waiting).take)} à prendre, pas encore dans la caisse
               </div>
             </div>
           )}

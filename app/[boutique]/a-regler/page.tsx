@@ -6,7 +6,14 @@ import { requireMember } from "@/lib/auth/session";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
 import { formatNumber, septims } from "@/lib/pricing";
-import { pendingTotals, registerCount, registerEntries, stockReminders, type RegisterFilter } from "@/lib/register";
+import {
+  pendingTotals,
+  registerCount,
+  registerEntries,
+  stockReminders,
+  toSettle,
+  type RegisterFilter,
+} from "@/lib/register";
 
 type Search = Record<"page", string | string[] | undefined>;
 
@@ -28,8 +35,7 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
     pendingTotals(member.shopId, filter),
     stockReminders(member.shopId, member.id),
   ]);
-  const deposit = waiting.sales + waiting.inflows;
-  const take = waiting.buybacks + waiting.outflows;
+  const { deposit, take } = toSettle(waiting);
 
   return (
     <>

@@ -1,15 +1,14 @@
 import { Hourglass } from "lucide-react";
 import Link from "next/link";
 import { septims } from "@/lib/pricing";
-import type { Till } from "@/lib/register";
+import { toSettle, type Till } from "@/lib/register";
 
 /**
  * At the top of every page, for the member signed in: what they still have to
  * settle with the till or the chest, leading to their « À régler » page. Nothing when all is settled.
  */
 export function ToSettleNotice({ mine, stock, href }: { mine: Till; stock: number; href: string }) {
-  const deposit = mine.sales + mine.inflows;
-  const take = mine.buybacks + mine.outflows;
+  const { deposit, take } = toSettle(mine);
   if (deposit + take === 0 && stock === 0) return null;
   const what = [
     deposit > 0 && `${septims(deposit)} à mettre en caisse`,

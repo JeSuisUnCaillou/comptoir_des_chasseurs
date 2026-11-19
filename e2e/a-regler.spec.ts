@@ -62,6 +62,12 @@ test("un achat avec « Rappelle-moi de déposer ça dans le stock » attend dans
   await form.getByLabel("Quantité").fill("3");
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(form.getByRole("group", { name: "Marchandise 2", exact: true }), bear);
+  // An article outside the stock has nothing to put in the chest.
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  const other = form.getByRole("group", { name: "Marchandise 3", exact: true });
+  await pickProduct(other, "Autre article (hors stock)…");
+  await other.getByLabel("Nom de l'article").fill("Corne");
+  await other.getByLabel("Montant (septims)").fill("4");
   await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(uniqueName("Elrindir"));
   await form.getByLabel("Pas encore sorti de la caisse").uncheck();
   await reminder.check();
