@@ -7,7 +7,7 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { QUANTITY_ERROR, checked, isQuantity, optionalText, productIdentity, text } from "@/lib/forms";
 import { MAX_LINES, NEW_MERCHANDISE, OTHER_ARTICLE, lineMessage } from "@/lib/transaction-kinds";
-import { cancelLines, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
+import { cancelLines, editAmounts, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
@@ -153,4 +153,26 @@ export async function restoreTransaction(
   if (!result.ok) return result;
   revalidateShop();
   return { ok: true, message: "Rétabli." };
+}
+
+/**
+ * Changes the septims of the lines of an entry, the stock left as it is, then
+ * goes back to the register. Gérants, or the member who wrote it.
+ */
+export async function editEntry(_prev: TransactionState, formData: FormData): Promise<TransactionState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  const lineIds = formData.getAll("lineId").map(Number);
+  const amounts = formData.getAll("amount").map((a) => (String(a).trim() === "" ? NaN : Number(a)));
+  if (!Number.isInteger(id) || lineIds.length === 0 || lineIds.length !== amounts.length) {
+    return { ok: false, message: "Formulaire incomplet, recharge la page." };
+  }
+  if (lineIds.some((lineId) => !Number.isInteger(lineId))) return { ok: false, message: "Ligne inconnue." };
+  if (amounts.some((amount) => !Number.isInteger(amount) || amount < 0)) {
+    return { ok: false, message: "Chaque montant doit être un nombre entier de septims." };
+  }
+  const result = await attempt(() => editAmounts(member, id, new Map(lineIds.map((lineId, i) => [lineId, amounts[i]]))));
+  if (!result.ok) return result;
+  revalidateShop();
+  redirect(shopPath(member.shop.slug, `/achat-vente?modifie=${id}`));
 }

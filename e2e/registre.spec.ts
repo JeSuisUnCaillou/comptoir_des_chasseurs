@@ -634,6 +634,95 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   }
 });
 
+test("l'auteur d'une vente en modifie les montants : la caisse suit, le stock ne bouge pas", async ({ browser }) => {
+  const hide = uniqueName("Peau d'ours");
+  const fang = uniqueName("Croc d'ours");
+  await createProduct(hide, { sellPrice: 5, stock: 10 });
+  await createProduct(fang, { sellPrice: 2, stock: 10 });
+  const { page, username } = await newEmployeePage(browser, "faendal");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(line(form, 1), hide);
+  await line(form, 1).getByLabel("Quantité").fill("2");
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), fang);
+  await line(form, 2).getByLabel("Quantité").fill("3");
+  await form.getByLabel("Pas encore mis en caisse").uncheck();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "16 septims au total" })).toBeVisible();
+
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const filtered = page.url();
+  const table = page.getByTestId("registre");
+  const lines = table.locator("tbody tr");
+  await expect(lines).toHaveCount(2);
+  await expect(page.getByTestId("totaux-registre")).toContainText("+16 septims");
+
+  // Everything to zero: the sale stays, its septims no longer count.
+  await lines.filter({ hasText: fang }).getByRole("link", { name: /^Modifier la vente/ }).click();
+  const edit = page.getByRole("region", { name: "Modifier les montants" });
+  await expect(edit.getByLabel(`2 × ${hide} (septims)`)).toHaveValue("10");
+  await expect(edit.getByLabel(`3 × ${fang} (septims)`)).toHaveValue("6");
+  await edit.getByRole("button", { name: "Tout mettre à 0" }).click();
+  await expect(edit.getByTestId("nouveau-total")).toHaveText("Total : +16 septims → après : 0 septim");
+  await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
+  await expect(page.getByRole("status")).toHaveText("Écriture modifiée : 0 septim au total.");
+  await page.goto(filtered);
+  await expect(page.getByTestId("totaux-registre")).toContainText("0 septim");
+  await expect(lines.filter({ hasText: `Modifiée par ${username}` })).toHaveCount(2);
+  for (const [product, left] of [
+    [hide, "8"],
+    [fang, "7"],
+  ]) {
+    await expect(await stockOf(page, product)).toHaveText(left);
+  }
+
+  // One line again, to another price.
+  await page.goto(filtered);
+  await lines.filter({ hasText: hide }).getByRole("link", { name: /^Modifier la vente/ }).click();
+  await edit.getByLabel(`2 × ${hide} (septims)`).fill("7");
+  await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
+  await expect(page.getByRole("status")).toHaveText("Écriture modifiée : +7 septims au total.");
+  await page.goto(filtered);
+  await expect(page.getByTestId("totaux-registre")).toContainText("+7 septims");
+  await expect(lines.filter({ hasText: hide })).toContainText("+7 septims");
+});
+
+test("seuls l'auteur et un gérant modifient les montants d'une écriture", async ({ browser }) => {
+  const label = uniqueName("Vente de Hroki");
+  const { page: author, username } = await newEmployeePage(browser, "hroki");
+  await createTransactions(username, 1, { amount: 40, label });
+  const { page: other } = await newEmployeePage(browser, "carlotta");
+  await other.goto("/achat-vente");
+  // Only Hroki's lines, so other tests' lines never push it to another page.
+  await other.getByLabel("Employé").selectOption({ label: username });
+  await other.getByRole("button", { name: "Filtrer" }).click();
+  await expect(other).toHaveURL(/employe=\d+/);
+  const filtered = other.url();
+  const row = other.getByTestId("registre").locator("tbody tr").filter({ hasText: label });
+  await expect(row).toBeVisible();
+  await expect(row.getByRole("link", { name: /^Modifier/ })).toHaveCount(0);
+  const id = (await row.getAttribute("data-testid"))!.replace("ligne-", "");
+  await other.goto(`/achat-vente/modifier/${id}`);
+  await expect(other.getByText("404")).toBeVisible();
+  await expect(other.getByRole("region", { name: "Modifier les montants" })).toHaveCount(0);
+
+  // The gérant may, and the line says who changed it.
+  const gerant = await (await browser.newContext()).newPage();
+  await loginAsGerant(gerant);
+  await gerant.goto(`/achat-vente/modifier/${id}`);
+  const edit = gerant.getByRole("region", { name: "Modifier les montants" });
+  await edit.getByLabel(`1 × ${label} 1 (septims)`).fill("25");
+  await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
+  await expect(gerant.getByRole("status")).toHaveText("Écriture modifiée : +25 septims.");
+  await author.goto(filtered);
+  const mine = author.getByTestId("registre").locator("tbody tr").filter({ hasText: label });
+  await expect(mine).toContainText("+25 septims");
+  await expect(mine).toContainText("Modifiée par Lomone");
+});
+
 test("tout annuler un achat dont une marchandise est déjà vendue ne change aucune ligne", async ({ browser }) => {
   const kept = uniqueName("Peau de daim");
   const sold = uniqueName("Peau de mammouth");

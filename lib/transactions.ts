@@ -9,7 +9,7 @@ import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct, type ProductIdentity
 import { moveStock } from "@/lib/stock";
 import { cancelStockDelta, sameEntryAs, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
-import { lineMessage } from "@/lib/transaction-kinds";
+import { isCashKind, lineMessage } from "@/lib/transaction-kinds";
 
 /** Writing the register: sales, buybacks, cash movements, and undoing them. */
 
@@ -161,6 +161,48 @@ export async function settleLine(member: Actor, id: number) {
 }
 
 type Line = typeof schema.transactions.$inferSelect;
+
+/**
+ * Changes the septims of lines still counted of the entry holding line `id`:
+ * `amounts` maps a line's id to its new septims. All of them or none, and the
+ * stock does not move. Each changed line keeps who changed it. Gérants, or the
+ * member who wrote it.
+ */
+export async function editAmounts(member: Actor, id: number, amounts: Map<number, number>) {
+  const t = schema.transactions;
+  await getDb().transaction(async (tx) => {
+    const lines = await tx
+      .select()
+      .from(t)
+      .where(and(eq(t.shopId, member.shopId), sameEntryAs(id), isNull(t.cancelledAt)))
+      .orderBy(asc(t.id))
+      .for("update");
+    if (lines.length === 0) throw new UserError("Cette écriture est introuvable ou annulée.");
+    // The lines of one entry share their author.
+    if (!canActOn(member, lines[0])) {
+      throw new UserError("Seul un gérant peut modifier l'écriture d'un autre membre.");
+    }
+    const byId = new Map(lines.map((line) => [line.id, line]));
+    for (const lineId of amounts.keys()) {
+      if (!byId.has(lineId)) throw new UserError("Une ligne a été annulée entre-temps : recharge la page.");
+    }
+    for (const [i, line] of lines.entries()) {
+      const amount = amounts.get(line.id);
+      if (amount === undefined || amount === line.amount) continue;
+      const least = isCashKind(line.kind) ? 1 : 0;
+      if (!Number.isInteger(amount) || amount < least) {
+        throw new UserError(
+          lineMessage(
+            lines.length,
+            i,
+            least ? "Le montant doit être un nombre entier d'au moins 1 septim." : "Le montant doit être un nombre entier de septims.",
+          ),
+        );
+      }
+      await tx.update(t).set({ amount, editedAt: new Date(), editedBy: member.id }).where(eq(t.id, line.id));
+    }
+  });
+}
 
 /**
  * Cancels a line, or every line still counted of its entry (`whole`), and
