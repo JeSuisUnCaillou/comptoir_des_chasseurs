@@ -62,7 +62,7 @@ test("un achat avec « Rappelle-moi de déposer ça dans le stock » attend dans
   await form.getByLabel("Quantité").fill("3");
   await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
   await pickProduct(form.getByRole("group", { name: "Marchandise 2", exact: true }), bear);
-  await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(uniqueName("Ysolda"));
+  await form.getByLabel("Nom RP du client / vendeur (facultatif)").fill(uniqueName("Elrindir"));
   await form.getByLabel("Pas encore sorti de la caisse").uncheck();
   await reminder.check();
   await form.getByRole("button", { name: "Confirmer l'achat" }).click();
@@ -81,7 +81,7 @@ test("un achat avec « Rappelle-moi de déposer ça dans le stock » attend dans
   const purchase = stock.getByRole("listitem");
   await expect(purchase).toHaveCount(1);
   await expect(purchase).toContainText(`3 × ${wolf}, 1 × ${bear}`);
-  await expect(purchase).toContainText("à Ysolda-");
+  await expect(purchase).toContainText("à Elrindir-");
 
   await purchase.getByRole("button", { name: `C'est déposé : 3 × ${wolf}, 1 × ${bear}` }).click();
   await expect(stock).toContainText("Rien à déposer dans le stock.");
@@ -91,7 +91,7 @@ test("un achat avec « Rappelle-moi de déposer ça dans le stock » attend dans
   await expect(page.getByTestId(`stock-${wolf}`).getByTestId("stock-value")).toHaveText("3");
 });
 
-test("une vente n'a pas de rappel de stock, et un achat annulé quitte le stock à déposer", async ({ browser }) => {
+test("une vente n'a pas de rappel de stock, et un achat annulé quitte toute la page À régler", async ({ browser }) => {
   const product = uniqueName("Peau de chèvre des montagnes");
   await createProduct(product, { stock: 2, buyPrice: 1 });
   const { page } = await newEmployeePage(browser, "lod");
@@ -99,15 +99,22 @@ test("une vente n'a pas de rappel de stock, et un achat annulé quitte le stock 
   await page.goto("/achat-vente/vente");
   await expect(page.getByLabel("Rappelle-moi de déposer ça dans le stock")).toHaveCount(0);
 
+  // A purchase waiting for the till and for the chest.
   await page.goto("/achat-vente/achat");
   const form = page.getByRole("region", { name: "Inscrire un achat" });
   await pickProduct(form, product);
-  await form.getByLabel("Pas encore sorti de la caisse").uncheck();
+  await expect(form.getByLabel("Pas encore sorti de la caisse")).toBeChecked();
   await form.getByLabel("Rappelle-moi de déposer ça dans le stock").check();
   await form.getByRole("button", { name: "Confirmer l'achat" }).click();
-  await expect(notification(page)).toContainText("1 marchandise à déposer");
+  await expect(notification(page)).toContainText("1 septim à sortir de la caisse · 1 marchandise à déposer");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByTestId("registre").getByRole("row").filter({ hasText: product }).getByRole("button", { name: /^Annuler/ }).click();
   await expect(notification(page)).toHaveCount(0);
+  // Cancelled: nothing left to settle, neither its septims nor its merchandise.
+  await page.goto("/le-comptoir-des-chasseurs/a-regler");
+  await expect(page.getByRole("region", { name: "Mes septims" })).toContainText(
+    "Rien à régler : tous tes septims sont en caisse.",
+  );
+  await expect(page.getByRole("region", { name: "Mon stock à déposer" })).toContainText("Rien à déposer dans le stock.");
 });
