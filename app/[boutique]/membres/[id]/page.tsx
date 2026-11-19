@@ -53,6 +53,9 @@ export default async function ActiviteMembre({
     memberActivity(viewer.shopId, member.id, from!, to!, { limit: PAGE_SIZE, offset: offsetOf(page) }),
     memberActivityCount(viewer.shopId, member.id, from!, to!),
   ]);
+  const cash = totals.inflows - totals.outflows;
+  // What the till won or lost through this member.
+  const till = totals.sales - totals.buybacks + cash;
   const period = `Du ${longDate.format(from!)} au ${longDate.format(parisDay(au)!)}`;
 
   return (
@@ -76,19 +79,29 @@ export default async function ActiviteMembre({
           au={au}
           resetLabel="7 derniers jours"
         />
-        <div className="stats">
-          <Total testId="total-achats" title="Achats" amount={-totals.buybacks}>
-            Septims payés aux vendeurs.
-          </Total>
-          <Total testId="total-ventes" title="Ventes" amount={totals.sales}>
-            Septims encaissés des clients.
-          </Total>
-          <Total testId="total-inventaire" title="Inventaire" amount={stock.value}>
+        {/* One figure for the till, the others detailing it; the stock apart, as it is no till money. */}
+        <div className="bilan">
+          <div className="stat bilan-main" data-testid="bilan-caisse">
+            <div className="stat-label">Bilan en caisse</div>
+            <div className={`stat-value ${till >= 0 ? "plus" : "minus"}`}>{septims(till, { signed: true })}</div>
+            <div className="small muted">
+              Ventes − achats ± mouvements de caisse : ce que la caisse a gagné ou perdu sur la période.
+            </div>
+          </div>
+          <div className="bilan-details">
+            <Total testId="total-ventes" title="Ventes" amount={totals.sales}>
+              Septims encaissés des clients.
+            </Total>
+            <Total testId="total-achats" title="Achats" amount={-totals.buybacks}>
+              Septims payés aux vendeurs.
+            </Total>
+            <Total testId="total-caisse" title="Mouvements de caisse" amount={cash}>
+              {septims(totals.inflows)} entrés / {septims(totals.outflows)} sortis, sans marchandise.
+            </Total>
+          </div>
+          <Total testId="total-inventaire" title="Inventaire, à part" amount={stock.value}>
             Entrées et sorties de stock manuelles (+{formatNumber(stock.unitsIn)} / −{formatNumber(stock.unitsOut)}),
-            comptées au prix de vente.
-          </Total>
-          <Total testId="total-caisse" title="Mouvements de caisse" amount={totals.inflows - totals.outflows}>
-            {septims(totals.inflows)} entrés / {septims(totals.outflows)} sortis, sans marchandise.
+            comptées au prix de vente : pas des septims de la caisse.
           </Total>
         </div>
         {stock.unpriced > 0 && (

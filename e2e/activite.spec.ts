@@ -63,6 +63,11 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   await expect(employee).toHaveURL(/\/achat-vente\?inscrit=\d+$/);
 
   await openActivity(page, username);
+  // One figure for the till: 12 cashed − 10 paid + 20 brought, the stock left out.
+  const balance = page.getByTestId("bilan-caisse");
+  await expect(balance.locator(".stat-label")).toHaveText("Bilan en caisse");
+  await expect(balance.locator(".stat-value")).toHaveText("+22 septims");
+  await expect(page.getByTestId("total-inventaire").locator(".stat-label")).toHaveText("Inventaire, à part");
   // Money paid and cashed; the sale the gérant cancelled is left out.
   await expect(page.getByTestId("total-achats").locator(".stat-value")).toHaveText("−10 septims");
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+12 septims");
@@ -96,7 +101,7 @@ test("l'activité d'un membre et ses totaux sur les 7 derniers jours", async ({ 
   await page.getByLabel("Au", { exact: true }).fill("2020-01-31");
   await page.getByRole("button", { name: "Filtrer" }).click();
   await expect(page).toHaveURL(/du=2020-01-01&au=2020-01-31/);
-  for (const tile of ["total-achats", "total-ventes", "total-inventaire", "total-caisse"]) {
+  for (const tile of ["bilan-caisse", "total-achats", "total-ventes", "total-inventaire", "total-caisse"]) {
     await expect(page.getByTestId(tile).locator(".stat-value")).toHaveText("0 septim");
   }
   await expect(page.getByText("Aucune activité sur cette période.")).toBeVisible();
