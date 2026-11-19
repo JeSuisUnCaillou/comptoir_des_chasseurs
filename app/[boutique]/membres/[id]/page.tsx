@@ -55,7 +55,7 @@ export default async function ActiviteMembre({
   ]);
   const cash = totals.inflows - totals.outflows;
   // What the till won or lost through this member.
-  const till = totals.sales - totals.buybacks + cash;
+  const till = totals.balance;
   const period = `Du ${longDate.format(from!)} au ${longDate.format(parisDay(au)!)}`;
 
   return (
