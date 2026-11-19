@@ -7,7 +7,7 @@ import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct, type ProductIdentity } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
-import { cancelStockDelta, sameEntryAs, settleEntry } from "@/lib/register";
+import { cancelStockDelta, clearStockReminder, sameEntryAs, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { lineMessage } from "@/lib/transaction-kinds";
 
@@ -38,6 +38,7 @@ export async function recordLines(
     counterparty: typedName,
     notes,
     tillPending,
+    stockReminder = false,
     lines,
   }: {
     kind: "vente" | "rachat";
@@ -45,6 +46,8 @@ export async function recordLines(
     notes: string | null;
     /** The member has not yet put the septims in the till, or taken them out. */
     tillPending: boolean;
+    /** On a purchase, remind the member to put the merchandise in the chest. */
+    stockReminder?: boolean;
     lines: TransactionLine[];
   },
 ) {
@@ -92,6 +95,8 @@ export async function recordLines(
             counterparty,
             notes,
             tillPending,
+            // A reminder for merchandise only: a purchase line without one has nothing to put in the chest.
+            stockReminder: stockReminder && kind === "rachat" && productId != null,
             memberId: member.id,
           })
           .returning({ id: schema.transactions.id });
@@ -158,6 +163,24 @@ export async function settleLine(member: Actor, id: number) {
     throw new UserError("Seul un gérant peut valider la ligne de quelqu'un d'autre.");
   }
   await settleEntry(member.shopId, id);
+}
+
+/**
+ * The merchandise of the purchase holding line `id` is in the chest: its
+ * reminder goes. Gérants, or the member who wrote it.
+ */
+export async function markStockDeposited(member: Actor, id: number) {
+  const t = schema.transactions;
+  const [line] = await getDb()
+    .select({ memberId: t.memberId })
+    .from(t)
+    .where(and(eq(t.id, id), eq(t.shopId, member.shopId), eq(t.stockReminder, true), isNull(t.cancelledAt)))
+    .limit(1);
+  if (!line) throw new UserError("Cet achat est déjà déposé, ou annulé.");
+  if (!canActOn(member, line)) {
+    throw new UserError("Seul un gérant peut le dire pour l'achat de quelqu'un d'autre.");
+  }
+  await clearStockReminder(member.shopId, id);
 }
 
 type Line = typeof schema.transactions.$inferSelect;

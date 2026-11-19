@@ -11,6 +11,7 @@ fichier à jour dans le même commit.
 - [Grand livre](#grand-livre)
 - [Achat, Vente et registre](#achat-vente-et-registre)
 - [Mouvement de caisse](#mouvement-de-caisse)
+- [À régler](#à-régler) : mes septims pas encore en caisse, mon stock à déposer
 - [Annonces](#annonces)
 - [Contacts](#contacts)
 - [Tarifs et Gérer les marchandises](#tarifs-et-gérer-les-marchandises)
@@ -29,6 +30,11 @@ fichier à jour dans le même commit.
   et son logo quand elle en a un (sinon celui du Codex) ; hors d'une
   boutique (connexion, Mes boutiques, invitation), « Codex enchanté » et le
   logo du Codex.
+- En haut de chaque page d'une boutique, une notification « À régler » dit
+  au membre connecté ce qu'il lui reste à faire : septims à mettre en
+  caisse, à en sortir, marchandises à déposer. Un clic mène à sa page
+  [À régler](#à-régler). Rien à régler : pas de notification. Sur un écran
+  étroit, elle passe au-dessus du titre de la page.
 
 ### Téléphone et petites fenêtres
 
@@ -266,6 +272,11 @@ page ; l'écriture enregistrée ramène au registre.
   même marchandise comptées ensemble) n'est pas bloqué. Sur la ligne, le
   stock s'affiche en orange avec un panneau d'avertissement (« la vente
   passera quand même, et le stock descendra à 0 »), et l'on peut confirmer.
+- **« Rappelle-moi de déposer ça dans le stock »** (achat seulement,
+  décochée d'avance) : l'achat rejoint le stock à déposer de son auteur
+  (voir [À régler](#à-régler)). Ce n'est qu'un rappel : la marchandise entre
+  dans l'inventaire à l'enregistrement, comme sans la case. Une ligne
+  d'article hors stock n'a rien à déposer.
 - **Enregistrement** : chaque marchandise devient sa propre ligne du
   registre ; toutes sont inscrites ensemble, ou aucune. Dans le registre et
   l'activité d'un membre, une écriture de plusieurs lignes porte son total
@@ -299,7 +310,8 @@ sortie d'argent) les septims :
    d'avance : il la décoche s'il prend ou dépose les septims tout de suite.
    Passer d'un achat à une vente (ou l'inverse) garde la case comme elle est.
 2. Une tuile du registre donne leur total ; le filtre Opération « Pas encore
-   en caisse » les retrouve.
+   en caisse » les retrouve. Son auteur les retrouve aussi sur sa page
+   [À régler](#à-régler), annoncée en haut de chaque page.
 3. Plus tard, l'auteur ou un gérant clique sur le bouton de l'écriture, dans
    le registre ou sur la page d'activité du membre : « Sortir 58 septims de
    la caisse » ou « Mettre 60 septims en caisse » (le total de l'écriture).
@@ -349,6 +361,24 @@ sortie d'argent) les septims :
   caisse](#pas-encore-en-caisse)).
 - Tout membre peut en inscrire.
 - Dans le registre : badge *Caisse* et son propre filtre.
+
+## À régler
+
+La page du membre connecté (`/<boutique>/a-regler`), où mène la
+notification « À régler » du haut des pages. Elle ne montre que ce qu'il a
+inscrit lui-même :
+
+- **Mes septims** : ses écritures *Pas encore en caisse* et pas annulées,
+  comme dans le registre, avec leur bouton « Mettre … en caisse » ou
+  « Sortir … de la caisse » ; au-dessus, ce qu'il a en tout à mettre en
+  caisse et à en sortir.
+- **Mon stock à déposer** : ses achats inscrits avec « Rappelle-moi de
+  déposer ça dans le stock », pas annulés, du plus ancien au plus récent :
+  leurs marchandises (« 3 × Peau de loup, 2 × Cuir »), la date et le
+  vendeur. « C'est déposé » retire le rappel de tout l'achat ; le stock ne
+  bouge pas, il a bougé à l'achat.
+
+Rien à régler : chaque partie le dit.
 
 ## Annonces
 

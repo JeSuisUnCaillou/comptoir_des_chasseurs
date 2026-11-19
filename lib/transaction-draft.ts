@@ -10,6 +10,8 @@ export type TransactionDraft = {
   counterparty: string;
   notes: string;
   tillPending: boolean;
+  /** On a purchase, « Rappelle-moi de déposer ça dans le stock ». */
+  stockReminder: boolean;
   /** The seller's privileged group, by id, or null for the usual prices. */
   privileged: number | null;
 };
@@ -60,6 +62,7 @@ export function decodeDraft(raw: string | string[] | undefined): TransactionDraf
     counterparty: text(d.counterparty, 100),
     notes: text(d.notes, 500),
     tillPending: d.tillPending !== false,
+    stockReminder: d.stockReminder === true,
     privileged: Number.isSafeInteger(d.privileged) && (d.privileged as number) > 0 ? (d.privileged as number) : null,
   };
 }

@@ -59,6 +59,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/boutiques", "Mes boutiques"],
     ["/mot-de-passe", "Mot de passe"],
     [`${COMPTOIR}/reglages`, "Réglages de la boutique"],
+    [`${COMPTOIR}/a-regler`, "À régler"],
   ];
   for (const [path, title] of pages) {
     await page.goto(path);
@@ -335,6 +336,16 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
   await form.getByLabel("Pas encore mis en caisse").check();
   await form.getByRole("button", { name: "Confirmer la vente" }).click();
   await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
+  // A purchase of two lines to put in the chest, listed on « À régler » with that sale.
+  await page.goto("/achat-vente/achat");
+  const purchase = page.getByRole("region", { name: "Inscrire un achat" });
+  await pickProduct(purchase, product);
+  await purchase.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(purchase.getByRole("group", { name: "Marchandise 2" }), product);
+  await purchase.getByLabel("Pas encore sorti de la caisse").uncheck();
+  await purchase.getByLabel("Rappelle-moi de déposer ça dans le stock").check();
+  await purchase.getByRole("button", { name: "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
 
   // The gérant's own activity page, where that sale is listed too.
   const activity = (await page.getByTestId("member-name").getAttribute("href"))!;
@@ -379,6 +390,7 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     "/boutiques",
     "/mot-de-passe",
     `${COMPTOIR}/reglages`,
+    `${COMPTOIR}/a-regler`,
     activity,
   ];
   const widths: number[] = [];

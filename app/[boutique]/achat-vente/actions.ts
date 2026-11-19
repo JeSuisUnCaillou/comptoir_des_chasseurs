@@ -7,7 +7,15 @@ import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
 import { QUANTITY_ERROR, checked, isQuantity, optionalText, productIdentity, text } from "@/lib/forms";
 import { MAX_LINES, NEW_MERCHANDISE, OTHER_ARTICLE, lineMessage } from "@/lib/transaction-kinds";
-import { cancelLines, recordCashLine, recordLines, restoreLines, settleLine, type TransactionLine } from "@/lib/transactions";
+import {
+  cancelLines,
+  markStockDeposited,
+  recordCashLine,
+  recordLines,
+  restoreLines,
+  settleLine,
+  type TransactionLine,
+} from "@/lib/transactions";
 
 export type TransactionState = { ok: boolean; message: string } | null;
 
@@ -26,6 +34,7 @@ export async function recordTransaction(
   const counterparty = optionalText(formData, "counterparty", 100);
   const notes = optionalText(formData, "notes", 500);
   const tillPending = checked(formData, "tillPending");
+  const stockReminder = checked(formData, "stockReminder");
   const productIds = formData.getAll("productId").map(String);
   const labels = formData.getAll("label").map(String);
   const quantities = formData.getAll("quantity").map(Number);
@@ -70,7 +79,7 @@ export async function recordTransaction(
     lines.push({ productId, newProduct, quantity, amount, label });
   }
 
-  const result = await attempt(() => recordLines(member, { kind, counterparty, notes, tillPending, lines }));
+  const result = await attempt(() => recordLines(member, { kind, counterparty, notes, tillPending, stockReminder, lines }));
   if (!result.ok) return result;
   revalidateShop();
   // Back to the register, which shows the new lines.
@@ -119,6 +128,17 @@ export async function settleTransaction(
   if (!result.ok) return result;
   revalidateShop();
   return { ok: true, message: "C'est noté, la caisse est à jour." };
+}
+
+/** The merchandise of a purchase is in the chest: its reminder goes. Gérants, or the member who wrote it. */
+export async function depositStock(_prev: TransactionState, formData: FormData): Promise<TransactionState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
+  const result = await attempt(() => markStockDeposited(member, id));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "C'est noté." };
 }
 
 /**

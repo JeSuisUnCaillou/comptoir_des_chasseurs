@@ -204,6 +204,13 @@
       "when": 1794994888267,
       "tag": "0028_sessions-discord",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795088984219,
+      "tag": "0029_rappel-stock",
+      "breakpoints": true
     }
   ]
 }
