@@ -168,9 +168,7 @@ export async function editEntry(_prev: TransactionState, formData: FormData): Pr
     return { ok: false, message: "Formulaire incomplet, recharge la page." };
   }
   if (lineIds.some((lineId) => !Number.isInteger(lineId))) return { ok: false, message: "Ligne inconnue." };
-  if (amounts.some((amount) => !Number.isInteger(amount) || amount < 0)) {
-    return { ok: false, message: "Chaque montant doit être un nombre entier de septims." };
-  }
+  // The service says which septims a line accepts.
   const result = await attempt(() => editAmounts(member, id, new Map(lineIds.map((lineId, i) => [lineId, amounts[i]]))));
   if (!result.ok) return result;
   revalidateShop();
