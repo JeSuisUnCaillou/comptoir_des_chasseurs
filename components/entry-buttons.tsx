@@ -111,16 +111,16 @@ export function hasEntryButtons(e: ButtonLine, mine: boolean) {
   return mine && (active.length > 1 || cancelled.length > 1);
 }
 
-/**
- * On an entry of several lines, under its total: change the septims of every
- * line still counted, cancel them all, or restore every cancelled one, in one
- * click. `where` places them like the total (see `entryPlaces`).
- */
 /** What cancelling every line of an entry does to the stock. */
 export function wholeStockEffect(kind: TransactionKind) {
   return kind === "vente" ? "Ce qui est sorti du stock y revient." : "Ce qui est entré en stock en ressort.";
 }
 
+/**
+ * On an entry of several lines, under its total: change the septims of every
+ * line still counted, cancel them all, or restore every cancelled one, in one
+ * click. `where` places them like the total (see `entryPlaces`).
+ */
 export function EntryButtons({
   entry: e,
   where,

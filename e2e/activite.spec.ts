@@ -166,6 +166,9 @@ test("sur sa page d'activité, un membre modifie et annule ses écritures, et y 
   await record(page, "vente", hide, 3);
   await page.getByTestId("member-name").click();
   await expect(page).toHaveURL(/\/membres\/\d+$/);
+  // A period of its own: the page comes back to it after editing.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+  await page.goto(`${new URL(page.url()).pathname}?du=2020-01-01&au=${today}`);
   const mine = page.url();
   const row = page.getByTestId("activite").getByRole("row").filter({ hasText: hide });
   await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+6 septims");
