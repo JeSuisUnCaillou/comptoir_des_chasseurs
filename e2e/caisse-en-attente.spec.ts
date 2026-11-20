@@ -269,15 +269,20 @@ test("sur la page d'activité, une vente de plusieurs lignes forme un bloc au bo
   expect(button.y).toBeLessThan(septims.y + septims.height + 16);
   expect(Math.abs(button.x + button.width - (septims.x + septims.width))).toBeLessThan(2);
 
-  // The line on top is cancelled: the button moves to the next line, with what is left.
-  await page.goto("/achat-vente");
-  const top = page.getByTestId("registre").getByRole("row").filter({ hasText: username }).first();
-  await expect(top).toContainText(salt);
+  // The line on top is cancelled alone, from the entry's page: the button
+  // moves to the next line, with what is left.
+  await expect(sale.first()).toContainText(salt);
+  // The whole entry's buttons on its first line, none on the others.
+  await expect(sale.first().getByRole("button", { name: /^Tout annuler/ })).toBeVisible();
+  await expect(sale.nth(1).getByRole("button", { name: /^(Annuler|Tout annuler)/ })).toHaveCount(0);
+  await page.getByTestId("activite").getByRole("link", { name: /^Modifier les transactions/ }).click();
+  const one = page.getByRole("region", { name: "Annuler une seule ligne" });
   page.once("dialog", (dialog) => dialog.accept());
-  await top.getByRole("button", { name: /Annuler/ }).click();
-  await expect(top).toContainText("Annulée");
+  await one.getByRole("listitem").filter({ hasText: salt }).getByRole("button", { name: "Annuler" }).click();
+  await expect(one.getByRole("listitem").filter({ hasText: salt })).toHaveCount(0);
 
   await page.goto(memberPath);
+  await expect(sale.first()).toContainText("Annulée");
   await expect(settle).toHaveCount(1);
   await expect(settle).toHaveText("Mettre 11 septims en caisse");
   await expect(sale.nth(1).getByRole("button", { name: /^(Mettre en caisse|Sortir de la caisse)/ })).toHaveCount(1);

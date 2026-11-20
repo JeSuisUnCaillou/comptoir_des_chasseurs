@@ -322,35 +322,42 @@ sortie d'argent) les septims :
 
 - **Filtres** : opération, employé (le membre qui a inscrit la ligne),
   dates.
-- **Annuler une ligne** : son auteur ou un gérant. Elle reste barrée, ne
-  compte plus dans la caisse, et le stock revient à l'état d'avant. Sur
-  une carte (téléphone, fenêtre étroite), dans le registre comme dans
-  l'activité d'un membre, les boutons d'une ligne sont juste sous son prix,
-  à droite. À côté
-  de « Annulée par … », sur la même ligne, **Rétablir** la fait compter de
-  nouveau, comme si on l'inscrivait à nouveau : une vente ressort du stock
-  ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
-  quantité. L'annuler encore rend ce qu'elle a vraiment pris la dernière
-  fois.
-- **Modifier les montants** : son auteur ou un gérant. « Modifier », à côté
-  d'« Annuler » sur une ligne qui compte, ouvre une page avec les septims de
-  chaque ligne de son écriture (lignes annulées exclues), le total avant et
-  après, et, pour plusieurs lignes, « Tout mettre à 0 ». Seuls les septims
-  changent : le stock, les quantités et le statut *Pas encore en caisse*
-  restent. La caisse, les tuiles et les totaux suivent, puisqu'ils sont
-  recalculés depuis les lignes. Une vente ou un achat accepte 0, un mouvement
-  de caisse au moins 1. L'enregistrement ramène au registre, qui confirme le
-  nouveau total ; chaque ligne changée affiche « Modifiée par … ».
-- **Toute une écriture d'un coup** : dans une écriture de plusieurs lignes,
-  juste sous son total (sous le client ou le vendeur, ou au bas de la carte
-  sur un téléphone), « Tout annuler » annule toutes celles qui comptent
-  encore, « Tout rétablir » toutes celles qui sont annulées (le bouton
-  n'apparaît que s'il touche au moins deux lignes). La confirmation liste
-  les lignes ; elles changent toutes ensemble, ou aucune (un achat dont la
-  marchandise est déjà vendue bloque tout).
+Les boutons qui changent une écriture sont les mêmes dans le registre et
+sur la page d'activité d'un membre, pour son auteur ou un gérant :
+
+- **Une écriture d'une seule ligne qui compte** : « Modifier » et
+  « Annuler » sur la ligne. Sur une carte (téléphone, fenêtre étroite), ils
+  sont juste sous son prix, à droite.
+- **Une écriture de plusieurs lignes qui comptent** : ses lignes n'ont pas de
+  bouton à elles ; sa première ligne porte, là où une ligne seule a les
+  siens, « Modifier les transactions » et « Tout annuler », l'un sous
+  l'autre et de même largeur pour ne pas élargir la ligne. « Tout annuler » annule toutes les lignes qui comptent encore ;
+  la confirmation les liste, et elles changent toutes ensemble, ou aucune
+  (un achat dont la marchandise est déjà vendue bloque tout).
+- **Annuler** : la ligne reste barrée, ne compte plus dans la caisse, et le
+  stock revient à l'état d'avant. Pour n'annuler qu'une ligne d'une écriture
+  de plusieurs, « Modifier les transactions » les liste une par une sous
+  « Annuler une seule ligne ».
+- **Rétablir** : à côté de « Annulée par … », sur la même ligne, la fait
+  compter de nouveau, comme si on l'inscrivait à nouveau : une vente ressort
+  du stock ce qui y reste (jamais sous zéro, comme une vente), un achat y
+  remet sa quantité. L'annuler encore rend ce qu'elle a vraiment pris la
+  dernière fois. Quand une écriture a au moins deux lignes annulées, un seul
+  « Tout rétablir », sur sa première ligne, les rétablit toutes, à la place des
+  boutons de chaque ligne.
+- **Modifier les montants** (« Modifier » ou « Modifier les transactions ») :
+  une page avec les septims de chaque ligne de l'écriture (lignes annulées
+  exclues), le total avant et après, et, pour plusieurs lignes, « Tout
+  mettre à 0 ». Seuls les septims changent : le stock, les quantités et le
+  statut *Pas encore en caisse* restent. La caisse, les tuiles et les totaux
+  suivent, puisqu'ils sont recalculés depuis les lignes. Une vente ou un
+  achat accepte 0, un mouvement de caisse au moins 1. L'enregistrement
+  ramène là d'où l'on vient (le registre, qui confirme le nouveau total, ou
+  la page d'activité) ; chaque ligne changée affiche « Modifiée par … ».
 - **Une écriture = un bloc**, même d'une seule ligne, dans le registre comme
   dans l'activité d'un membre : une carte encadrée d'un trait fin, une barre
-  dorée à gauche, un espace entre deux cartes. La date, l'opération, le
+  dorée à gauche, un trait plus discret entre deux de ses lignes
+  (en tableau, sous l'article, la quantité et les septims seulement), un espace entre deux cartes. La date, l'opération, le
   client, l'employé et les notes ne sont écrits que sur sa première ligne.
 
 ## Mouvement de caisse
@@ -685,7 +692,10 @@ aujourd'hui compris (dates modifiables), dans une seule liste paginée : ses
 achats, ventes, mouvements de caisse et mouvements de stock faits à la main
 (ceux des achats et des ventes sont leur ligne). Les colonnes « Client /
 vendeur » et « Notes / motif » : un mouvement de stock n'a ni client ni
-vendeur, son motif est dans la seconde.
+vendeur, son motif est dans la seconde. Le membre lui-même et les gérants
+y ont les boutons du registre sur ses achats, ventes et mouvements de caisse
+(mettre en caisse, modifier, annuler, rétablir : voir [Le
+registre](#le-registre)).
 
 En tête, le **bilan en caisse**, en grand : ventes − achats ± mouvements de
 caisse, ce que la caisse a gagné ou perdu par ce membre sur la période. À

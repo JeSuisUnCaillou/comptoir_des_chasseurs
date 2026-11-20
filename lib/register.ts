@@ -119,7 +119,7 @@ function conditions(shopId: number, filter: RegisterFilter) {
  * What the line's stock movements moved (their sum) and how many there are,
  * read by `cancelStockDelta`.
  */
-function stockMovedColumns() {
+export function stockMovedColumns() {
   const m = schema.stockMovements;
   const t = schema.transactions;
   const of = sql`from ${m} where ${m.transactionId} = ${t.id} and ${m.productId} = ${t.productId}`;
@@ -142,6 +142,15 @@ function stockMovedColumns() {
 export function cancelStockDelta(kind: TransactionKind, quantity: number, moved: number, moves: number) {
   const unwritten = moves % 2 === 0 ? (kind === "vente" ? -quantity : quantity) : 0;
   return -(moved + unwritten);
+}
+
+/** Units cancelling the line puts back in stock (or takes out, for a buyback), from `stockMovedColumns`. */
+export function stockBackOf(
+  line: { kind: TransactionKind; productId: number | null; quantity: number },
+  moved: number,
+  moves: number,
+) {
+  return line.productId == null ? 0 : Math.abs(cancelStockDelta(line.kind, line.quantity, moved, moves));
 }
 
 export async function registerEntries(
@@ -185,9 +194,7 @@ export async function registerEntries(
     .then((rows) =>
       rows.map(({ stockMoved, stockMoves, ...row }) => ({
         ...row,
-        // Units cancelling the line puts back in stock (or takes out, for a buyback).
-        stockBack:
-          row.productId == null ? 0 : Math.abs(cancelStockDelta(row.kind, row.quantity, stockMoved, stockMoves)),
+        stockBack: stockBackOf(row, stockMoved, stockMoves),
       })),
     );
 }

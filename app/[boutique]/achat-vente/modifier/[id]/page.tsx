@@ -1,20 +1,34 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CancelButton } from "@/components/cancel-button";
+import { wholeStockEffect } from "@/components/entry-buttons";
 import { EditEntryForm } from "@/components/edit-entry-form";
 import { OperationBadge } from "@/components/operation-badge";
 import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
+import { safeReturnPath } from "@/lib/auth/return-path";
+import { param } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
 import { canActOn } from "@/lib/policies";
 import { entryLines } from "@/lib/register";
+import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel } from "@/lib/transaction-kinds";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" });
 
 /** /achat-vente/modifier/<id>: the septims of the entry holding line <id>, for its author or a gérant. */
-export default async function ModifierEcriture({ params }: { params: Promise<{ id: string }> }) {
+export default async function ModifierEcriture({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const member = await requireMember();
+  // Where the member came from: their activity page, or the register.
+  const retour = param((await searchParams).retour);
+  const back = retour ? safeReturnPath(retour) : null;
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const lines = await entryLines(member.shopId, id);
@@ -27,8 +41,8 @@ export default async function ModifierEcriture({ params }: { params: Promise<{ i
         Seuls les septims changent : le stock ne bouge pas. La caisse et les totaux suivent d&apos;eux-mêmes.
       </PageHead>
       <p>
-        <Link className="btn btn-small btn-ghost" href={shopPath(member.shop.slug, "/achat-vente")}>
-          <ArrowLeft size={14} /> Retour au registre
+        <Link className="btn btn-small btn-ghost" href={back ?? shopPath(member.shop.slug, "/achat-vente")}>
+          <ArrowLeft size={14} /> {back ? "Retour" : "Retour au registre"}
         </Link>
       </p>
       <section className="panel" style={{ maxWidth: 760 }} aria-label="Modifier les montants">
@@ -41,12 +55,38 @@ export default async function ModifierEcriture({ params }: { params: Promise<{ i
             {counterpartyLabel(first.kind)} : {first.counterparty}
           </p>
         )}
+        {/* Remounted when a line is cancelled below or its septims change, so its fields match the lines. */}
         <EditEntryForm
+          key={lines.map((l) => `${l.id}:${l.amount}`).join(",")}
           id={id}
+          back={back}
           kind={first.kind}
           lines={lines.map((l) => ({ id: l.id, label: l.label, quantity: l.quantity, amount: l.amount }))}
         />
       </section>
+      {lines.length > 1 && (
+        <section className="panel" style={{ maxWidth: 760 }} aria-labelledby="annuler-une-ligne">
+          <h2 id="annuler-une-ligne">Annuler une seule ligne</h2>
+          <p className="small muted">
+            Elle reste barrée dans le registre et ne compte plus. {wholeStockEffect(first.kind)}
+          </p>
+          <ul className="cancel-lines">
+            {lines.map((l) => (
+              <li key={l.id}>
+                <span>
+                  {formatNumber(l.quantity)} × {l.label}
+                </span>
+                <CancelButton
+                  id={l.id}
+                  text="Annuler"
+                  name={`Annuler ${l.label}`}
+                  question={`Annuler ${formatNumber(l.quantity)} × ${l.label} ?`}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

@@ -5,6 +5,8 @@
   --panel-2: #26302b;
   --border: #3a4038;
   --border-gold: #6b5a37;
+  /* The faint rule between two lines of one register entry. */
+  --border-soft: rgb(255 255 255 / 0.07);
   --text: #ece4d2;
   --muted: #a7a594;
   --gold: #cfae6e;
@@ -384,6 +386,19 @@ h3 {
 
 .row-actions .btn {
   white-space: nowrap;
+}
+
+/* An entry's buttons stack, all the same width, so they take less room. */
+.entry-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.entry-buttons .inline-form,
+.entry-buttons .btn {
+  width: 100%;
 }
 
 /* A primary button among others in a row keeps its own width. */
@@ -1030,25 +1045,8 @@ tr.cancelled td .badge {
   font-weight: 600;
 }
 
-.entry-total:not(.on-table),
-.entry-actions:not(.on-table) {
+.entry-total:not(.on-table) {
   display: none;
-}
-
-/* « Tout annuler », « Tout rétablir »: under the entry's total, side by side,
-   one under the other if need be. Inline-flex, so that a cancelled line's
-   strike-through does not reach them; full width puts them on their own line. */
-.entry-actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  width: 100%;
-  margin-top: 4px;
-}
-
-.entry-actions .btn-small {
-  padding: 2px 10px;
-  font-size: 12px;
 }
 
 /* A cancelled line can carry its entry's total, which still counts: not dimmed
@@ -1056,6 +1054,23 @@ tr.cancelled td .badge {
 tr.cancelled td:last-child {
   color: inherit;
   text-decoration: none;
+}
+
+/* The lines of an entry, one by one, on the page that edits it: each with its Annuler. */
+.cancel-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cancel-lines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
 }
 
 /* « Annulée par Lomone » on one line, beside its Rétablir button. */
@@ -1700,7 +1715,8 @@ tr.fresh td {
 
 /* Every entry (the lines written together, or a single line) is a card in
    the register and on a member's activity page: framed by thin rules, a gold
-   bar on its left, no rule between its lines, room between two cards, what
+   bar on its left, a faint rule between its lines (as a table, across what
+   differs from one to the next: article, quantity, septims), room between two cards, what
    its lines share written on the first one only. Rules are inset shadows, so
    the transparent borders that make the room stay empty. When the table has
    less room than its columns need, the rows themselves become cards: see
@@ -1717,7 +1733,7 @@ tr.fresh td {
     background-clip: padding-box;
     background-color: rgb(255 255 255 / 0.025);
     box-shadow:
-      inset 0 var(--top) 0 var(--border),
+      inset 0 var(--top) 0 var(--top-color, var(--border)),
       inset 0 calc(-1 * var(--bottom)) 0 var(--border),
       inset var(--left),
       inset var(--right);
@@ -1746,6 +1762,11 @@ tr.fresh td {
 
   tr.entry-next td {
     padding-top: 4px;
+  }
+
+  tr.entry-next td:is(.cell-label, .cell-qty, .cell-amount) {
+    --top: 1px;
+    --top-color: var(--border-soft);
   }
 
   /* Room between cards; none above the first, to keep the header's rule. */
@@ -2096,14 +2117,6 @@ tr.fresh td {
     display: inline-block;
   }
 
-  .entry-cards .entry-actions.on-card {
-    display: inline-flex;
-  }
-
-  .entry-cards .entry-actions:not(.on-card) {
-    display: none;
-  }
-
   .entry-cards .entry-total:not(.on-card) {
     display: none;
   }
@@ -2171,6 +2184,14 @@ tr.fresh td {
 
   tr.entry.fresh {
     background: rgba(201, 169, 106, 0.1);
+  }
+
+  /* The faint rule between two lines of one card, inside its frame. */
+  tr.entry-next {
+    background-image: linear-gradient(var(--border-soft), var(--border-soft));
+    background-size: calc(100% - 27px) 1px;
+    background-position: 15px 0;
+    background-repeat: no-repeat;
   }
 
   /* A cell the line shares with the first line of its entry: kept for screen readers, takes no room. */

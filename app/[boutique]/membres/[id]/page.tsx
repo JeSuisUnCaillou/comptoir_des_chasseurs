@@ -46,6 +46,13 @@ export default async function ActiviteMembre({
   const path = at(`/membres/${member.id}`);
   const filters = { du: asked.du, au: asked.au };
   const filter = { memberId: member.id, from, to };
+  // This very page, to come back to after editing a line's septims.
+  const query = new URLSearchParams(
+    Object.entries({ ...filters, page: page > 1 ? String(page) : undefined }).filter(
+      (pair): pair is [string, string] => pair[1] != null,
+    ),
+  ).toString();
+  const back = at(`/membres/${member.id}${query ? `?${query}` : ""}`);
 
   const [stock, totals, lines, lineTotal] = await Promise.all([
     memberHandStock(viewer.shopId, member.id, from!, to!),
@@ -121,7 +128,13 @@ export default async function ActiviteMembre({
           Les lignes barrées sont annulées. Elles ne comptent pas, pas plus que celles qui ne sont pas encore en caisse.
         </p>
         {/* The author or a gérant settles a line waiting for the till, as in the register. */}
-        <ActivityTable lines={lines} empty="Aucune activité sur cette période." canSettle={canActOn(viewer, { memberId: member.id })} />
+        <ActivityTable
+          lines={lines}
+          empty="Aucune activité sur cette période."
+          shopSlug={viewer.shop.slug}
+          back={back}
+          canAct={canActOn(viewer, { memberId: member.id })}
+        />
         <Pagination page={page} total={lineTotal} path={path} params={filters} label="Pages de l'activité" noun="opération" />
       </section>
     </>
