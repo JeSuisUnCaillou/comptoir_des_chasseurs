@@ -657,14 +657,18 @@ achats, ventes, mouvements de caisse et mouvements de stock faits à la main
 vendeur » et « Notes / motif » : un mouvement de stock n'a ni client ni
 vendeur, son motif est dans la seconde.
 
-En tête, quatre totaux :
+En tête, le **bilan en caisse**, en grand : ventes − achats ± mouvements de
+caisse, ce que la caisse a gagné ou perdu par ce membre sur la période. À
+côté, en plus petit, les trois totaux qui le font, et à part l'inventaire,
+qui n'est pas de l'argent de la caisse :
 
 | Total | Ce qu'il compte |
 | --- | --- |
-| Achats | septims payés |
+| Bilan en caisse | ventes − achats + entrées − sorties de caisse |
 | Ventes | septims encaissés |
-| Inventaire | unités entrées et sorties à la main (hors achats et ventes), et leur valeur au prix de vente d'aujourd'hui, gros compris |
+| Achats | septims payés |
 | Mouvements de caisse | septims entrés − sortis, sans marchandise |
+| Inventaire, à part | unités entrées et sorties à la main (hors achats et ventes), et leur valeur au prix de vente d'aujourd'hui, gros compris |
 
 Ne comptent pas :
 

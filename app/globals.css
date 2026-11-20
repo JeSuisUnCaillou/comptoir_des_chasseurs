@@ -328,6 +328,38 @@ h3 {
   margin-top: 6px;
 }
 
+/* A member's activity: the till's balance, large, the three figures that make
+   it, and the stock set apart. Three columns when they fit, else stacked. */
+.bilan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 12px;
+}
+
+.bilan-main {
+  border-left: 3px solid var(--gold);
+}
+
+.bilan-main .stat-value {
+  font-size: 34px;
+  line-height: 1.15;
+  margin: 10px 0 8px;
+}
+
+.bilan-details {
+  display: grid;
+  gap: 8px;
+}
+
+.bilan-details .stat {
+  padding: 12px 16px;
+}
+
+.bilan-details .stat-value {
+  font-size: 22px;
+  margin-top: 4px;
+}
+
 /* A privileged group's buyback price, on Tarifs */
 .stat-privileged {
   border-color: var(--border-gold);
@@ -2010,6 +2042,7 @@ tr.fresh td {
 /* A note or a table under tiles (the activity's stock left aside, the
    register under its till tiles) does not touch them. */
 .stats + p,
+.bilan + p,
 .stats + .table-wrap {
   margin-top: 12px;
 }
