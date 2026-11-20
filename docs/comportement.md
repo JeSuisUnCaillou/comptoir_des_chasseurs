@@ -323,7 +323,10 @@ sortie d'argent) les septims :
 - **Filtres** : opération, employé (le membre qui a inscrit la ligne),
   dates.
 Les boutons qui changent une écriture sont les mêmes dans le registre et
-sur la page d'activité d'un membre, pour son auteur ou un gérant :
+sur la page d'activité d'un membre, pour son auteur ou un gérant. Un
+mouvement de stock fait à la main a les mêmes, dans l'historique de
+l'Inventaire et l'activité de son auteur (voir [Annuler ou modifier un
+mouvement de stock](#annuler-ou-modifier-un-mouvement-de-stock)) :
 
 - **Une écriture d'une seule ligne qui compte** : « Modifier » et
   « Annuler » sur la ligne. Sur une carte (téléphone, fenêtre étroite), ils
@@ -670,6 +673,33 @@ d'inscrire, et une vente faite entre-temps serait effacée. Ensuite :
   même nom : le même qu'en Tarifs, au même endroit, à côté du titre de la
   page.
 
+### Annuler ou modifier un mouvement de stock
+
+Un mouvement de stock fait à la main (Mouvement de stock, Nouvelle
+marchandise, Régulariser le stock) se corrige comme une écriture du
+registre, par son auteur ou un gérant, dans l'historique des mouvements et
+sur la page d'activité de son auteur, avec les mêmes boutons (voir [Le
+registre](#le-registre)) : « Modifier » et « Annuler » sur un mouvement
+d'une seule marchandise, « Modifier les transactions » et « Tout annuler »
+sur la première ligne d'un mouvement de plusieurs, « Rétablir » ou « Tout
+rétablir » une fois annulé. Les mouvements nés d'un achat ou d'une vente
+n'en ont pas : ils se corrigent par leur ligne du registre.
+
+- **Annuler** : ce qui est entré ressort du stock, ce qui est sorti y
+  revient. Le mouvement reste barré, « Annulée par … », et ne compte plus
+  dans le total « Inventaire » de l'activité. Refusé si le stock passerait sous
+  zéro (« Impossible d'annuler : il ne reste que 3 Peau de lion en
+  stock. ») ; pour plusieurs marchandises, toutes ou aucune.
+- **Rétablir** : le mouvement compte de nouveau, comme la première fois ;
+  refusé de même sous zéro.
+- **Modifier** : une page (`/<slug>/inventaire/modifier/<id>`) avec la
+  quantité de chaque marchandise du mouvement (annulées exclues), qui garde
+  son sens (entrée ou sortie), au moins 1. Le stock suit l'écart, jamais
+  sous zéro, tout ou rien. Pour plusieurs marchandises, « Annuler une seule
+  ligne » les liste une par une. L'enregistrement ramène là d'où l'on vient
+  (l'historique, avec ses filtres, ou la page d'activité) ; le mouvement
+  affiche « Modifiée par … ».
+
 ### Historique des mouvements
 
 - Chaque entrée ou sortie porte son motif.
@@ -693,9 +723,10 @@ achats, ventes, mouvements de caisse et mouvements de stock faits à la main
 (ceux des achats et des ventes sont leur ligne). Les colonnes « Client /
 vendeur » et « Notes / motif » : un mouvement de stock n'a ni client ni
 vendeur, son motif est dans la seconde. Le membre lui-même et les gérants
-y ont les boutons du registre sur ses achats, ventes et mouvements de caisse
-(mettre en caisse, modifier, annuler, rétablir : voir [Le
-registre](#le-registre)).
+y ont les boutons du registre sur ses achats, ventes, mouvements de caisse
+et mouvements de stock (mettre en caisse, modifier, annuler, rétablir : voir
+[Le registre](#le-registre) et [Annuler ou modifier un mouvement de
+stock](#annuler-ou-modifier-un-mouvement-de-stock)).
 
 En tête, le **bilan en caisse**, en grand : ventes − achats ± mouvements de
 caisse, ce que la caisse a gagné ou perdu par ce membre sur la période. À

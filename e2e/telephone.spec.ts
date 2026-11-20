@@ -4,6 +4,7 @@ import {
   createAnnouncements,
   createMember,
   createProduct,
+  createStockMovement,
   createTransactions,
   GERANT,
   loginAs,
@@ -378,12 +379,23 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     .getByRole("link", { name: /^Modifier la vente/ })
     .getAttribute("href"))!;
 
+  // A stock movement of two merchandises: its buttons in the Inventaire's history, and the page editing its units.
+  const hunt = uniqueName("Battue");
+  await createStockMovement(GERANT.username, [[product, 2], [product, 3]], hunt);
+  await page.goto("/inventaire");
+  const units = (await page
+    .getByTestId("historique")
+    .getByRole("row")
+    .filter({ hasText: hunt })
+    .getByRole("link", { name: /^Modifier les transactions/ })
+    .getAttribute("href"))!;
   const pages = [
     COMPTOIR,
     "/achat-vente",
     "/achat-vente/achat",
     "/achat-vente/caisse",
     amounts,
+    units,
     "/inventaire",
     "/inventaire/mouvement",
     "/inventaire/regularisation",

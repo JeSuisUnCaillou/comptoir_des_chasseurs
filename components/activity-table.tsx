@@ -8,9 +8,10 @@ import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-k
 
 /**
  * A member's sales, buybacks, cash movements and hand stock movements, in one list.
- * With `canAct` (a gérant, or the member themself), its register lines get
- * the same buttons as in the register: settle a line waiting for the till,
- * change its septims, cancel or restore it, or all of its entry at once.
+ * With `canAct` (a gérant, or the member themself), its lines get the same
+ * buttons as in the register: settle a line waiting for the till, change its
+ * septims (or a stock movement's units), cancel or restore it, or all of its
+ * entry at once.
  */
 export function ActivityTable({
   lines,
@@ -21,9 +22,9 @@ export function ActivityTable({
 }: {
   lines: ActivityLine[];
   empty: string;
-  /** The shop's address, for the link that edits a line's septims. */
+  /** The shop's address, for the link that edits a line. */
   shopSlug: string;
-  /** This page, where editing a line's septims comes back to. */
+  /** This page, where editing a line comes back to. */
   back: string;
   canAct?: boolean;
 }) {
@@ -67,9 +68,9 @@ export function ActivityTable({
             const cancelled = l.cancelledAt != null;
             const waiting = !cancelled && l.tillPending;
             const settles = kind !== "stock" && waiting && canAct && place.settles;
-            const buttons = kind !== "stock" && canAct && hasLineButtons({ ...l, kind });
+            const buttons = canAct && hasLineButtons({ ...l, kind });
             // Like the register: the whole entry's buttons on its first line.
-            const whole = kind !== "stock" && canAct && place.first && hasEntryButtons({ ...l, kind }, true);
+            const whole = canAct && place.first && hasEntryButtons({ ...l, kind }, true);
             return (
               <tr
                 key={`${l.source}-${l.id}`}

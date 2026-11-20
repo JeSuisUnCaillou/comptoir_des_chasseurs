@@ -218,6 +218,13 @@
       "when": 1795163549239,
       "tag": "0030_rappel-stock",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795185652034,
+      "tag": "0031_mouvement-annule",
+      "breakpoints": true
     }
   ]
 }

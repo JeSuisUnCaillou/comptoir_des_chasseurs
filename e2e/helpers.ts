@@ -190,6 +190,29 @@ export async function createTransactions(
 }
 
 /**
+ * A Mouvement de stock by a member straight in the database, as the form
+ * writes it: its movements share one instant, and the stock moves with them.
+ */
+export async function createStockMovement(username: string, lines: [product: string, delta: number][], reason: string) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    await sql.begin(async (tx) => {
+      for (const [product, delta] of lines) {
+        await tx`
+          with moved as (
+            update products set stock = stock + ${delta} where shop_id = 1 and name = ${product} returning id, stock
+          )
+          insert into stock_movements (shop_id, product_id, delta, stock_after, member_id, reason, created_at)
+          select 1, moved.id, ${delta}, moved.stock, m.id, ${reason}, now()
+          from moved, members m where m.username = ${username.toLowerCase()}`;
+      }
+    });
+  } finally {
+    await sql.end();
+  }
+}
+
+/**
  * Pins `n` parchments by a member straight in the database, dated yesterday so
  * they never push other tests' fresh ones off the first page.
  */

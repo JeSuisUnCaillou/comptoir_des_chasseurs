@@ -7,7 +7,15 @@ import { shopPath } from "@/lib/paths";
 import { attempt } from "@/lib/errors";
 import { MAX_QUANTITY, QUANTITY_ERROR, checked, isQuantity, readProductIdentity, readProductPrices, text } from "@/lib/forms";
 import { endShopSetup } from "@/lib/shop-setup";
-import { createStocked, recordMovement as moveByHand, recordMovements } from "@/lib/stock";
+import { safeReturnPath } from "@/lib/auth/return-path";
+import {
+  cancelMovements,
+  createStocked,
+  editQuantities,
+  recordMovement as moveByHand,
+  recordMovements,
+  restoreMovements,
+} from "@/lib/stock";
 import { recordCount, type CountLine } from "@/lib/stock-count";
 import { MAX_COUNT_LINES, NEW_PRODUCT } from "@/lib/game-count";
 import { MAX_LINES, lineMessage } from "@/lib/transaction-kinds";
@@ -159,4 +167,51 @@ export async function recordGameCount(_prev: MoveState, formData: FormData): Pro
     };
   }
   redirect(shopPath(member.shop.slug, `/inventaire?inscrit=${written.join(",")}`));
+}
+
+/**
+ * Cancels a stock movement made by hand, or every one of its entry when the
+ * form says `entier`; the stock follows. Gérants, or the member who wrote it.
+ */
+export async function cancelStockMovement(_prev: MoveState, formData: FormData): Promise<MoveState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Mouvement inconnu." };
+  const result = await attempt(() => cancelMovements(member, id, formData.get("entier") === "1"));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "Annulé." };
+}
+
+/** Counts a cancelled stock movement again, or every cancelled one of its entry with `entier`. */
+export async function restoreStockMovement(_prev: MoveState, formData: FormData): Promise<MoveState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id)) return { ok: false, message: "Mouvement inconnu." };
+  const result = await attempt(() => restoreMovements(member, id, formData.get("entier") === "1"));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "Rétabli." };
+}
+
+/**
+ * Changes the units of the movements of a Mouvement de stock, the stock
+ * following, then goes back where the member came from (the Inventaire when
+ * nowhere). Gérants, or the member who wrote it.
+ */
+export async function editStockMovement(_prev: MoveState, formData: FormData): Promise<MoveState> {
+  const member = await requireMember();
+  const id = Number(formData.get("id"));
+  const lineIds = formData.getAll("lineId").map(Number);
+  const quantities = formData.getAll("quantity").map((q) => (String(q).trim() === "" ? NaN : Number(q)));
+  if (!Number.isInteger(id) || lineIds.length === 0 || lineIds.length !== quantities.length) {
+    return { ok: false, message: "Formulaire incomplet, recharge la page." };
+  }
+  if (lineIds.some((lineId) => !Number.isInteger(lineId))) return { ok: false, message: "Mouvement inconnu." };
+  // The service says which quantities a movement accepts.
+  const result = await attempt(() => editQuantities(member, id, new Map(lineIds.map((lineId, i) => [lineId, quantities[i]]))));
+  if (!result.ok) return result;
+  revalidateShop();
+  const retour = formData.get("retour");
+  redirect(retour ? safeReturnPath(retour) : shopPath(member.shop.slug, "/inventaire"));
 }
