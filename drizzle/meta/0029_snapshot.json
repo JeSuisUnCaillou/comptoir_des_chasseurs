@@ -1,5 +1,5 @@
 {
-  "id": "6fc3d020-8462-48e1-b4ab-01a4691d8119",
+  "id": "5ec35422-349d-43c4-be86-2af8f9151f48",
   "prevId": "95ed97ac-3ad3-4a73-a592-afca177ac3b7",
   "version": "7",
   "dialect": "postgresql",
@@ -1513,13 +1513,6 @@
           "notNull": true,
           "default": false
         },
-        "stock_reminder": {
-          "name": "stock_reminder",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "member_id": {
           "name": "member_id",
           "type": "integer",
@@ -1541,6 +1534,18 @@
         },
         "cancelled_by": {
           "name": "cancelled_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_by": {
+          "name": "edited_by",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1615,6 +1620,19 @@
           "tableTo": "members",
           "columnsFrom": [
             "cancelled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "transactions_edited_by_members_id_fk": {
+          "name": "transactions_edited_by_members_id_fk",
+          "tableFrom": "transactions",
+          "tableTo": "members",
+          "columnsFrom": [
+            "edited_by"
           ],
           "columnsTo": [
             "id"

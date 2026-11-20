@@ -208,8 +208,15 @@
     {
       "idx": 29,
       "version": "7",
-      "when": 1795088984219,
-      "tag": "0029_rappel-stock",
+      "when": 1795100149216,
+      "tag": "0029_montant-modifie",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795163549239,
+      "tag": "0030_rappel-stock",
       "breakpoints": true
     }
   ]

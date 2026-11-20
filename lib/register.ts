@@ -18,6 +18,7 @@ export type RegisterFilter = {
 };
 
 const canceller = alias(schema.members, "canceller");
+const editor = alias(schema.members, "editor");
 const sameEntry = alias(schema.transactions, "same_entry");
 
 type EntryColumns = Record<"shopId" | "memberId" | "kind" | "createdAt" | "tillPending" | "cancelledAt", AnyColumn>;
@@ -166,6 +167,7 @@ export async function registerEntries(
       member: schema.members.name,
       memberId: t.memberId,
       cancelledBy: canceller.name,
+      editedBy: editor.name,
       entryKey: entryKeyColumn(),
       entrySum: entrySumColumn(),
       ...stockMovedColumns(),
@@ -175,6 +177,7 @@ export async function registerEntries(
     .from(t)
     .innerJoin(schema.members, eq(schema.members.id, t.memberId))
     .leftJoin(canceller, eq(canceller.id, t.cancelledBy))
+    .leftJoin(editor, eq(editor.id, t.editedBy))
     .where(and(...where))
     .orderBy(desc(t.createdAt), desc(t.id))
     .limit(limit)
@@ -190,6 +193,35 @@ export async function registerEntries(
 }
 
 export type RegisterEntry = Awaited<ReturnType<typeof registerEntries>>[number];
+
+/**
+ * The lines still counted of the entry holding line `id`, in the order they
+ * were written, for editing their septims; empty when there is none in the shop.
+ */
+export async function entryLines(shopId: number, id: number) {
+  const t = schema.transactions;
+  return getDb()
+    .select({
+      id: t.id,
+      kind: t.kind,
+      label: t.label,
+      productId: t.productId,
+      quantity: t.quantity,
+      amount: t.amount,
+      counterparty: t.counterparty,
+      notes: t.notes,
+      tillPending: t.tillPending,
+      createdAt: t.createdAt,
+      member: schema.members.name,
+      memberId: t.memberId,
+    })
+    .from(t)
+    .innerJoin(schema.members, eq(schema.members.id, t.memberId))
+    .where(and(eq(t.shopId, shopId), sameEntryAs(id), isNull(t.cancelledAt)))
+    .orderBy(t.id);
+}
+
+export type EntryLine = Awaited<ReturnType<typeof entryLines>>[number];
 
 /** Number of lines (cancelled ones included) matching the filter. */
 export async function registerCount(shopId: number, filter: RegisterFilter = {}) {

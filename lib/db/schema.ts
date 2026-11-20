@@ -330,6 +330,9 @@ export const transactions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelledBy: integer("cancelled_by").references(() => members.id),
+    // The last time its septims were changed after it was written, and by whom.
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+    editedBy: integer("edited_by").references(() => members.id),
   },
   (t) => [
     index("transactions_shop_created_at_idx").on(t.shopId, t.createdAt),

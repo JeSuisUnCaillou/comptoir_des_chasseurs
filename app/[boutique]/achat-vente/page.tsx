@@ -13,6 +13,7 @@ import { CASH_KINDS, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import { dayRange } from "@/lib/dates";
 import { memberNames } from "@/lib/members";
 import {
+  entryLines,
   hasPending,
   pendingTotals,
   registerCount,
@@ -22,7 +23,7 @@ import {
   type RegisterFilter,
 } from "@/lib/register";
 
-type Search = Record<"type" | "employe" | "du" | "au" | "page" | "inscrit", string | string[] | undefined>;
+type Search = Record<"type" | "employe" | "du" | "au" | "page" | "inscrit" | "modifie", string | string[] | undefined>;
 
 
 /** What the "Opération" filter offers, and the lines each shows. */
@@ -68,6 +69,9 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
   const writtenIds = (param(search.inscrit) ?? "").split(",").map(Number);
   const written = writtenIds.flatMap((id) => entries.filter((e) => e.id === id));
   const first = written[0];
+  // Coming back from editing an entry's septims: its lines, and their new total.
+  const editedId = Number(param(search.modifie));
+  const edited = Number.isInteger(editedId) && editedId > 0 ? await entryLines(member.shopId, editedId) : [];
 
   return (
     <>
@@ -115,6 +119,12 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
           )}
         </p>
       )}
+      {edited.length > 0 && (
+        <p className="notice" role="status">
+          Écriture modifiée : {septims(signedAmount(edited[0].kind, edited.reduce((sum, e) => sum + e.amount, 0)), { signed: true })}
+          {edited.length > 1 ? " au total" : ""}.
+        </p>
+      )}
       <section className="panel" aria-labelledby="registre">
         <div className="eyebrow">Toutes les écritures</div>
         <h2 id="registre">Registre des achats, ventes et mouvements de caisse</h2>
@@ -142,7 +152,7 @@ export default async function AchatVente({ searchParams }: { searchParams: Promi
             </div>
           )}
         </div>
-        <RegisterTable entries={entries} member={member} highlight={written.map((e) => e.id)} />
+        <RegisterTable entries={entries} member={member} shopSlug={member.shop.slug} highlight={[...written, ...edited].map((e) => e.id)} />
         <Pagination page={page} total={total} path={PATH} params={filters} label="Pages du registre" />
       </section>
     </>

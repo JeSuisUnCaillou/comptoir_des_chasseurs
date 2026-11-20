@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CancelButton } from "@/components/cancel-button";
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
@@ -14,15 +15,19 @@ import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
 import { canActOn } from "@/lib/policies";
+import { shopPath } from "@/lib/paths";
 
 export function RegisterTable({
   entries,
   member,
+  shopSlug,
   showNotes = true,
   highlight,
 }: {
   entries: RegisterEntry[];
   member: { id: number; role: MemberRole };
+  /** The shop's address, for the link that edits a line's septims. */
+  shopSlug: string;
   showNotes?: boolean;
   /** Lines just written, shown fresh. */
   highlight?: number[];
@@ -90,9 +95,10 @@ export function RegisterTable({
                 </td>
                 {showNotes && <td className={`small cell-notes${rep}`}>{shared(e.notes ?? "")}</td>}
                 <td className="cell-actions">
-                  {(cancelled || mine) && (
+                  {(cancelled || mine || e.editedBy) && (
                     <div className="row-actions">
                       {cancelled && <CancelledNote by={e.cancelledBy} beside />}
+                      {!cancelled && e.editedBy && <span className="small muted">Modifiée par {e.editedBy}</span>}
                       {waiting && mine && place.settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
                       {mine &&
                         (cancelled ? (
@@ -104,12 +110,21 @@ export function RegisterTable({
                             question={`Rétablir ${label} ? ${restoreEffect(e, sale, cash)}`}
                           />
                         ) : (
+                          <>
+                          <Link
+                            className="btn btn-small btn-ghost"
+                            href={shopPath(shopSlug, `/achat-vente/modifier/${e.id}`)}
+                            aria-label={`Modifier ${label}`}
+                          >
+                            Modifier
+                          </Link>
                           <CancelButton
                             id={e.id}
                             text="Annuler"
                             name={`Annuler ${label}`}
                             question={`Annuler ${label} ? ${cash ? "L'argent est retiré de la caisse." : stockEffect(e, sale)}`}
                           />
+                          </>
                         ))}
                     </div>
                   )}

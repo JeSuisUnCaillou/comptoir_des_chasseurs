@@ -65,7 +65,7 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
                 </div>
               )}
             </div>
-            <RegisterTable entries={entries} member={member} />
+            <RegisterTable entries={entries} member={member} shopSlug={member.shop.slug} />
             <Pagination page={page} total={total} path={path} label="Pages des écritures à régler" />
           </>
         )}
