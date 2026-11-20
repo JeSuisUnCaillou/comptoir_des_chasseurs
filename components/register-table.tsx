@@ -2,7 +2,7 @@ import { EntryButtons, LineButtons, hasEntryButtons, hasLineButtons } from "@/co
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
 import type { MemberRole } from "@/lib/db/schema";
-import { entryClasses, entryPlaces, entryPositions, entryTotals } from "@/lib/entry-groups";
+import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 import type { RegisterEntry } from "@/lib/register";
@@ -30,7 +30,6 @@ export function RegisterTable({
   // The buttons acting on a whole entry go where its total goes, under it:
   // on a phone card, "Tout annuler" at the bottom under the total, while each
   // line's own "Annuler" stays under its price.
-  const buttonPlaces = entryPlaces(entries, positions, (e) => hasEntryButtons(e, canActOn(member, e)));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="registre">
@@ -58,6 +57,8 @@ export function RegisterTable({
             const waiting = !cancelled && e.tillPending;
             const settles = waiting && mine && place.settles;
             const buttons = mine && hasLineButtons(e);
+            // The buttons acting on the whole entry go on its first line, with the others.
+            const whole = mine && place.first && hasEntryButtons(e, true);
             return (
               <tr
                 key={e.id}
@@ -79,19 +80,19 @@ export function RegisterTable({
                   label={counterpartyLabel(e.kind)}
                   total={totals[i]}
                   place={place}
-                  actions={buttonPlaces[i] && <EntryButtons entry={e} where={buttonPlaces[i]} shopSlug={shopSlug} />}
                 />
                 <td className={`cell-member${rep}`} data-label="Employé">
                   {shared(e.member)}
                 </td>
                 {showNotes && <td className={`small cell-notes${rep}`}>{shared(e.notes ?? "")}</td>}
                 <td className="cell-actions">
-                  {(cancelled || settles || buttons || e.editedBy) && (
+                  {(cancelled || settles || buttons || whole || e.editedBy) && (
                     <div className="row-actions">
                       {cancelled && <CancelledNote by={e.cancelledBy} beside />}
                       {!cancelled && e.editedBy && <span className="small muted">Modifiée par {e.editedBy}</span>}
                       {settles && <SettleButton id={e.id} kind={e.kind} entry={e} />}
                       {buttons && <LineButtons line={e} shopSlug={shopSlug} />}
+                      {whole && <EntryButtons entry={e} shopSlug={shopSlug} />}
                     </div>
                   )}
                 </td>

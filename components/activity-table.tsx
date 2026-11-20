@@ -2,7 +2,7 @@ import { EntryButtons, LineButtons, hasEntryButtons, hasLineButtons } from "@/co
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
 import type { ActivityLine } from "@/lib/activity";
-import { entryClasses, entryPlaces, entryPositions, entryTotals } from "@/lib/entry-groups";
+import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 
@@ -33,8 +33,6 @@ export function ActivityTable({
   const totals = entryTotals(lines, positions, (l) =>
     l.entrySum == null || l.kind === "stock" ? null : signedAmount(l.kind, l.entrySum),
   );
-  // Placed like the register's: see `RegisterTable`.
-  const buttonPlaces = entryPlaces(lines, positions, (l) => l.kind !== "stock" && hasEntryButtons({ ...l, kind: l.kind }, canAct));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="activite">
@@ -70,6 +68,8 @@ export function ActivityTable({
             const waiting = !cancelled && l.tillPending;
             const settles = kind !== "stock" && waiting && canAct && place.settles;
             const buttons = kind !== "stock" && canAct && hasLineButtons({ ...l, kind });
+            // Like the register: the whole entry's buttons on its first line.
+            const whole = kind !== "stock" && canAct && place.first && hasEntryButtons({ ...l, kind }, true);
             return (
               <tr
                 key={`${l.source}-${l.id}`}
@@ -85,21 +85,19 @@ export function ActivityTable({
                   label={kind === "stock" ? undefined : counterpartyLabel(kind)}
                   total={totals[i]}
                   place={place}
-                  actions={
-                    buttonPlaces[i] && kind !== "stock" && <EntryButtons entry={{ ...l, kind }} where={buttonPlaces[i]} shopSlug={shopSlug} back={back} />
-                  }
                 />
                 <td
                   className={`small cell-notes${rep}`}
                   data-label={kind === "stock" && notes ? "Motif" : undefined}
                 >{shared(notes ?? "")}</td>
                 <td className="cell-actions">
-                  {(cancelled || settles || buttons || l.editedBy) && (
+                  {(cancelled || settles || buttons || whole || l.editedBy) && (
                     <div className="row-actions">
                       {cancelled && <CancelledNote by={l.cancelledBy} beside={canAct} />}
                       {!cancelled && l.editedBy && <span className="small muted">Modifiée par {l.editedBy}</span>}
                       {settles && <SettleButton id={l.id} kind={kind} entry={l} />}
                       {buttons && <LineButtons line={{ ...l, kind }} shopSlug={shopSlug} back={back} />}
+                      {whole && <EntryButtons entry={{ ...l, kind }} shopSlug={shopSlug} back={back} />}
                     </div>
                   )}
                 </td>

@@ -58,28 +58,24 @@ export function AmountCell({ money, cancelled, waiting }: { money: number | null
   );
 }
 
-/** The client or seller, written once per entry, with the entry's total under it, and its buttons. */
+/** The client or seller, written once per entry, with the entry's total under it. */
 export function PartyCell({
   party,
   label,
   total,
   place,
-  actions,
 }: {
   party: string | null;
   /** The cell's name on a phone card; none for a stock movement. */
   label: string | undefined;
   total: Total | null;
   place: EntryPosition;
-  /** Buttons acting on the whole entry, under its total. */
-  actions?: ReactNode;
 }) {
   const { shared, rep } = entryPlace(place);
   return (
-    <td className={`cell-party${rep}${party || total != null || actions ? "" : " cell-none"}`} data-label={label}>
+    <td className={`cell-party${rep}${party || total != null ? "" : " cell-none"}`} data-label={label}>
       {shared(party ?? "—")}
       <EntryTotal total={total} />
-      {actions}
     </td>
   );
 }

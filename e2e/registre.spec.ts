@@ -609,21 +609,15 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   expect(asked.at(-1)).toContain(`• 2 × ${hide}\n• 3 × ${meat}\n• 4 × ${fang}`);
   await expect(lines.filter({ hasText: "Annulée" })).toHaveCount(0);
   await expect(table.getByTestId("total-ecriture").filter({ visible: true })).toHaveText("Total : +25 septims");
-  // The button for the whole entry sits right under its total, as a table and as a card.
-  const box = async (locator: ReturnType<Page["locator"]>) => (await locator.boundingBox())!;
+  // The buttons for the whole entry sit on its first line, where a single line has its own.
   for (const width of [1920, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const total = await box(table.getByTestId("total-ecriture").filter({ visible: true }));
-    const edit = await box(table.getByRole("link", { name: /^Modifier les transactions/ }));
-    const all = await box(table.getByRole("button", { name: /^Tout annuler/ }));
-    expect(edit.y).toBeGreaterThanOrEqual(total.y + total.height);
-    expect(edit.y).toBeLessThan(total.y + total.height + 12);
-    expect(Math.abs(edit.x - total.x)).toBeLessThan(2);
-    // Side by side when they fit, else just under.
-    expect(all.y).toBeLessThan(edit.y + 2 * edit.height + 8);
-    // The lines have no buttons of their own.
-    await expect(lines.locator("td.cell-actions").getByRole("button")).toHaveCount(0);
-    await expect(lines.locator("td.cell-actions").getByRole("link")).toHaveCount(0);
+    const first = lines.first().locator("td.cell-actions");
+    await expect(first.getByRole("link", { name: /^Modifier les transactions/ })).toBeVisible();
+    await expect(first.getByRole("button", { name: /^Tout annuler/ })).toBeVisible();
+    // The other lines have no buttons of their own.
+    await expect(lines.locator("td.cell-actions").getByRole("button")).toHaveCount(1);
+    await expect(lines.locator("td.cell-actions").getByRole("link")).toHaveCount(1);
   }
   for (const [product, left] of [
     [hide, "8"],
@@ -852,12 +846,11 @@ test("sur un petit téléphone, Tout annuler et Tout rétablir tiennent dans la 
   await expect(table.getByRole("button", { name: /^Tout rétablir/ })).toBeVisible();
   for (const width of [320, 360]) {
     await page.setViewportSize({ width, height: 900 });
-    const card = (await table.locator("tbody tr").last().boundingBox())!;
-    const total = (await table.getByTestId("total-ecriture").filter({ visible: true }).boundingBox())!;
+    const card = (await table.locator("tbody tr").first().boundingBox())!;
     for (const name of [/^Tout annuler/, /^Tout rétablir/]) {
       const button = (await table.getByRole("button", { name }).boundingBox())!;
-      // In the last line's card, at the total or under it, and inside the card.
-      expect(button.y + button.height / 2).toBeGreaterThan(total.y);
+      // In the first line's card, inside it.
+      expect(button.y).toBeGreaterThanOrEqual(card.y - 1);
       expect(button.y + button.height).toBeLessThanOrEqual(card.y + card.height + 1);
       expect(button.x).toBeGreaterThanOrEqual(card.x - 1);
       expect(button.x + button.width).toBeLessThanOrEqual(card.x + card.width + 1);

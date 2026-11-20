@@ -317,9 +317,8 @@ sur la page d'activité d'un membre, pour son auteur ou un gérant :
   « Annuler » sur la ligne. Sur une carte (téléphone, fenêtre étroite), ils
   sont juste sous son prix, à droite.
 - **Une écriture de plusieurs lignes qui comptent** : ses lignes n'ont pas de
-  bouton à elles ; juste sous son total (sous le client ou le vendeur, ou au
-  bas de la carte sur un téléphone), « Modifier les transactions » et « Tout
-  annuler ». « Tout annuler » annule toutes les lignes qui comptent encore ;
+  bouton à elles ; sa première ligne porte, là où une ligne seule a les
+  siens, « Modifier les transactions » et « Tout annuler ». « Tout annuler » annule toutes les lignes qui comptent encore ;
   la confirmation les liste, et elles changent toutes ensemble, ou aucune
   (un achat dont la marchandise est déjà vendue bloque tout).
 - **Annuler** : la ligne reste barrée, ne compte plus dans la caisse, et le
@@ -331,7 +330,7 @@ sur la page d'activité d'un membre, pour son auteur ou un gérant :
   du stock ce qui y reste (jamais sous zéro, comme une vente), un achat y
   remet sa quantité. L'annuler encore rend ce qu'elle a vraiment pris la
   dernière fois. Quand une écriture a au moins deux lignes annulées, un seul
-  « Tout rétablir » sous son total les rétablit toutes, à la place des
+  « Tout rétablir », sur sa première ligne, les rétablit toutes, à la place des
   boutons de chaque ligne.
 - **Modifier les montants** (« Modifier » ou « Modifier les transactions ») :
   une page avec les septims de chaque ligne de l'écriture (lignes annulées

@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { CancelButton } from "@/components/cancel-button";
 import type { TransactionKind } from "@/lib/db/schema";
-import { entryPlaceClasses, type EntryPlace } from "@/lib/entry-groups";
 import { shopPath } from "@/lib/paths";
 import { isCashKind } from "@/lib/transaction-kinds";
 
 /**
  * The buttons that change register lines, in the register and on a member's
  * activity page alike, shown only to whom may act on them (`canActOn`). An
- * entry with two lines or more still counted gets, under its total,
- * « Modifier les transactions » and « Tout annuler », and its lines no button
- * of their own; otherwise its line has Modifier and Annuler. Likewise two
+ * entry with two lines or more still counted gets, on its first line, where
+ * a single line has its own, « Modifier les transactions » and « Tout
+ * annuler », and its lines no button of their own; otherwise its line has Modifier and Annuler. Likewise two
  * cancelled lines or more get « Tout rétablir », a single one Rétablir.
  */
 export type ButtonLine = {
@@ -117,18 +116,16 @@ export function wholeStockEffect(kind: TransactionKind) {
 }
 
 /**
- * On an entry of several lines, under its total: change the septims of every
- * line still counted, cancel them all, or restore every cancelled one, in one
- * click. `where` places them like the total (see `entryPlaces`).
+ * On the first line of an entry of several, among its buttons: change the
+ * septims of every line still counted, cancel them all, or restore every
+ * cancelled one, in one click.
  */
 export function EntryButtons({
   entry: e,
-  where,
   shopSlug,
   back,
 }: {
   entry: ButtonLine;
-  where: EntryPlace;
   shopSlug: string;
   back?: string;
 }) {
@@ -137,7 +134,7 @@ export function EntryButtons({
   const list = (items: string[]) => items.map((item) => `• ${item}`).join("\n");
   const sale = e.kind === "vente";
   return (
-    <span className={`entry-actions ${entryPlaceClasses(where)}`}>
+    <>
       {active.length > 1 && (
         <Link
           className="btn btn-small btn-ghost"
@@ -170,6 +167,6 @@ export function EntryButtons({
           }`}
         />
       )}
-    </span>
+    </>
   );
 }
