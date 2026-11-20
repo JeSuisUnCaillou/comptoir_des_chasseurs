@@ -143,6 +143,8 @@ export function TransactionForm({
   const [notes, setNotes] = useState(draft?.notes ?? "");
   // The septims usually reach the till later, so the box starts checked.
   const [tillPending, setTillPending] = useState(draft?.tillPending ?? true);
+  // A purchase can ask for a reminder to put its merchandise in the chest; off unless asked.
+  const [stockReminder, setStockReminder] = useState(draft?.stockReminder ?? false);
   const evaluated = lines.map((line) => evaluate(line, kind, products, group));
   const total = evaluated.reduce((sum, e) => sum + e.value, 0);
   // The purchase's products that have privileged prices, once each, and their groups in the groups' order.
@@ -190,6 +192,7 @@ export function TransactionForm({
       counterparty,
       notes,
       tillPending,
+      stockReminder,
       privileged: group,
     };
     const params = new URLSearchParams({ [DRAFT_PARAM]: encodeDraft(carried) });
@@ -493,6 +496,23 @@ export function TransactionForm({
             Tu pourras {sale ? "la" : "le"} valider plus tard depuis le registre.
           </span>
         </div>
+        {!sale && (
+          <div className="field full">
+            <label className="check">
+              <input
+                type="checkbox"
+                name="stockReminder"
+                checked={stockReminder}
+                onChange={(ev) => setStockReminder(ev.target.checked)}
+              />{" "}
+              Rappelle-moi de déposer ça dans le stock
+            </label>
+            <span className="small muted">
+              L&apos;achat entre dans l&apos;inventaire tout de suite ; il t&apos;attendra dans « À régler » jusqu&apos;à ce
+              que tu dises l&apos;avoir déposé.
+            </span>
+          </div>
+        )}
       </div>
       {state && (
         <p className="notice error" role="alert">

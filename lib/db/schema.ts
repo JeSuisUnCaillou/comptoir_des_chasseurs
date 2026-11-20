@@ -321,6 +321,9 @@ export const transactions = pgTable(
     // A sale or buyback whose septims the member has not yet put in or taken
     // from the till: it does not count in the till until then.
     tillPending: boolean("till_pending").notNull().default(false),
+    // A purchase line whose merchandise the member asked to be reminded to put
+    // in the chest. Only a reminder: its stock moved when it was written.
+    stockReminder: boolean("stock_reminder").notNull().default(false),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id),

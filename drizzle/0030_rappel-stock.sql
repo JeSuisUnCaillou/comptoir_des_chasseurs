@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "stock_reminder" boolean DEFAULT false NOT NULL;

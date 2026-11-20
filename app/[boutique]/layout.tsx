@@ -24,6 +24,8 @@ import { shopPath } from "@/lib/paths";
 import { isGerant } from "@/lib/policies";
 import { shopLogoVersion } from "@/lib/shop-logos";
 import { currentShop } from "@/lib/shops";
+import { ToSettleNotice } from "@/components/to-settle-notice";
+import { pendingTotals, stockReminderCount } from "@/lib/register";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,14 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
   const member = await requireMember();
   const gerant = isGerant(member);
   const at = (path: string) => shopPath(member.shop.slug, path);
-  const logo = shopLogoPath(member.shop.slug, await shopLogoVersion(member.shopId));
+  const [logoVersion, mine, stock] = await Promise.all([
+    shopLogoVersion(member.shopId),
+    // What the member still has to settle, said at the top of every page: septims, merchandise.
+    pendingTotals(member.shopId, { memberId: member.id }),
+    stockReminderCount(member.shopId, member.id),
+  ]);
+  const logo = shopLogoPath(member.shop.slug, logoVersion);
+  const notice = <ToSettleNotice mine={mine} stock={stock} href={at("/a-regler")} />;
 
   return (
     <div className="shell">
@@ -95,6 +104,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           <span className="eyebrow" data-testid="shop-name">
             {member.shop.name}
           </span>
+          <div className="topbar-notice">{notice}</div>
           <div className="topbar-user">
             <Link className="topbar-name" href={at(`/membres/${member.id}`)} title="Voir mon activité" data-testid="member-name">
               {member.name}
@@ -109,7 +119,10 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
             </form>
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content">
+          <div className="content-notice">{notice}</div>
+          {children}
+        </main>
         <footer className="footer">✦ Codex enchanté ✦</footer>
       </div>
     </div>

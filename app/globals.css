@@ -2938,3 +2938,91 @@ button.count-read[aria-expanded="true"] .count-chevron {
 .setup-till .field {
   margin: 0 0 10px;
 }
+
+/* « À régler »: at the top of every page, what the member signed in still has
+   to settle; beside their name on a wide screen, above the page on a narrow one. */
+.topbar-notice {
+  margin-left: auto;
+  min-width: 0;
+}
+
+.content-notice {
+  display: none;
+}
+
+.content-notice:empty,
+.topbar-notice:empty {
+  display: none;
+}
+
+.to-settle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border: 1px solid var(--orange);
+  border-radius: 999px;
+  background: rgb(245 132 60 / 0.12);
+  color: var(--orange);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.to-settle:hover {
+  background: rgb(245 132 60 / 0.2);
+}
+
+.to-settle > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.to-settle-detail {
+  color: var(--text);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .topbar-notice {
+    display: none;
+  }
+
+  .content-notice:not(:empty) {
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .content-notice .to-settle {
+    display: flex;
+    border-radius: 10px;
+  }
+}
+
+.deposit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.deposit-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  box-shadow: inset 3px 0 0 var(--orange);
+  background: rgb(255 255 255 / 0.025);
+}
+
+.deposit-item > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

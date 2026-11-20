@@ -13,6 +13,8 @@ export type RegisterFilter = {
   memberId?: number;
   /** Only the lines waiting for the till. */
   tillPending?: boolean;
+  /** Only the lines not cancelled. */
+  live?: boolean;
 };
 
 const canceller = alias(schema.members, "canceller");
@@ -109,6 +111,7 @@ function conditions(shopId: number, filter: RegisterFilter) {
   if (filter.to) where.push(lt(t.createdAt, filter.to));
   if (filter.memberId) where.push(eq(t.memberId, filter.memberId));
   if (filter.tillPending) where.push(eq(t.tillPending, true));
+  if (filter.live) where.push(isNull(t.cancelledAt));
   return where;
 }
 
@@ -246,6 +249,71 @@ export async function settleEntry(shopId: number, id: number) {
     .where(pendingOfSameEntry(t, sql`(${line})`));
 }
 
+/**
+ * The purchase holding line `id` of the shop is in the chest: its lines no
+ * longer remind anyone to put their merchandise there.
+ */
+export async function clearStockReminder(shopId: number, id: number) {
+  const t = schema.transactions;
+  const line = getDb()
+    .select({ shopId: t.shopId, memberId: t.memberId, kind: t.kind, createdAt: t.createdAt })
+    .from(t)
+    .where(and(eq(t.id, id), eq(t.shopId, shopId)));
+  await getDb()
+    .update(t)
+    .set({ stockReminder: false })
+    .where(sql`${entryOf(t)} = (${line}) and ${t.stockReminder}`);
+}
+
+/** A purchase whose merchandise its author asked to be reminded to put in the chest. */
+export type StockReminder = {
+  /** Its first line, which the « C'est déposé » button names. */
+  id: number;
+  createdAt: Date;
+  counterparty: string | null;
+  items: { label: string; quantity: number }[];
+};
+
+/** The member's purchase lines still to put in the chest, cancelled ones left out. */
+function reminderOf(shopId: number, memberId: number) {
+  const t = schema.transactions;
+  return and(eq(t.shopId, shopId), eq(t.memberId, memberId), eq(t.stockReminder, true), isNull(t.cancelledAt));
+}
+
+/** The member's purchases still to put in the chest, oldest first, cancelled lines left out. */
+export async function stockReminders(shopId: number, memberId: number): Promise<StockReminder[]> {
+  const t = schema.transactions;
+  const rows = await getDb()
+    .select({
+      id: t.id,
+      createdAt: t.createdAt,
+      counterparty: t.counterparty,
+      label: t.label,
+      quantity: t.quantity,
+      entryKey: entryKeyColumn(),
+    })
+    .from(t)
+    .where(reminderOf(shopId, memberId))
+    .orderBy(t.createdAt, t.id);
+  const entries = new Map<string, StockReminder>();
+  for (const { entryKey, label, quantity, ...line } of rows) {
+    const entry = entries.get(entryKey) ?? { ...line, items: [] };
+    entry.items.push({ label, quantity });
+    entries.set(entryKey, entry);
+  }
+  return [...entries.values()];
+}
+
+/** How many lines of the member's purchases are still to put in the chest. */
+export async function stockReminderCount(shopId: number, memberId: number) {
+  const t = schema.transactions;
+  const [row] = await getDb()
+    .select({ total: count() })
+    .from(t)
+    .where(reminderOf(shopId, memberId));
+  return row.total;
+}
+
 export type Till = {
   sales: number;
   buybacks: number;
@@ -256,6 +324,11 @@ export type Till = {
   /** Sales minus buybacks, cash movements left out. */
   margin: number;
 };
+
+/** What waiting money asks of its authors: septims to put in the till, septims to take from it. */
+export function toSettle(waiting: Till) {
+  return { deposit: waiting.sales + waiting.inflows, take: waiting.buybacks + waiting.outflows };
+}
 
 /** Whether any money is written but waiting for the till (see pendingTotals). */
 export function hasPending(waiting: Till) {
