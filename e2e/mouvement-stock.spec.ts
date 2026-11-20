@@ -1,6 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
-import { ALERT, createProduct, newEmployeePage, pickProduct, uniqueName } from "./helpers";
+import {
+  ALERT,
+  createProduct,
+  createStockMovement,
+  GERANT,
+  loginAsGerant,
+  newEmployeePage,
+  pickProduct,
+  uniqueName,
+} from "./helpers";
 
 /** Sets a product's stock straight in the database, as a sale made meanwhile would. */
 async function setStock(name: string, stock: number) {
@@ -167,4 +176,123 @@ test("dans le choix d'une marchandise, Tab prend le premier résultat, ou garde 
   await expect(page).toHaveURL(/\/inventaire\/mouvement$/);
   await pickProduct(line, hide);
   expect(await box.evaluate((el: HTMLInputElement) => el.validationMessage)).toBe("");
+});
+
+/** The stock of a merchandise, as the Inventaire shows it. */
+async function stockOf(page: Page, name: string) {
+  await page.goto("/inventaire");
+  await page.getByLabel("Rechercher une marchandise").fill(name);
+  return page.getByTestId(`stock-${name}`).getByTestId("stock-value");
+}
+
+test("sur sa page d'activité, un membre annule, rétablit et modifie son mouvement de stock, et le stock suit", async ({
+  browser,
+}) => {
+  const hide = uniqueName("Patte de vasard");
+  const meat = uniqueName("Gigot de chèvre");
+  await createProduct(hide, { stock: 0 });
+  await createProduct(meat, { stock: 10, unit: "morceau", category: "Viandes et venaison" });
+  const { page, username } = await newEmployeePage(browser, "bruma");
+  const reason = uniqueName("Chasse à Bruma");
+  // In with the hide, out with the meat: one Mouvement de stock each way would do, a mixed one tests both.
+  await createStockMovement(username, [[hide, 14], [meat, -3]], reason);
+  const asked: string[] = [];
+  page.on("dialog", (dialog) => {
+    asked.push(dialog.message());
+    void dialog.accept();
+  });
+
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  const mine = page.url();
+  const table = page.getByTestId("activite");
+  const lines = table.locator("tbody tr").filter({ hasText: new RegExp(`${hide}|${meat}`) });
+  await expect(lines).toHaveCount(2);
+  // The whole entry's buttons on its first line, none on each line.
+  await expect(lines.first().getByRole("link", { name: "Modifier les transactions : les 2 lignes de ce mouvement de stock" })).toBeVisible();
+  await expect(table.getByRole("link", { name: /^Modifier le mouvement de stock/ })).toHaveCount(0);
+
+  // All cancelled at once: the hides go out, the meat comes back.
+  await lines.first().getByRole("button", { name: "Tout annuler : les 2 lignes de ce mouvement de stock" }).click();
+  expect(asked.at(-1)).toContain(`• 14 × ${hide}\n• 3 × ${meat}`);
+  await expect(lines.filter({ hasText: "Annulée par" })).toHaveCount(2);
+  // A cancelled movement no longer counts in the member's stock tile.
+  await expect(page.getByTestId("total-inventaire")).toContainText("(+0 / −0)");
+  await expect(await stockOf(page, hide)).toHaveText("0");
+  await expect(await stockOf(page, meat)).toHaveText("10");
+
+  // And back.
+  await page.goto(mine);
+  await lines.first().getByRole("button", { name: "Tout rétablir : les 2 lignes de ce mouvement de stock" }).click();
+  await expect(lines.filter({ hasText: "Annulée" })).toHaveCount(0);
+  await expect(page.getByTestId("total-inventaire")).toContainText("(+14 / −3)");
+  await expect(await stockOf(page, hide)).toHaveText("14");
+  await expect(await stockOf(page, meat)).toHaveText("7");
+
+  // One line cancelled alone, the other's units changed: back on the activity page.
+  await page.goto(mine);
+  await lines.first().getByRole("link", { name: /^Modifier les transactions/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Modifier un mouvement de stock" })).toBeVisible();
+  await page.getByRole("button", { name: `Annuler ${meat}` }).click();
+  expect(asked.at(-1)).toBe(`Annuler −3 ${meat} ?`);
+  const edit = page.getByRole("region", { name: "Modifier les quantités" });
+  await expect(edit.getByLabel(`${meat} (sortie)`)).toHaveCount(0);
+  await edit.getByLabel(`${hide} (entrée)`).fill("10");
+  await expect(edit.getByText("Avant : 14")).toBeVisible();
+  await edit.getByRole("button", { name: "Enregistrer les quantités" }).click();
+  await expect(page).toHaveURL(mine);
+  const hideRow = lines.filter({ hasText: hide });
+  await expect(hideRow).toContainText("+10");
+  await expect(hideRow).toContainText("Modifiée par");
+  // The meat, cancelled alone, has its own Rétablir.
+  await expect(lines.filter({ hasText: meat }).getByRole("button", { name: /^Rétablir le mouvement de stock/ })).toBeVisible();
+  await expect(await stockOf(page, hide)).toHaveText("10");
+  await expect(await stockOf(page, meat)).toHaveText("10");
+});
+
+test("un mouvement de stock ne s'annule ni ne se modifie sous zéro, et chacun n'a les boutons que des siens", async ({
+  page,
+  browser,
+}) => {
+  const hide = uniqueName("Peau de lion");
+  await createProduct(hide, { stock: 0 });
+  const { page: employee, username } = await newEmployeePage(browser, "dar");
+  const reason = uniqueName("Battue");
+  const gerantReason = uniqueName("Coffre du gérant");
+  await createStockMovement(username, [[hide, 6]], reason);
+  await createStockMovement(GERANT.username, [[hide, 1]], gerantReason);
+  // Four sold since: only three left.
+  await setStock(hide, 3);
+
+  // The employee sees buttons on their own movement only, in the Inventaire's history.
+  await employee.goto(`/inventaire?q=${encodeURIComponent(hide)}`);
+  const history = employee.getByTestId("historique");
+  const own = history.getByRole("row").filter({ hasText: reason });
+  await expect(own.getByRole("link", { name: /^Modifier le mouvement de stock/ })).toBeVisible();
+  await expect(history.getByRole("row").filter({ hasText: gerantReason }).getByRole("button")).toHaveCount(0);
+
+  // Cancelling the six that came in would take the stock below zero.
+  employee.once("dialog", (dialog) => dialog.accept());
+  await own.getByRole("button", { name: /^Annuler le mouvement de stock/ }).click();
+  await expect(own.locator(ALERT)).toHaveText(`Impossible d'annuler : il ne reste que 3 ${hide} en stock.`);
+  await expect(own).not.toContainText("Annulée");
+  // Down to two: four leave, one more than is left.
+  await own.getByRole("link", { name: /^Modifier le mouvement de stock/ }).click();
+  const edit = employee.getByRole("region", { name: "Modifier les quantités" });
+  await edit.getByLabel(`${hide} (entrée)`).fill("2");
+  await edit.getByRole("button", { name: "Enregistrer les quantités" }).click();
+  await expect(edit.locator(ALERT)).toHaveText(`Impossible : il ne reste que 3 ${hide} en stock.`);
+  // Down to three: the stock is empty, the history comes back.
+  await edit.getByLabel(`${hide} (entrée)`).fill("3");
+  await edit.getByRole("button", { name: "Enregistrer les quantités" }).click();
+  await expect(employee).toHaveURL(new RegExp(`/inventaire\\?q=`));
+  await expect(own).toContainText("+3");
+  await expect(await stockOf(employee, hide)).toHaveText("0");
+
+  // A gérant has the buttons on the employee's movement too.
+  await loginAsGerant(page);
+  await page.goto(`/inventaire?q=${encodeURIComponent(hide)}`);
+  await expect(
+    page.getByTestId("historique").getByRole("row").filter({ hasText: reason }).getByRole("button", { name: /^Annuler le mouvement de stock/ }),
+  ).toBeVisible();
 });

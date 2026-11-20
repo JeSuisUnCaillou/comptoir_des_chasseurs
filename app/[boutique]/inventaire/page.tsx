@@ -58,6 +58,13 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
     to,
   };
   const filtered = Boolean(q || employe || sens || du || au);
+  // This very page, to come back to after editing a movement.
+  const query = new URLSearchParams(
+    Object.entries({ ...filters, page: page > 1 ? String(page) : undefined }).filter(
+      (entry): entry is [string, string] => Boolean(entry[1]),
+    ),
+  ).toString();
+  const back = `${PATH}${query ? `?${query}` : ""}`;
   const [products, movements, total, till, groups, categories] = await Promise.all([
     activeProducts(member.shopId),
     recentMovements(member.shopId, filter, { limit: PAGE_SIZE, offset: offsetOf(page) }),
@@ -178,6 +185,9 @@ export default async function Inventaire({ searchParams }: { searchParams: Promi
         </MemberDateFilters>
         <MovementTable
           movements={movements}
+          member={member}
+          shopSlug={member.shop.slug}
+          back={back}
           highlight={written.map((m) => m.id)}
           empty={filtered ? "Aucun mouvement ne correspond." : "Aucun mouvement pour l'instant."}
         />

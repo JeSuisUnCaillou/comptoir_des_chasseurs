@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
-import { movementEntryKey } from "@/lib/stock";
+import { movementEntryKey, movementStateColumns } from "@/lib/stock";
 import {
   entryKeyColumn,
   entryStateColumns,
@@ -48,7 +48,7 @@ function goodsValue(p: JoinedPrices, quantity: number) {
 /**
  * The stock a member moved by hand on the shop's Inventaire between two
  * instants (hunts, transformations, losses…), without the movements of sales
- * and buybacks, and what it is worth at today's sale prices.
+ * and buybacks nor the cancelled ones, and what it is worth at today's sale prices.
  */
 export async function memberHandStock(shopId: number, memberId: number, from: Date, to: Date): Promise<HandStock> {
   const m = schema.stockMovements;
@@ -56,7 +56,16 @@ export async function memberHandStock(shopId: number, memberId: number, from: Da
     .select({ delta: m.delta, ...priceColumns })
     .from(m)
     .innerJoin(schema.products, eq(schema.products.id, m.productId))
-    .where(and(eq(m.shopId, shopId), eq(m.memberId, memberId), isNull(m.transactionId), gte(m.createdAt, from), lt(m.createdAt, to)));
+    .where(
+      and(
+        eq(m.shopId, shopId),
+        eq(m.memberId, memberId),
+        isNull(m.transactionId),
+        isNull(m.cancelledAt),
+        gte(m.createdAt, from),
+        lt(m.createdAt, to),
+      ),
+    );
   const result: HandStock = { unitsIn: 0, unitsOut: 0, value: 0, unpriced: 0 };
   for (const move of moves) {
     if (move.delta > 0) result.unitsIn += move.delta;
@@ -98,9 +107,9 @@ export type ActivityLine = {
   createdAt: Date;
   cancelledAt: Date | null;
   cancelledBy: string | null;
-  /** Who last changed its septims. */
+  /** Who last changed its septims, or a stock movement's units. */
   editedBy: string | null;
-  /** For a register line's buttons (`ButtonLine`); null, 0 and '' for a stock movement. */
+  /** For its buttons (`ButtonLine`); `stockBack` is 0 for a stock movement. */
   productId: number | null;
   stockBack: number;
   entryActiveItems: string;
@@ -120,6 +129,7 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
   const entry = pendingEntryColumns();
   const state = entryStateColumns();
   const stock = stockMovedColumns();
+  const moves = movementStateColumns();
   return sql`
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
@@ -133,10 +143,13 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
     left join ${schema.members} ${editor} on ${editor.id} = ${t.editedBy}
     where ${t.shopId} = ${shopId} and ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}, null,
-      null, null, 0, 0, '', ''
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, ${m.cancelledAt}, ${canceller.name},
+      0, 0, '', ${movementEntryKey()}, null,
+      ${editor.name}, ${m.productId}, 0, 0, ${moves.entryActiveItems}, ${moves.entryCancelledItems}
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
+    left join ${schema.members} ${canceller} on ${canceller.id} = ${m.cancelledBy}
+    left join ${schema.members} ${editor} on ${editor.id} = ${m.editedBy}
     where ${m.shopId} = ${shopId} and ${m.memberId} = ${memberId} and ${m.transactionId} is null
       and ${m.createdAt} >= ${since} and ${m.createdAt} < ${until}`;
 }

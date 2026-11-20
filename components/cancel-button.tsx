@@ -2,10 +2,12 @@
 
 import { useActionState } from "react";
 import { cancelTransaction, restoreTransaction, type TransactionState } from "@/app/[boutique]/achat-vente/actions";
+import { cancelStockMovement, restoreStockMovement } from "@/app/[boutique]/inventaire/actions";
 
 /**
  * Cancels a register line, or counts a cancelled one again (`restore`); with
- * `whole`, every line of its entry at once. Asks `question` first.
+ * `whole`, every line of its entry at once; with `stock`, a stock movement
+ * made by hand instead. Asks `question` first.
  */
 export function CancelButton({
   id,
@@ -14,6 +16,7 @@ export function CancelButton({
   question,
   restore = false,
   whole = false,
+  stock = false,
 }: {
   id: number;
   /** What the button says. */
@@ -23,9 +26,10 @@ export function CancelButton({
   question: string;
   restore?: boolean;
   whole?: boolean;
+  stock?: boolean;
 }) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(
-    restore ? restoreTransaction : cancelTransaction,
+    stock ? (restore ? restoreStockMovement : cancelStockMovement) : restore ? restoreTransaction : cancelTransaction,
     null,
   );
   return (

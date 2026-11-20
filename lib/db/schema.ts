@@ -264,6 +264,13 @@ export const stockMovements = pgTable("stock_movements", {
   // cancellation). Null for a movement made by hand on the Inventaire.
   transactionId: integer("transaction_id").references(() => transactions.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // A movement by hand cancelled by its author or a gérant: it no longer
+  // counts, and its units went back. Null while it counts.
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  cancelledBy: integer("cancelled_by").references(() => members.id),
+  // Who last changed its quantity, by hand, after it was written.
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+  editedBy: integer("edited_by").references(() => members.id),
 });
 
 /**
