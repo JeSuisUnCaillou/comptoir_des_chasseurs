@@ -358,12 +358,21 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
   await page.goto("/marchandises");
   await page.getByRole("searchbox").fill(product);
   const goods = (await page.getByRole("link", { name: `Modifier ${product}` }).getAttribute("href"))!;
+  // The page editing the septims of that sale of millions.
+  await page.goto("/achat-vente");
+  const amounts = (await page
+    .getByTestId("registre")
+    .getByRole("row")
+    .filter({ hasText: product })
+    .getByRole("link", { name: /^Modifier la vente/ })
+    .getAttribute("href"))!;
 
   const pages = [
     COMPTOIR,
     "/achat-vente",
     "/achat-vente/achat",
     "/achat-vente/caisse",
+    amounts,
     "/inventaire",
     "/inventaire/mouvement",
     "/inventaire/regularisation",
