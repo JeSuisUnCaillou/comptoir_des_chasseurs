@@ -52,7 +52,7 @@ export default async function ActiviteMembre({
       (pair): pair is [string, string] => pair[1] != null,
     ),
   ).toString();
-  const back = `/membres/${member.id}${query ? `?${query}` : ""}`;
+  const back = at(`/membres/${member.id}${query ? `?${query}` : ""}`);
 
   const [stock, totals, lines, lineTotal] = await Promise.all([
     memberHandStock(viewer.shopId, member.id, from!, to!),

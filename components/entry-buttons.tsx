@@ -30,7 +30,7 @@ export type ButtonLine = {
 /**
  * On one line, unless its entry has the buttons (see above): Modifier and
  * Annuler while it counts, Rétablir once cancelled. `back`, a page of the
- * shop, is where editing the septims comes back to (the register when none).
+ * app, is where editing the septims comes back to (the register when none).
  */
 export function LineButtons({ line: e, shopSlug, back }: { line: ButtonLine; shopSlug: string; back?: string }) {
   if (!hasLineButtons(e)) return null;
@@ -116,6 +116,11 @@ export function hasEntryButtons(e: ButtonLine, mine: boolean) {
  * line still counted, cancel them all, or restore every cancelled one, in one
  * click. `where` places them like the total (see `entryPlaces`).
  */
+/** What cancelling every line of an entry does to the stock. */
+export function wholeStockEffect(kind: TransactionKind) {
+  return kind === "vente" ? "Ce qui est sorti du stock y revient." : "Ce qui est entré en stock en ressort.";
+}
+
 export function EntryButtons({
   entry: e,
   where,
@@ -148,9 +153,7 @@ export function EntryButtons({
           id={e.id}
           text="Tout annuler"
           name={`Tout annuler : les ${active.length} lignes de ${name}`}
-          question={`Annuler les ${active.length} lignes de ${name} ?\n\n${list(active)}\n\n${
-            sale ? "Ce qui est sorti du stock y revient." : "Ce qui est entré en stock en ressort."
-          }`}
+          question={`Annuler les ${active.length} lignes de ${name} ?\n\n${list(active)}\n\n${wholeStockEffect(e.kind)}`}
         />
       )}
       {cancelled.length > 1 && (

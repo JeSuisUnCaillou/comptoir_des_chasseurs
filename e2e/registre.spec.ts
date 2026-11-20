@@ -727,6 +727,37 @@ test("l'auteur d'une vente en modifie les montants : la caisse suit, le stock ne
   await expect(lines.filter({ hasText: hide })).toContainText("+7 septims");
 });
 
+test("annuler une ligne depuis la page Modifier laisse aux autres leurs vrais montants", async ({ browser }) => {
+  const [a, b, c] = ["Peau de troll", "Croc de troll", "Graisse de troll"].map((n) => uniqueName(n));
+  for (const [product, price] of [[a, 1], [b, 2], [c, 3]] as const) await createProduct(product, { sellPrice: price, stock: 50 });
+  const { page, username } = await newEmployeePage(browser, "brand-shei");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  for (const [i, product] of [a, b, c].entries()) {
+    if (i > 0) await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+    await pickProduct(line(form, i + 1), product);
+    await line(form, i + 1).getByLabel("Quantité").fill("10");
+  }
+  await form.getByLabel("Pas encore mis en caisse").uncheck();
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "60 septims au total" })).toBeVisible();
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+
+  await page.getByTestId("registre").getByRole("link", { name: /^Modifier les transactions/ }).click();
+  const edit = page.getByRole("region", { name: "Modifier les montants" });
+  const one = page.getByRole("region", { name: "Annuler une seule ligne" });
+  page.once("dialog", (dialog) => dialog.accept());
+  await one.getByRole("listitem").filter({ hasText: a }).getByRole("button", { name: "Annuler" }).click();
+  await expect(edit.getByLabel(`10 × ${a} (septims)`)).toHaveCount(0);
+  await expect(edit.getByLabel(`10 × ${b} (septims)`)).toHaveValue("20");
+  await expect(edit.getByLabel(`10 × ${c} (septims)`)).toHaveValue("30");
+  await expect(edit.getByTestId("nouveau-total")).toHaveText("Total : +50 septims → après : +50 septims");
+  await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
+  await expect(page.getByRole("status")).toHaveText("Écriture modifiée : +50 septims au total.");
+});
+
 test("seuls l'auteur et un gérant modifient les montants d'une écriture", async ({ browser }) => {
   const label = uniqueName("Vente de Hroki");
   const { page: author, username } = await newEmployeePage(browser, "hroki");

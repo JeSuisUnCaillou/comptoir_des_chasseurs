@@ -23,7 +23,7 @@ export function ActivityTable({
   empty: string;
   /** The shop's address, for the link that edits a line's septims. */
   shopSlug: string;
-  /** This page in the shop, where editing a line's septims comes back to. */
+  /** This page, where editing a line's septims comes back to. */
   back: string;
   canAct?: boolean;
 }) {

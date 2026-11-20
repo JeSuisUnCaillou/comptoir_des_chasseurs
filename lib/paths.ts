@@ -56,14 +56,6 @@ export function shopPath(slug: string, path = "/") {
   return path === "/" ? `/${slug}` : `/${slug}${path}`;
 }
 
-/**
- * A page of the shop to come back to after a form, as given in `?retour=`
- * ("/membres/1?page=2"); null for anything else, such as another site.
- */
-export function returnPath(value: string | null | undefined): string | null {
-  return value && /^\/[a-z0-9-]+(\/[a-z0-9-]+)*(\?[a-zA-Z0-9=&%._-]*)?$/.test(value) ? value : null;
-}
-
 /** The shop slug a path starts with, or null for a page outside any shop. */
 export function slugOf(path: string | null | undefined): string | null {
   const first = (path ?? "").split(/[/?#]/)[1] ?? "";

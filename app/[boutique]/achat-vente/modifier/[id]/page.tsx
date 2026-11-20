@@ -2,12 +2,14 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CancelButton } from "@/components/cancel-button";
+import { wholeStockEffect } from "@/components/entry-buttons";
 import { EditEntryForm } from "@/components/edit-entry-form";
 import { OperationBadge } from "@/components/operation-badge";
 import { PageHead } from "@/components/page-head";
 import { requireMember } from "@/lib/auth/session";
+import { safeReturnPath } from "@/lib/auth/return-path";
 import { param } from "@/lib/pagination";
-import { returnPath, shopPath } from "@/lib/paths";
+import { shopPath } from "@/lib/paths";
 import { canActOn } from "@/lib/policies";
 import { entryLines } from "@/lib/register";
 import { formatNumber } from "@/lib/pricing";
@@ -25,7 +27,8 @@ export default async function ModifierEcriture({
 }) {
   const member = await requireMember();
   // Where the member came from: their activity page, or the register.
-  const back = returnPath(param((await searchParams).retour));
+  const retour = param((await searchParams).retour);
+  const back = retour ? safeReturnPath(retour) : null;
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const lines = await entryLines(member.shopId, id);
@@ -38,7 +41,7 @@ export default async function ModifierEcriture({
         Seuls les septims changent : le stock ne bouge pas. La caisse et les totaux suivent d&apos;eux-mêmes.
       </PageHead>
       <p>
-        <Link className="btn btn-small btn-ghost" href={shopPath(member.shop.slug, back ?? "/achat-vente")}>
+        <Link className="btn btn-small btn-ghost" href={back ?? shopPath(member.shop.slug, "/achat-vente")}>
           <ArrowLeft size={14} /> {back ? "Retour" : "Retour au registre"}
         </Link>
       </p>
@@ -52,7 +55,9 @@ export default async function ModifierEcriture({
             {counterpartyLabel(first.kind)} : {first.counterparty}
           </p>
         )}
+        {/* Remounted when a line is cancelled below or its septims change, so its fields match the lines. */}
         <EditEntryForm
+          key={lines.map((l) => `${l.id}:${l.amount}`).join(",")}
           id={id}
           back={back}
           kind={first.kind}
@@ -63,7 +68,7 @@ export default async function ModifierEcriture({
         <section className="panel" style={{ maxWidth: 760 }} aria-labelledby="annuler-une-ligne">
           <h2 id="annuler-une-ligne">Annuler une seule ligne</h2>
           <p className="small muted">
-            Elle reste barrée dans le registre et ne compte plus ; {first.kind === "vente" ? "ce qui est sorti du stock y revient" : "ce qui est entré en stock en ressort"}.
+            Elle reste barrée dans le registre et ne compte plus. {wholeStockEffect(first.kind)}
           </p>
           <ul className="cancel-lines">
             {lines.map((l) => (
