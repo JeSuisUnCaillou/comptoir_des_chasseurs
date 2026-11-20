@@ -289,6 +289,29 @@ test("un mouvement de stock ne s'annule ni ne se modifie sous zéro, et chacun n
   await expect(own).toContainText("+3");
   await expect(await stockOf(employee, hide)).toHaveText("0");
 
+  // Nor may they open the page editing the gérant's movement.
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  const [{ id }] = await sql`select id from stock_movements where reason = ${gerantReason}`;
+  await sql.end();
+  await employee.goto(`/inventaire/modifier/${id}`);
+  await expect(employee.getByText("404")).toBeVisible();
+
+  // Restoring a cancelled way out needs what it takes out again.
+  const leather = uniqueName("Cuir de lion");
+  await createProduct(leather, { stock: 5, unit: "cuir", category: "Autres ressources", leather: true });
+  const out = uniqueName("Pour faire des capes");
+  await createStockMovement(username, [[leather, -2]], out);
+  await employee.goto(`/inventaire?q=${encodeURIComponent(leather)}`);
+  const outRow = history.getByRole("row").filter({ hasText: out });
+  employee.once("dialog", (dialog) => dialog.accept());
+  await outRow.getByRole("button", { name: /^Annuler le mouvement de stock/ }).click();
+  await expect(outRow).toContainText("Annulée par");
+  await setStock(leather, 1);
+  employee.once("dialog", (dialog) => dialog.accept());
+  await outRow.getByRole("button", { name: /^Rétablir le mouvement de stock/ }).click();
+  await expect(outRow.locator(ALERT)).toHaveText(`Impossible de rétablir : il ne reste que 1 ${leather} en stock.`);
+  await expect(outRow).toContainText("Annulée par");
+
   // A gérant has the buttons on the employee's movement too.
   await loginAsGerant(page);
   await page.goto(`/inventaire?q=${encodeURIComponent(hide)}`);

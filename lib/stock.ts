@@ -330,7 +330,7 @@ async function changeMovements(
     for (const move of moves) {
       const refused = await shiftStock(tx, member.shopId, move.productId, cancel ? -move.delta : move.delta);
       // Throwing keeps every movement as it was.
-      if (refused) throw new UserError(`Impossible d'${cancel ? "annuler" : "rétablir"} : ${refused}.`);
+      if (refused) throw new UserError(`Impossible ${cancel ? "d'annuler" : "de rétablir"} : ${refused}.`);
       await tx
         .update(m)
         .set(cancel ? { cancelledAt: new Date(), cancelledBy: member.id } : { cancelledAt: null, cancelledBy: null })
