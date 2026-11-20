@@ -320,6 +320,15 @@ sortie d'argent) les septims :
   ce qui y reste (jamais sous zéro, comme une vente), un achat y remet sa
   quantité. L'annuler encore rend ce qu'elle a vraiment pris la dernière
   fois.
+- **Modifier les montants** : son auteur ou un gérant. « Modifier », à côté
+  d'« Annuler » sur une ligne qui compte, ouvre une page avec les septims de
+  chaque ligne de son écriture (lignes annulées exclues), le total avant et
+  après, et, pour plusieurs lignes, « Tout mettre à 0 ». Seuls les septims
+  changent : le stock, les quantités et le statut *Pas encore en caisse*
+  restent. La caisse, les tuiles et les totaux suivent, puisqu'ils sont
+  recalculés depuis les lignes. Une vente ou un achat accepte 0, un mouvement
+  de caisse au moins 1. L'enregistrement ramène au registre, qui confirme le
+  nouveau total ; chaque ligne changée affiche « Modifiée par … ».
 - **Toute une écriture d'un coup** : dans une écriture de plusieurs lignes,
   juste sous son total (sous le client ou le vendeur, ou au bas de la carte
   sur un téléphone), « Tout annuler » annule toutes celles qui comptent

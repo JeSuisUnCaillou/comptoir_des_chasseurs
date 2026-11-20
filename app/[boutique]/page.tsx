@@ -89,7 +89,7 @@ export default async function GrandLivre() {
             Tout le registre →
           </Link>
         </div>
-        <RegisterTable entries={recent} member={member} showNotes={false} />
+        <RegisterTable entries={recent} member={member} shopSlug={member.shop.slug} showNotes={false} />
       </section>
     </>
   );
