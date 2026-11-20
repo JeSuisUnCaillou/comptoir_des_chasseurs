@@ -5,7 +5,14 @@ import { getDb, schema } from "@/lib/db";
 import type { Product, TransactionKind } from "@/lib/db/schema";
 import { sellTotal } from "@/lib/pricing";
 import { movementEntryKey } from "@/lib/stock";
-import { entryKeyColumn, entrySumColumn, pendingEntryColumns } from "@/lib/register";
+import {
+  entryKeyColumn,
+  entryStateColumns,
+  entrySumColumn,
+  pendingEntryColumns,
+  stockBackOf,
+  stockMovedColumns,
+} from "@/lib/register";
 
 export type HandStock = {
   /** Units put in and taken out. */
@@ -91,9 +98,17 @@ export type ActivityLine = {
   createdAt: Date;
   cancelledAt: Date | null;
   cancelledBy: string | null;
+  /** Who last changed its septims. */
+  editedBy: string | null;
+  /** For a register line's buttons (`ButtonLine`); null, 0 and '' for a stock movement. */
+  productId: number | null;
+  stockBack: number;
+  entryActiveItems: string;
+  entryCancelledItems: string;
 };
 
 const canceller = alias(schema.members, "canceller");
+const editor = alias(schema.members, "editor");
 
 /** Both kinds of activity lines as one SQL source; columns come from the schema so tsc checks them. */
 function activitySource(shopId: number, memberId: number, from: Date, to: Date) {
@@ -103,17 +118,23 @@ function activitySource(shopId: number, memberId: number, from: Date, to: Date) 
   const since = sql`${from.toISOString()}::timestamptz`;
   const until = sql`${to.toISOString()}::timestamptz`;
   const entry = pendingEntryColumns();
+  const state = entryStateColumns();
+  const stock = stockMovedColumns();
   return sql`
     select 'ligne' as source, ${t.id} as id, ${t.kind}::text as kind, ${t.label} as label,
       ${t.quantity} as quantity, ${t.amount} as amount, ${t.counterparty} as detail, ${t.notes} as notes,
       ${t.tillPending} as till_pending, ${t.createdAt} as created_at, ${t.cancelledAt} as cancelled_at, ${canceller.name} as cancelled_by,
       ${entry.entryLines} as entry_lines, ${entry.pendingTotal} as pending_total, ${entry.entryItems} as entry_items,
-      ${entryKeyColumn()} as entry_key, ${entrySumColumn()} as entry_sum
+      ${entryKeyColumn()} as entry_key, ${entrySumColumn()} as entry_sum,
+      ${editor.name} as edited_by, ${t.productId} as product_id, ${stock.stockMoved} as stock_moved, ${stock.stockMoves} as stock_moves,
+      ${state.entryActiveItems} as entry_active_items, ${state.entryCancelledItems} as entry_cancelled_items
     from ${t}
     left join ${schema.members} ${canceller} on ${canceller.id} = ${t.cancelledBy}
+    left join ${schema.members} ${editor} on ${editor.id} = ${t.editedBy}
     where ${t.shopId} = ${shopId} and ${t.memberId} = ${memberId} and ${t.createdAt} >= ${since} and ${t.createdAt} < ${until}
     union all
-    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}, null
+    select 'stock', ${m.id}, 'stock', ${p.name}, ${m.delta}, 0, ${m.reason}, null, false, ${m.createdAt}, null, null, 0, 0, '', ${movementEntryKey()}, null,
+      null, null, 0, 0, '', ''
     from ${m}
     join ${p} on ${p.id} = ${m.productId}
     where ${m.shopId} = ${shopId} and ${m.memberId} = ${memberId} and ${m.transactionId} is null
@@ -150,6 +171,18 @@ export async function memberActivity(
     createdAt: new Date(r.created_at as string),
     cancelledAt: r.cancelled_at ? new Date(r.cancelled_at as string) : null,
     cancelledBy: (r.cancelled_by as string | null) ?? null,
+    editedBy: (r.edited_by as string | null) ?? null,
+    productId: r.product_id == null ? null : Number(r.product_id),
+    stockBack:
+      r.source === "ligne"
+        ? stockBackOf(
+            { kind: r.kind as TransactionKind, productId: r.product_id == null ? null : Number(r.product_id), quantity: Number(r.quantity) },
+            Number(r.stock_moved),
+            Number(r.stock_moves),
+          )
+        : 0,
+    entryActiveItems: String(r.entry_active_items ?? ""),
+    entryCancelledItems: String(r.entry_cancelled_items ?? ""),
   }));
 }
 

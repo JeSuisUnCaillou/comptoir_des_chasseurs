@@ -1,23 +1,31 @@
+import { EntryButtons, LineButtons, hasEntryButtons, hasLineButtons } from "@/components/entry-buttons";
 import { AmountCell, CancelledNote, DateCell, KindCell, PartyCell, entryPlace } from "@/components/entry-cells";
 import { SettleButton } from "@/components/settle-button";
 import type { ActivityLine } from "@/lib/activity";
-import { entryClasses, entryPositions, entryTotals } from "@/lib/entry-groups";
+import { entryClasses, entryPlaces, entryPositions, entryTotals } from "@/lib/entry-groups";
 import { formatNumber } from "@/lib/pricing";
 import { counterpartyLabel, isCashKind, signedAmount } from "@/lib/transaction-kinds";
 
 /**
  * A member's sales, buybacks, cash movements and hand stock movements, in one list.
- * With `canSettle` (a gérant, or the member themself), a line waiting for the
- * till gets the button saying its septims are now in it, or out of it.
+ * With `canAct` (a gérant, or the member themself), its register lines get
+ * the same buttons as in the register: settle a line waiting for the till,
+ * change its septims, cancel or restore it, or all of its entry at once.
  */
 export function ActivityTable({
   lines,
   empty,
-  canSettle = false,
+  shopSlug,
+  back,
+  canAct = false,
 }: {
   lines: ActivityLine[];
   empty: string;
-  canSettle?: boolean;
+  /** The shop's address, for the link that edits a line's septims. */
+  shopSlug: string;
+  /** This page in the shop, where editing a line's septims comes back to. */
+  back: string;
+  canAct?: boolean;
 }) {
   if (lines.length === 0) return <p className="muted">{empty}</p>;
   // The lines of one entry form a block; what they share is written on its first line.
@@ -25,6 +33,8 @@ export function ActivityTable({
   const totals = entryTotals(lines, positions, (l) =>
     l.entrySum == null || l.kind === "stock" ? null : signedAmount(l.kind, l.entrySum),
   );
+  // Placed like the register's: see `RegisterTable`.
+  const buttonPlaces = entryPlaces(lines, positions, (l) => l.kind !== "stock" && hasEntryButtons({ ...l, kind: l.kind }, canAct));
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="activite">
@@ -58,6 +68,8 @@ export function ActivityTable({
             const notes = kind === "stock" ? l.detail : l.notes;
             const cancelled = l.cancelledAt != null;
             const waiting = !cancelled && l.tillPending;
+            const settles = kind !== "stock" && waiting && canAct && place.settles;
+            const buttons = kind !== "stock" && canAct && hasLineButtons({ ...l, kind });
             return (
               <tr
                 key={`${l.source}-${l.id}`}
@@ -73,16 +85,22 @@ export function ActivityTable({
                   label={kind === "stock" ? undefined : counterpartyLabel(kind)}
                   total={totals[i]}
                   place={place}
+                  actions={
+                    buttonPlaces[i] && kind !== "stock" && <EntryButtons entry={{ ...l, kind }} where={buttonPlaces[i]} shopSlug={shopSlug} back={back} />
+                  }
                 />
                 <td
                   className={`small cell-notes${rep}`}
                   data-label={kind === "stock" && notes ? "Motif" : undefined}
                 >{shared(notes ?? "")}</td>
                 <td className="cell-actions">
-                  {cancelled ? (
-                    <CancelledNote by={l.cancelledBy} />
-                  ) : (
-                    waiting && canSettle && place.settles && kind !== "stock" && <SettleButton id={l.id} kind={kind} entry={l} />
+                  {(cancelled || settles || buttons || l.editedBy) && (
+                    <div className="row-actions">
+                      {cancelled && <CancelledNote by={l.cancelledBy} beside={canAct} />}
+                      {!cancelled && l.editedBy && <span className="small muted">Modifiée par {l.editedBy}</span>}
+                      {settles && <SettleButton id={l.id} kind={kind} entry={l} />}
+                      {buttons && <LineButtons line={{ ...l, kind }} shopSlug={shopSlug} back={back} />}
+                    </div>
                   )}
                 </td>
               </tr>

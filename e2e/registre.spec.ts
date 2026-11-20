@@ -399,8 +399,8 @@ test("le filtre par dates et la caisse de la sélection, annulation comprise", a
   // A cancelled line leaves the till.
   await page.goto(`/achat-vente?du=${day}&au=${day}`);
   page.once("dialog", (dialog) => dialog.accept());
-  await table.locator("tbody tr").first().getByRole("button", { name: /Annuler/ }).click();
-  await expect(table.locator("tbody tr").first()).toContainText("Annulée par Lomone");
+  await cancelOneLine(page, "Vente du passé 1", page.url());
+  await expect(table.locator("tbody tr").filter({ hasText: "Vente du passé 1" })).toContainText("Annulée par Lomone");
   await expect(page.getByTestId("totaux-registre")).toContainText("+14 septims");
 });
 
@@ -592,9 +592,10 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
     return dialog.accept();
   });
 
-  // One line cancelled by hand; the button cancels the two others.
-  await lines.filter({ hasText: meat }).getByRole("button", { name: /^Annuler la vente/ }).click();
+  // One line cancelled alone, from the entry's page; the button cancels the two others.
+  await cancelOneLine(page, meat, filtered);
   await expect(lines.filter({ hasText: meat })).toContainText("Annulée par");
+  await expect(table.getByRole("button", { name: /^Annuler la vente/ })).toHaveCount(0);
   await table.getByRole("button", { name: "Tout annuler : les 2 lignes de cette vente" }).click();
   expect(asked.at(-1)).toContain(`• 2 × ${hide}\n• 4 × ${fang}`);
   await expect(table.locator("[role=alert]")).toHaveCount(0);
@@ -613,18 +614,17 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   for (const width of [1920, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const total = await box(table.getByTestId("total-ecriture").filter({ visible: true }));
+    const edit = await box(table.getByRole("link", { name: /^Modifier les transactions/ }));
     const all = await box(table.getByRole("button", { name: /^Tout annuler/ }));
-    expect(all.y).toBeGreaterThanOrEqual(total.y + total.height);
-    expect(all.y).toBeLessThan(total.y + total.height + 12);
-    expect(Math.abs(all.x - total.x)).toBeLessThan(2);
+    expect(edit.y).toBeGreaterThanOrEqual(total.y + total.height);
+    expect(edit.y).toBeLessThan(total.y + total.height + 12);
+    expect(Math.abs(edit.x - total.x)).toBeLessThan(2);
+    // Side by side when they fit, else just under.
+    expect(all.y).toBeLessThan(edit.y + 2 * edit.height + 8);
+    // The lines have no buttons of their own.
+    await expect(lines.locator("td.cell-actions").getByRole("button")).toHaveCount(0);
+    await expect(lines.locator("td.cell-actions").getByRole("link")).toHaveCount(0);
   }
-  // As a card, a line's own button sits right under its septims, on the right.
-  const hideRow = lines.filter({ hasText: hide });
-  const septims = await box(hideRow.locator("td.cell-amount"));
-  const cancel = await box(hideRow.getByRole("button", { name: /^Annuler la vente/ }));
-  expect(cancel.y).toBeGreaterThanOrEqual(septims.y + septims.height - 1);
-  expect(cancel.y).toBeLessThan(septims.y + septims.height + 16);
-  expect(Math.abs(cancel.x + cancel.width - (septims.x + septims.width))).toBeLessThan(2);
   for (const [product, left] of [
     [hide, "8"],
     [meat, "7"],
@@ -632,6 +632,43 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   ]) {
     await expect(await stockOf(page, product)).toHaveText(left);
   }
+});
+
+test("un trait discret sépare les lignes d'une même écriture, pas deux écritures", async ({ browser }) => {
+  const hide = uniqueName("Peau de horqueur");
+  const fang = uniqueName("Croc de horqueur");
+  await createProduct(hide, { sellPrice: 4, stock: 10 });
+  await createProduct(fang, { sellPrice: 2, stock: 10 });
+  const { page, username } = await newEmployeePage(browser, "sorex");
+  await page.goto("/achat-vente/vente");
+  const form = page.getByRole("region", { name: "Inscrire une vente" });
+  await pickProduct(line(form, 1), hide);
+  await form.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(line(form, 2), fang);
+  await form.getByRole("button", { name: "Confirmer la vente" }).click();
+  await expect(page.getByRole("status").filter({ hasText: hide })).toBeVisible();
+  await page.getByLabel("Employé").selectOption({ label: username });
+  await page.getByRole("button", { name: "Filtrer" }).click();
+  await expect(page).toHaveURL(/employe=\d+/);
+  const rows = page.getByTestId("registre").locator("tbody tr");
+  await expect(rows).toHaveCount(2);
+  const [first, second] = [rows.first(), rows.nth(1)];
+  const faint = "rgba(255, 255, 255, 0.07)";
+
+  // As a table: over the second line's article, quantity and septims, not over what the entry shares.
+  await page.setViewportSize({ width: 1920, height: 900 });
+  const shadow = (row: typeof first, cell: string) =>
+    row.locator(cell).evaluate((el) => getComputedStyle(el).boxShadow);
+  await expect.poll(() => shadow(second, ".cell-label")).toContain(`${faint} 0px 1px 0px 0px inset`);
+  expect(await shadow(second, ".cell-date")).not.toContain(faint);
+  expect(await shadow(second, ".cell-party")).not.toContain(faint);
+  expect(await shadow(first, ".cell-label")).not.toContain(faint);
+
+  // As a phone card: across the card, over the second line only.
+  await page.setViewportSize({ width: 390, height: 900 });
+  const image = (row: typeof first) => row.evaluate((el) => getComputedStyle(el).backgroundImage);
+  await expect.poll(() => image(second)).toContain(faint);
+  expect(await image(first)).toBe("none");
 });
 
 test("l'auteur d'une vente en modifie les montants : la caisse suit, le stock ne bouge pas", async ({ browser }) => {
@@ -661,7 +698,7 @@ test("l'auteur d'une vente en modifie les montants : la caisse suit, le stock ne
   await expect(page.getByTestId("totaux-registre")).toContainText("+16 septims");
 
   // Everything to zero: the sale stays, its septims no longer count.
-  await lines.filter({ hasText: fang }).getByRole("link", { name: /^Modifier la vente/ }).click();
+  await table.getByRole("link", { name: "Modifier les transactions : les 2 lignes de cette vente" }).click();
   const edit = page.getByRole("region", { name: "Modifier les montants" });
   await expect(edit.getByLabel(`2 × ${hide} (septims)`)).toHaveValue("10");
   await expect(edit.getByLabel(`3 × ${fang} (septims)`)).toHaveValue("6");
@@ -681,7 +718,7 @@ test("l'auteur d'une vente en modifie les montants : la caisse suit, le stock ne
 
   // One line again, to another price.
   await page.goto(filtered);
-  await lines.filter({ hasText: hide }).getByRole("link", { name: /^Modifier la vente/ }).click();
+  await table.getByRole("link", { name: /^Modifier les transactions/ }).click();
   await edit.getByLabel(`2 × ${hide} (septims)`).fill("7");
   await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
   await expect(page.getByRole("status")).toHaveText("Écriture modifiée : +7 septims au total.");
@@ -773,13 +810,15 @@ test("sur un petit téléphone, Tout annuler et Tout rétablir tiennent dans la 
   await page.getByRole("button", { name: "Filtrer" }).click();
   await expect(page).toHaveURL(/employe=\d+/);
   const table = page.getByTestId("registre");
+  const filtered = page.url();
   page.on("dialog", (dialog) => dialog.accept());
   // Two lines cancelled, two still counted: both buttons.
   for (const product of products.slice(0, 2)) {
-    const row = table.locator("tbody tr").filter({ hasText: product });
-    await row.getByRole("button", { name: /^Annuler la vente/ }).click();
-    await expect(row).toContainText("Annulée par");
+    await cancelOneLine(page, product, filtered);
+    await expect(table.locator("tbody tr").filter({ hasText: product })).toContainText("Annulée par");
   }
+  await expect(table.locator("tbody tr")).toHaveCount(products.length);
+  await expect(table.getByRole("button", { name: /^Tout rétablir/ })).toBeVisible();
   for (const width of [320, 360]) {
     await page.setViewportSize({ width, height: 900 });
     const card = (await table.locator("tbody tr").last().boundingBox())!;
@@ -1024,6 +1063,18 @@ test("le filtre par employé ne garde que ses lignes, page après page", async (
 });
 
 /** One merchandise of a sale or purchase form, by its number. */
+/**
+ * Cancels one line of an entry of several from its « Modifier les transactions »
+ * page, then comes back to `back`. The page accepts its dialogs already.
+ */
+async function cancelOneLine(page: Page, product: string, back: string) {
+  await page.getByTestId("registre").getByRole("link", { name: /^Modifier les transactions/ }).click();
+  const one = page.getByRole("region", { name: "Annuler une seule ligne" });
+  await one.getByRole("listitem").filter({ hasText: product }).getByRole("button", { name: "Annuler" }).click();
+  await expect(one.getByRole("listitem").filter({ hasText: product })).toHaveCount(0);
+  await page.goto(back);
+}
+
 function line(form: ReturnType<Page["getByRole"]>, n: number) {
   return form.getByRole("group", { name: `Marchandise ${n}`, exact: true });
 }
@@ -1126,7 +1177,7 @@ test("une écriture de plusieurs lignes montre son total sous le client, sans le
   // A cancelled line no longer counts.
   const meatRow = table.locator("tbody tr").filter({ hasText: meat });
   page.once("dialog", (dialog) => dialog.accept());
-  await meatRow.getByRole("button", { name: /Annuler/ }).click();
+  await cancelOneLine(page, meat, page.url());
   await expect(meatRow).toContainText("Annulée par");
   await expect(total).toHaveText("Total : −7 septims");
   // The cancelled line carries it, and it still counts: not dimmed.

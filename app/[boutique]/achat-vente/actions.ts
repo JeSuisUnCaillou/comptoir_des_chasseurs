@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { shopPath } from "@/lib/paths";
+import { returnPath, shopPath } from "@/lib/paths";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
 import { attempt } from "@/lib/errors";
@@ -172,5 +172,6 @@ export async function editEntry(_prev: TransactionState, formData: FormData): Pr
   const result = await attempt(() => editAmounts(member, id, new Map(lineIds.map((lineId, i) => [lineId, amounts[i]]))));
   if (!result.ok) return result;
   revalidateShop();
-  redirect(shopPath(member.shop.slug, `/achat-vente?modifie=${id}`));
+  const back = returnPath(String(formData.get("retour") ?? ""));
+  redirect(shopPath(member.shop.slug, back ?? `/achat-vente?modifie=${id}`));
 }

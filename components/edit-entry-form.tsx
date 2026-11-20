@@ -13,7 +13,18 @@ type Line = { id: number; label: string; quantity: number; amount: number };
  * The septims of each line still counted of an entry, to change; the stock
  * does not move. Shows the entry's new total as it is typed.
  */
-export function EditEntryForm({ id, kind, lines }: { id: number; kind: TransactionKind; lines: Line[] }) {
+export function EditEntryForm({
+  id,
+  kind,
+  lines,
+  back,
+}: {
+  id: number;
+  kind: TransactionKind;
+  lines: Line[];
+  /** The page of the shop to come back to, the register when null. */
+  back: string | null;
+}) {
   const [state, action, pending] = useActionState<TransactionState, FormData>(editEntry, null);
   const [amounts, setAmounts] = useState(() => lines.map((l) => String(l.amount)));
   const cash = isCashKind(kind);
@@ -22,6 +33,7 @@ export function EditEntryForm({ id, kind, lines }: { id: number; kind: Transacti
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
+      {back && <input type="hidden" name="retour" value={back} />}
       <div className="tx-grid">
         {lines.map((line, i) => (
           <div className="field" key={line.id}>

@@ -158,3 +158,43 @@ test("l'activité d'un membre est paginée", async ({ page, browser }) => {
   await expect(page).toHaveURL(/page=2/);
   await expect(lines).toHaveCount(1);
 });
+
+test("sur sa page d'activité, un membre modifie et annule ses écritures, et y revient", async ({ browser }) => {
+  const hide = uniqueName("Peau de chèvre");
+  await createProduct(hide, { sellPrice: 2, stock: 10 });
+  const { page } = await newEmployeePage(browser, "ralof");
+  await record(page, "vente", hide, 3);
+  await page.getByTestId("member-name").click();
+  await expect(page).toHaveURL(/\/membres\/\d+$/);
+  const mine = page.url();
+  const row = page.getByTestId("activite").getByRole("row").filter({ hasText: hide });
+  await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("+6 septims");
+
+  // Its septims: the page comes back here, with the new total.
+  await row.getByRole("link", { name: /^Modifier la vente/ }).click();
+  const edit = page.getByRole("region", { name: "Modifier les montants" });
+  await edit.getByLabel(`3 × ${hide} (septims)`).fill("0");
+  await edit.getByRole("button", { name: "Enregistrer les montants" }).click();
+  await expect(page).toHaveURL(mine);
+  await expect(page.getByTestId("total-ventes").locator(".stat-value")).toHaveText("0 septim");
+  await expect(row).toContainText("Modifiée par");
+
+  // Cancelled and restored from here too.
+  page.once("dialog", (dialog) => dialog.accept());
+  await row.getByRole("button", { name: /^Annuler la vente/ }).click();
+  await expect(row).toContainText("Annulée par");
+  page.once("dialog", (dialog) => dialog.accept());
+  await row.getByRole("button", { name: /^Rétablir la vente/ }).click();
+  await expect(row).not.toContainText("Annulée");
+});
+
+test("sur la page d'activité d'un employé, un gérant a les mêmes boutons", async ({ page, browser }) => {
+  const { username } = await newEmployeePage(browser, "ulfric");
+  const label = uniqueName("Vente d'Ulfric");
+  await createTransactions(username, 1, { amount: 9, label, at: "now()" });
+  await loginAsGerant(page);
+  await openActivity(page, username);
+  const row = page.getByTestId("activite").getByRole("row").filter({ hasText: label });
+  await expect(row.getByRole("link", { name: /^Modifier la vente/ })).toBeVisible();
+  await expect(row.getByRole("button", { name: /^Annuler la vente/ })).toBeVisible();
+});
