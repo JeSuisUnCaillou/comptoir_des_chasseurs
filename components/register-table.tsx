@@ -27,9 +27,6 @@ export function RegisterTable({
   // The lines of one entry form a block; what they share is written on its first line.
   const positions = entryPositions(entries, (e) => e.cancelledAt == null && e.tillPending);
   const totals = entryTotals(entries, positions, (e) => (e.entrySum == null ? null : signedAmount(e.kind, e.entrySum)));
-  // The buttons acting on a whole entry go where its total goes, under it:
-  // on a phone card, "Tout annuler" at the bottom under the total, while each
-  // line's own "Annuler" stays under its price.
   return (
     <div className="table-wrap">
       <table className="entry-cards" data-testid="registre">

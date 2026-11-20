@@ -41,7 +41,7 @@ export function entryClasses(p: EntryPosition) {
 
 /**
  * Where an entry of several lines shows its total: on its second row as a table, under what the lines share; on its
- * last row as a card, at the bottom. An entry cut by the page shows them on
+ * last row as a card, at the bottom. An entry cut by the page shows it on
  * each part, on its only row if need be.
  */
 export type EntryPlace = { table: boolean; card: boolean };
