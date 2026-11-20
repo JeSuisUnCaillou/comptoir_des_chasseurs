@@ -318,7 +318,8 @@ sur la page d'activité d'un membre, pour son auteur ou un gérant :
   sont juste sous son prix, à droite.
 - **Une écriture de plusieurs lignes qui comptent** : ses lignes n'ont pas de
   bouton à elles ; sa première ligne porte, là où une ligne seule a les
-  siens, « Modifier les transactions » et « Tout annuler ». « Tout annuler » annule toutes les lignes qui comptent encore ;
+  siens, « Modifier les transactions » et « Tout annuler », l'un sous
+  l'autre et de même largeur pour ne pas élargir la ligne. « Tout annuler » annule toutes les lignes qui comptent encore ;
   la confirmation les liste, et elles changent toutes ensemble, ou aucune
   (un achat dont la marchandise est déjà vendue bloque tout).
 - **Annuler** : la ligne reste barrée, ne compte plus dans la caisse, et le

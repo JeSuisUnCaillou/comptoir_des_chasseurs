@@ -613,8 +613,15 @@ test("toute une vente de plusieurs lignes s'annule et se rétablit en un clic", 
   for (const width of [1920, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const first = lines.first().locator("td.cell-actions");
-    await expect(first.getByRole("link", { name: /^Modifier les transactions/ })).toBeVisible();
-    await expect(first.getByRole("button", { name: /^Tout annuler/ })).toBeVisible();
+    const edit = first.getByRole("link", { name: /^Modifier les transactions/ });
+    const cancel = first.getByRole("button", { name: /^Tout annuler/ });
+    await expect(edit).toBeVisible();
+    await expect(cancel).toBeVisible();
+    // One under the other, the same width, so they don't widen the line.
+    const [e, c] = [await edit.boundingBox(), await cancel.boundingBox()];
+    expect(c!.y).toBeGreaterThanOrEqual(e!.y + e!.height);
+    expect(Math.abs(c!.x - e!.x)).toBeLessThan(1);
+    expect(Math.abs(c!.width - e!.width)).toBeLessThan(1);
     // The other lines have no buttons of their own.
     await expect(lines.locator("td.cell-actions").getByRole("button")).toHaveCount(1);
     await expect(lines.locator("td.cell-actions").getByRole("link")).toHaveCount(1);

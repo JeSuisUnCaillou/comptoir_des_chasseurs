@@ -356,6 +356,19 @@ h3 {
   white-space: nowrap;
 }
 
+/* An entry's buttons stack, all the same width, so they take less room. */
+.entry-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.entry-buttons .inline-form,
+.entry-buttons .btn {
+  width: 100%;
+}
+
 /* A primary button among others in a row keeps its own width. */
 .row-actions .btn-primary {
   width: auto;

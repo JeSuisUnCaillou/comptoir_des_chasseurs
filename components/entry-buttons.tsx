@@ -134,7 +134,7 @@ export function EntryButtons({
   const list = (items: string[]) => items.map((item) => `• ${item}`).join("\n");
   const sale = e.kind === "vente";
   return (
-    <>
+    <div className="entry-buttons">
       {active.length > 1 && (
         <Link
           className="btn btn-small btn-ghost"
@@ -167,6 +167,6 @@ export function EntryButtons({
           }`}
         />
       )}
-    </>
+    </div>
   );
 }
