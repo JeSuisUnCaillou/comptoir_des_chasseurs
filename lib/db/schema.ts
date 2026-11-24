@@ -363,6 +363,8 @@ export const announcements = pgTable(
     body: text("body").notNull(),
     // What holds the parchment on the board.
     pin: announcementPin("pin").notNull().default("couteau"),
+    // Every member of the shop may edit it, not only its author and the gérants.
+    editableByAll: boolean("editable_by_all").notNull().default(false),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id),

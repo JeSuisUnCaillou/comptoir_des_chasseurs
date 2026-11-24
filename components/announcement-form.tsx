@@ -9,9 +9,12 @@ import type { AnnouncementPin } from "@/lib/db/schema";
 import { keepValues } from "@/components/keep-values";
 import { useShopPath } from "@/components/use-shop-path";
 
-type Editing = { id: number; title: string; body: string; pin: AnnouncementPin };
+type Editing = { id: number; title: string; body: string; pin: AnnouncementPin; editableByAll: boolean; setsEditors: boolean };
 
-/** Pins a new parchment, or, given `announcement`, rewrites it and goes back to `back`. */
+/**
+ * Pins a new parchment, or, given `announcement`, rewrites it and goes back to
+ * `back`. Who may edit it is asked of its author and the gérants only.
+ */
 export function AnnouncementForm({ announcement, back }: { announcement?: Editing; back?: string }) {
   const path = useShopPath();
   const [state, action, pending] = useActionState(announcement ? editAnnouncement : postAnnouncement, null);
@@ -52,6 +55,12 @@ export function AnnouncementForm({ announcement, back }: { announcement?: Editin
           ))}
         </div>
       </fieldset>
+      {(!announcement || announcement.setsEditors) && (
+        <label className="check">
+          <input type="checkbox" name="editableByAll" defaultChecked={announcement?.editableByAll} /> Modifiable par
+          tous les employés
+        </label>
+      )}
       <button className="btn btn-primary" type="submit" disabled={pending}>
         {announcement ? (
           <>

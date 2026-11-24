@@ -3,7 +3,7 @@ import Link from "next/link";
 import { takeDownAnnouncement } from "@/app/[boutique]/annonces/actions";
 import { PinIcon } from "@/components/pins";
 import { PINS } from "@/lib/announcement-rules";
-import { canActOn } from "@/lib/policies";
+import { canActOn, canEditAnnouncement } from "@/lib/policies";
 import type { AnnouncementEntry } from "@/lib/announcements";
 import type { ShopMember } from "@/lib/auth/session";
 import { shopPath } from "@/lib/paths";
@@ -44,7 +44,7 @@ export function AnnouncementBoard({
                 <span className="parchment-pin" title={PINS.find((p) => p.value === a.pin)?.label}>
                   <PinIcon pin={a.pin} size={52} />
                 </span>
-                {canActOn(member, a) && (
+                {canEditAnnouncement(member, a) && (
                   <div className="parchment-actions">
                     <Link
                       href={shopPath(member.shop.slug, `/annonces/${a.id}/modifier?retour=${encodeURIComponent(back)}`)}
@@ -54,12 +54,14 @@ export function AnnouncementBoard({
                     >
                       <Pencil size={16} />
                     </Link>
-                    <form action={takeDownAnnouncement}>
-                      <input type="hidden" name="id" value={a.id} />
-                      <button type="submit" className="icon-btn" aria-label={`Décrocher « ${a.title} »`} title="Décrocher">
-                        <X size={16} />
-                      </button>
-                    </form>
+                    {canActOn(member, a) && (
+                      <form action={takeDownAnnouncement}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <button type="submit" className="icon-btn" aria-label={`Décrocher « ${a.title} »`} title="Décrocher">
+                          <X size={16} />
+                        </button>
+                      </form>
+                    )}
                   </div>
                 )}
                 <div className="parchment-flourish" aria-hidden="true">

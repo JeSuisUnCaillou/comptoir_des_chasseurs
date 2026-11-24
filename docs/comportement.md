@@ -408,6 +408,10 @@ Rien à régler : chaque partie le dit.
 - L'auteur d'une annonce ou un gérant peut la décrocher, ou la modifier
   (crayon : titre, texte, attache). Elle garde sa place et sa date, et on
   revient au tableau d'où on est parti.
+- En l'accrochant ou en la modifiant, son auteur ou un gérant peut cocher
+  « Modifiable par tous les employés » (décoché par défaut) : tout membre de
+  la boutique a alors le crayon. Seuls l'auteur et les gérants la décrochent
+  et changent cette case ; les autres ne la voient pas en modifiant.
 - 12 parchemins par page ici ; le Grand livre montre tout le tableau.
 
 ## Contacts

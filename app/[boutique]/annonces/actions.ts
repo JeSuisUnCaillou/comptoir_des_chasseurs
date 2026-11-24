@@ -22,7 +22,8 @@ function readAnnouncement(formData: FormData) {
   if (title.length > TITLE_MAX) return { error: `Le titre dépasse ${TITLE_MAX} caractères.` };
   if (body.length > BODY_MAX) return { error: `Le texte dépasse ${BODY_MAX} caractères.` };
   if (!pin) return { error: "Choisis avec quoi l'accrocher." };
-  return { values: { title, body, pin } };
+  const editableByAll = formData.get("editableByAll") === "on";
+  return { values: { title, body, pin, editableByAll } };
 }
 
 export async function postAnnouncement(_prev: AnnouncementState, formData: FormData): Promise<AnnouncementState> {
@@ -35,7 +36,7 @@ export async function postAnnouncement(_prev: AnnouncementState, formData: FormD
   return { ok: true, message: "Le parchemin est accroché au tableau.", id };
 }
 
-/** Rewrites a parchment, then goes back to the board it was opened from: its author or a gérant may. */
+/** Rewrites a parchment, then goes back to the board it was opened from (§ Annonces says who may). */
 export async function editAnnouncement(_prev: AnnouncementState, formData: FormData): Promise<AnnouncementState> {
   const member = await requireMember();
   const id = optionalId(formData);

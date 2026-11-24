@@ -1,0 +1,1 @@
+ALTER TABLE "announcements" ADD COLUMN IF NOT EXISTS "editable_by_all" boolean DEFAULT false NOT NULL;

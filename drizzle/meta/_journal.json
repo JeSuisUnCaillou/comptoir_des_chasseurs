@@ -225,6 +225,13 @@
       "when": 1795185652034,
       "tag": "0031_mouvement-annule",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795520910275,
+      "tag": "0032_parchemin-modifiable-par-tous",
+      "breakpoints": true
     }
   ]
 }

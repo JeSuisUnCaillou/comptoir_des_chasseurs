@@ -1487,6 +1487,10 @@ tr.fresh td {
   margin-top: 0;
 }
 
+.announcement-form .check {
+  margin: 0 0 16px;
+}
+
 .pin-choice {
   border: none;
   padding: 0;
