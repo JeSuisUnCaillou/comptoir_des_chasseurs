@@ -4,7 +4,7 @@ import type { ShopMember } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import type { AnnouncementPin } from "@/lib/db/schema";
 import { UserError } from "@/lib/errors";
-import { canActOn } from "@/lib/policies";
+import { canActOn, canEditAnnouncement } from "@/lib/policies";
 
 /** Parchments per page of the board on the Annonces page. */
 export const BOARD_SIZE = 12;
@@ -21,6 +21,7 @@ export async function announcementList(
       title: a.title,
       body: a.body,
       pin: a.pin,
+      editableByAll: a.editableByAll,
       createdAt: a.createdAt,
       memberId: a.memberId,
       author: schema.members.name,
@@ -54,33 +55,49 @@ export async function postAnnouncement(member: Actor, values: AnnouncementValues
   return posted.id;
 }
 
-type AnnouncementValues = { title: string; body: string; pin: AnnouncementPin };
+type AnnouncementValues = { title: string; body: string; pin: AnnouncementPin; editableByAll: boolean };
 
-/** A parchment the member may change (its author or a gérant); null otherwise, or when it is gone. */
-export async function editableAnnouncement(member: Actor, id: number) {
+async function findAnnouncement(member: Actor, id: number) {
   const a = schema.announcements;
   const [announcement] = await getDb()
-    .select({ id: a.id, title: a.title, body: a.body, pin: a.pin, memberId: a.memberId })
+    .select({ id: a.id, title: a.title, body: a.body, pin: a.pin, editableByAll: a.editableByAll, memberId: a.memberId })
     .from(a)
     .where(and(eq(a.id, id), eq(a.shopId, member.shopId)));
-  return announcement && canActOn(member, announcement) ? announcement : null;
+  return announcement;
 }
 
-/** Rewrites a parchment, keeping its place and date on the board: its author or a gérant may. */
+/**
+ * A parchment the member may change (its author, a gérant, or anyone when it
+ * is editable by all), with whether they may also say who edits it (its
+ * author or a gérant); null otherwise, or when it is gone.
+ */
+export async function editableAnnouncement(member: Actor, id: number) {
+  const announcement = await findAnnouncement(member, id);
+  if (!announcement || !canEditAnnouncement(member, announcement)) return null;
+  return { ...announcement, setsEditors: canActOn(member, announcement) };
+}
+
+/**
+ * Rewrites a parchment, keeping its place and date on the board. Only its
+ * author or a gérant may change who edits it: for anyone else it stays.
+ */
 export async function reviseAnnouncement(member: Actor, id: number, values: AnnouncementValues) {
-  if (!(await editableAnnouncement(member, id))) {
+  const announcement = await editableAnnouncement(member, id);
+  if (!announcement) {
     throw new UserError("Ce parchemin n'est plus au tableau, ou tu ne peux pas le modifier.");
   }
   const a = schema.announcements;
+  const { editableByAll, ...text } = values;
   await getDb()
     .update(a)
-    .set(values)
+    .set(announcement.setsEditors ? values : text)
     .where(and(eq(a.id, id), eq(a.shopId, member.shopId)));
 }
 
 /** Takes a parchment off the board: its author or a gérant may. False when it may not, or is gone. */
 export async function takeDown(member: Actor, id: number) {
-  if (!(await editableAnnouncement(member, id))) return false;
+  const announcement = await findAnnouncement(member, id);
+  if (!announcement || !canActOn(member, announcement)) return false;
   const a = schema.announcements;
   await getDb()
     .delete(a)

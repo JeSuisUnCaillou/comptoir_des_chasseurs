@@ -131,6 +131,56 @@ test("seuls l'auteur et un gérant peuvent modifier un parchemin", async ({ page
   await expect(parchment(other, title)).toContainText("Rendez-vous à midi");
 });
 
+test("un parchemin modifiable par tous : chaque employé le modifie, seul l'auteur le décroche", async ({ page, browser }) => {
+  const { page: author } = await newEmployeePage(browser, "astrid");
+  const { page: other } = await newEmployeePage(browser, "brynja");
+  const open = uniqueName("Liste des commandes");
+  const closed = uniqueName("Note privée");
+
+  // Unchecked by default.
+  await author.goto("/annonces");
+  await expect(author.getByLabel("Modifiable par tous les employés")).not.toBeChecked();
+  await pinParchment(author, closed, "Rien que pour moi");
+  await author.getByLabel("Titre de l'annonce").fill(open);
+  await author.getByLabel("Texte à afficher").fill("10 peaux de loup");
+  await author.getByLabel("Modifiable par tous les employés").check();
+  await author.getByRole("button", { name: "Accrocher le parchemin" }).click();
+  await expect(parchment(author, open)).toBeVisible();
+
+  // Another employee has the pencil on it only, and no way to take it down.
+  await other.goto("/annonces");
+  await expect(other.getByRole("link", { name: `Modifier « ${closed} »` })).toHaveCount(0);
+  await expect(other.getByRole("button", { name: `Décrocher « ${open} »` })).toHaveCount(0);
+  await openEdit(other, open);
+  // Who edits it is the author's call: the box is not offered.
+  await expect(other.getByLabel("Modifiable par tous les employés")).toHaveCount(0);
+  await other.getByLabel("Texte à afficher").fill("10 peaux de loup\n3 peaux d'ours");
+  await other.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(other).toHaveURL(/\/annonces$/);
+  await expect(parchment(other, open)).toContainText("3 peaux d'ours");
+
+  // It stays editable by all; the author sees the box checked and unchecks it.
+  await author.reload();
+  await openEdit(author, open);
+  await expect(author.getByLabel("Modifiable par tous les employés")).toBeChecked();
+  await author.getByLabel("Modifiable par tous les employés").uncheck();
+  await author.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(author).toHaveURL(/\/annonces$/);
+  await other.reload();
+  await expect(parchment(other, open)).toContainText("3 peaux d'ours");
+  await expect(other.getByRole("link", { name: `Modifier « ${open} »` })).toHaveCount(0);
+
+  // A gérant ticks it on someone else's parchment.
+  await loginAsGerant(page);
+  await page.goto("/annonces");
+  await openEdit(page, closed);
+  await page.getByLabel("Modifiable par tous les employés").check();
+  await page.getByRole("button", { name: "Enregistrer le parchemin" }).click();
+  await expect(page).toHaveURL(/\/annonces$/);
+  await other.reload();
+  await expect(other.getByRole("link", { name: `Modifier « ${closed} »` })).toBeVisible();
+});
+
 test("le serveur refuse la modification à qui n'est plus gérant, et un parchemin vidé", async ({ browser }) => {
   const { page: author } = await newEmployeePage(browser, "hroki");
   const title = uniqueName("Vend miel");

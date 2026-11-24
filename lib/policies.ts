@@ -18,6 +18,14 @@ export function canActOn(member: Actor, owned: { memberId: number }) {
   return isGerant(member) || owned.memberId === member.id;
 }
 
+/**
+ * Editing a parchment: its author and the gérants, and every member when it
+ * was pinned as editable by all. Taking it down stays `canActOn`.
+ */
+export function canEditAnnouncement(member: Actor, announcement: { memberId: number; editableByAll: boolean }) {
+  return announcement.editableByAll || canActOn(member, announcement);
+}
+
 /** The super admin is a gérant in every shop, whatever their role there says. */
 export function effectiveRole(account: { role: MemberRole; superAdmin: boolean }): MemberRole {
   return account.superAdmin ? "gerant" : account.role;
