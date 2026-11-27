@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnyPgColumn,
   boolean,
   check,
   customType,
@@ -344,8 +343,11 @@ export const transactions = pgTable(
     editedBy: integer("edited_by").references(() => members.id),
     // The contract whose delivery wrote it, on every line of that sale. It
     // stays after the delivery is undone, so the old sale cannot be counted
-    // again once the contract is open or delivered by another sale.
-    contractId: integer("contract_id").references((): AnyPgColumn => contracts.id, { onDelete: "set null" }),
+    // again once the contract is open or delivered by another sale. No
+    // foreign key: contracts already points here (`deliveryLineId`), and the
+    // prod copy (scripts/preview/copy-prod.mjs) needs tables without loops;
+    // a deleted contract leaves an id that matches nothing.
+    contractId: integer("contract_id"),
   },
   (t) => [
     index("transactions_shop_created_at_idx").on(t.shopId, t.createdAt),

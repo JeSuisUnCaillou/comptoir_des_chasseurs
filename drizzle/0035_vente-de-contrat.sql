@@ -1,8 +1,6 @@
 ALTER TABLE "transactions" ADD COLUMN IF NOT EXISTS "contract_id" integer;--> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_contract_id_contracts_id_fk" FOREIGN KEY ("contract_id") REFERENCES "public"."contracts"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN null;
-END $$;--> statement-breakpoint
+-- A first version of this migration, run on the previews' database, had a foreign key.
+ALTER TABLE "transactions" DROP CONSTRAINT IF EXISTS "transactions_contract_id_contracts_id_fk";--> statement-breakpoint
 -- The sales of contracts delivered today: every line of the entry their delivery line opens.
 UPDATE "transactions" AS t SET "contract_id" = c."id"
 FROM "contracts" AS c

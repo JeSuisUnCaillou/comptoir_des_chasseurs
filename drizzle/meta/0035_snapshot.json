@@ -1,5 +1,5 @@
 {
-  "id": "1f08860c-d428-49db-b79a-a8e8600d59da",
+  "id": "e9a398dc-5b13-4918-93eb-ab04809a6847",
   "prevId": "815941c3-0241-4f2d-ac2e-46cad5475f67",
   "version": "7",
   "dialect": "postgresql",
@@ -1941,19 +1941,6 @@
             "id"
           ],
           "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "transactions_contract_id_contracts_id_fk": {
-          "name": "transactions_contract_id_contracts_id_fk",
-          "tableFrom": "transactions",
-          "tableTo": "contracts",
-          "columnsFrom": [
-            "contract_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
