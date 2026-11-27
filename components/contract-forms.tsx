@@ -12,7 +12,7 @@ import { keepValues } from "@/components/keep-values";
 import { focusCombobox } from "@/components/combobox";
 import { ProductCombobox } from "@/components/product-combobox";
 import { ProductField } from "@/components/product-field";
-import { CONTRACT_CLIENT_MAX, CONTRACT_LINES_MAX, CONTRACT_NAME_MAX } from "@/lib/forms";
+import { CONTRACT_CLIENT_MAX, CONTRACT_LINES_MAX, CONTRACT_NAME_MAX, MAX_QUANTITY } from "@/lib/forms";
 
 type ProductChoice = { id: number; name: string; unit: string; aliases?: readonly string[] };
 
@@ -61,7 +61,7 @@ function NewContractLines({ products }: { products: ProductChoice[] }) {
               </div>
               <div className="field">
                 <label htmlFor={`${id}-quantity`}>Quantité demandée</label>
-                <input id={`${id}-quantity`} name="quantity" type="number" min={1} max={1_000_000} step={1} required />
+                <input id={`${id}-quantity`} name="quantity" type="number" min={1} max={MAX_QUANTITY} step={1} required />
               </div>
               <button
                 type="button"
@@ -169,7 +169,7 @@ export function ContractLineForm({
         </div>
         <div className="field">
           <label htmlFor="l-quantity">Quantité demandée</label>
-          <input id="l-quantity" name="quantity" type="number" min={1} max={1_000_000} step={1} required />
+          <input id="l-quantity" name="quantity" type="number" min={1} max={MAX_QUANTITY} step={1} required />
         </div>
       </div>
       <button className="btn" type="submit" disabled={pending}>
