@@ -395,7 +395,8 @@ inscrit lui-même :
 - **Mes septims** : ses écritures *Pas encore en caisse* et pas annulées,
   comme dans le registre, avec leur bouton « Mettre … en caisse » ou
   « Sortir … de la caisse » ; au-dessus, ce qu'il a en tout à mettre en
-  caisse et à en sortir, et le bouton « Tout régler » qui donne le solde :
+  caisse et à en sortir ; dans la carte du côté où tombe le solde, le
+  bouton « Tout régler », à sa taille, qui donne ce solde :
   « Tout régler : mettre 7 septims en caisse » (ou « sortir … de la
   caisse », ou « rien à mettre ni à sortir »). Sa confirmation redit les
   deux totaux et le solde ; sur OK, toutes ses écritures *Pas encore en

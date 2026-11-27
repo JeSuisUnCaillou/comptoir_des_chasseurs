@@ -146,9 +146,14 @@ test("« Tout régler » donne le solde à mettre en caisse et règle toutes les
 
   await page.goto("/le-comptoir-des-chasseurs/a-regler");
   const septimsPart = page.getByRole("region", { name: "Mes septims" });
-  const settleAll = septimsPart.getByRole("button", { name: "Tout régler : mettre 7 septims en caisse" });
-  await expect(page.getByTestId("a-mettre-en-caisse")).toContainText("12 septims");
+  // The button sits in the card of the side the net falls on, at its own size.
+  const depositCard = page.getByTestId("a-mettre-en-caisse");
+  const settleAll = depositCard.getByRole("button", { name: "Tout régler : mettre 7 septims en caisse" });
+  await expect(depositCard).toContainText("12 septims");
   await expect(page.getByTestId("a-sortir-de-la-caisse")).toContainText("5 septims");
+  await expect(page.getByTestId("a-sortir-de-la-caisse").getByRole("button")).toHaveCount(0);
+  const [button, card] = await Promise.all([settleAll.boundingBox(), depositCard.boundingBox()]);
+  expect(button!.width).toBeLessThan(card!.width - 36);
 
   // Said no: nothing moves.
   let message = "";
@@ -194,7 +199,10 @@ test("« Tout régler » dit ce qu'il faut sortir de la caisse quand les achats 
     message = dialog.message();
     void dialog.accept();
   });
-  await septimsPart.getByRole("button", { name: "Tout régler : sortir 10 septims de la caisse" }).click();
+  await page
+    .getByTestId("a-sortir-de-la-caisse")
+    .getByRole("button", { name: "Tout régler : sortir 10 septims de la caisse" })
+    .click();
   await expect(septimsPart).toContainText("Rien à régler : tous tes septims sont en caisse.");
   expect(message).toContain("Au total, sortir 10 septims de la caisse.");
 });

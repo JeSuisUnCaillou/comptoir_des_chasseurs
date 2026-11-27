@@ -584,6 +584,14 @@ textarea:focus {
   gap: 8px;
 }
 
+.stat .settle-all {
+  margin-top: 10px;
+}
+
+.settle-all .btn-primary {
+  width: auto;
+}
+
 .inline-form {
   display: flex;
   gap: 8px;
