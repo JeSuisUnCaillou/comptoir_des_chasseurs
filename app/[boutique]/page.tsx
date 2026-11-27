@@ -70,23 +70,6 @@ export default async function GrandLivre() {
           {isGerant(member) && <WeekEndButton />}
         </div>
       </section>
-      <section className="section-gap">
-        <div className="panel-head">
-          <div>
-            <div className="eyebrow">Affichage de la boutique</div>
-            <h2>
-              <Megaphone size={18} style={{ verticalAlign: "-2px" }} /> Tableau d&apos;annonces
-            </h2>
-            <p className="muted" style={{ margin: "4px 0 0" }}>
-              Les annonces laissées par les membres de la boutique.
-            </p>
-          </div>
-          <Link className="btn btn-small" href={at("/annonces")}>
-            <Megaphone size={14} /> Afficher un parchemin
-          </Link>
-        </div>
-        <AnnouncementBoard announcements={announcements} member={member} back={at("/")} />
-      </section>
       {contracts.length > 0 && (
         <section className="section-gap" aria-label="Contrats en cours">
           <div className="panel-head">
@@ -113,6 +96,23 @@ export default async function GrandLivre() {
           </div>
         </section>
       )}
+      <section className="section-gap">
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">Affichage de la boutique</div>
+            <h2>
+              <Megaphone size={18} style={{ verticalAlign: "-2px" }} /> Tableau d&apos;annonces
+            </h2>
+            <p className="muted" style={{ margin: "4px 0 0" }}>
+              Les annonces laissées par les membres de la boutique.
+            </p>
+          </div>
+          <Link className="btn btn-small" href={at("/annonces")}>
+            <Megaphone size={14} /> Afficher un parchemin
+          </Link>
+        </div>
+        <AnnouncementBoard announcements={announcements} member={member} back={at("/")} />
+      </section>
       <section className="panel">
         <div className="panel-head">
           <h2>Dernières écritures</h2>
