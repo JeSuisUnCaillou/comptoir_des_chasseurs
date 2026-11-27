@@ -7,7 +7,8 @@ import { splitPrice } from "@/lib/contract-progress";
 import { UserError } from "@/lib/errors";
 import { unitPrice } from "@/lib/pricing";
 import { activeIn } from "@/lib/products";
-import { cancelLines, recordLinesIn, settleLine } from "@/lib/transactions";
+import { entryOf, settleEntry } from "@/lib/register";
+import { cancelLines, recordLinesIn } from "@/lib/transactions";
 
 /** Paid contracts per page of the Contrats page. */
 export const PAID_PAGE_SIZE = 12;
@@ -52,13 +53,24 @@ export type ContractLine = {
 /** The sale that delivered a contract, if any. */
 const delivery = alias(schema.transactions, "delivery");
 
+/** Another line of the delivery's sale. */
+const deliveryLine = alias(schema.transactions, "delivery_line");
+
+/** Some line of the delivery's sale still counted, waiting for the till if `pending`. */
+function deliveryLineLeft(pending: boolean) {
+  return sql`exists (select 1 from ${schema.transactions} ${deliveryLine}
+    where ${entryOf(deliveryLine)} = ${entryOf(delivery)} and ${deliveryLine.cancelledAt} is null
+    ${pending ? sql`and ${deliveryLine.tillPending}` : sql``})`;
+}
+
 /**
- * Delivered: marked so and its sale not cancelled since (cancelling that sale
- * in the register undoes the delivery). Paid: delivered, and the septims of
- * its sale are in the till; a contract delivered before prices has no sale and is paid.
+ * Delivered: marked so and some line of its sale still counted (cancelling
+ * that sale in the register undoes the delivery; cancelling one of its lines
+ * does not). Paid: delivered, and no line of its sale waits for the till; a
+ * contract delivered before prices has no sale and is paid.
  */
-const deliveredSql = sql<boolean>`(${schema.contracts.deliveredAt} is not null and (${schema.contracts.deliveryLineId} is null or ${delivery.cancelledAt} is null))`;
-const paidSql = sql<boolean>`(${deliveredSql} and (${schema.contracts.deliveryLineId} is null or not ${delivery.tillPending}))`;
+const deliveredSql = sql<boolean>`(${schema.contracts.deliveredAt} is not null and (${schema.contracts.deliveryLineId} is null or ${deliveryLineLeft(false)}))`;
+const paidSql = sql<boolean>`(${deliveredSql} and (${schema.contracts.deliveryLineId} is null or not ${deliveryLineLeft(true)}))`;
 
 const contractFields = {
   id: schema.contracts.id,
@@ -290,7 +302,8 @@ export async function receivePayment(member: Actor, id: number) {
   if (!contract) throw new UserError("Ce contrat n'existe plus.");
   if (!contract.delivered || contract.deliveryLineId == null) throw new UserError("Ce contrat n'est pas encore livré.");
   if (contract.paid) throw new UserError("L'argent de ce contrat est déjà en caisse.");
-  await settleLine(member, contract.deliveryLineId);
+  // Its whole sale, even when its first line was cancelled alone in the register.
+  await settleEntry(member.shopId, contract.deliveryLineId);
 }
 
 /**

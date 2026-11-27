@@ -40,6 +40,8 @@ export function isQuantity(n: number) {
 /** The longest name and client a contract keeps. */
 export const CONTRACT_NAME_MAX = 100;
 export const CONTRACT_CLIENT_MAX = 100;
+/** The most septims a contract may be paid. */
+export const CONTRACT_PRICE_MAX = 100_000_000;
 /** The most merchandises a contract is written with at once. */
 export const CONTRACT_LINES_MAX = 25;
 

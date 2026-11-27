@@ -20,15 +20,13 @@ import {
   CONTRACT_CLIENT_MAX,
   CONTRACT_LINES_MAX,
   CONTRACT_NAME_MAX,
+  CONTRACT_PRICE_MAX,
   QUANTITY_ERROR,
   isQuantity,
   optionalId,
   optionalInt,
   text,
 } from "@/lib/forms";
-
-/** The most septims a contract may be paid. */
-const MAX_PRICE = 100_000_000;
 
 // `at` changes on every success, so a form can clear itself by key.
 export type ContractFormState = { ok: boolean; message: string; at?: number } | null;
@@ -63,7 +61,7 @@ export async function saveContract(_prev: ContractFormState, formData: FormData)
   if (Number.isNaN(id)) return { ok: false, message: "Contrat inconnu." };
   if (!values.name) return { ok: false, message: "Donne un nom au contrat." };
   if (dueOn === undefined) return { ok: false, message: "L'échéance n'est pas une date." };
-  if (Number.isNaN(price) || (price != null && price > MAX_PRICE)) {
+  if (Number.isNaN(price) || (price != null && price > CONTRACT_PRICE_MAX)) {
     return { ok: false, message: "Le prix doit être un nombre entier de septims (0 ou plus)." };
   }
 

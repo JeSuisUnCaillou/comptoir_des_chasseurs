@@ -747,9 +747,10 @@ Inventaire et Contacts dans le menu.
     prix partagé entre elles (au prorata de leur prix de vente quand toutes
     en ont un, sinon de leur quantité). Elles sortent du stock comme pour
     toute vente. Avec un prix, la vente est « pas encore en caisse » au nom
-    du gérant qui livre (elle compte dans « À régler ») ; sans prix, elle est
-    à 0 septim. Un contrat sans marchandise ne se livre pas. Le contrat passe
-    sous « Livrés, argent attendu » (étiquette bleue du même nom) ; ses
+    du gérant qui livre (elle compte dans « À régler ») et le contrat passe
+    sous « Livrés, argent attendu » (étiquette bleue du même nom) ; sans
+    prix, elle est à 0 septim et le contrat passe tout de suite sous
+    « Contrats payés ». Un contrat sans marchandise ne se livre pas. Livré, ses
     marchandises et son prix ne changent plus, sa carte n'en garde que les
     quantités.
   - « Argent reçu » met les septims de cette vente en caisse, comme « Mettre
@@ -759,7 +760,8 @@ Inventaire et Contacts dans le menu.
     vente au registre (les marchandises reviennent dans le stock) et remet le
     contrat en cours.
   - Le contrat suit sa vente : la mettre en caisse au registre le dit payé,
-    l'annuler au registre le remet en cours.
+    l'annuler entière au registre le remet en cours ; en annuler une ligne
+    seule ne change rien au contrat.
 - Supprimer un contrat ne touche ni au stock ni à une vente déjà inscrite
   par sa livraison.
 - Tout le monde les consulte. Seuls les gérants en créent, les modifient

@@ -256,3 +256,69 @@ test("un nouveau contrat refuse une marchandise demandée deux fois, et peut par
   await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
   await expect(card(page, contract)).toContainText("Aucune marchandise demandée pour l'instant.");
 });
+
+test("le contrat suit sa vente au registre : une ligne annulée seule, la mise en caisse, l'annulation entière", async ({ page }) => {
+  const contract = uniqueName("Commande suivie au registre");
+  const leather = uniqueName("Cuir suivi");
+  const pelt = uniqueName("Peau suivie");
+  await createProduct(leather, { unit: "cuir", stock: 10, leather: true, category: "Autres ressources" });
+  await createProduct(pelt, { stock: 10 });
+  const id = await createContract(contract, [[leather, 4], [pelt, 6]], { price: 100 });
+  await loginAsGerant(page);
+  await page.goto(`${COMPTOIR}/contrats/${id}`);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  const unpaid = page.getByRole("region", { name: "Livrés, argent attendu" });
+  await expect(unpaid.getByRole("article", { name: contract, exact: true })).toBeVisible();
+
+  // The leather, its sale's first line, is cancelled alone: the pelts are still delivered.
+  await page.goto("/achat-vente");
+  const sale = page.getByTestId("registre").getByRole("row").filter({ hasText: new RegExp(`${leather}|${pelt}`) });
+  await expect(sale).toHaveCount(2);
+  await sale.getByRole("link", { name: /^Modifier les transactions/ }).click();
+  const one = page.getByRole("region", { name: "Annuler une seule ligne" });
+  page.once("dialog", (dialog) => dialog.accept());
+  await one.getByRole("listitem").filter({ hasText: leather }).getByRole("button", { name: "Annuler" }).click();
+  await expect(one.getByRole("listitem").filter({ hasText: leather })).toHaveCount(0);
+  await page.goto(`${COMPTOIR}/contrats`);
+  await expect(unpaid.getByRole("article", { name: contract, exact: true })).toBeVisible();
+
+  // « Argent reçu » puts the rest of its sale in the till.
+  await unpaid.getByRole("link", { name: `Modifier ${contract}` }).click();
+  await page.getByRole("button", { name: "Argent reçu" }).click();
+  const paid = page.getByRole("region", { name: "Contrats payés" });
+  await expect(paid.getByRole("article", { name: contract, exact: true }).getByText("Payé", { exact: true })).toBeVisible();
+
+  // Its whole sale cancelled in the register: the contract is open again.
+  await page.goto("/achat-vente");
+  page.once("dialog", (dialog) => dialog.accept());
+  await sale.filter({ hasText: pelt }).getByRole("button", { name: /^Annuler la vente/ }).click();
+  await expect(sale.filter({ hasText: pelt })).toContainText("Annulée");
+  await page.goto(`${COMPTOIR}/contrats`);
+  await expect(page.getByRole("region", { name: "Contrats en cours" }).getByRole("article", { name: contract, exact: true })).toBeVisible();
+});
+
+test("un contrat sans prix livré est payé d'emblée, un sans marchandise ne se livre pas, un prix faux est refusé", async ({ page }) => {
+  const free = uniqueName("Commande offerte");
+  const empty = uniqueName("Commande vide");
+  const hide = uniqueName("Peau offerte");
+  await createProduct(hide, { stock: 5 });
+  const freeId = await createContract(free, [[hide, 2]]);
+  const emptyId = await createContract(empty, []);
+  await loginAsGerant(page);
+
+  await page.goto(`${COMPTOIR}/contrats/${freeId}`);
+  await expect(page.getByText("Sans prix, la vente est à 0 septim.")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  await expect(page.getByRole("region", { name: "Contrats payés" }).getByRole("article", { name: free, exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Livrés, argent attendu" }).getByRole("article", { name: free })).toHaveCount(0);
+
+  await page.goto(`${COMPTOIR}/contrats/${emptyId}`);
+  await page.getByLabel("Prix (septims)").fill("100000001");
+  await page.getByRole("button", { name: "Enregistrer le contrat" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Le prix doit être un nombre entier de septims" })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Ce contrat ne demande aucune marchandise : rien à livrer." })).toBeVisible();
+});
