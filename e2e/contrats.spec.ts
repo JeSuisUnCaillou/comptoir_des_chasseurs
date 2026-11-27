@@ -350,3 +350,72 @@ test("le créateur d'un contrat le livre depuis sa carte, un autre employé n'a 
   // The rest stays with the gérants: no page to edit it.
   await expect(author.getByRole("link", { name: `Modifier ${contract}` })).toHaveCount(0);
 });
+
+test("l'ancienne vente d'un contrat relivré ne se rétablit plus, sa dernière vente oui", async ({ page }) => {
+  const contract = uniqueName("Commande relivrée");
+  const pelt = uniqueName("Peau relivrée");
+  await createProduct(pelt, { stock: 10 });
+  const id = await createContract(contract, [[pelt, 6]], { price: 60 });
+  await loginAsGerant(page);
+  const sheet = `${COMPTOIR}/contrats/${id}`;
+  const sale = page.getByTestId("registre").getByRole("row").filter({ hasText: pelt });
+  const stock = async (value: string) => {
+    await page.goto("/inventaire");
+    await page.getByLabel("Rechercher une marchandise").fill(pelt);
+    await expect(page.getByTestId(`stock-${pelt}`).getByTestId("stock-value")).toHaveText(value);
+  };
+  const deliver = async () => {
+    await page.goto(sheet);
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+    await expect(page.getByRole("heading", { name: "Livré, argent attendu" })).toBeVisible();
+  };
+
+  // Delivered, its delivery undone from its sheet, delivered again.
+  await deliver();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Annuler la livraison" }).click();
+  await expect(page.getByRole("button", { name: "Livrer les marchandises" })).toBeVisible();
+  await deliver();
+  await stock("4");
+
+  // The first sale is refused: the contract would count twice.
+  await page.goto("/achat-vente");
+  await expect(sale).toHaveCount(2);
+  const first = sale.nth(1);
+  await expect(first).toContainText("Annulée");
+  page.once("dialog", (dialog) => dialog.accept());
+  await first.getByRole("button", { name: /^Rétablir la vente/ }).click();
+  await expect(first.getByRole("alert")).toHaveText(
+    `Cette vente livrait le contrat « ${contract} », remis en cours ou livré de nouveau depuis : elle ne se rétablit plus.`,
+  );
+  await page.reload();
+  await expect(first).toContainText("Annulée");
+  await stock("4");
+
+  // The last sale, cancelled in the register then restored, delivers it again.
+  await page.goto("/achat-vente");
+  const last = sale.first();
+  page.once("dialog", (dialog) => dialog.accept());
+  await last.getByRole("button", { name: /^Annuler la vente/ }).click();
+  await expect(last).toContainText("Annulée");
+  page.once("dialog", (dialog) => dialog.accept());
+  await last.getByRole("button", { name: /^Rétablir la vente/ }).click();
+  await expect(last).not.toContainText("Annulée");
+  await page.goto(sheet);
+  await expect(page.getByRole("heading", { name: "Livré, argent attendu" })).toBeVisible();
+
+  // Cancelled in the register and delivered anew: that sale is refused too.
+  await page.goto("/achat-vente");
+  page.once("dialog", (dialog) => dialog.accept());
+  await last.getByRole("button", { name: /^Annuler la vente/ }).click();
+  await expect(last).toContainText("Annulée");
+  await deliver();
+  await page.goto("/achat-vente");
+  await expect(sale).toHaveCount(3);
+  const second = sale.nth(1);
+  page.once("dialog", (dialog) => dialog.accept());
+  await second.getByRole("button", { name: /^Rétablir la vente/ }).click();
+  await expect(second.getByRole("alert")).toContainText(`le contrat « ${contract} »`);
+  await stock("4");
+});

@@ -8,7 +8,7 @@ import { UserError } from "@/lib/errors";
 import { canActOn } from "@/lib/policies";
 import { unitPrice } from "@/lib/pricing";
 import { activeIn } from "@/lib/products";
-import { entryOf, settleEntry } from "@/lib/register";
+import { entryOf, sameEntryAs, settleEntry } from "@/lib/register";
 import { cancelLines, recordLinesIn } from "@/lib/transactions";
 
 /** Paid contracts per page of the Contrats page. */
@@ -298,6 +298,7 @@ export async function deliverContract(member: Actor, id: number) {
       lines: lines.map((l, i) => ({ productId: l.productId, label: l.label, quantity: l.quantity, amount: amounts[i] })),
     });
     await tx.update(c).set({ deliveredAt: new Date(), deliveryLineId: first }).where(eq(c.id, id));
+    await tx.update(schema.transactions).set({ contractId: id }).where(sameEntryAs(first));
   });
 }
 
