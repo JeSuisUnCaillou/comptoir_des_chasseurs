@@ -16,6 +16,7 @@ fichier à jour dans le même commit.
 - [Contacts](#contacts)
 - [Tarifs et Gérer les marchandises](#tarifs-et-gérer-les-marchandises)
 - [Inventaire](#inventaire)
+- [Contrats](#contrats) : ce qu'on nous demande, face au stock
 - [Activité d'un membre](#activité-dun-membre)
 - [Rôles et comptes](#rôles-et-comptes)
 
@@ -64,7 +65,7 @@ fenêtre :
 | --- | --- |
 | Registre, historique du stock, marchandises (avec une recherche par nom), membres, activité d'un membre | 25 |
 | Cartes du stock | 24 |
-| Annonces, contacts | 12 |
+| Annonces, contacts, contrats livrés | 12 |
 
 Une écriture d'achat ou de vente porte au plus 25 marchandises, pour tenir
 sur une page du registre.
@@ -77,6 +78,7 @@ sur une page du registre.
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
 | Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
+| Contrats en cours | l'échéance la plus proche d'abord, puis ceux sans échéance, du plus récent au plus ancien ; les contrats livrés, du dernier livré au premier ; leurs marchandises par nom |
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
 sont à l'heure de Paris.
@@ -709,6 +711,32 @@ n'en ont pas : ils se corrigent par leur ligne du registre.
 - Chaque entrée ou sortie porte son motif.
 - Recherche par marchandise, qui filtre pendant qu'on tape.
 - Filtres : employé, sens (entrées ou sorties), dates.
+
+## Contrats
+
+Ce qu'on demande à la boutique (« cette semaine : 12 000 cuirs, 60 viandes
+de worker et 60 peaux de loup »), à l'adresse `/<boutique>/contrats`, entre
+Inventaire et Contacts dans le menu.
+
+- Un contrat a un nom, un client et une échéance facultatifs, et les
+  marchandises de la boutique qu'il demande, chacune avec sa quantité (une
+  ligne par marchandise ; la redemander change sa quantité).
+- Une carte par contrat en cours : pour chaque marchandise, le stock
+  d'aujourd'hui face à la quantité demandée (« 40 / 60 peaux »), une barre,
+  et ce qui manque (« Manque 20 peaux ») ou « Prêt » ; un stock au-delà de
+  la demande se dit (« 80 en stock »). En tête, la progression d'ensemble :
+  la moyenne des marchandises, chacune comptant autant quelle que soit sa
+  quantité, et combien sont prêtes (« 2 marchandises prêtes sur 3 »).
+- L'étiquette dit « En cours », ou « Prêt à livrer » quand tout est en
+  stock ; « Échéance passée » s'ajoute après le jour dit (heure de Paris).
+- Le stock compté est celui de l'Inventaire : deux contrats qui demandent
+  la même marchandise voient le même stock.
+- « Marquer comme livré » range le contrat sous « Contrats livrés »
+  (étiquette « Livré ») ; « Rouvrir le contrat » le remet en cours. Le stock
+  ne bouge pas : la livraison s'inscrit comme une vente dans Achat / Vente.
+- Tout le monde les consulte. Seuls les gérants en créent, les modifient
+  (nom, client, échéance, marchandises), les marquent livrés, les rouvrent
+  ou les suppriment, par les boutons de la page.
 
 ## Activité d'un membre
 

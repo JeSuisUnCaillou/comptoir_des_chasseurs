@@ -26,7 +26,7 @@ frappe.
 2. `legacy:import` lit ce fichier et **remplace** dans la première boutique
    de la base cible (l'ancienne app n'était que le comptoir) les
    marchandises, l'historique du stock, le registre, les annonces et les
-   fournisseurs, et met
+   fournisseurs (les contrats, qui nomment les marchandises, sont vidés), et met
    à jour le prix du cuir chez le forgeron. Les membres existants ne changent
    pas : chaque ligne est rattachée au membre du même identifiant ou du même
    nom. Un auteur de l'ancienne app sans compte en reçoit un à son nom, en

@@ -102,9 +102,10 @@ test("la liste des comptes est paginée", async ({ page }) => {
   await pages.getByRole("link", { name: "Suivant" }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(pages).toContainText(/Page 2 sur \d+/);
-  // It sorts last of all, so it is on the last page.
+  // It sorts after every active member, but before the accounts other tests
+  // deactivate meanwhile, which close the list: look for it page by page.
   const next = pages.getByRole("link", { name: "Suivant" });
-  for (let n = 3; await next.count(); n++) {
+  for (let n = 3; (await last.count()) === 0 && (await next.count()); n++) {
     await next.click();
     await expect(pages).toContainText(`Page ${n} sur`);
   }

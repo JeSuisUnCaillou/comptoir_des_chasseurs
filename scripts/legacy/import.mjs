@@ -147,7 +147,8 @@ async function saveBackup(sql, target) {
 
 async function write(sql, plan) {
   await sql.begin(async (tx) => {
-    await tx`truncate transactions, stock_movements, supplier_offers, suppliers, privileged_prices, product_aliases, products, announcements restart identity`;
+    // Contracts name the merchandises: they go with them (the old app had none).
+    await tx`truncate transactions, stock_movements, supplier_offers, suppliers, privileged_prices, product_aliases, contract_lines, contracts, products, announcements restart identity`;
     // Members are only ever added, never changed. "!" is no valid hash: no
     // sign-in until the gérant sets a password.
     const memberIds = new Map();

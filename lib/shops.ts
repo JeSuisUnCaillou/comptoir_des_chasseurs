@@ -145,6 +145,8 @@ export async function deleteShop(gerant: Pick<Member, "id" | "superAdmin">, shop
   await getDb().transaction(async (tx) => {
     const of = <T extends { shopId: AnyColumn }>(table: T) => eq(table.shopId, shop.id);
     // Supplier offers go with their supplier; every other table names the shop.
+    // Contract lines go with their contract (on delete cascade).
+    await tx.delete(schema.contracts).where(of(schema.contracts));
     await tx.delete(schema.suppliers).where(of(schema.suppliers));
     await tx.delete(schema.stockMovements).where(of(schema.stockMovements));
     await tx.delete(schema.transactions).where(of(schema.transactions));

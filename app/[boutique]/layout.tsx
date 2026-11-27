@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   LogOut,
   Megaphone,
+  ScrollText,
   Settings,
   Shield,
   Store,
@@ -73,6 +74,9 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           </NavLink>
           <NavLink href={at("/inventaire")}>
             <Archive size={18} /> Inventaire
+          </NavLink>
+          <NavLink href={at("/contrats")}>
+            <ScrollText size={18} /> Contrats
           </NavLink>
           <NavLink href={at("/contacts")}>
             <Contact size={18} /> Contacts

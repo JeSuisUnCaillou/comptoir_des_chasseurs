@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 // Fills a fresh preview database so it can be tried right away: Caillou's
-// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy), a contact created by a sale (Ulfgar) and
+// gérant account and a second gérant, some stock, privileged groups, a second shop (La Taverne du Port), a few announcements, the old app's suppliers, a customer (Roy), a contact created by a sale (Ulfgar), an open contract and
 // purchases and sales of several lines, some waiting for the till. Runs on preview builds
 // only, after the migrations, and only adds what is missing (it never
 // overwrites anything).
@@ -70,6 +70,16 @@ const SAMPLES = [
   ["rachat", "Faendal", true, [["Cuir", 10, 30], ["Loup", 2, 8], ["Venaison", 20, 20]]],
   ["vente", "Taverne de la Jument pie", true, [["Venaison", 30, 45], ["Viande d'horqueur", 10, 15]]],
 ];
+// An open contract of the comptoir, partly in stock: [product name, quantity asked].
+const CONTRACT = {
+  name: "Commande de la semaine (exemple)",
+  client: "Jarl de Vendeaume",
+  lines: [
+    ["Cuir", 120],
+    ["Venaison", 60],
+    ["Loup", 8],
+  ],
+};
 const SAMPLE_NOTE = "Exemple d'écriture groupée (preview)";
 const CASH_NOTE = "Exemple de mouvement de caisse pas encore en caisse (preview)";
 /** Cash movements waiting for the till: [kind, label, amount, counterparty]. */
@@ -208,6 +218,22 @@ try {
           values (1, ${product.id}, ${quantity}, ${product.stock}, ${memberId}, 'Stock de départ (preview)')`;
       }
       console.log("Stock de départ ajouté.");
+    }
+
+    // Again on each build once the comptoir has no open contract (delivered or deleted).
+    const [{ openContracts }] = await tx`
+      select count(*)::int as "openContracts" from contracts where shop_id = 1 and delivered_at is null`;
+    if (openContracts === 0) {
+      const [contract] = await tx`
+        insert into contracts (shop_id, name, client, due_on, member_id)
+        values (1, ${CONTRACT.name}, ${CONTRACT.client}, (now() + interval '5 days')::date, ${memberId})
+        returning id`;
+      for (const [product, quantity] of CONTRACT.lines) {
+        await tx`
+          insert into contract_lines (contract_id, product_id, quantity)
+          select ${contract.id}, id, ${quantity} from products where shop_id = 1 and name = ${product}`;
+      }
+      console.log("Contrat d'exemple ajouté.");
     }
 
     // Again on each build once every sample waiting for the till has been settled or cancelled.

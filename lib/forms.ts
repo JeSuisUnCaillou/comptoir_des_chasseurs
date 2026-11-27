@@ -37,6 +37,10 @@ export function isQuantity(n: number) {
   return Number.isInteger(n) && n >= 1 && n <= MAX_QUANTITY;
 }
 
+/** The longest name and client a contract keeps. */
+export const CONTRACT_NAME_MAX = 100;
+export const CONTRACT_CLIENT_MAX = 100;
+
 /** A checkbox: true when ticked. */
 export function checked(formData: FormData, key: string) {
   return formData.get(key) === "on";

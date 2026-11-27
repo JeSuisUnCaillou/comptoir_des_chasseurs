@@ -50,3 +50,19 @@ export function daysBetween(from: string, to: string) {
 export function parisToday(now = new Date()) {
   return parisDate.format(now);
 }
+
+/** A "YYYY-MM-DD" day a date field sent: null when empty, undefined when it is no day. */
+export function optionalDay(raw: string): string | null | undefined {
+  if (raw === "") return null;
+  const utc = new Date(`${raw}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(utc.getTime()) && utc.toISOString().startsWith(raw)
+    ? raw
+    : undefined;
+}
+
+const longDay = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+/** "30 novembre 2026" for a "YYYY-MM-DD" day. */
+export function formatDay(day: string) {
+  return longDay.format(new Date(`${day}T12:00:00Z`));
+}
