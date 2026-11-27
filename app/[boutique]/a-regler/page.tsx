@@ -2,6 +2,7 @@ import { DepositButton } from "@/components/deposit-button";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { RegisterTable } from "@/components/register-table";
+import { SettleAllButton } from "@/components/settle-all-button";
 import { requireMember } from "@/lib/auth/session";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
@@ -36,6 +37,9 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
     stockReminders(member.shopId, member.id),
   ]);
   const { deposit, take } = toSettle(waiting);
+  // « Tout régler » sits in the card of the side the net falls on.
+  const settleAll = <SettleAllButton lines={total} deposit={deposit} take={take} />;
+  const settleIn = deposit === 0 && take === 0 ? "none" : deposit >= take ? "deposit" : "take";
 
   return (
     <>
@@ -48,23 +52,26 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
         ) : (
           <>
             <p className="muted">
-              Une fois les septims déposés ou pris dans le jeu, dis-le avec le bouton de l&apos;écriture : ils comptent
-              alors dans la caisse.
+              Une fois les septims déposés ou pris dans le jeu, dis-le avec le bouton de l&apos;écriture, ou règle tout
+              d&apos;un coup : ils comptent alors dans la caisse.
             </p>
             <div className="stats">
               {deposit > 0 && (
                 <div className="stat stat-accent-green" data-testid="a-mettre-en-caisse">
                   <div className="stat-label">À mettre en caisse</div>
                   <div className="stat-value plus">{septims(deposit)}</div>
+                  {settleIn === "deposit" && settleAll}
                 </div>
               )}
               {take > 0 && (
                 <div className="stat stat-accent-red" data-testid="a-sortir-de-la-caisse">
                   <div className="stat-label">À sortir de la caisse</div>
                   <div className="stat-value minus">{septims(take)}</div>
+                  {settleIn === "take" && settleAll}
                 </div>
               )}
             </div>
+            {settleIn === "none" && settleAll}
             <RegisterTable entries={entries} member={member} shopSlug={member.shop.slug} />
             <Pagination page={page} total={total} path={path} label="Pages des écritures à régler" />
           </>
