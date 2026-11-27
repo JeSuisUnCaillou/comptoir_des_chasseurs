@@ -395,7 +395,13 @@ inscrit lui-même :
 - **Mes septims** : ses écritures *Pas encore en caisse* et pas annulées,
   comme dans le registre, avec leur bouton « Mettre … en caisse » ou
   « Sortir … de la caisse » ; au-dessus, ce qu'il a en tout à mettre en
-  caisse et à en sortir.
+  caisse et à en sortir, et le bouton « Tout régler » qui donne le solde :
+  « Tout régler : mettre 7 septims en caisse » (ou « sortir … de la
+  caisse », ou « rien à mettre ni à sortir »). Sa confirmation redit les
+  deux totaux et le solde ; sur OK, toutes ses écritures *Pas encore en
+  caisse* comptent dans la caisse d'un coup. Si une écriture est arrivée
+  ou partie entre-temps (le solde a changé), rien n'est réglé et la page
+  demande d'être rechargée.
 - **Mon stock à déposer** : ses achats inscrits avec « Rappelle-moi de
   déposer ça dans le stock », pas annulés, du plus ancien au plus récent :
   leurs marchandises (« 3 × Peau de loup, 2 × Cuir »), la date et le

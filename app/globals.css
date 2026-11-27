@@ -576,6 +576,14 @@ textarea:focus {
   display: inline-flex;
 }
 
+/* « Tout régler » on À régler: the button, and beside it the reason it was refused. */
+.settle-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .inline-form {
   display: flex;
   gap: 8px;
@@ -2068,7 +2076,9 @@ tr.fresh td {
    register under its till tiles) does not touch them. */
 .stats + p,
 .bilan + p,
-.stats + .table-wrap {
+.stats + .table-wrap,
+.stats + .settle-all,
+.settle-all + .table-wrap {
   margin-top: 12px;
 }
 

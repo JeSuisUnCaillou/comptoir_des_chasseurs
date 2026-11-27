@@ -2,6 +2,7 @@ import { DepositButton } from "@/components/deposit-button";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { RegisterTable } from "@/components/register-table";
+import { SettleAllButton } from "@/components/settle-all-button";
 import { requireMember } from "@/lib/auth/session";
 import { PAGE_SIZE, offsetOf, pageParam, param } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
@@ -48,8 +49,8 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
         ) : (
           <>
             <p className="muted">
-              Une fois les septims déposés ou pris dans le jeu, dis-le avec le bouton de l&apos;écriture : ils comptent
-              alors dans la caisse.
+              Une fois les septims déposés ou pris dans le jeu, dis-le avec le bouton de l&apos;écriture, ou règle tout
+              d&apos;un coup : ils comptent alors dans la caisse.
             </p>
             <div className="stats">
               {deposit > 0 && (
@@ -65,6 +66,7 @@ export default async function ARegler({ searchParams }: { searchParams: Promise<
                 </div>
               )}
             </div>
+            <SettleAllButton lines={total} deposit={deposit} take={take} />
             <RegisterTable entries={entries} member={member} shopSlug={member.shop.slug} />
             <Pagination page={page} total={total} path={path} label="Pages des écritures à régler" />
           </>
