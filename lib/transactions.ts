@@ -7,7 +7,7 @@ import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct, type ProductIdentity } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
-import { cancelStockDelta, clearStockReminder, sameEntryAs, settleEntry } from "@/lib/register";
+import { cancelStockDelta, clearStockReminder, sameEntryAs, settleAllPending, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
 import { isCashKind, lineMessage } from "@/lib/transaction-kinds";
 
@@ -163,6 +163,23 @@ export async function settleLine(member: Actor, id: number) {
     throw new UserError("Seul un gérant peut valider la ligne de quelqu'un d'autre.");
   }
   await settleEntry(member.shopId, id);
+}
+
+/**
+ * Every line the member wrote that waits for the till, cancelled ones left
+ * out, is now in it or out of it, all at once. `expectedNet` is the net they
+ * confirmed (money in minus money out): if a line came or went since, nothing
+ * is settled. Returns the number of lines settled.
+ */
+export async function settleAllOf(member: Actor, expectedNet: number) {
+  return getDb().transaction(async (tx) => {
+    const { lines, net } = await settleAllPending(tx, member.shopId, member.id);
+    if (lines === 0) throw new UserError("Rien à régler : tous tes septims sont déjà en caisse.");
+    if (net !== expectedNet) {
+      throw new UserError("Tes écritures à régler ont changé entre-temps : recharge la page pour voir le nouveau total.");
+    }
+    return lines;
+  });
 }
 
 /**

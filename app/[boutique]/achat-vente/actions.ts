@@ -15,6 +15,7 @@ import {
   recordCashLine,
   recordLines,
   restoreLines,
+  settleAllOf,
   settleLine,
   type TransactionLine,
 } from "@/lib/transactions";
@@ -127,6 +128,20 @@ export async function settleTransaction(
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id)) return { ok: false, message: "Ligne inconnue." };
   const result = await attempt(() => settleLine(member, id));
+  if (!result.ok) return result;
+  revalidateShop();
+  return { ok: true, message: "C'est noté, la caisse est à jour." };
+}
+
+/**
+ * Every line the member wrote that waits for the till is now in it or out of
+ * it, provided the net is still the one they confirmed (`net`).
+ */
+export async function settleAll(_prev: TransactionState, formData: FormData): Promise<TransactionState> {
+  const member = await requireMember();
+  const net = Number(formData.get("net"));
+  if (!Number.isInteger(net)) return { ok: false, message: "Total inconnu." };
+  const result = await attempt(() => settleAllOf(member, net));
   if (!result.ok) return result;
   revalidateShop();
   return { ok: true, message: "C'est noté, la caisse est à jour." };

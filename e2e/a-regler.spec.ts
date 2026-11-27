@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createProduct, newEmployeePage, pickProduct, uniqueName } from "./helpers";
+import { createProduct, loginAs, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
 /** The « À régler » notification: beside the name on a wide screen, above the page on a narrow one (the other copy is hidden). */
 function notification(page: Page) {
@@ -123,4 +123,86 @@ test("une vente n'a pas de rappel de stock, et un achat annulé quitte toute la 
     "Rien à régler : tous tes septims sont en caisse.",
   );
   await expect(page.getByRole("region", { name: "Mon stock à déposer" })).toContainText("Rien à déposer dans le stock.");
+});
+
+/** A sale or purchase of `quantity` × `product`, left waiting for the till. */
+async function recordPending(page: Page, kind: "vente" | "achat", product: string, quantity: number) {
+  await page.goto(`/achat-vente/${kind}`);
+  const form = page.getByRole("region", { name: kind === "vente" ? "Inscrire une vente" : "Inscrire un achat" });
+  await pickProduct(form, product);
+  await form.getByLabel("Quantité").fill(String(quantity));
+  await expect(form.getByLabel(kind === "vente" ? "Pas encore mis en caisse" : "Pas encore sorti de la caisse")).toBeChecked();
+  await form.getByRole("button", { name: kind === "vente" ? "Confirmer la vente" : "Confirmer l'achat" }).click();
+  await expect(page.getByRole("status").filter({ hasText: product })).toBeVisible();
+}
+
+test("« Tout régler » donne le solde à mettre en caisse et règle toutes les écritures d'un coup", async ({ browser }) => {
+  const product = uniqueName("Peau de sabrecat");
+  await createProduct(product, { stock: 10, sellPrice: 4, buyPrice: 5 });
+  const { page, username } = await newEmployeePage(browser, "hroki");
+  // 12 septims cashed, 5 paid: 7 to put in the till.
+  await recordPending(page, "vente", product, 3);
+  await recordPending(page, "achat", product, 1);
+
+  await page.goto("/le-comptoir-des-chasseurs/a-regler");
+  const septimsPart = page.getByRole("region", { name: "Mes septims" });
+  // The button sits in the card of the side the net falls on, at its own size.
+  const depositCard = page.getByTestId("a-mettre-en-caisse");
+  const settleAll = depositCard.getByRole("button", { name: "Tout régler : mettre 7 septims en caisse" });
+  await expect(depositCard).toContainText("12 septims");
+  await expect(page.getByTestId("a-sortir-de-la-caisse")).toContainText("5 septims");
+  await expect(page.getByTestId("a-sortir-de-la-caisse").getByRole("button")).toHaveCount(0);
+  const [button, card] = await Promise.all([settleAll.boundingBox(), depositCard.boundingBox()]);
+  expect(button!.width).toBeLessThan(card!.width - 36);
+
+  // Said no: nothing moves.
+  let message = "";
+  page.once("dialog", (dialog) => {
+    message = dialog.message();
+    void dialog.dismiss();
+  });
+  await settleAll.click();
+  await expect.poll(() => message).toContain("2 lignes");
+  expect(message).toContain("À mettre en caisse : 12 septims");
+  expect(message).toContain("À sortir de la caisse : 5 septims");
+  expect(message).toContain("Au total, mettre 7 septims en caisse.");
+  await expect(page.getByTestId("registre").getByRole("row").filter({ hasText: product })).toHaveCount(2);
+
+  // Meanwhile, another sale from another tab: the 7 septims confirmed are no longer the whole story.
+  const other = await (await browser.newContext()).newPage();
+  await loginAs(other, username, "mot-de-passe");
+  await recordPending(other, "vente", product, 1);
+  page.once("dialog", (dialog) => dialog.accept());
+  await settleAll.click();
+  await expect(septimsPart.getByRole("alert")).toContainText("recharge la page");
+
+  // Reloaded, the new net: 16 in, 5 out.
+  await page.reload();
+  page.once("dialog", (dialog) => dialog.accept());
+  await expect(notification(page)).toContainText("16 septims à mettre en caisse · 5 septims à sortir de la caisse");
+  await septimsPart.getByRole("button", { name: "Tout régler : mettre 11 septims en caisse" }).click();
+  await expect(septimsPart).toContainText("Rien à régler : tous tes septims sont en caisse.");
+  await expect(notification(page)).toHaveCount(0);
+});
+
+test("« Tout régler » dit ce qu'il faut sortir de la caisse quand les achats l'emportent", async ({ browser }) => {
+  const product = uniqueName("Peau de troll des glaces");
+  await createProduct(product, { stock: 10, sellPrice: 2, buyPrice: 6 });
+  const { page } = await newEmployeePage(browser, "jorleif");
+  await recordPending(page, "vente", product, 1);
+  await recordPending(page, "achat", product, 2);
+
+  await page.goto("/le-comptoir-des-chasseurs/a-regler");
+  const septimsPart = page.getByRole("region", { name: "Mes septims" });
+  let message = "";
+  page.once("dialog", (dialog) => {
+    message = dialog.message();
+    void dialog.accept();
+  });
+  await page
+    .getByTestId("a-sortir-de-la-caisse")
+    .getByRole("button", { name: "Tout régler : sortir 10 septims de la caisse" })
+    .click();
+  await expect(septimsPart).toContainText("Rien à régler : tous tes septims sont en caisse.");
+  expect(message).toContain("Au total, sortir 10 septims de la caisse.");
 });
