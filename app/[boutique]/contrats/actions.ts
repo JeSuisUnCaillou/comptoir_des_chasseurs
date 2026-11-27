@@ -109,10 +109,11 @@ export async function removeContractLine(formData: FormData) {
  * septims wait), say its septims are in, or undo its delivery.
  */
 export async function contractStep(_prev: ContractFormState, formData: FormData): Promise<ContractFormState> {
-  const member = await requireMember(["gerant"]);
+  const step = formData.get("step");
+  // Delivering is also for the member who wrote the contract (`deliverContract` checks it).
+  const member = await requireMember(step === "livrer" ? undefined : ["gerant"]);
   const id = optionalId(formData);
   if (!id) return { ok: false, message: "Contrat inconnu." };
-  const step = formData.get("step");
   const run =
     step === "livrer"
       ? () => deliverContract(member, id)
@@ -125,6 +126,8 @@ export async function contractStep(_prev: ContractFormState, formData: FormData)
   const result = await attempt(run);
   if (!result.ok) return result;
   revalidateShop();
+  // Delivered from its card or its page: that page shows it delivered.
+  if (step === "livrer") return { ok: true, message: "Contrat livré.", at: Date.now() };
   redirect(shopPath(member.shop.slug, step === "annuler" ? `/contrats/${id}` : "/contrats"));
 }
 

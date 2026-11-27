@@ -8,7 +8,7 @@ import { ShopSetup } from "@/components/shop-setup";
 import { TillOverview } from "@/components/till-overview";
 import { WeekEndButton } from "@/components/week-end-button";
 import { requireMember } from "@/lib/auth/session";
-import { isGerant } from "@/lib/policies";
+import { canActOn, isGerant } from "@/lib/policies";
 import { shopPath } from "@/lib/paths";
 import { announcementList } from "@/lib/announcements";
 import { openContracts } from "@/lib/contracts";
@@ -107,6 +107,7 @@ export default async function GrandLivre() {
                 contract={c}
                 editHref={gerant ? at(`/contrats/${c.id}`) : undefined}
                 today={parisToday()}
+                canDeliver={canActOn(member, c)}
               />
             ))}
           </div>

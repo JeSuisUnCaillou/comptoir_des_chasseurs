@@ -262,13 +262,14 @@ export async function dragAbove(page: Page, handle: Locator, target: Locator) {
 export async function createContract(
   name: string,
   lines: [string, number][],
-  { dueOn = null as string | null, price = null as number | null } = {},
+  { dueOn = null as string | null, price = null as number | null, author = null as string | null } = {},
 ) {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
   try {
     const [{ id }] = await sql`
       insert into contracts (shop_id, name, due_on, price, member_id)
-      values (1, ${name}, ${dueOn}, ${price}, (select min(id) from members))
+      values (1, ${name}, ${dueOn}, ${price},
+        coalesce((select id from members where username = ${author}), (select min(id) from members)))
       returning id`;
     for (const [product, quantity] of lines) {
       await sql`

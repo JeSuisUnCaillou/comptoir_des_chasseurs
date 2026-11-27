@@ -5,6 +5,7 @@ import { byName, getDb, schema, type Tx } from "@/lib/db";
 import type { ShopMember } from "@/lib/auth/session";
 import { splitPrice } from "@/lib/contract-progress";
 import { UserError } from "@/lib/errors";
+import { canActOn } from "@/lib/policies";
 import { unitPrice } from "@/lib/pricing";
 import { activeIn } from "@/lib/products";
 import { entryOf, settleEntry } from "@/lib/register";
@@ -78,6 +79,7 @@ const contractFields = {
   client: schema.contracts.client,
   dueOn: schema.contracts.dueOn,
   price: schema.contracts.price,
+  memberId: schema.contracts.memberId,
   createdAt: schema.contracts.createdAt,
   deliveredAt: schema.contracts.deliveredAt,
   deliveryLineId: schema.contracts.deliveryLineId,
@@ -104,6 +106,8 @@ export type ContractWithLines = {
   client: string;
   dueOn: string | null;
   price: number | null;
+  /** Who wrote it: with the gérants, the one who may deliver it. */
+  memberId: number;
   createdAt: Date;
   deliveredAt: Date | null;
   deliveryLineId: number | null;
@@ -254,7 +258,7 @@ type Actor = Pick<ShopMember, "id" | "role" | "shopId">;
  * Delivers a contract of the shop: a sale of its merchandises to its client,
  * at its price shared among them (`splitPrice`), whose septims wait for the
  * till until the shop is paid. The stock goes out as with any sale. All of it
- * or nothing.
+ * or nothing. Gérants, or the member who wrote it.
  */
 export async function deliverContract(member: Actor, id: number) {
   await getDb().transaction(async (tx) => {
@@ -271,6 +275,7 @@ export async function deliverContract(member: Actor, id: number) {
       .from(c)
       .leftJoin(delivery, eq(delivery.id, c.deliveryLineId))
       .where(eq(c.id, id));
+    if (!canActOn(member, contract)) throw new UserError("Seuls les gérants et le créateur du contrat le livrent.");
     if (contract.delivered) throw new UserError("Ce contrat est déjà livré.");
     const p = schema.products;
     const lines = await tx

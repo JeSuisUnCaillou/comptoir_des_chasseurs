@@ -741,8 +741,10 @@ Inventaire et Contacts dans le menu.
   stock ; « Échéance passée » s'ajoute après le jour dit (heure de Paris).
 - Le stock compté est celui de l'Inventaire : deux contrats qui demandent
   la même marchandise voient le même stock.
-- Livrer et être payé sont deux étapes, sur la fiche du contrat :
-  - « Livrer les marchandises » (après confirmation) inscrit au registre une
+- Livrer et être payé sont deux étapes :
+  - « Livrer les marchandises » (après confirmation), sur la carte d'un
+    contrat en cours qui demande des marchandises (page Contrats et Grand
+    livre) et sur sa fiche, inscrit au registre une
     vente de ses marchandises à son client, note « Contrat « nom » », à son
     prix partagé entre elles (au prorata de leur prix de vente quand toutes
     en ont un, sinon de leur quantité). Elles sortent du stock comme pour
@@ -764,10 +766,11 @@ Inventaire et Contacts dans le menu.
     seule ne change rien au contrat.
 - Supprimer un contrat ne touche ni au stock ni à une vente déjà inscrite
   par sa livraison.
-- Tout le monde les consulte. Seuls les gérants en créent, les modifient
-  (nom, client, échéance, prix, marchandises), les livrent, disent l'argent
-  reçu, annulent une livraison ou les suppriment, par les boutons de la
-  page.
+- Tout le monde les consulte. Les gérants et le membre qui a écrit le
+  contrat le livrent (les autres n'ont pas le bouton, et le serveur le
+  refuse). Seuls les gérants en créent, les modifient (nom, client,
+  échéance, prix, marchandises), disent l'argent reçu, annulent une
+  livraison ou les suppriment, par les boutons de la page.
 
 ## Activité d'un membre
 

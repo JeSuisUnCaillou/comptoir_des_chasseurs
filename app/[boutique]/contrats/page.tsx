@@ -8,7 +8,7 @@ import { PAID_PAGE_SIZE, openContracts, paidContracts, unpaidContracts } from "@
 import { parisToday } from "@/lib/dates";
 import { pageParam } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
-import { isGerant } from "@/lib/policies";
+import { canActOn, isGerant } from "@/lib/policies";
 
 export default async function Contrats({ searchParams }: { searchParams: Promise<{ page?: string | string[] }> }) {
   const member = await requireMember();
@@ -52,7 +52,7 @@ export default async function Contrats({ searchParams }: { searchParams: Promise
         <section className="section-gap" aria-label="Contrats en cours">
           <div className="contract-grid">
             {open.map((c) => (
-              <ContractCard key={c.id} contract={c} editHref={editHref(c.id)} today={today} />
+              <ContractCard key={c.id} contract={c} editHref={editHref(c.id)} today={today} canDeliver={canActOn(member, c)} />
             ))}
           </div>
         </section>

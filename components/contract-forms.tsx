@@ -224,12 +224,14 @@ export function ContractStepButton({
   label,
   confirm,
   primary,
+  ariaLabel,
 }: {
   id: number;
   step: "livrer" | "payer" | "annuler";
   label: string;
   confirm?: string;
   primary?: boolean;
+  ariaLabel?: string;
 }) {
   const [state, action, pending] = useActionState<ContractFormState, FormData>(contractStep, null);
   return (
@@ -244,7 +246,7 @@ export function ContractStepButton({
     >
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="step" value={step} />
-      <button className={`btn${primary ? " btn-primary" : ""}`} type="submit" disabled={pending}>
+      <button className={`btn${primary ? " btn-primary" : ""}`} type="submit" disabled={pending} aria-label={ariaLabel}>
         {label}
       </button>
       <Status state={state} />

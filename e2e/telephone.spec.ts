@@ -399,7 +399,7 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
   await page.goto(`${COMPTOIR}/contrats/${deliveredId}`);
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Livrer les marchandises" }).click();
-  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Livré, argent attendu" })).toBeVisible();
   const pages = [
     COMPTOIR,
     "/achat-vente",

@@ -1,5 +1,6 @@
 import { CalendarDays, Coins, User } from "lucide-react";
 import Link from "next/link";
+import { ContractStepButton } from "@/components/contract-forms";
 import { contractProgress, contractStatus, lineProgress } from "@/lib/contract-progress";
 import type { ContractWithLines } from "@/lib/contracts";
 import { formatDay } from "@/lib/dates";
@@ -25,15 +26,18 @@ export function ProgressBar({ percent, label, done }: { percent: number; label: 
  * A contract's card: each merchandise it asks for against the stock now, and
  * how far the whole is. `editHref` is the address of its page, for a gérant;
  * `today` ("YYYY-MM-DD", in Paris) tells an open contract past its day.
+ * `canDeliver` (a gérant, or who wrote it) shows its « Livrer » button.
  */
 export function ContractCard({
   contract,
   editHref,
   today,
+  canDeliver,
 }: {
   contract: ContractWithLines;
   editHref?: string;
   today: string;
+  canDeliver?: boolean;
 }) {
   const { lines } = contract;
   const progress = contractProgress(lines);
@@ -132,6 +136,16 @@ export function ContractCard({
             })}
           </ul>
         </>
+      )}
+      {canDeliver && !contract.delivered && lines.length > 0 && (
+        <ContractStepButton
+          id={contract.id}
+          step="livrer"
+          label="Livrer les marchandises"
+          primary={allReady}
+          ariaLabel={`Livrer les marchandises de ${contract.name}`}
+          confirm={`Livrer ${contract.name} ? Ses marchandises sortent du stock.`}
+        />
       )}
     </article>
   );

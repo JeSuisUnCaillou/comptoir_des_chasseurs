@@ -101,18 +101,18 @@ test("le gérant inscrit un contrat et suit le stock jusqu'à le livrer", async 
   await expect(open.getByText("Prêt à livrer", { exact: true })).toBeVisible();
   await expect(open).toContainText("100 %");
 
-  // Delivered: a sale of its merchandises at its price, whose septims are not in the till yet.
-  await open.getByRole("link", { name: `Modifier ${contract}` }).click();
+  // Delivered from its card: a sale of its merchandises at its price, whose septims are not in the till yet.
   let question = "";
   page.once("dialog", (dialog) => {
     question = dialog.message();
     return dialog.accept();
   });
-  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
-  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await open.getByRole("button", { name: `Livrer les marchandises de ${contract}` }).click();
   expect(question).toBe(`Livrer ${contract} ? Ses marchandises sortent du stock.`);
   const unpaid = page.getByRole("region", { name: "Livrés, argent attendu" });
   await expect(unpaid.getByRole("article", { name: contract, exact: true }).getByText("Livré, argent attendu", { exact: true })).toBeVisible();
+  // Delivered, its card has no button to deliver it again.
+  await expect(page.getByRole("button", { name: `Livrer les marchandises de ${contract}` })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Contrats en cours" }).getByRole("article", { name: contract })).toHaveCount(0);
   // Its merchandises left the stock: 70 - 60 wolf pelts.
   await page.goto("/inventaire");
@@ -223,7 +223,7 @@ test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pa
   await gerant.goto(`${COMPTOIR}/contrats/${deliveredId}`);
   gerant.once("dialog", (dialog) => dialog.accept());
   await gerant.getByRole("button", { name: "Livrer les marchandises" }).click();
-  await expect(gerant.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await expect(gerant.getByRole("heading", { name: "Livré et payé" })).toBeVisible();
   await page.goto(COMPTOIR);
   await expect(line(page, contract, hide)).toBeVisible();
   await expect(card(page, delivered)).toHaveCount(0);
@@ -265,9 +265,9 @@ test("le contrat suit sa vente au registre : une ligne annulée seule, la mise e
   await createProduct(pelt, { stock: 10 });
   const id = await createContract(contract, [[leather, 4], [pelt, 6]], { price: 100 });
   await loginAsGerant(page);
-  await page.goto(`${COMPTOIR}/contrats/${id}`);
+  await page.goto(`${COMPTOIR}/contrats`);
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  await page.getByRole("button", { name: `Livrer les marchandises de ${contract}` }).click();
   const unpaid = page.getByRole("region", { name: "Livrés, argent attendu" });
   await expect(unpaid.getByRole("article", { name: contract, exact: true })).toBeVisible();
 
@@ -311,6 +311,9 @@ test("un contrat sans prix livré est payé d'emblée, un sans marchandise ne se
   await expect(page.getByText("Sans prix, la vente est à 0 septim.")).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  // The page stays on it, now delivered and paid.
+  await expect(page.getByRole("heading", { name: "Livré et payé" })).toBeVisible();
+  await page.goto(`${COMPTOIR}/contrats`);
   await expect(page.getByRole("region", { name: "Contrats payés" }).getByRole("article", { name: free, exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Livrés, argent attendu" }).getByRole("article", { name: free })).toHaveCount(0);
 
@@ -321,4 +324,29 @@ test("un contrat sans prix livré est payé d'emblée, un sans marchandise ne se
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Livrer les marchandises" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Ce contrat ne demande aucune marchandise : rien à livrer." })).toBeVisible();
+});
+
+test("le créateur d'un contrat le livre depuis sa carte, un autre employé n'a pas le bouton", async ({ browser }) => {
+  const hide = uniqueName("Peau de daim");
+  await createProduct(hide, { stock: 5 });
+  const { page: author, username } = await newEmployeePage(browser, "auteur-contrat");
+  const { page: other } = await newEmployeePage(browser, "autre-employe-contrat");
+  const contract = uniqueName("Commande de l'auteur");
+  await createContract(contract, [[hide, 2]], { price: 30, author: username });
+
+  // Another employee reads it on the Grand livre, without the button.
+  await other.goto(COMPTOIR);
+  await expect(card(other, contract)).toBeVisible();
+  await expect(card(other, contract).getByRole("button", { name: /^Livrer/ })).toHaveCount(0);
+
+  // Its author delivers it from the Grand livre.
+  await author.goto(COMPTOIR);
+  author.once("dialog", (dialog) => dialog.accept());
+  await card(author, contract).getByRole("button", { name: `Livrer les marchandises de ${contract}` }).click();
+  await expect(card(author, contract)).toHaveCount(0);
+  await author.goto(`${COMPTOIR}/contrats`);
+  const unpaid = author.getByRole("region", { name: "Livrés, argent attendu" });
+  await expect(unpaid.getByRole("article", { name: contract, exact: true })).toBeVisible();
+  // The rest stays with the gérants: no page to edit it.
+  await expect(author.getByRole("link", { name: `Modifier ${contract}` })).toHaveCount(0);
 });
