@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, gte, inArray, isNull, lt, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { getDb, schema } from "@/lib/db";
+import { getDb, schema, type Tx } from "@/lib/db";
 import type { TransactionKind } from "@/lib/db/schema";
 import { daysBetween, parisToday } from "@/lib/dates";
 import { lastWeekEnd } from "@/lib/week-ends";
@@ -254,6 +254,27 @@ export async function settleEntry(shopId: number, id: number) {
     .update(t)
     .set({ tillPending: false })
     .where(pendingOfSameEntry(t, sql`(${line})`));
+}
+
+/**
+ * Every line of the member waiting for the till, cancelled ones left out, is
+ * now in it or out of it. Returns how many lines, and their net (money in
+ * minus money out, as `toSettle` counts it).
+ */
+export async function settleAllPending(tx: Tx, shopId: number, memberId: number) {
+  const t = schema.transactions;
+  const settled = await tx
+    .update(t)
+    .set({ tillPending: false })
+    .where(and(...conditions(shopId, { memberId, tillPending: true, live: true })))
+    .returning({ kind: t.kind, amount: t.amount });
+  const sums: TillSums = { sales: 0, buybacks: 0, inflows: 0, outflows: 0 };
+  for (const line of settled) {
+    const field = (Object.keys(TILL_FIELDS) as (keyof TillSums)[]).find((f) => TILL_FIELDS[f] === line.kind)!;
+    sums[field] += line.amount;
+  }
+  const { deposit, take } = toSettle(till(sums));
+  return { lines: settled.length, net: deposit - take };
 }
 
 /**

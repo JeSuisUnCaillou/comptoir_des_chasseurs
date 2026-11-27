@@ -7,9 +7,9 @@ import { contactSide } from "@/lib/contact-kind";
 import { canActOn } from "@/lib/policies";
 import { activeIn, DUPLICATE_MAYBE_ARCHIVED, insertProduct, type ProductIdentity } from "@/lib/products";
 import { moveStock } from "@/lib/stock";
-import { cancelStockDelta, clearStockReminder, sameEntryAs, settleEntry } from "@/lib/register";
+import { cancelStockDelta, clearStockReminder, sameEntryAs, settleAllPending, settleEntry } from "@/lib/register";
 import { contactNamed, createContactFromTransaction } from "@/lib/suppliers";
-import { isCashKind, lineMessage, signedAmount } from "@/lib/transaction-kinds";
+import { isCashKind, lineMessage } from "@/lib/transaction-kinds";
 
 /** Writing the register: sales, buybacks, cash movements, and undoing them. */
 
@@ -172,19 +172,13 @@ export async function settleLine(member: Actor, id: number) {
  * is settled. Returns the number of lines settled.
  */
 export async function settleAllOf(member: Actor, expectedNet: number) {
-  const t = schema.transactions;
   return getDb().transaction(async (tx) => {
-    const settled = await tx
-      .update(t)
-      .set({ tillPending: false })
-      .where(and(eq(t.shopId, member.shopId), eq(t.memberId, member.id), eq(t.tillPending, true), isNull(t.cancelledAt)))
-      .returning({ kind: t.kind, amount: t.amount });
-    if (settled.length === 0) throw new UserError("Rien à régler : tous tes septims sont déjà en caisse.");
-    const net = settled.reduce((sum, line) => sum + signedAmount(line.kind, line.amount), 0);
+    const { lines, net } = await settleAllPending(tx, member.shopId, member.id);
+    if (lines === 0) throw new UserError("Rien à régler : tous tes septims sont déjà en caisse.");
     if (net !== expectedNet) {
       throw new UserError("Tes écritures à régler ont changé entre-temps : recharge la page pour voir le nouveau total.");
     }
-    return settled.length;
+    return lines;
   });
 }
 
