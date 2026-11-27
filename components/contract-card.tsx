@@ -1,9 +1,10 @@
-import { CalendarDays, User } from "lucide-react";
+import { CalendarDays, Coins, User } from "lucide-react";
 import Link from "next/link";
+import { ContractStepButton } from "@/components/contract-forms";
 import { contractProgress, contractStatus, lineProgress } from "@/lib/contract-progress";
 import type { ContractWithLines } from "@/lib/contracts";
 import { formatDay } from "@/lib/dates";
-import { formatNumber, plural } from "@/lib/pricing";
+import { formatNumber, plural, septims } from "@/lib/pricing";
 
 /** A bar filled to `percent`, read out as such. */
 export function ProgressBar({ percent, label, done }: { percent: number; label: string; done: boolean }) {
@@ -25,15 +26,18 @@ export function ProgressBar({ percent, label, done }: { percent: number; label: 
  * A contract's card: each merchandise it asks for against the stock now, and
  * how far the whole is. `editHref` is the address of its page, for a gérant;
  * `today` ("YYYY-MM-DD", in Paris) tells an open contract past its day.
+ * `canDeliver` (a gérant, or who wrote it) shows its « Livrer » button.
  */
 export function ContractCard({
   contract,
   editHref,
   today,
+  canDeliver,
 }: {
   contract: ContractWithLines;
   editHref?: string;
   today: string;
+  canDeliver?: boolean;
 }) {
   const { lines } = contract;
   const progress = contractProgress(lines);
@@ -42,8 +46,10 @@ export function ContractCard({
     <article className={`contract-card${allReady ? " contract-card-ready" : ""}`} aria-label={contract.name}>
       <div className="contract-card-head">
         <div className="badges">
-          {contract.deliveredAt ? (
-            <span className="badge badge-green">Livré</span>
+          {contract.paid ? (
+            <span className="badge badge-green">Payé</span>
+          ) : contract.delivered ? (
+            <span className="badge badge-blue">Livré, argent attendu</span>
           ) : allReady ? (
             <span className="badge badge-green">Prêt à livrer</span>
           ) : (
@@ -58,7 +64,7 @@ export function ContractCard({
         )}
       </div>
       <h3>{contract.name}</h3>
-      {(contract.client || contract.dueOn) && (
+      {(contract.client || contract.dueOn || contract.price != null) && (
         <p className="contract-meta">
           {contract.client && (
             <span>
@@ -70,10 +76,30 @@ export function ContractCard({
               <CalendarDays size={15} aria-hidden /> Pour le {formatDay(contract.dueOn)}
             </span>
           )}
+          {contract.price != null && (
+            <span>
+              <Coins size={15} aria-hidden /> {septims(contract.price)}
+            </span>
+          )}
         </p>
       )}
       {lines.length === 0 ? (
         <p className="small muted">Aucune marchandise demandée pour l&apos;instant.</p>
+      ) : contract.delivered ? (
+        // Delivered: its merchandises left the stock, which no longer says anything of it.
+        <ul className="contract-lines" aria-label={`Marchandises de ${contract.name}`}>
+          {lines.map((line) => (
+            <li key={line.id}>
+              <div className="contract-line-head">
+                <span>{line.productName}</span>
+                <span className="contract-line-count">
+                  <strong>{formatNumber(line.quantity)}</strong>{" "}
+                  <span className="small muted">{plural(line.unit, line.quantity)}</span>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
         <>
           <div className="contract-total">
@@ -110,6 +136,16 @@ export function ContractCard({
             })}
           </ul>
         </>
+      )}
+      {canDeliver && !contract.delivered && lines.length > 0 && (
+        <ContractStepButton
+          id={contract.id}
+          step="livrer"
+          label="Livrer les marchandises"
+          primary={allReady}
+          ariaLabel={`Livrer les marchandises de ${contract.name}`}
+          confirm={`Livrer ${contract.name} ? Ses marchandises sortent du stock.`}
+        />
       )}
     </article>
   );

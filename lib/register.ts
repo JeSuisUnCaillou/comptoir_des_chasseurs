@@ -30,7 +30,7 @@ type EntryColumns = Record<"shopId" | "memberId" | "kind" | "createdAt" | "tillP
  * keeps its microseconds. Settling, saying what settling settles and showing
  * an entry as one block all read it from here.
  */
-function entryOf(rows: EntryColumns) {
+export function entryOf(rows: EntryColumns) {
   return sql`(${rows.shopId}, ${rows.memberId}, ${rows.kind}, ${rows.createdAt})`;
 }
 

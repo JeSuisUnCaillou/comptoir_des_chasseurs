@@ -10,11 +10,23 @@ import {
   removeContractLine as unask,
   saveContract as save,
   saveContractLine as ask,
-  setDelivered,
+  cancelDelivery as undeliver,
+  deliverContract,
+  receivePayment as receive,
 } from "@/lib/contracts";
 import { optionalDay } from "@/lib/dates";
 import { attempt } from "@/lib/errors";
-import { CONTRACT_CLIENT_MAX, CONTRACT_LINES_MAX, CONTRACT_NAME_MAX, QUANTITY_ERROR, isQuantity, optionalId, text } from "@/lib/forms";
+import {
+  CONTRACT_CLIENT_MAX,
+  CONTRACT_LINES_MAX,
+  CONTRACT_NAME_MAX,
+  CONTRACT_PRICE_MAX,
+  QUANTITY_ERROR,
+  isQuantity,
+  optionalId,
+  optionalInt,
+  text,
+} from "@/lib/forms";
 
 // `at` changes on every success, so a form can clear itself by key.
 export type ContractFormState = { ok: boolean; message: string; at?: number } | null;
@@ -39,14 +51,19 @@ export async function saveContract(_prev: ContractFormState, formData: FormData)
   const member = await requireMember(["gerant"]);
   const id = optionalId(formData);
   const dueOn = optionalDay(text(formData, "dueOn", 10));
+  const price = optionalInt(formData, "price");
   const values = {
     name: text(formData, "name", CONTRACT_NAME_MAX),
     client: text(formData, "client", CONTRACT_CLIENT_MAX),
     dueOn: dueOn ?? null,
+    price,
   };
   if (Number.isNaN(id)) return { ok: false, message: "Contrat inconnu." };
   if (!values.name) return { ok: false, message: "Donne un nom au contrat." };
   if (dueOn === undefined) return { ok: false, message: "L'échéance n'est pas une date." };
+  if (Number.isNaN(price) || (price != null && price > CONTRACT_PRICE_MAX)) {
+    return { ok: false, message: "Le prix doit être un nombre entier de septims (0 ou plus)." };
+  }
 
   if (id != null) {
     const result = await attempt(() => save(member.shopId, id, values));
@@ -82,19 +99,36 @@ export async function removeContractLine(formData: FormData) {
   const lineId = optionalId(formData);
   const contractId = optionalId(formData, "contractId");
   if (!lineId || !contractId) return;
-  await unask(member.shopId, contractId, lineId);
-  revalidateShop();
+  // A delivered contract's merchandises don't change: its page shows no button for it.
+  const result = await attempt(() => unask(member.shopId, contractId, lineId));
+  if (result.ok) revalidateShop();
 }
 
-/** Marks a contract delivered (it goes under « Contrats livrés »), or opens it again. */
-export async function markDelivered(formData: FormData) {
-  const member = await requireMember(["gerant"]);
+/**
+ * The steps of a contract after it is written: deliver it (a sale whose
+ * septims wait), say its septims are in, or undo its delivery.
+ */
+export async function contractStep(_prev: ContractFormState, formData: FormData): Promise<ContractFormState> {
+  const step = formData.get("step");
+  // Delivering is also for the member who wrote the contract (`deliverContract` checks it).
+  const member = await requireMember(step === "livrer" ? undefined : ["gerant"]);
   const id = optionalId(formData);
-  if (!id) return;
-  const delivered = formData.get("delivered") === "true";
-  await setDelivered(member.shopId, id, delivered);
+  if (!id) return { ok: false, message: "Contrat inconnu." };
+  const run =
+    step === "livrer"
+      ? () => deliverContract(member, id)
+      : step === "payer"
+        ? () => receive(member, id)
+        : step === "annuler"
+          ? () => undeliver(member, id)
+          : null;
+  if (!run) return { ok: false, message: "Étape inconnue." };
+  const result = await attempt(run);
+  if (!result.ok) return result;
   revalidateShop();
-  redirect(shopPath(member.shop.slug, delivered ? "/contrats" : `/contrats/${id}`));
+  // Delivered from its card or its page: that page shows it delivered.
+  if (step === "livrer") return { ok: true, message: "Contrat livré.", at: Date.now() };
+  redirect(shopPath(member.shop.slug, step === "annuler" ? `/contrats/${id}` : "/contrats"));
 }
 
 export async function deleteContract(formData: FormData) {

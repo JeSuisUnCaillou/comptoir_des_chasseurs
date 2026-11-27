@@ -65,7 +65,7 @@ fenêtre :
 | --- | --- |
 | Registre, historique du stock, marchandises (avec une recherche par nom), membres, activité d'un membre | 25 |
 | Cartes du stock | 24 |
-| Annonces, contacts, contrats livrés | 12 |
+| Annonces, contacts, contrats payés | 12 |
 
 Une écriture d'achat ou de vente porte au plus 25 marchandises, pour tenir
 sur une page du registre.
@@ -78,7 +78,7 @@ sur une page du registre.
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
 | Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
-| Contrats en cours | l'échéance la plus proche d'abord, puis ceux sans échéance, du plus récent au plus ancien ; les contrats livrés, du dernier livré au premier ; leurs marchandises par nom |
+| Contrats en cours | l'échéance la plus proche d'abord, puis ceux sans échéance, du plus récent au plus ancien ; ceux dont l'argent est attendu, du premier livré au dernier ; les contrats payés, du dernier livré au premier ; leurs marchandises par nom |
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
 sont à l'heure de Paris.
@@ -728,12 +728,14 @@ Ce qu'on demande à la boutique (« cette semaine : 12 000 cuirs, 60 viandes
 de worker et 60 peaux de loup »), à l'adresse `/<boutique>/contrats`, entre
 Inventaire et Contacts dans le menu.
 
-- Un contrat a un nom, un client et une échéance facultatifs, et les
+- Un contrat a un nom, un client, une échéance et un prix facultatifs (les
+  septims qu'on nous paiera à la livraison, entier, 0 ou plus), et les
   marchandises de la boutique qu'il demande, chacune avec sa quantité.
 - « Nouveau contrat » prend tout d'un coup : nom, client, échéance et ses
   marchandises, une ligne chacune (« Ajouter une marchandise », la corbeille
   pour en retirer une ; 25 au plus, et une marchandise une seule fois). Le
-  contrat créé, on revient aux Contrats. Sa fiche (« Modifier ») ajoute,
+  contrat créé, on revient aux Contrats. Le prix, s'il y en a un, s'affiche
+  sur sa carte. Sa fiche (« Modifier ») ajoute,
   change ou retire ensuite une marchandise : la redemander change sa
   quantité.
 - Une carte par contrat en cours : pour chaque marchandise, le stock
@@ -746,12 +748,36 @@ Inventaire et Contacts dans le menu.
   stock ; « Échéance passée » s'ajoute après le jour dit (heure de Paris).
 - Le stock compté est celui de l'Inventaire : deux contrats qui demandent
   la même marchandise voient le même stock.
-- « Marquer comme livré » range le contrat sous « Contrats livrés »
-  (étiquette « Livré ») ; « Rouvrir le contrat » le remet en cours. Le stock
-  ne bouge pas : la livraison s'inscrit comme une vente dans Achat / Vente.
-- Tout le monde les consulte. Seuls les gérants en créent, les modifient
-  (nom, client, échéance, marchandises), les marquent livrés, les rouvrent
-  ou les suppriment, par les boutons de la page.
+- Livrer et être payé sont deux étapes :
+  - « Livrer les marchandises » (après confirmation), sur la carte d'un
+    contrat en cours qui demande des marchandises (page Contrats et Grand
+    livre) et sur sa fiche, inscrit au registre une
+    vente de ses marchandises à son client, note « Contrat « nom » », à son
+    prix partagé entre elles (au prorata de leur prix de vente quand toutes
+    en ont un, sinon de leur quantité). Elles sortent du stock comme pour
+    toute vente. Avec un prix, la vente est « pas encore en caisse » au nom
+    du gérant qui livre (elle compte dans « À régler ») et le contrat passe
+    sous « Livrés, argent attendu » (étiquette bleue du même nom) ; sans
+    prix, elle est à 0 septim et le contrat passe tout de suite sous
+    « Contrats payés ». Un contrat sans marchandise ne se livre pas. Livré, ses
+    marchandises et son prix ne changent plus, sa carte n'en garde que les
+    quantités.
+  - « Argent reçu » met les septims de cette vente en caisse, comme « Mettre
+    en caisse » au registre : le contrat passe sous « Contrats payés »
+    (étiquette « Payé », 12 par page).
+  - « Annuler la livraison » (après confirmation), payé ou non, annule sa
+    vente au registre (les marchandises reviennent dans le stock) et remet le
+    contrat en cours.
+  - Le contrat suit sa vente : la mettre en caisse au registre le dit payé,
+    l'annuler entière au registre le remet en cours ; en annuler une ligne
+    seule ne change rien au contrat.
+- Supprimer un contrat ne touche ni au stock ni à une vente déjà inscrite
+  par sa livraison.
+- Tout le monde les consulte. Les gérants et le membre qui a écrit le
+  contrat le livrent (les autres n'ont pas le bouton, et le serveur le
+  refuse). Seuls les gérants en créent, les modifient (nom, client,
+  échéance, prix, marchandises), disent l'argent reçu, annulent une
+  livraison ou les suppriment, par les boutons de la page.
 
 ## Activité d'un membre
 

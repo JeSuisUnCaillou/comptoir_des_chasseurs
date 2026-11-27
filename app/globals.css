@@ -3210,3 +3210,11 @@ button.count-read[aria-expanded="true"] .count-chevron {
     grid-column: 1 / -1;
   }
 }
+
+/* « Argent reçu » and « Annuler la livraison » side by side, wrapping on a phone. */
+.contract-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: flex-start;
+}
