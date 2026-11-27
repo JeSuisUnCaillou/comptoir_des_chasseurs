@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   COMPTOIR,
+  createContract,
   createAnnouncements,
   createMember,
   createProduct,
@@ -56,6 +57,7 @@ test("au téléphone, aucune page ne déborde sur le côté", async ({ page }) =
     ["/marchandises", "Gérer les marchandises"],
     ["/contacts", "Contacts"],
     ["/annonces", "Annonces"],
+    [`${COMPTOIR}/contrats`, "Contrats"],
     ["/membres", "Membres"],
     ["/boutiques", "Mes boutiques"],
     ["/mot-de-passe", "Mot de passe"],
@@ -389,6 +391,9 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     .filter({ hasText: hunt })
     .getByRole("link", { name: /^Modifier les transactions/ })
     .getAttribute("href"))!;
+  // A contract with a long name, a client, a day past, and lines ready or not: its card and its page.
+  const contract = uniqueName("Grande commande du Jarl de Vendeaume pour la semaine des chasseurs");
+  const contractId = await createContract(contract, [[product, 1_000_000], ["Cuir", 12_000]], { dueOn: "2020-01-15" });
   const pages = [
     COMPTOIR,
     "/achat-vente",
@@ -407,6 +412,9 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     contactPage,
     "/annonces",
     edit,
+    `${COMPTOIR}/contrats`,
+    `${COMPTOIR}/contrats/nouveau`,
+    `${COMPTOIR}/contrats/${contractId}`,
     "/membres",
     "/boutiques",
     "/mot-de-passe",

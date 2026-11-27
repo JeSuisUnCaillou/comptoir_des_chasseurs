@@ -257,3 +257,22 @@ export async function dragAbove(page: Page, handle: Locator, target: Locator) {
   await page.mouse.move(from.x + from.width / 2, to.y + 2, { steps: 12 });
   await page.mouse.up();
 }
+
+/** Writes a contract and its lines straight in the database: [product name, quantity]. */
+export async function createContract(name: string, lines: [string, number][], { dueOn = null as string | null } = {}) {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  try {
+    const [{ id }] = await sql`
+      insert into contracts (shop_id, name, due_on, member_id)
+      values (1, ${name}, ${dueOn}, (select min(id) from members))
+      returning id`;
+    for (const [product, quantity] of lines) {
+      await sql`
+        insert into contract_lines (contract_id, product_id, quantity)
+        select ${id}, id, ${quantity} from products where shop_id = 1 and name = ${product}`;
+    }
+    return id as number;
+  } finally {
+    await sql.end();
+  }
+}

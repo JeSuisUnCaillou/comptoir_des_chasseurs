@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   customType,
+  date,
   index,
   integer,
   pgEnum,
@@ -445,4 +446,51 @@ export const weekEnds = pgTable(
     declaredAt: timestamp("declared_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("week_ends_shop_declared_at_idx").on(t.shopId, t.declaredAt)],
+);
+
+/**
+ * A contract the shop was asked to fill, such as "12 000 cuirs, 60 viandes de
+ * worker et 60 peaux de loup" for the week: its lines say how much of each
+ * merchandise, and the Contrats page sets them against the stock.
+ */
+export const contracts = pgTable(
+  "contracts",
+  {
+    id: serial("id").primaryKey(),
+    shopId: shopColumn(),
+    name: text("name").notNull(),
+    // Who asked for it ("Jarl de Vendeaume"), free text.
+    client: text("client").notNull().default(""),
+    // The day it is due, if any.
+    dueOn: date("due_on", { mode: "string" }),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Marked delivered by a gérant: it leaves the open contracts. Its stock
+    // goes out by the sale written in Achat / Vente, not by this mark.
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  },
+  (t) => [index("contracts_shop_idx").on(t.shopId, t.deliveredAt)],
+);
+
+export type Contract = typeof contracts.$inferSelect;
+
+/** How much of a merchandise a contract asks for. One line per merchandise and contract. */
+export const contractLines = pgTable(
+  "contract_lines",
+  {
+    id: serial("id").primaryKey(),
+    contractId: integer("contract_id")
+      .notNull()
+      .references(() => contracts.id, { onDelete: "cascade" }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id),
+    quantity: integer("quantity").notNull(),
+  },
+  (t) => [
+    uniqueIndex("contract_lines_contract_product_idx").on(t.contractId, t.productId),
+    check("contract_lines_quantity_positive", sql`${t.quantity} > 0`),
+  ],
 );

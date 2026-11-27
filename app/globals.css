@@ -3051,3 +3051,119 @@ button.count-read[aria-expanded="true"] .count-chevron {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Contracts: what a contract asks for, against the stock */
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: 16px;
+}
+
+.contract-card {
+  background: rgb(31 39 35 / 0.92);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  padding: 20px;
+  min-width: 0;
+}
+
+.contract-card-ready {
+  border-left: 4px solid var(--green);
+}
+
+.contract-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.contract-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.contract-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.contract-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.contract-meta svg {
+  color: var(--gold);
+  flex: none;
+}
+
+.contract-total {
+  margin: 12px 0 6px;
+}
+
+.contract-total strong {
+  color: var(--gold-strong);
+  font-size: 18px;
+}
+
+.contract-lines {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.contract-lines li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.contract-line-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.contract-line-head > span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.contract-line-count {
+  margin-left: auto;
+  text-align: right;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+
+.progress-done > span {
+  background: var(--green);
+}
+
+.contract-lines form {
+  align-self: flex-start;
+}
