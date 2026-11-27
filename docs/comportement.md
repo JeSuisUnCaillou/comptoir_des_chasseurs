@@ -183,6 +183,9 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
   droite, Nouvel achat et Nouvelle vente.
 - Les dernières écritures.
 - Tout le tableau des annonces, sans pagination (choix du propriétaire).
+- Sous le tableau, les contrats en cours, en cartes comme sur la page
+  [Contrats](#contrats), avec « Tous les contrats → » ; rien quand aucun
+  n'est en cours.
 
 ### Initialiser une nouvelle boutique
 
