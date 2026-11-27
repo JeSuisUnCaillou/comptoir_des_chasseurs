@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { shopPath } from "@/lib/paths";
 import { revalidateShop } from "../revalidate";
 import { requireMember } from "@/lib/auth/session";
-import { CONTRACT_CLIENT_MAX, CONTRACT_NAME_MAX } from "@/lib/contract-progress";
 import {
   deleteContract as remove,
   removeContractLine as unask,
@@ -14,7 +13,7 @@ import {
 } from "@/lib/contracts";
 import { optionalDay } from "@/lib/dates";
 import { attempt } from "@/lib/errors";
-import { QUANTITY_ERROR, isQuantity, optionalId, text } from "@/lib/forms";
+import { CONTRACT_CLIENT_MAX, CONTRACT_NAME_MAX, QUANTITY_ERROR, isQuantity, optionalId, text } from "@/lib/forms";
 
 // `at` changes on every success, so a form can clear itself by key.
 export type ContractFormState = { ok: boolean; message: string; at?: number } | null;

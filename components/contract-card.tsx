@@ -1,6 +1,6 @@
 import { CalendarDays, User } from "lucide-react";
 import Link from "next/link";
-import { contractProgress, lineProgress } from "@/lib/contract-progress";
+import { contractProgress, contractStatus, lineProgress } from "@/lib/contract-progress";
 import type { ContractWithLines } from "@/lib/contracts";
 import { formatDay } from "@/lib/dates";
 import { formatNumber, plural } from "@/lib/pricing";
@@ -37,8 +37,7 @@ export function ContractCard({
 }) {
   const { lines } = contract;
   const progress = contractProgress(lines);
-  const allReady = lines.length > 0 && progress.ready === progress.total;
-  const late = !contract.deliveredAt && contract.dueOn !== null && contract.dueOn < today;
+  const { allReady, late } = contractStatus(contract, today);
   return (
     <article className={`contract-card${allReady ? " contract-card-ready" : ""}`} aria-label={contract.name}>
       <div className="contract-card-head">
@@ -101,7 +100,7 @@ export function ContractCard({
                       <span className="small muted">{plural(line.unit, line.quantity)}</span>
                     </span>
                   </div>
-                  <ProgressBar percent={Math.floor(p.ratio * 100)} label={line.productName} done={p.done} />
+                  <ProgressBar percent={p.percent} label={line.productName} done={p.done} />
                   <span className={`small ${p.done ? "plus" : "muted"}`}>
                     {p.done ? "Prêt" : `Manque ${formatNumber(p.missing)} ${plural(line.unit, p.missing)}`}
                     {line.stock > line.quantity && ` · ${formatNumber(line.stock)} en stock`}

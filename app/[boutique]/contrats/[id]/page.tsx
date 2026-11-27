@@ -53,7 +53,7 @@ export default async function EditContract({ params }: { params: Promise<{ id: s
                         {formatNumber(line.stock)} / {formatNumber(line.quantity)} {plural(line.unit, line.quantity)}
                       </span>
                     </div>
-                    <ProgressBar percent={Math.floor(p.ratio * 100)} label={line.productName} done={p.done} />
+                    <ProgressBar percent={p.percent} label={line.productName} done={p.done} />
                     <form action={removeContractLine}>
                       <input type="hidden" name="id" value={line.id} />
                       <input type="hidden" name="contractId" value={contract.id} />

@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { byName, getDb, schema } from "@/lib/db";
 import { UserError } from "@/lib/errors";
+import { activeIn } from "@/lib/products";
 
 /** Delivered contracts per page of the Contrats page. */
 export const DELIVERED_PAGE_SIZE = 12;
@@ -147,7 +148,7 @@ export async function saveContractLine(
     db
       .select({ id: schema.products.id })
       .from(schema.products)
-      .where(and(eq(schema.products.id, productId), eq(schema.products.shopId, shopId))),
+      .where(and(eq(schema.products.id, productId), activeIn(shopId))),
   ]);
   if (!contract) throw new UserError("Ce contrat n'existe plus.");
   if (!product) throw new UserError("Marchandise inconnue.");

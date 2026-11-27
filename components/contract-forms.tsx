@@ -9,7 +9,7 @@ import {
 } from "@/app/[boutique]/contrats/actions";
 import { keepValues } from "@/components/keep-values";
 import { ProductField } from "@/components/product-field";
-import { CONTRACT_CLIENT_MAX, CONTRACT_NAME_MAX } from "@/lib/contract-progress";
+import { CONTRACT_CLIENT_MAX, CONTRACT_NAME_MAX } from "@/lib/forms";
 
 function Status({ state }: { state: ContractFormState }) {
   if (!state) return null;

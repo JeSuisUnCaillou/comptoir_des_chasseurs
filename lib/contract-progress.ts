@@ -8,7 +8,8 @@ export type ContractLineStock = { quantity: number; stock: number };
 /** One line: how much of it the stock already holds (`ready`), what is missing, and its share from 0 to 1. */
 export function lineProgress({ quantity, stock }: ContractLineStock) {
   const ready = Math.min(Math.max(stock, 0), quantity);
-  return { ready, missing: quantity - ready, ratio: quantity > 0 ? ready / quantity : 1, done: ready >= quantity };
+  const ratio = quantity > 0 ? ready / quantity : 1;
+  return { ready, missing: quantity - ready, percent: Math.floor(ratio * 100), ratio, done: ready >= quantity };
 }
 
 /**
@@ -23,6 +24,18 @@ export function contractProgress(lines: ContractLineStock[]) {
   return { percent: Math.floor(mean * 100), ready, total: lines.length };
 }
 
-/** The longest name and client a contract keeps, as in its form. */
-export const CONTRACT_NAME_MAX = 100;
-export const CONTRACT_CLIENT_MAX = 100;
+/**
+ * What a contract's card says of it: every line in stock (« Prêt à livrer »,
+ * never for a contract asking nothing), and past its day while still open
+ * (`today` is "YYYY-MM-DD" in Paris).
+ */
+export function contractStatus(
+  contract: { lines: ContractLineStock[]; dueOn: string | null; deliveredAt: Date | null },
+  today: string,
+) {
+  const { ready, total } = contractProgress(contract.lines);
+  return {
+    allReady: total > 0 && ready === total,
+    late: !contract.deliveredAt && contract.dueOn !== null && contract.dueOn < today,
+  };
+}
