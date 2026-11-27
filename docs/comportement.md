@@ -65,7 +65,7 @@ fenêtre :
 | --- | --- |
 | Registre, historique du stock, marchandises (avec une recherche par nom), membres, activité d'un membre | 25 |
 | Cartes du stock | 24 |
-| Annonces, contacts, contrats livrés | 12 |
+| Annonces, contacts, contrats payés | 12 |
 
 Une écriture d'achat ou de vente porte au plus 25 marchandises, pour tenir
 sur une page du registre.
@@ -78,7 +78,7 @@ sur une page du registre.
 | Cartes du stock (Inventaire) | le cuir, puis chaque catégorie dans son ordre ; chaque groupe par nom comme ci-dessus |
 | Catégories (Gérer les marchandises, grilles des Tarifs, groupes des choix de marchandise, filtre du stock) | dans l'ordre choisi par un gérant (§ Catégories) |
 | Registre, historique du stock, annonces | du plus récent au plus ancien |
-| Contrats en cours | l'échéance la plus proche d'abord, puis ceux sans échéance, du plus récent au plus ancien ; les contrats livrés, du dernier livré au premier ; leurs marchandises par nom |
+| Contrats en cours | l'échéance la plus proche d'abord, puis ceux sans échéance, du plus récent au plus ancien ; ceux dont l'argent est attendu, du premier livré au dernier ; les contrats payés, du dernier livré au premier ; leurs marchandises par nom |
 
 Les filtres de dates (registre, historique du stock, activité d'un membre)
 sont à l'heure de Paris.
