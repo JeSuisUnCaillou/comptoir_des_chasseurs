@@ -147,3 +147,40 @@ test("un employé suit les contrats sans pouvoir les modifier", async ({ browser
   await page.goto(`${COMPTOIR}/contrats/nouveau`);
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 });
+
+test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pas les livrés", async ({ browser }) => {
+  const contract = uniqueName("Commande de Blancherive");
+  const delivered = uniqueName("Commande livrée");
+  const hide = uniqueName("Peau de chèvre");
+  await createProduct(hide, { stock: 3 });
+  await createContract(contract, [[hide, 12]]);
+  const deliveredId = await createContract(delivered, [[hide, 1]]);
+  const { page } = await newEmployeePage(browser, "employe-grand-livre-contrats");
+
+  await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
+  const open = page.getByRole("region", { name: "Contrats en cours" });
+  await expect(line(page, contract, hide)).toContainText("3 / 12 peaux");
+  await expect(open.getByRole("article", { name: contract, exact: true })).toContainText("Manque 9 peaux");
+  // Under the board, before the latest entries.
+  const board = await page.getByRole("heading", { name: "Tableau d'annonces" }).boundingBox();
+  const contracts = await open.boundingBox();
+  const entries = await page.getByRole("heading", { name: "Dernières écritures" }).boundingBox();
+  expect(contracts!.y).toBeGreaterThan(board!.y);
+  expect(contracts!.y).toBeLessThan(entries!.y);
+  // An employé reads them: no button to change them.
+  await expect(open.getByRole("link", { name: `Modifier ${contract}` })).toHaveCount(0);
+
+  // A delivered contract is gone from it.
+  await expect(card(page, delivered)).toBeVisible();
+  const gerant = await (await browser.newContext()).newPage();
+  await loginAsGerant(gerant);
+  await gerant.goto(`${COMPTOIR}/contrats/${deliveredId}`);
+  await gerant.getByRole("button", { name: "Marquer comme livré" }).click();
+  await expect(gerant.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await page.goto(COMPTOIR);
+  await expect(line(page, contract, hide)).toBeVisible();
+  await expect(card(page, delivered)).toHaveCount(0);
+
+  await open.getByRole("link", { name: "Tous les contrats →" }).click();
+  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+});

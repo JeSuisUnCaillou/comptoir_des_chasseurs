@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Coins, Megaphone, ShoppingBasket, Wallet } from "lucide-react";
+import { ArrowLeftRight, Coins, Megaphone, ScrollText, ShoppingBasket, Wallet } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementBoard } from "@/components/announcement-board";
+import { ContractCard } from "@/components/contract-card";
 import { PageHead } from "@/components/page-head";
 import { RegisterTable } from "@/components/register-table";
 import { ShopSetup } from "@/components/shop-setup";
@@ -10,6 +11,8 @@ import { requireMember } from "@/lib/auth/session";
 import { isGerant } from "@/lib/policies";
 import { shopPath } from "@/lib/paths";
 import { announcementList } from "@/lib/announcements";
+import { openContracts } from "@/lib/contracts";
+import { parisToday } from "@/lib/dates";
 import { registerEntries, tillSummary } from "@/lib/register";
 import { shopSetup } from "@/lib/shop-setup";
 
@@ -22,10 +25,12 @@ const weekEndDate = new Intl.DateTimeFormat("fr-FR", {
 export default async function GrandLivre() {
   const member = await requireMember();
   const at = (path: string) => shopPath(member.shop.slug, path);
-  const [till, recent, announcements, setup] = await Promise.all([
+  const gerant = isGerant(member);
+  const [till, recent, announcements, contracts, setup] = await Promise.all([
     tillSummary(member.shopId),
     registerEntries(member.shopId, {}, { limit: 10 }),
     announcementList(member.shopId),
+    openContracts(member.shopId),
     // A new shop with nothing in stock is offered to its gérants to set up.
     isGerant(member) ? shopSetup(member.shop) : null,
   ]);
@@ -82,6 +87,31 @@ export default async function GrandLivre() {
         </div>
         <AnnouncementBoard announcements={announcements} member={member} back={at("/")} />
       </section>
+      {contracts.length > 0 && (
+        <section className="section-gap" aria-label="Contrats en cours">
+          <div className="panel-head">
+            <div>
+              <div className="eyebrow">Commandes à honorer</div>
+              <h2>
+                <ScrollText size={18} style={{ verticalAlign: "-2px" }} /> Contrats en cours
+              </h2>
+            </div>
+            <Link className="small" href={at("/contrats")}>
+              Tous les contrats →
+            </Link>
+          </div>
+          <div className="contract-grid">
+            {contracts.map((c) => (
+              <ContractCard
+                key={c.id}
+                contract={c}
+                editHref={gerant ? at(`/contrats/${c.id}`) : undefined}
+                today={parisToday()}
+              />
+            ))}
+          </div>
+        </section>
+      )}
       <section className="panel">
         <div className="panel-head">
           <h2>Dernières écritures</h2>
