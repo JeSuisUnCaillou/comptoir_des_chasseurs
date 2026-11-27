@@ -459,6 +459,18 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     await page.setViewportSize({ width, height: 900 });
     await check(`une vente en cours à ${width} px`);
   }
+
+  // A contract being written, with two merchandises, at every width.
+  await page.goto(`${COMPTOIR}/contrats/nouveau`);
+  await page.addStyleTag({ content: "body { letter-spacing: 0.04em; }" });
+  const contractForm = page.getByRole("form", { name: "Le contrat" });
+  await pickProduct(contractForm.getByRole("group", { name: "Marchandise 1" }), `${product} (peau)`);
+  await contractForm.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(contractForm.getByRole("group", { name: "Marchandise 2" }), "Cuir (cuir)");
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await check(`un contrat en cours d'écriture à ${width} px`);
+  }
 });
 
 test("le balayage des largeurs voit un bouton collé à la liste sous lui", async ({ page }) => {

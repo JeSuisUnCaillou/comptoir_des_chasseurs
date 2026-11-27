@@ -722,8 +722,13 @@ de worker et 60 peaux de loup »), à l'adresse `/<boutique>/contrats`, entre
 Inventaire et Contacts dans le menu.
 
 - Un contrat a un nom, un client et une échéance facultatifs, et les
-  marchandises de la boutique qu'il demande, chacune avec sa quantité (une
-  ligne par marchandise ; la redemander change sa quantité).
+  marchandises de la boutique qu'il demande, chacune avec sa quantité.
+- « Nouveau contrat » prend tout d'un coup : nom, client, échéance et ses
+  marchandises, une ligne chacune (« Ajouter une marchandise », la corbeille
+  pour en retirer une ; 25 au plus, et une marchandise une seule fois). Le
+  contrat créé, on revient aux Contrats. Sa fiche (« Modifier ») ajoute,
+  change ou retire ensuite une marchandise : la redemander change sa
+  quantité.
 - Une carte par contrat en cours : pour chaque marchandise, le stock
   d'aujourd'hui face à la quantité demandée (« 40 / 60 peaux »), une barre,
   et ce qui manque (« Manque 20 peaux ») ou « Prêt » ; un stock au-delà de

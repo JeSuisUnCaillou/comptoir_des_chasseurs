@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { COMPTOIR, createContract, createProduct, loginAsGerant, newEmployeePage, pickProduct, uniqueName } from "./helpers";
 
+/** A merchandise's line in the form of a new contract. */
+function newLine(page: Page, n: number) {
+  return page.getByRole("group", { name: `Marchandise ${n}`, exact: true });
+}
+
 function card(page: Page, name: string) {
   return page.getByRole("article", { name, exact: true });
 }
@@ -36,14 +41,22 @@ test("le gérant inscrit un contrat et suit le stock jusqu'à le livrer", async 
   await page.getByLabel("Nom du contrat").fill(contract);
   await page.getByLabel("Client").fill("Jarl de Vendeaume");
   await page.getByLabel("Échéance").fill("2099-11-30");
+  // Its merchandises are written with it, one line each.
+  await pickProduct(newLine(page, 1), `${leather} (cuir)`);
+  await newLine(page, 1).getByLabel("Quantité demandée").fill("12000");
+  await page.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(newLine(page, 2), `${meat} (pièce)`);
+  await newLine(page, 2).getByLabel("Quantité demandée").fill("60");
+  await page.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(newLine(page, 3), `${wolf} (peau)`);
+  await newLine(page, 3).getByLabel("Quantité demandée").fill("50");
   await page.getByRole("button", { name: "Créer le contrat" }).click();
-  await expect(page.getByRole("heading", { name: contract, level: 1 })).toBeVisible();
-  await expect(page.getByText("Aucune marchandise demandée pour l'instant.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await expect(line(page, contract, wolf)).toContainText("40 / 50 peaux");
 
-  await ask(page, leather, "cuir", 12_000);
-  await ask(page, meat, "pièce", 60);
-  await ask(page, wolf, "peau", 50);
-  // The same merchandise again changes its quantity.
+  // On its page, the same merchandise again changes its quantity.
+  await card(page, contract).getByRole("link", { name: `Modifier ${contract}` }).click();
+  await expect(page.getByRole("heading", { name: contract, level: 1 })).toBeVisible();
   await ask(page, wolf, "peau", 60);
   const wolfRow = page.getByRole("list", { name: "Marchandises demandées" }).getByRole("listitem").filter({ hasText: wolf });
   await expect(wolfRow).toContainText("40 / 60 peaux");
@@ -183,4 +196,29 @@ test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pa
 
   await open.getByRole("link", { name: "Tous les contrats →" }).click();
   await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+});
+
+test("un nouveau contrat refuse une marchandise demandée deux fois, et peut partir sans marchandise", async ({ page }) => {
+  const contract = uniqueName("Commande vide");
+  const hide = uniqueName("Peau de lynx");
+  await createProduct(hide, { stock: 1 });
+  await loginAsGerant(page);
+  await page.goto(`${COMPTOIR}/contrats/nouveau`);
+  await page.getByLabel("Nom du contrat").fill(contract);
+  await pickProduct(newLine(page, 1), `${hide} (peau)`);
+  await newLine(page, 1).getByLabel("Quantité demandée").fill("4");
+  await page.getByRole("button", { name: "Ajouter une marchandise" }).click();
+  await pickProduct(newLine(page, 2), `${hide} (peau)`);
+  await newLine(page, 2).getByLabel("Quantité demandée").fill("6");
+  await page.getByRole("button", { name: "Créer le contrat" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Une marchandise est demandée deux fois." })).toBeVisible();
+  // What was typed stays.
+  await expect(newLine(page, 2).getByLabel("Quantité demandée")).toHaveValue("6");
+
+  await page.getByRole("button", { name: "Retirer la marchandise 2" }).click();
+  await page.getByRole("button", { name: "Retirer la marchandise 1" }).click();
+  await expect(page.getByText("Aucune marchandise : tu pourras en ajouter depuis sa fiche.")).toBeVisible();
+  await page.getByRole("button", { name: "Créer le contrat" }).click();
+  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
+  await expect(card(page, contract)).toContainText("Aucune marchandise demandée pour l'instant.");
 });

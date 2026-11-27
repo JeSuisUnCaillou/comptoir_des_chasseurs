@@ -111,27 +111,45 @@ export async function contractOf(shopId: number, id: number) {
   return contract;
 }
 
-/** Writes a new contract of the shop (`id` null), or changes one. Returns its id. */
-export async function saveContract(
+/**
+ * Writes a new contract of the shop with the merchandises it asks for, all at
+ * once: each must be an active merchandise of the shop, asked once. Returns its id.
+ */
+export async function createContract(
   member: { id: number; shopId: number },
-  id: number | null,
   values: ContractValues,
+  lines: { productId: number; quantity: number }[],
 ) {
-  const c = schema.contracts;
-  if (id == null) {
-    const [created] = await getDb()
-      .insert(c)
+  const ids = lines.map((l) => l.productId);
+  if (new Set(ids).size !== ids.length) throw new UserError("Une marchandise est demandée deux fois.");
+  return getDb().transaction(async (tx) => {
+    if (ids.length > 0) {
+      const known = await tx
+        .select({ id: schema.products.id })
+        .from(schema.products)
+        .where(and(inArray(schema.products.id, ids), activeIn(member.shopId)));
+      if (known.length !== ids.length) throw new UserError("Marchandise inconnue.");
+    }
+    const [created] = await tx
+      .insert(schema.contracts)
       .values({ ...values, shopId: member.shopId, memberId: member.id })
-      .returning({ id: c.id });
+      .returning({ id: schema.contracts.id });
+    if (lines.length > 0) {
+      await tx.insert(schema.contractLines).values(lines.map((l) => ({ ...l, contractId: created.id })));
+    }
     return created.id;
-  }
+  });
+}
+
+/** Changes the name, client and day of a contract of the shop. */
+export async function saveContract(shopId: number, id: number, values: ContractValues) {
+  const c = schema.contracts;
   const [updated] = await getDb()
     .update(c)
     .set(values)
-    .where(and(eq(c.id, id), eq(c.shopId, member.shopId)))
+    .where(and(eq(c.id, id), eq(c.shopId, shopId)))
     .returning({ id: c.id });
   if (!updated) throw new UserError("Ce contrat n'existe plus.");
-  return updated.id;
 }
 
 /** Asks `quantity` of a merchandise of the shop in a contract of the shop; a merchandise already asked gets the new quantity. */

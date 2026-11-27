@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   deleteContract,
   saveContract,
@@ -8,8 +9,85 @@ import {
   type ContractFormState,
 } from "@/app/[boutique]/contrats/actions";
 import { keepValues } from "@/components/keep-values";
+import { focusCombobox } from "@/components/combobox";
+import { ProductCombobox } from "@/components/product-combobox";
 import { ProductField } from "@/components/product-field";
-import { CONTRACT_CLIENT_MAX, CONTRACT_NAME_MAX } from "@/lib/forms";
+import { CONTRACT_CLIENT_MAX, CONTRACT_LINES_MAX, CONTRACT_NAME_MAX } from "@/lib/forms";
+
+type ProductChoice = { id: number; name: string; unit: string; aliases?: readonly string[] };
+
+/** "Biche (peau)": the unit tells which merchandise, as in the other contract forms. */
+function withUnits(products: ProductChoice[]) {
+  return products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})`, aliases: p.aliases }));
+}
+
+/**
+ * The merchandises of a contract being written, one line each: picked from the
+ * shop's merchandises, with the quantity asked. Sent as productId and quantity
+ * fields, in order.
+ */
+function NewContractLines({ products }: { products: ProductChoice[] }) {
+  const [lines, setLines] = useState<{ key: number; productId: number | null }[]>([{ key: 0, productId: null }]);
+  const nextKey = useRef(1);
+  const choices = withUnits(products);
+  const add = () => {
+    const key = nextKey.current++;
+    setLines((all) => [...all, { key, productId: null }]);
+    // Once the new line is drawn, the cursor waits in its merchandise.
+    setTimeout(() => focusCombobox(`n-${key}-product`));
+  };
+  return (
+    <div className="contract-new-lines">
+      <h3>Marchandises demandées</h3>
+      {lines.length === 0 && <p className="small muted">Aucune marchandise : tu pourras en ajouter depuis sa fiche.</p>}
+      {lines.map((line, index) => {
+        const id = `n-${line.key}`;
+        return (
+          <fieldset key={line.key} className="tx-line" aria-label={`Marchandise ${index + 1}`}>
+            <div className="contract-new-line">
+              <div className="field">
+                <label htmlFor={`${id}-product`}>Marchandise</label>
+                <ProductCombobox
+                  id={`${id}-product`}
+                  name="productId"
+                  required
+                  placeholder="Choisir ou taper un nom…"
+                  products={choices}
+                  value={line.productId}
+                  onChange={(productId) =>
+                    setLines((all) => all.map((l) => (l.key === line.key ? { ...l, productId } : l)))
+                  }
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`${id}-quantity`}>Quantité demandée</label>
+                <input id={`${id}-quantity`} name="quantity" type="number" min={1} max={1_000_000} step={1} required />
+              </div>
+              <button
+                type="button"
+                className="icon-btn tx-remove"
+                title="Retirer cette marchandise"
+                aria-label={`Retirer la marchandise ${index + 1}`}
+                onClick={() => setLines((all) => all.filter((l) => l.key !== line.key))}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </fieldset>
+        );
+      })}
+      <button
+        type="button"
+        className="btn btn-small contract-add-line"
+        disabled={lines.length >= CONTRACT_LINES_MAX}
+        title={lines.length >= CONTRACT_LINES_MAX ? `${CONTRACT_LINES_MAX} marchandises au plus` : undefined}
+        onClick={add}
+      >
+        <Plus size={14} /> Ajouter une marchandise
+      </button>
+    </div>
+  );
+}
 
 function Status({ state }: { state: ContractFormState }) {
   if (!state) return null;
@@ -20,10 +98,13 @@ function Status({ state }: { state: ContractFormState }) {
   );
 }
 
+/** A contract's name, client and day; a new one (`products` given) also takes its merchandises. */
 export function ContractForm({
   contract,
+  products,
 }: {
   contract?: { id: number; name: string; client: string; dueOn: string | null };
+  products?: ProductChoice[];
 }) {
   const [state, action, pending] = useActionState<ContractFormState, FormData>(saveContract, null);
   return (
@@ -56,6 +137,7 @@ export function ContractForm({
           <input id="c-due" name="dueOn" type="date" defaultValue={contract?.dueOn ?? ""} />
         </div>
       </div>
+      {!contract && products && <NewContractLines products={products} />}
       <button className="btn btn-primary" type="submit" disabled={pending}>
         {contract ? "Enregistrer le contrat" : "Créer le contrat"}
       </button>
@@ -69,7 +151,7 @@ export function ContractLineForm({
   products,
 }: {
   contractId: number;
-  products: { id: number; name: string; unit: string; aliases?: readonly string[] }[];
+  products: ProductChoice[];
 }) {
   const [state, action, pending] = useActionState<ContractFormState, FormData>(saveContractLine, null);
   return (
@@ -82,7 +164,7 @@ export function ContractLineForm({
             id="l-product"
             name="productId"
             required
-            products={products.map((p) => ({ id: p.id, name: `${p.name} (${p.unit})`, aliases: p.aliases }))}
+            products={withUnits(products)}
           />
         </div>
         <div className="field">
