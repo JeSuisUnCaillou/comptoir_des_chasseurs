@@ -3167,3 +3167,28 @@ button.count-read[aria-expanded="true"] .count-chevron {
 .contract-lines form {
   align-self: flex-start;
 }
+
+/* A merchandise of a contract being written: product, quantity, bin. */
+.contract-new-lines {
+  margin-bottom: 16px;
+}
+
+.contract-new-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  gap: 0 10px;
+  align-items: start;
+}
+
+.contract-new-line .tx-remove {
+  margin-top: 34px;
+}
+
+@media (max-width: 600px) {
+  .contract-new-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .contract-new-line > .field:first-child {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
-import { byName, getDb, schema } from "@/lib/db";
+import { byName, getDb, schema, type Tx } from "@/lib/db";
 import { UserError } from "@/lib/errors";
 import { activeIn } from "@/lib/products";
 
@@ -111,27 +111,49 @@ export async function contractOf(shopId: number, id: number) {
   return contract;
 }
 
-/** Writes a new contract of the shop (`id` null), or changes one. Returns its id. */
-export async function saveContract(
+/** A contract asks only for active merchandises of its shop: refuses any other. */
+async function assertActive(db: Tx | ReturnType<typeof getDb>, shopId: number, ids: number[]) {
+  if (ids.length === 0) return;
+  const known = await db
+    .select({ id: schema.products.id })
+    .from(schema.products)
+    .where(and(inArray(schema.products.id, ids), activeIn(shopId)));
+  if (known.length !== new Set(ids).size) throw new UserError("Marchandise inconnue.");
+}
+
+/**
+ * Writes a new contract of the shop with the merchandises it asks for, all at
+ * once: each must be an active merchandise of the shop, asked once. Returns its id.
+ */
+export async function createContract(
   member: { id: number; shopId: number },
-  id: number | null,
   values: ContractValues,
+  lines: { productId: number; quantity: number }[],
 ) {
-  const c = schema.contracts;
-  if (id == null) {
-    const [created] = await getDb()
-      .insert(c)
+  const ids = lines.map((l) => l.productId);
+  if (new Set(ids).size !== ids.length) throw new UserError("Une marchandise est demandée deux fois.");
+  return getDb().transaction(async (tx) => {
+    await assertActive(tx, member.shopId, ids);
+    const [created] = await tx
+      .insert(schema.contracts)
       .values({ ...values, shopId: member.shopId, memberId: member.id })
-      .returning({ id: c.id });
+      .returning({ id: schema.contracts.id });
+    if (lines.length > 0) {
+      await tx.insert(schema.contractLines).values(lines.map((l) => ({ ...l, contractId: created.id })));
+    }
     return created.id;
-  }
+  });
+}
+
+/** Changes the name, client and day of a contract of the shop. */
+export async function saveContract(shopId: number, id: number, values: ContractValues) {
+  const c = schema.contracts;
   const [updated] = await getDb()
     .update(c)
     .set(values)
-    .where(and(eq(c.id, id), eq(c.shopId, member.shopId)))
+    .where(and(eq(c.id, id), eq(c.shopId, shopId)))
     .returning({ id: c.id });
   if (!updated) throw new UserError("Ce contrat n'existe plus.");
-  return updated.id;
 }
 
 /** Asks `quantity` of a merchandise of the shop in a contract of the shop; a merchandise already asked gets the new quantity. */
@@ -140,18 +162,12 @@ export async function saveContractLine(
   { contractId, productId, quantity }: { contractId: number; productId: number; quantity: number },
 ) {
   const db = getDb();
-  const [[contract], [product]] = await Promise.all([
-    db
-      .select({ id: schema.contracts.id })
-      .from(schema.contracts)
-      .where(and(eq(schema.contracts.id, contractId), eq(schema.contracts.shopId, shopId))),
-    db
-      .select({ id: schema.products.id })
-      .from(schema.products)
-      .where(and(eq(schema.products.id, productId), activeIn(shopId))),
-  ]);
+  const [contract] = await db
+    .select({ id: schema.contracts.id })
+    .from(schema.contracts)
+    .where(and(eq(schema.contracts.id, contractId), eq(schema.contracts.shopId, shopId)));
   if (!contract) throw new UserError("Ce contrat n'existe plus.");
-  if (!product) throw new UserError("Marchandise inconnue.");
+  await assertActive(db, shopId, [productId]);
   await db
     .insert(schema.contractLines)
     .values({ contractId, productId, quantity })
