@@ -239,6 +239,13 @@
       "when": 1795766413270,
       "tag": "0033_contrats",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795782964948,
+      "tag": "0034_prix-contrat",
+      "breakpoints": true
     }
   ]
 }

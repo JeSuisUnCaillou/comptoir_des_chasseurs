@@ -41,6 +41,7 @@ test("le gérant inscrit un contrat et suit le stock jusqu'à le livrer", async 
   await page.getByLabel("Nom du contrat").fill(contract);
   await page.getByLabel("Client").fill("Jarl de Vendeaume");
   await page.getByLabel("Échéance").fill("2099-11-30");
+  await page.getByLabel("Prix (septims)").fill("900");
   // Its merchandises are written with it, one line each.
   await pickProduct(newLine(page, 1), `${leather} (cuir)`);
   await newLine(page, 1).getByLabel("Quantité demandée").fill("12000");
@@ -67,6 +68,7 @@ test("le gérant inscrit un contrat et suit le stock jusqu'à le livrer", async 
   const open = card(page, contract);
   await expect(open).toContainText("Jarl de Vendeaume");
   await expect(open).toContainText("Pour le 30 novembre 2099");
+  await expect(open).toContainText("900 septims");
   await expect(open.getByText("En cours", { exact: true })).toBeVisible();
   await expect(line(page, contract, leather)).toContainText(/3\s000 \/ 12\s000 cuirs/);
   await expect(line(page, contract, leather)).toContainText(/Manque 9\s000 cuirs/);
@@ -99,19 +101,50 @@ test("le gérant inscrit un contrat et suit le stock jusqu'à le livrer", async 
   await expect(open.getByText("Prêt à livrer", { exact: true })).toBeVisible();
   await expect(open).toContainText("100 %");
 
-  // Delivered: it goes under « Contrats livrés », and the stock stays.
+  // Delivered: a sale of its merchandises at its price, whose septims are not in the till yet.
   await open.getByRole("link", { name: `Modifier ${contract}` }).click();
-  await page.getByRole("button", { name: "Marquer comme livré" }).click();
+  let question = "";
+  page.once("dialog", (dialog) => {
+    question = dialog.message();
+    return dialog.accept();
+  });
+  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
   await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
-  const delivered = page.getByRole("region", { name: "Contrats livrés" });
-  await expect(delivered.getByRole("article", { name: contract, exact: true }).getByText("Livré", { exact: true })).toBeVisible();
+  expect(question).toBe(`Livrer ${contract} ? Ses marchandises sortent du stock.`);
+  const unpaid = page.getByRole("region", { name: "Livrés, argent attendu" });
+  await expect(unpaid.getByRole("article", { name: contract, exact: true }).getByText("Livré, argent attendu", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Contrats en cours" }).getByRole("article", { name: contract })).toHaveCount(0);
-  // Opened again, then deleted.
+  // Its merchandises left the stock: 70 - 60 wolf pelts.
+  await page.goto("/inventaire");
+  await page.getByLabel("Rechercher une marchandise").fill(wolf);
+  await expect(page.getByTestId(`stock-${wolf}`).getByTestId("stock-value")).toHaveText("10");
+  // In the register: a sale to the client, shared by quantity, its septims awaited.
+  await page.goto("/achat-vente");
+  const saleRow = page.getByTestId("registre").getByRole("row").filter({ hasText: wolf }).filter({ hasText: "Jarl de Vendeaume" });
+  await expect(saleRow).toContainText("Pas encore en caisse");
+  await expect(saleRow).toContainText("450 septims");
+
+  // The money comes: the contract is paid, the sale counts in the till.
   await page.goto(`${COMPTOIR}/contrats`);
-  await delivered.getByRole("link", { name: `Modifier ${contract}` }).click();
-  await page.getByRole("button", { name: "Rouvrir le contrat" }).click();
-  await expect(page.getByRole("button", { name: "Marquer comme livré" })).toBeVisible();
-  // Delivering moved no stock.
+  await unpaid.getByRole("link", { name: `Modifier ${contract}` }).click();
+  await expect(page.getByRole("heading", { name: "Livré, argent attendu" })).toBeVisible();
+  await expect(page.getByLabel("Prix (septims)")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Enregistrer la marchandise" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Argent reçu" }).click();
+  const paid = page.getByRole("region", { name: "Contrats payés" });
+  await expect(paid.getByRole("article", { name: contract, exact: true }).getByText("Payé", { exact: true })).toBeVisible();
+  await expect(unpaid.getByRole("article", { name: contract })).toHaveCount(0);
+  await page.goto("/achat-vente");
+  await expect(saleRow).not.toContainText("Pas encore en caisse");
+  await expect(saleRow).toContainText("+450 septims");
+
+  // The delivery undone: its sale is cancelled, the pelts come back, the contract is open again.
+  await page.goto(`${COMPTOIR}/contrats`);
+  await paid.getByRole("link", { name: `Modifier ${contract}` }).click();
+  await expect(page.getByRole("heading", { name: "Livré et payé" })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Annuler la livraison" }).click();
+  await expect(page.getByRole("button", { name: "Livrer les marchandises" })).toBeVisible();
   await expect(wolfRow).toContainText("70 / 60 peaux");
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Supprimer le contrat" }).click();
@@ -188,7 +221,8 @@ test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pa
   const gerant = await (await browser.newContext()).newPage();
   await loginAsGerant(gerant);
   await gerant.goto(`${COMPTOIR}/contrats/${deliveredId}`);
-  await gerant.getByRole("button", { name: "Marquer comme livré" }).click();
+  gerant.once("dialog", (dialog) => dialog.accept());
+  await gerant.getByRole("button", { name: "Livrer les marchandises" }).click();
   await expect(gerant.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
   await page.goto(COMPTOIR);
   await expect(line(page, contract, hide)).toBeVisible();

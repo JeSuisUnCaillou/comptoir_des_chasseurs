@@ -4,7 +4,7 @@ import { ContractCard } from "@/components/contract-card";
 import { PageHead } from "@/components/page-head";
 import { Pagination } from "@/components/pagination";
 import { requireMember } from "@/lib/auth/session";
-import { DELIVERED_PAGE_SIZE, deliveredContracts, openContracts } from "@/lib/contracts";
+import { PAID_PAGE_SIZE, openContracts, paidContracts, unpaidContracts } from "@/lib/contracts";
 import { parisToday } from "@/lib/dates";
 import { pageParam } from "@/lib/pagination";
 import { shopPath } from "@/lib/paths";
@@ -15,7 +15,11 @@ export default async function Contrats({ searchParams }: { searchParams: Promise
   const at = (path: string) => shopPath(member.shop.slug, path);
   const gerant = isGerant(member);
   const page = pageParam((await searchParams).page);
-  const [open, delivered] = await Promise.all([openContracts(member.shopId), deliveredContracts(member.shopId, page)]);
+  const [open, unpaid, paid] = await Promise.all([
+    openContracts(member.shopId),
+    unpaidContracts(member.shopId),
+    paidContracts(member.shopId, page),
+  ]);
   const today = parisToday();
   const editHref = (id: number) => (gerant ? at(`/contrats/${id}`) : undefined);
 
@@ -54,22 +58,35 @@ export default async function Contrats({ searchParams }: { searchParams: Promise
         </section>
       )}
 
-      {delivered.total > 0 && (
-        <section className="section-gap" aria-label="Contrats livrés">
+      {unpaid.length > 0 && (
+        <section className="section-gap" aria-label="Livrés, argent attendu">
           <div className="panel-head">
-            <h2>Contrats livrés</h2>
+            <h2>Livrés, argent attendu</h2>
           </div>
           <div className="contract-grid">
-            {delivered.contracts.map((c) => (
+            {unpaid.map((c) => (
+              <ContractCard key={c.id} contract={c} editHref={editHref(c.id)} today={today} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {paid.total > 0 && (
+        <section className="section-gap" aria-label="Contrats payés">
+          <div className="panel-head">
+            <h2>Contrats payés</h2>
+          </div>
+          <div className="contract-grid">
+            {paid.contracts.map((c) => (
               <ContractCard key={c.id} contract={c} editHref={editHref(c.id)} today={today} />
             ))}
           </div>
           <Pagination
             page={page}
-            total={delivered.total}
+            total={paid.total}
             path={at("/contrats")}
-            size={DELIVERED_PAGE_SIZE}
-            label="Pages des contrats livrés"
+            size={PAID_PAGE_SIZE}
+            label="Pages des contrats payés"
             noun="contrat"
           />
         </section>

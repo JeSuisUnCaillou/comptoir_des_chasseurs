@@ -1,13 +1,18 @@
 import "server-only";
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { byName, getDb, schema, type Tx } from "@/lib/db";
+import type { ShopMember } from "@/lib/auth/session";
+import { splitPrice } from "@/lib/contract-progress";
 import { UserError } from "@/lib/errors";
+import { unitPrice } from "@/lib/pricing";
 import { activeIn } from "@/lib/products";
+import { cancelLines, recordLinesIn, settleLine } from "@/lib/transactions";
 
-/** Delivered contracts per page of the Contrats page. */
-export const DELIVERED_PAGE_SIZE = 12;
+/** Paid contracts per page of the Contrats page. */
+export const PAID_PAGE_SIZE = 12;
 
-export type ContractValues = { name: string; client: string; dueOn: string | null };
+export type ContractValues = { name: string; client: string; dueOn: string | null; price: number | null };
 
 /** The lines of these contracts, with their merchandise's name, unit and stock now, by name. */
 async function linesOf(contractIds: number[]) {
@@ -44,14 +49,37 @@ export type ContractLine = {
   stock: number;
 };
 
+/** The sale that delivered a contract, if any. */
+const delivery = alias(schema.transactions, "delivery");
+
+/**
+ * Delivered: marked so and its sale not cancelled since (cancelling that sale
+ * in the register undoes the delivery). Paid: delivered, and the septims of
+ * its sale are in the till; a contract delivered before prices has no sale and is paid.
+ */
+const deliveredSql = sql<boolean>`(${schema.contracts.deliveredAt} is not null and (${schema.contracts.deliveryLineId} is null or ${delivery.cancelledAt} is null))`;
+const paidSql = sql<boolean>`(${deliveredSql} and (${schema.contracts.deliveryLineId} is null or not ${delivery.tillPending}))`;
+
 const contractFields = {
   id: schema.contracts.id,
   name: schema.contracts.name,
   client: schema.contracts.client,
   dueOn: schema.contracts.dueOn,
+  price: schema.contracts.price,
   createdAt: schema.contracts.createdAt,
   deliveredAt: schema.contracts.deliveredAt,
+  deliveryLineId: schema.contracts.deliveryLineId,
+  delivered: deliveredSql,
+  paid: paidSql,
 };
+
+function contracts() {
+  return getDb()
+    .select(contractFields)
+    .from(schema.contracts)
+    .leftJoin(delivery, eq(delivery.id, schema.contracts.deliveryLineId))
+    .$dynamic();
+}
 
 async function withLines(contracts: Omit<ContractWithLines, "lines">[]): Promise<ContractWithLines[]> {
   const lines = await linesOf(contracts.map((c) => c.id));
@@ -63,38 +91,51 @@ export type ContractWithLines = {
   name: string;
   client: string;
   dueOn: string | null;
+  price: number | null;
   createdAt: Date;
   deliveredAt: Date | null;
+  deliveryLineId: number | null;
+  delivered: boolean;
+  paid: boolean;
   lines: ContractLine[];
 };
 
 /**
- * The shop's open contracts with their lines: those due soonest first, then
- * those without a day, newest first.
+ * The shop's contracts not delivered yet, with their lines: those due soonest
+ * first, then those without a day, newest first.
  */
 export async function openContracts(shopId: number) {
   const c = schema.contracts;
-  const rows = await getDb()
-    .select(contractFields)
-    .from(c)
-    .where(and(eq(c.shopId, shopId), isNull(c.deliveredAt)))
+  const rows = await contracts()
+    .where(and(eq(c.shopId, shopId), sql`not ${deliveredSql}`))
     .orderBy(sql`${c.dueOn} asc nulls last`, desc(c.createdAt), desc(c.id));
   return withLines(rows);
 }
 
-/** A page of the shop's delivered contracts, latest delivered first, and how many there are. */
-export async function deliveredContracts(shopId: number, page: number) {
+/** The shop's delivered contracts whose septims are still awaited, first delivered first. */
+export async function unpaidContracts(shopId: number) {
   const c = schema.contracts;
-  const delivered = and(eq(c.shopId, shopId), isNotNull(c.deliveredAt));
+  const rows = await contracts()
+    .where(and(eq(c.shopId, shopId), deliveredSql, sql`not ${paidSql}`))
+    .orderBy(asc(c.deliveredAt), asc(c.id));
+  return withLines(rows);
+}
+
+/** A page of the shop's delivered and paid contracts, latest delivered first, and how many there are. */
+export async function paidContracts(shopId: number, page: number) {
+  const c = schema.contracts;
+  const paid = and(eq(c.shopId, shopId), paidSql);
   const [rows, [{ total }]] = await Promise.all([
-    getDb()
-      .select(contractFields)
-      .from(c)
-      .where(delivered)
+    contracts()
+      .where(paid)
       .orderBy(desc(c.deliveredAt), desc(c.id))
-      .limit(DELIVERED_PAGE_SIZE)
-      .offset((page - 1) * DELIVERED_PAGE_SIZE),
-    getDb().select({ total: count() }).from(c).where(delivered),
+      .limit(PAID_PAGE_SIZE)
+      .offset((page - 1) * PAID_PAGE_SIZE),
+    getDb()
+      .select({ total: count() })
+      .from(c)
+      .leftJoin(delivery, eq(delivery.id, c.deliveryLineId))
+      .where(paid),
   ]);
   return { contracts: await withLines(rows), total };
 }
@@ -102,10 +143,7 @@ export async function deliveredContracts(shopId: number, page: number) {
 /** A contract of the shop with its lines, or undefined. */
 export async function contractOf(shopId: number, id: number) {
   const c = schema.contracts;
-  const [row] = await getDb()
-    .select(contractFields)
-    .from(c)
-    .where(and(eq(c.id, id), eq(c.shopId, shopId)));
+  const [row] = await contracts().where(and(eq(c.id, id), eq(c.shopId, shopId)));
   if (!row) return undefined;
   const [contract] = await withLines([row]);
   return contract;
@@ -145,15 +183,26 @@ export async function createContract(
   });
 }
 
-/** Changes the name, client and day of a contract of the shop. */
+/**
+ * Changes the name, client, day and price of a contract of the shop. A
+ * delivered contract keeps its price: its sale was written at it.
+ */
 export async function saveContract(shopId: number, id: number, values: ContractValues) {
+  const contract = await contractOf(shopId, id);
+  if (!contract) throw new UserError("Ce contrat n'existe plus.");
+  const { price, ...rest } = values;
   const c = schema.contracts;
-  const [updated] = await getDb()
+  await getDb()
     .update(c)
-    .set(values)
-    .where(and(eq(c.id, id), eq(c.shopId, shopId)))
-    .returning({ id: c.id });
-  if (!updated) throw new UserError("Ce contrat n'existe plus.");
+    .set(contract.delivered ? rest : values)
+    .where(and(eq(c.id, id), eq(c.shopId, shopId)));
+}
+
+/** Its merchandises change only before it is delivered: its sale was written with them. */
+async function assertNotDelivered(shopId: number, contractId: number) {
+  const contract = await contractOf(shopId, contractId);
+  if (!contract) throw new UserError("Ce contrat n'existe plus.");
+  if (contract.delivered) throw new UserError("Ce contrat est livré : ses marchandises ne changent plus.");
 }
 
 /** Asks `quantity` of a merchandise of the shop in a contract of the shop; a merchandise already asked gets the new quantity. */
@@ -162,11 +211,7 @@ export async function saveContractLine(
   { contractId, productId, quantity }: { contractId: number; productId: number; quantity: number },
 ) {
   const db = getDb();
-  const [contract] = await db
-    .select({ id: schema.contracts.id })
-    .from(schema.contracts)
-    .where(and(eq(schema.contracts.id, contractId), eq(schema.contracts.shopId, shopId)));
-  if (!contract) throw new UserError("Ce contrat n'existe plus.");
+  await assertNotDelivered(shopId, contractId);
   await assertActive(db, shopId, [productId]);
   await db
     .insert(schema.contractLines)
@@ -184,19 +229,83 @@ function contractsOfShop(shopId: number) {
 
 /** Takes a merchandise off a contract of the shop. */
 export async function removeContractLine(shopId: number, contractId: number, lineId: number) {
+  await assertNotDelivered(shopId, contractId);
   const l = schema.contractLines;
   await getDb()
     .delete(l)
     .where(and(eq(l.id, lineId), eq(l.contractId, contractId), inArray(l.contractId, contractsOfShop(shopId))));
 }
 
-/** Marks a contract of the shop delivered, or opens it again. Its stock does not move. */
-export async function setDelivered(shopId: number, id: number, delivered: boolean) {
+type Actor = Pick<ShopMember, "id" | "role" | "shopId">;
+
+/**
+ * Delivers a contract of the shop: a sale of its merchandises to its client,
+ * at its price shared among them (`splitPrice`), whose septims wait for the
+ * till until the shop is paid. The stock goes out as with any sale. All of it
+ * or nothing.
+ */
+export async function deliverContract(member: Actor, id: number) {
+  await getDb().transaction(async (tx) => {
+    const c = schema.contracts;
+    // One delivery at a time: a second click waits, then finds it delivered.
+    const [locked] = await tx
+      .select({ id: c.id })
+      .from(c)
+      .where(and(eq(c.id, id), eq(c.shopId, member.shopId)))
+      .for("update");
+    if (!locked) throw new UserError("Ce contrat n'existe plus.");
+    const [contract] = await tx
+      .select(contractFields)
+      .from(c)
+      .leftJoin(delivery, eq(delivery.id, c.deliveryLineId))
+      .where(eq(c.id, id));
+    if (contract.delivered) throw new UserError("Ce contrat est déjà livré.");
+    const p = schema.products;
+    const lines = await tx
+      .select({ productId: p.id, label: p.name, quantity: schema.contractLines.quantity, sellPrice: p.sellPrice, sellQty: p.sellQty })
+      .from(schema.contractLines)
+      .innerJoin(p, eq(p.id, schema.contractLines.productId))
+      .where(eq(schema.contractLines.contractId, id))
+      .orderBy(byName(p.name), asc(schema.contractLines.id));
+    if (lines.length === 0) throw new UserError("Ce contrat ne demande aucune marchandise : rien à livrer.");
+    const price = contract.price ?? 0;
+    const amounts = splitPrice(
+      price,
+      lines.map((l) => ({ quantity: l.quantity, value: l.sellPrice == null ? null : (unitPrice(l.sellPrice, l.sellQty) ?? 0) * l.quantity })),
+    );
+    const [first] = await recordLinesIn(tx, member, {
+      kind: "vente",
+      counterparty: contract.client || null,
+      notes: `Contrat « ${contract.name} »`,
+      tillPending: price > 0,
+      lines: lines.map((l, i) => ({ productId: l.productId, label: l.label, quantity: l.quantity, amount: amounts[i] })),
+    });
+    await tx.update(c).set({ deliveredAt: new Date(), deliveryLineId: first }).where(eq(c.id, id));
+  });
+}
+
+/** The septims of a delivered contract of the shop are in: its sale counts in the till. */
+export async function receivePayment(member: Actor, id: number) {
+  const contract = await contractOf(member.shopId, id);
+  if (!contract) throw new UserError("Ce contrat n'existe plus.");
+  if (!contract.delivered || contract.deliveryLineId == null) throw new UserError("Ce contrat n'est pas encore livré.");
+  if (contract.paid) throw new UserError("L'argent de ce contrat est déjà en caisse.");
+  await settleLine(member, contract.deliveryLineId);
+}
+
+/**
+ * Undoes the delivery of a contract of the shop: its sale is cancelled (its
+ * merchandises go back into the stock) and it is open again.
+ */
+export async function cancelDelivery(member: Actor, id: number) {
+  const contract = await contractOf(member.shopId, id);
+  if (!contract) throw new UserError("Ce contrat n'existe plus.");
+  if (contract.delivered && contract.deliveryLineId != null) await cancelLines(member, contract.deliveryLineId, true);
   const c = schema.contracts;
   await getDb()
     .update(c)
-    .set({ deliveredAt: delivered ? new Date() : null })
-    .where(and(eq(c.id, id), eq(c.shopId, shopId)));
+    .set({ deliveredAt: null, deliveryLineId: null })
+    .where(and(eq(c.id, id), eq(c.shopId, member.shopId)));
 }
 
 /** Deletes a contract of the shop; its lines go with it (on delete cascade). */

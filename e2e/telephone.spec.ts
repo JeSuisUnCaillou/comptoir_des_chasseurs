@@ -394,6 +394,12 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
   // A contract with a long name, a client, a day past, and lines ready or not: its card and its page.
   const contract = uniqueName("Grande commande du Jarl de Vendeaume pour la semaine des chasseurs");
   const contractId = await createContract(contract, [[product, 1_000_000], ["Cuir", 12_000]], { dueOn: "2020-01-15" });
+  // Another, delivered with its septims awaited: its card among « Livrés, argent attendu », and its buttons.
+  const deliveredId = await createContract(uniqueName("Commande livrée du Jarl de Vendeaume"), [[product, 2]], { price: 1_500_000 });
+  await page.goto(`${COMPTOIR}/contrats/${deliveredId}`);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Livrer les marchandises" }).click();
+  await expect(page.getByRole("heading", { name: "Contrats", level: 1 })).toBeVisible();
   const pages = [
     COMPTOIR,
     "/achat-vente",
@@ -415,6 +421,7 @@ test("à toutes les largeurs, de 320 à 1600 px, aucune page ne déborde, ne cou
     `${COMPTOIR}/contrats`,
     `${COMPTOIR}/contrats/nouveau`,
     `${COMPTOIR}/contrats/${contractId}`,
+    `${COMPTOIR}/contrats/${deliveredId}`,
     "/membres",
     "/boutiques",
     "/mot-de-passe",

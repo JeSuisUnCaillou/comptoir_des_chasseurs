@@ -1,9 +1,9 @@
-import { CalendarDays, User } from "lucide-react";
+import { CalendarDays, Coins, User } from "lucide-react";
 import Link from "next/link";
 import { contractProgress, contractStatus, lineProgress } from "@/lib/contract-progress";
 import type { ContractWithLines } from "@/lib/contracts";
 import { formatDay } from "@/lib/dates";
-import { formatNumber, plural } from "@/lib/pricing";
+import { formatNumber, plural, septims } from "@/lib/pricing";
 
 /** A bar filled to `percent`, read out as such. */
 export function ProgressBar({ percent, label, done }: { percent: number; label: string; done: boolean }) {
@@ -42,8 +42,10 @@ export function ContractCard({
     <article className={`contract-card${allReady ? " contract-card-ready" : ""}`} aria-label={contract.name}>
       <div className="contract-card-head">
         <div className="badges">
-          {contract.deliveredAt ? (
-            <span className="badge badge-green">Livré</span>
+          {contract.paid ? (
+            <span className="badge badge-green">Payé</span>
+          ) : contract.delivered ? (
+            <span className="badge badge-blue">Livré, argent attendu</span>
           ) : allReady ? (
             <span className="badge badge-green">Prêt à livrer</span>
           ) : (
@@ -58,7 +60,7 @@ export function ContractCard({
         )}
       </div>
       <h3>{contract.name}</h3>
-      {(contract.client || contract.dueOn) && (
+      {(contract.client || contract.dueOn || contract.price != null) && (
         <p className="contract-meta">
           {contract.client && (
             <span>
@@ -70,10 +72,30 @@ export function ContractCard({
               <CalendarDays size={15} aria-hidden /> Pour le {formatDay(contract.dueOn)}
             </span>
           )}
+          {contract.price != null && (
+            <span>
+              <Coins size={15} aria-hidden /> {septims(contract.price)}
+            </span>
+          )}
         </p>
       )}
       {lines.length === 0 ? (
         <p className="small muted">Aucune marchandise demandée pour l&apos;instant.</p>
+      ) : contract.delivered ? (
+        // Delivered: its merchandises left the stock, which no longer says anything of it.
+        <ul className="contract-lines" aria-label={`Marchandises de ${contract.name}`}>
+          {lines.map((line) => (
+            <li key={line.id}>
+              <div className="contract-line-head">
+                <span>{line.productName}</span>
+                <span className="contract-line-count">
+                  <strong>{formatNumber(line.quantity)}</strong>{" "}
+                  <span className="small muted">{plural(line.unit, line.quantity)}</span>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
         <>
           <div className="contract-total">

@@ -467,11 +467,19 @@ export const contracts = pgTable(
       .notNull()
       .references(() => members.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    // Marked delivered by a gérant: it leaves the open contracts. Its stock
-    // goes out by the sale written in Achat / Vente, not by this mark.
+    // When a gérant delivered it. Since prices, delivering writes a sale of
+    // its merchandises (`deliveryLineId`); contracts delivered before have none.
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    // The septims the shop will be paid for it, if known.
+    price: integer("price"),
+    // The first line of the sale that delivered it: its septims wait for the
+    // till until the shop is paid. Cancelling that sale undoes the delivery.
+    deliveryLineId: integer("delivery_line_id").references(() => transactions.id),
   },
-  (t) => [index("contracts_shop_idx").on(t.shopId, t.deliveredAt)],
+  (t) => [
+    index("contracts_shop_idx").on(t.shopId, t.deliveredAt),
+    check("contracts_price_positive", sql`${t.price} >= 0`),
+  ],
 );
 
 export type Contract = typeof contracts.$inferSelect;

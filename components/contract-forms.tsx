@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
+  contractStep,
   deleteContract,
   saveContract,
   saveContractLine,
@@ -103,7 +104,7 @@ export function ContractForm({
   contract,
   products,
 }: {
-  contract?: { id: number; name: string; client: string; dueOn: string | null };
+  contract?: { id: number; name: string; client: string; dueOn: string | null; price: number | null; delivered: boolean };
   products?: ProductChoice[];
 }) {
   const [state, action, pending] = useActionState<ContractFormState, FormData>(saveContract, null);
@@ -135,6 +136,22 @@ export function ContractForm({
         <div className="field">
           <label htmlFor="c-due">Échéance</label>
           <input id="c-due" name="dueOn" type="date" defaultValue={contract?.dueOn ?? ""} />
+        </div>
+        <div className="field">
+          <label htmlFor="c-price">Prix (septims)</label>
+          <input
+            id="c-price"
+            name="price"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={contract?.price ?? ""}
+            disabled={contract?.delivered}
+            aria-describedby="c-price-help"
+          />
+          <span id="c-price-help" className="small muted">
+            {contract?.delivered ? "Fixé par la livraison." : "Ce qu'on nous paiera à la livraison."}
+          </span>
         </div>
       </div>
       {!contract && products && <NewContractLines products={products} />}
@@ -193,6 +210,44 @@ export function DeleteContractButton({ id, name }: { id: number; name: string })
       >
         Supprimer le contrat
       </button>
+    </form>
+  );
+}
+
+/**
+ * One step of a contract after it is written (`step`: livrer, payer, annuler),
+ * with the message saying why it was refused. `confirm` asks first.
+ */
+export function ContractStepButton({
+  id,
+  step,
+  label,
+  confirm,
+  primary,
+}: {
+  id: number;
+  step: "livrer" | "payer" | "annuler";
+  label: string;
+  confirm?: string;
+  primary?: boolean;
+}) {
+  const [state, action, pending] = useActionState<ContractFormState, FormData>(contractStep, null);
+  return (
+    <form
+      onSubmit={(e) => {
+        if (confirm && !window.confirm(confirm)) {
+          e.preventDefault();
+          return;
+        }
+        keepValues(action)(e);
+      }}
+    >
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="step" value={step} />
+      <button className={`btn${primary ? " btn-primary" : ""}`} type="submit" disabled={pending}>
+        {label}
+      </button>
+      <Status state={state} />
     </form>
   );
 }

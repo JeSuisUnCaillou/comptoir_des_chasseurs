@@ -74,6 +74,7 @@ const SAMPLES = [
 const CONTRACT = {
   name: "Commande de la semaine (exemple)",
   client: "Jarl de Vendeaume",
+  price: 1500,
   lines: [
     ["Cuir", 120],
     ["Venaison", 60],
@@ -225,8 +226,8 @@ try {
       select count(*)::int as "openContracts" from contracts where shop_id = 1 and delivered_at is null`;
     if (openContracts === 0) {
       const [contract] = await tx`
-        insert into contracts (shop_id, name, client, due_on, member_id)
-        values (1, ${CONTRACT.name}, ${CONTRACT.client}, (now() + interval '5 days')::date, ${memberId})
+        insert into contracts (shop_id, name, client, due_on, price, member_id)
+        values (1, ${CONTRACT.name}, ${CONTRACT.client}, (now() + interval '5 days')::date, ${CONTRACT.price}, ${memberId})
         returning id`;
       for (const [product, quantity] of CONTRACT.lines) {
         await tx`
