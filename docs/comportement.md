@@ -181,11 +181,11 @@ contacts, ses réglages et ses membres, et ne voit rien des autres.
   changent pas. Le cadre dit qui a déclaré la dernière et quand.
 - Les boutons : Mouvement de caisse, Mouvement de stock, puis, mis en avant à
   droite, Nouvel achat et Nouvelle vente.
-- Les dernières écritures.
-- Tout le tableau des annonces, sans pagination (choix du propriétaire).
-- Sous le tableau, les contrats en cours, en cartes comme sur la page
+- Sous la caisse, les contrats en cours, en cartes comme sur la page
   [Contrats](#contrats), avec « Tous les contrats → » ; rien quand aucun
   n'est en cours.
+- Tout le tableau des annonces, sans pagination (choix du propriétaire).
+- Les dernières écritures.
 
 ### Initialiser une nouvelle boutique
 

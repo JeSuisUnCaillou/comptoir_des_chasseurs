@@ -194,7 +194,7 @@ test("un employé suit les contrats sans pouvoir les modifier", async ({ browser
   await expect(page.getByRole("heading", { name: "Grand livre" })).toBeVisible();
 });
 
-test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pas les livrés", async ({ browser }) => {
+test("le Grand livre montre les contrats en cours au-dessus du tableau d'annonces, pas les livrés", async ({ browser }) => {
   const contract = uniqueName("Commande de Blancherive");
   const delivered = uniqueName("Commande livrée");
   const hide = uniqueName("Peau de chèvre");
@@ -207,12 +207,12 @@ test("le Grand livre montre les contrats en cours sous le tableau d'annonces, pa
   const open = page.getByRole("region", { name: "Contrats en cours" });
   await expect(line(page, contract, hide)).toContainText("3 / 12 peaux");
   await expect(open.getByRole("article", { name: contract, exact: true })).toContainText("Manque 9 peaux");
-  // Under the board, before the latest entries.
-  const board = await page.getByRole("heading", { name: "Tableau d'annonces" }).boundingBox();
+  // Under the till, above the board.
+  const till = await page.getByRole("heading", { name: /^Bonjour/ }).boundingBox();
   const contracts = await open.boundingBox();
-  const entries = await page.getByRole("heading", { name: "Dernières écritures" }).boundingBox();
-  expect(contracts!.y).toBeGreaterThan(board!.y);
-  expect(contracts!.y).toBeLessThan(entries!.y);
+  const board = await page.getByRole("heading", { name: "Tableau d'annonces" }).boundingBox();
+  expect(contracts!.y).toBeGreaterThan(till!.y);
+  expect(contracts!.y + contracts!.height).toBeLessThan(board!.y);
   // An employé reads them: no button to change them.
   await expect(open.getByRole("link", { name: `Modifier ${contract}` })).toHaveCount(0);
 
