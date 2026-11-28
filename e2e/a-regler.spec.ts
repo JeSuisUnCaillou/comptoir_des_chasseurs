@@ -152,6 +152,8 @@ test("« Tout régler » donne le solde à mettre en caisse et règle toutes les
   await expect(depositCard).toContainText("12 septims");
   await expect(page.getByTestId("a-sortir-de-la-caisse")).toContainText("5 septims");
   await expect(page.getByTestId("a-sortir-de-la-caisse").getByRole("button")).toHaveCount(0);
+  // boundingBox() does not wait: it returns null until the button is shown.
+  await expect(settleAll).toBeVisible();
   const [button, card] = await Promise.all([settleAll.boundingBox(), depositCard.boundingBox()]);
   expect(button!.width).toBeLessThan(card!.width - 36);
 
