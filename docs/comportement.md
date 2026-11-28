@@ -770,7 +770,11 @@ Inventaire et Contacts dans le menu.
     contrat en cours.
   - Le contrat suit sa vente : la mettre en caisse au registre le dit payé,
     l'annuler entière au registre le remet en cours ; en annuler une ligne
-    seule ne change rien au contrat.
+    seule ne change rien au contrat. La rétablir au registre le livre de
+    nouveau, tant qu'elle est la dernière vente du contrat ; une fois sa
+    livraison annulée (« Annuler la livraison ») ou le contrat livré par une
+    nouvelle vente, l'ancienne ne se rétablit plus (message d'erreur), pour
+    ne pas compter le contrat ni sortir ses marchandises deux fois.
 - Supprimer un contrat ne touche ni au stock ni à une vente déjà inscrite
   par sa livraison.
 - Tout le monde les consulte. Les gérants et le membre qui a écrit le

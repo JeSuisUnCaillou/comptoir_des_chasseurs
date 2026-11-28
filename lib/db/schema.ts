@@ -341,6 +341,13 @@ export const transactions = pgTable(
     // The last time its septims were changed after it was written, and by whom.
     editedAt: timestamp("edited_at", { withTimezone: true }),
     editedBy: integer("edited_by").references(() => members.id),
+    // The contract whose delivery wrote it, on every line of that sale. It
+    // stays after the delivery is undone, so the old sale cannot be counted
+    // again once the contract is open or delivered by another sale. No
+    // foreign key: contracts already points here (`deliveryLineId`), and the
+    // prod copy (scripts/preview/copy-prod.mjs) needs tables without loops;
+    // a deleted contract leaves an id that matches nothing.
+    contractId: integer("contract_id"),
   },
   (t) => [
     index("transactions_shop_created_at_idx").on(t.shopId, t.createdAt),

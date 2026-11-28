@@ -284,11 +284,40 @@ async function changeLines(member: Actor, id: number, whole: boolean, change: "c
     if (!canActOn(member, lines[0])) {
       throw new UserError(`Seul un gérant peut ${cancel ? "annuler" : "rétablir"} la ligne d'un autre membre.`);
     }
+    if (!cancel) await assertDeliversItsContract(tx, lines[0]);
     for (const line of lines) {
       if (cancel) await cancelOne(tx, member, line, lines.length > 1);
       else await restoreOne(tx, member, line);
     }
   });
+}
+
+/**
+ * The sale of a contract's delivery counts again only while it is still the
+ * sale that delivers it: once the delivery is undone or written anew, the
+ * contract would be counted twice. The lines of one entry share their contract.
+ */
+async function assertDeliversItsContract(tx: Tx, line: Line) {
+  if (line.contractId == null) return;
+  const c = schema.contracts;
+  const t = schema.transactions;
+  // Locked like a delivery, so neither waits on the other's half.
+  const [contract] = await tx
+    .select({ name: c.name, deliveryLineId: c.deliveryLineId })
+    .from(c)
+    .where(eq(c.id, line.contractId))
+    .for("update");
+  if (!contract) return;
+  if (contract.deliveryLineId != null) {
+    const [same] = await tx
+      .select({ id: t.id })
+      .from(t)
+      .where(and(eq(t.id, contract.deliveryLineId), sameEntryAs(line.id)));
+    if (same) return;
+  }
+  throw new UserError(
+    `Cette vente livrait le contrat « ${contract.name} », remis en cours ou livré de nouveau depuis : elle ne se rétablit plus.`,
+  );
 }
 
 async function cancelOne(tx: Tx, member: Actor, line: Line, several: boolean) {
